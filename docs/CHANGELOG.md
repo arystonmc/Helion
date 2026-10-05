@@ -8,3 +8,10 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 
 ### Added
 - Initial mod setup for Minecraft 26.3 on NeoForge
+- Vulkan render core that draws the whole world through Helion's own stages with a picture identical to vanilla
+- Own color and depth buffers for the world image
+- Automatic fallback to vanilla rendering on OpenGL, with Sodium or Iris, or after a rendering error
+- Toggle key (H) and the commands /helion status, /helion toggle and /helion parity
+- GPU time per render stage, active GPU and Helion memory use on the F3 screen
+- Settings screen with render core and GPU timing options
+- English and Turkish translations

@@ -4,7 +4,7 @@
 
 <h1 align="center">Helion</h1>
 
-<p align="center">A client-side graphics enhancement mod for Minecraft.</p>
+<p align="center">A client-side graphics mod for Minecraft, built on the Vulkan renderer.</p>
 
 ## Requirements
 
@@ -13,6 +13,7 @@
 | Minecraft | 26.3 |
 | Loader | NeoForge 26.3.0.51-beta or newer |
 | Java | 25 |
+| Graphics API | Vulkan (Video Settings → Graphics API → Prefer Vulkan) |
 | Side | Client only |
 
 ## Features
@@ -22,6 +23,14 @@ See [docs/FEATURES.md](docs/FEATURES.md).
 ## Changelog
 
 See [docs/CHANGELOG.md](docs/CHANGELOG.md).
+
+## Architecture
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Troubleshooting
+
+If the game closes right after start on Vulkan, open `config/fml.toml` in the game folder and set `earlyWindowControl = false`. The NeoForge loading screen uses OpenGL and its handoff to Vulkan can fail on some systems.
 
 ## Building
 

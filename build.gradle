@@ -23,6 +23,7 @@ neoForge {
     runs {
         client {
             client()
+            programArguments.addAll '--graphicsBackend', 'vulkan'
         }
 
         configureEach {

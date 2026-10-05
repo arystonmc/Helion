@@ -10,8 +10,11 @@ displayURL="${mod_url}"
 iconFile="${mod_id}.png"
 displayTest="IGNORE_ALL_VERSION"
 description='''
-Client-side graphics enhancement mod for Minecraft.
+Client-side graphics enhancement mod for Minecraft, built on the Vulkan renderer.
 '''
+
+[[mixins]]
+config="${mod_id}.mixins.json"
 
 [[dependencies.${mod_id}]]
     modId="neoforge"
@@ -24,5 +27,21 @@ Client-side graphics enhancement mod for Minecraft.
     modId="minecraft"
     type="required"
     versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="CLIENT"
+
+[[dependencies.${mod_id}]]
+    modId="sodium"
+    type="discouraged"
+    reason="Sodium replaces the terrain renderer that Helion controls. Helion stays inactive while Sodium is installed."
+    versionRange="*"
+    ordering="NONE"
+    side="CLIENT"
+
+[[dependencies.${mod_id}]]
+    modId="iris"
+    type="discouraged"
+    reason="Iris replaces the render pipeline that Helion controls. Helion stays inactive while Iris is installed."
+    versionRange="*"
     ordering="NONE"
     side="CLIENT"
