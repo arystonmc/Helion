@@ -109,7 +109,7 @@ Places that copy or depend on vanilla internals. Check each of them first when M
 
 ## Testing Tools
 
-- `/helion parity`: renders one frame with vanilla and the next with Helion, reads both main targets back from the GPU and reports differing pixels. Use `/tick freeze` and keep the camera still.
+- `/helion parity`: after warm-up frames on each side, captures one vanilla frame and one Helion frame, reads both main targets back from the GPU and reports differing pixels. Use `/tick freeze` and keep the camera still.
 - `/helion toggle` or the `H` key: switches between Helion and vanilla rendering at runtime.
 - `/helion status`: shows whether the core is active, disabled or passive and why.
 - F3 debug screen: backend, GPU, smoothed GPU time per stage, tracked GPU memory and Helion frustum check against vanilla visible sections.

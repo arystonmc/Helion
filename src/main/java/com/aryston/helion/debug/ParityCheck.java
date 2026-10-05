@@ -7,8 +7,10 @@ import org.jspecify.annotations.Nullable;
 
 public final class ParityCheck {
     private static final ParityCheck INSTANCE = new ParityCheck();
+    private static final int WARM_UP_FRAMES = 3;
 
     private Phase phase = Phase.IDLE;
+    private int warmUpFramesLeft;
     private @Nullable FrameCapture vanillaFrame;
     private @Nullable FrameCapture helionFrame;
     private Consumer<ParityResult> reporter = result -> { };
@@ -25,27 +27,41 @@ public final class ParityCheck {
             return false;
         }
         reporter = resultReporter;
-        phase = Phase.CAPTURE_VANILLA;
+        enter(Phase.WARM_UP_VANILLA);
         return true;
     }
 
     public boolean forcesVanillaFrame() {
-        return phase == Phase.CAPTURE_VANILLA;
+        return phase == Phase.WARM_UP_VANILLA || phase == Phase.CAPTURE_VANILLA;
     }
 
     public void afterLevelFrame(RenderTarget output) {
         switch (phase) {
+            case WARM_UP_VANILLA -> warmUp(Phase.CAPTURE_VANILLA);
             case CAPTURE_VANILLA -> {
                 vanillaFrame = FrameCapture.of(output, HelionRenderCore.get().resources());
-                phase = Phase.CAPTURE_HELION;
+                enter(Phase.WARM_UP_HELION);
             }
+            case WARM_UP_HELION -> warmUp(Phase.CAPTURE_HELION);
             case CAPTURE_HELION -> {
                 helionFrame = FrameCapture.of(output, HelionRenderCore.get().resources());
-                phase = Phase.COMPARE;
+                enter(Phase.COMPARE);
             }
             case COMPARE -> compareWhenReady();
             case IDLE -> {
             }
+        }
+    }
+
+    private void enter(Phase next) {
+        phase = next;
+        warmUpFramesLeft = WARM_UP_FRAMES;
+    }
+
+    private void warmUp(Phase next) {
+        warmUpFramesLeft--;
+        if (warmUpFramesLeft <= 0) {
+            enter(next);
         }
     }
 
@@ -56,13 +72,15 @@ public final class ParityCheck {
         ParityResult result = vanillaFrame.compareWith(helionFrame);
         vanillaFrame = null;
         helionFrame = null;
-        phase = Phase.IDLE;
+        enter(Phase.IDLE);
         reporter.accept(result);
     }
 
     private enum Phase {
         IDLE,
+        WARM_UP_VANILLA,
         CAPTURE_VANILLA,
+        WARM_UP_HELION,
         CAPTURE_HELION,
         COMPARE
     }

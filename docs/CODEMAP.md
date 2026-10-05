@@ -259,7 +259,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ParityCheck
 - Path: `src/main/java/com/aryston/helion/debug/ParityCheck.java`
-- Role: State machine behind `/helion parity`: forces one vanilla frame, captures it, captures the next Helion frame, compares when both readbacks finish.
+- Role: State machine behind `/helion parity`: renders three warm-up vanilla frames, captures the fourth, renders three warm-up Helion frames, captures the fourth, compares when both readbacks finish. Warm-up keeps cold first-use resources out of the comparison.
 
 #### FrameCapture
 - Path: `src/main/java/com/aryston/helion/debug/FrameCapture.java`
