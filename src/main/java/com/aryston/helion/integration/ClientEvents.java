@@ -5,6 +5,7 @@ import com.aryston.helion.debug.HelionDebugEntry;
 import com.aryston.helion.integration.vanilla.LevelRenderHook;
 import com.aryston.helion.render.HelionRenderCore;
 import com.aryston.helion.render.PassiveReason;
+import com.aryston.helion.render.shader.HelionPipelines;
 import com.mojang.logging.LogUtils;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -14,6 +15,7 @@ import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
+import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.GameShuttingDownEvent;
 import org.slf4j.Logger;
@@ -30,6 +32,7 @@ public final class ClientEvents {
         modBus.addListener(ClientEvents::onConfigReloading);
         modBus.addListener(HelionKeys::register);
         modBus.addListener(HelionDebugEntry::register);
+        modBus.addListener(ClientEvents::onRegisterPipelines);
         NeoForge.EVENT_BUS.addListener(ClientEvents::onClientTick);
         NeoForge.EVENT_BUS.addListener(ClientEvents::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(ClientEvents::onShutdown);
@@ -45,6 +48,10 @@ public final class ClientEvents {
         }
     }
 
+    private static void onRegisterPipelines(RegisterRenderPipelinesEvent event) {
+        HelionPipelines.all().forEach(event::registerOptionalPipeline);
+    }
+
     private static void onConfigLoading(ModConfigEvent.Loading event) {
         applyConfig();
     }
@@ -54,7 +61,11 @@ public final class ClientEvents {
     }
 
     private static void applyConfig() {
-        HelionRenderCore.get().applySettings(HelionConfig.ENABLED.getAsBoolean(), HelionConfig.GPU_TIMINGS.getAsBoolean());
+        HelionRenderCore.get().applySettings(
+            HelionConfig.ENABLED.getAsBoolean(),
+            HelionConfig.GPU_TIMINGS.getAsBoolean(),
+            HelionConfig.renderSettings()
+        );
     }
 
     private static void onClientTick(ClientTickEvent.Post event) {

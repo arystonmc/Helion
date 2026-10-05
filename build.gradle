@@ -63,6 +63,9 @@ tasks.named('processResources', ProcessResources) {
         include 'logo.png'
         rename 'logo.png', "${mod_id}.png"
     }
+    from('.') {
+        include 'COPYING', 'COPYING.LESSER', 'THIRD_PARTY_NOTICES.md'
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {

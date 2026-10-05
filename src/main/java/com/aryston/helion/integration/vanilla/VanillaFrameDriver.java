@@ -7,11 +7,13 @@ import com.aryston.helion.render.HelionRenderCore;
 import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderGraph;
+import com.aryston.helion.render.graph.RenderSettings;
 import com.aryston.helion.render.scene.SceneSnapshot;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.List;
+import java.util.Objects;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
@@ -31,14 +33,14 @@ import org.jspecify.annotations.Nullable;
 final class VanillaFrameDriver {
     private final SceneSkyRenderer sky = new SceneSkyRenderer();
 
-    void render(LevelFrameRequest request) {
+    void render(LevelFrameRequest request, RenderSettings settings) {
         LevelRendererAccessor level = request.level();
         HelionRenderCore core = HelionRenderCore.get();
         RenderTarget output = level.helion$gameRenderer().mainRenderTarget();
         RenderTarget scene = core.beginLevelFrame(output);
         RenderSystem.isRenderingLevel = true;
         try {
-            renderLevel(request, scene, output);
+            renderLevel(request, settings, scene, output);
             finishLevel(request);
         } finally {
             core.endLevelFrame();
@@ -50,7 +52,7 @@ final class VanillaFrameDriver {
         sky.close();
     }
 
-    private void renderLevel(LevelFrameRequest request, RenderTarget scene, RenderTarget output) {
+    private void renderLevel(LevelFrameRequest request, RenderSettings settings, RenderTarget scene, RenderTarget output) {
         LevelRendererAccessor level = request.level();
         GameRenderer gameRenderer = level.helion$gameRenderer();
         LevelRenderState state = level.helion$levelRenderState();
@@ -82,7 +84,15 @@ final class VanillaFrameDriver {
                 new RenderGraph(builder, HelionRenderCore.get().timings()),
                 targets,
                 camera(camera),
-                new SceneSnapshot(request.fogColor(), request.shouldRenderSky(), orderIndependent, scene.width, scene.height)
+                new SceneSnapshot(
+                    request.fogColor(),
+                    request.shouldRenderSky(),
+                    orderIndependent,
+                    scene.width,
+                    scene.height,
+                    Objects.requireNonNull(scene.getColorTexture()).getFormat()
+                ),
+                settings
             );
             HelionRenderCore.get().recordCamera(frame.camera());
             FrameStages.build(frame, sources(request, sections, featureFrame));

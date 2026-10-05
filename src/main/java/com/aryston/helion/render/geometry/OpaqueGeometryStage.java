@@ -12,20 +12,18 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
 
-public final class GeometryStage implements RenderStage {
-    private static final String NAME = "geometry";
-    private static final String PASS_LABEL = "Helion Geometry";
+public final class OpaqueGeometryStage implements RenderStage {
+    private static final String NAME = "opaque_geometry";
+    private static final String PASS_LABEL = "Helion Opaque Geometry";
 
     private final TerrainSource terrain;
     private final EntitySource entities;
     private final AtmosphereSource atmosphere;
-    private final TransparencySource transparency;
 
-    public GeometryStage(TerrainSource terrain, EntitySource entities, AtmosphereSource atmosphere, TransparencySource transparency) {
+    public OpaqueGeometryStage(TerrainSource terrain, EntitySource entities, AtmosphereSource atmosphere) {
         this.terrain = terrain;
         this.entities = entities;
         this.atmosphere = atmosphere;
-        this.transparency = transparency;
     }
 
     @Override
@@ -43,12 +41,10 @@ public final class GeometryStage implements RenderStage {
         FramePass pass = frame.graph().addPass(NAME);
         ResourceHandle<RenderTarget> scene = pass.readsAndWrites(frame.targets().scene());
         frame.targets().updateScene(scene);
-        frame.targets().declareGeometryAttachments(pass);
-        boolean orderIndependent = frame.scene().orderIndependentTransparency();
-        pass.executes(frame.graph().timed(NAME, () -> render(scene.get(), orderIndependent)));
+        pass.executes(frame.graph().timed(NAME, () -> render(scene.get())));
     }
 
-    private void render(RenderTarget target, boolean orderIndependent) {
+    private void render(RenderTarget target) {
         terrain.prepareFrame();
         atmosphere.prepareTranslucents();
         entities.prepareLighting();
@@ -64,22 +60,6 @@ public final class GeometryStage implements RenderStage {
             RenderSystem.bindDefaultUniforms(pass);
             terrain.renderOpaque(pass);
             entities.renderSolid(pass);
-            if (!orderIndependent) {
-                renderSortedTransparency(pass);
-            }
         }
-        if (orderIndependent) {
-            transparency.renderOrderIndependent();
-        }
-        entities.renderOverlays(target);
-    }
-
-    private void renderSortedTransparency(RenderPass pass) {
-        entities.renderTranslucent(pass);
-        terrain.renderTranslucent(pass);
-        entities.renderTranslucentAfterTerrain(pass);
-        atmosphere.renderClouds(pass);
-        atmosphere.renderWeather(pass);
-        atmosphere.renderWorldBorder(pass);
     }
 }

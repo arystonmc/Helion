@@ -7,7 +7,10 @@ Every class and source file of Helion with its purpose. Find the right file here
 | I want to change | Go to |
 |---|---|
 | Stage order of a frame | `FrameStages` |
-| What a stage draws | `ClearStage`, `SkyStage`, `GeometryStage`, `PostProcessingStage`, `PresentStage` |
+| What a stage draws | `ClearStage`, `SkyStage`, `OpaqueGeometryStage`, `AmbientOcclusionStage`, `TransparentGeometryStage`, `PostProcessingStage`, `PresentStage` |
+| Ambient occlusion look and cost | `AmbientOcclusionResources` (tuning), `AmbientOcclusionQuality` (presets), `shaders/ambient_occlusion/` |
+| Effect settings per frame | `RenderSettings`, `HelionConfig.renderSettings` |
+| Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines` |
 | How vanilla terrain, entities, sky or OIT are called | `VanillaTerrainSource`, `VanillaEntitySource`, `VanillaAtmosphereSource`, `VanillaTransparencySource` |
 | The rebuilt vanilla `LevelRenderer.render` | `VanillaFrameDriver` |
 | Frame graph targets and OIT targets | `VanillaFrameTargets` |
@@ -44,7 +47,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### HelionConfig
 - Path: `src/main/java/com/aryston/helion/config/HelionConfig.java`
-- Role: Client config spec with `ENABLED` (render core on at startup) and `GPU_TIMINGS` (measure stage times).
+- Role: Client config spec: `ENABLED` (render core on at startup), `GPU_TIMINGS`, and the `ambientOcclusion` section (enabled, quality, strength, radius, debugView). `renderSettings()` turns the config into a `RenderSettings` snapshot.
 - Depends on: nothing inside the mod.
 
 ### `com.aryston.helion.render`
@@ -52,7 +55,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 #### HelionRenderCore
 - Path: `src/main/java/com/aryston/helion/render/HelionRenderCore.java`
 - Role: Singleton that owns the core state and shared GPU objects. Decides whether Helion renders, detects the backend on first use, starts and ends level frames, redirects the main target during a level frame, releases everything on shutdown.
-- Members: `get()`, `isActive()`, `toggle()`, `passivate(reason)`, `reportFailure(throwable)`, `beginLevelFrame(main)`, `endLevelFrame()`, `resolveMainTarget(original)`, `recordCamera(camera)`, `applySettings(enabled, gpuTimings)`, `setPassiveListener(listener)`, `shutdown()`.
+- Members: `get()`, `isActive()`, `toggle()`, `passivate(reason)`, `reportFailure(throwable)`, `beginLevelFrame(main)`, `endLevelFrame()`, `resolveMainTarget(original)`, `recordCamera(camera)`, `applySettings(enabled, gpuTimings, renderSettings)`, `settings()`, `ambientOcclusion()`, `setPassiveListener(listener)`, `shutdown()`.
 - Depends on: `GpuDeviceSummary`, `GpuResources`, `SceneTargets`, `GpuTimings`, `HelionCamera`.
 
 #### PassiveReason
@@ -84,6 +87,10 @@ Every class and source file of Helion with its purpose. Find the right file here
 - Path: `src/main/java/com/aryston/helion/render/resource/GpuResources.java`
 - Role: Registry of every GPU resource Helion owns. `release` frees through `RenderSystem.queueFencedTask` so in-flight frames are safe; `releaseAll` runs on shutdown. Feeds the F3 resource line.
 
+#### UniformRing
+- Path: `src/main/java/com/aryston/helion/render/resource/UniformRing.java`
+- Role: Three mappable uniform buffers used in turn, each guarded by a fence so the CPU never overwrites data the GPU still reads. Registered in `GpuResources`.
+
 #### TrackedResource
 - Path: `src/main/java/com/aryston/helion/render/resource/TrackedResource.java`
 - Role: Label, size in bytes and release action of one tracked resource.
@@ -101,11 +108,16 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### FrameContext
 - Path: `src/main/java/com/aryston/helion/render/graph/FrameContext.java`
-- Role: Everything a stage sees for one frame: graph, targets, camera, scene snapshot.
+- Role: Everything a stage sees for one frame: graph, targets, camera, scene snapshot, render settings.
 
 #### FrameTargets
 - Path: `src/main/java/com/aryston/helion/render/graph/FrameTargets.java`
 - Role: Frame graph handles of the scene and output targets, updated after each `readsAndWrites`, plus `declareGeometryAttachments` for auxiliary targets.
+
+#### RenderSettings
+- Path: `src/main/java/com/aryston/helion/render/graph/RenderSettings.java`
+- Role: Immutable per-frame effect settings. `foundation()` turns every effect off for the parity check.
+- Depends on: `AmbientOcclusionSettings`.
 
 #### RenderGraph
 - Path: `src/main/java/com/aryston/helion/render/graph/RenderGraph.java`
@@ -121,7 +133,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### SceneSnapshot
 - Path: `src/main/java/com/aryston/helion/render/scene/SceneSnapshot.java`
-- Role: Immutable per-frame scene facts: fog color, sky visibility, transparency mode, target size.
+- Role: Immutable per-frame scene facts: fog color, sky visibility, transparency mode, target size, scene color format.
 
 #### ClearStage
 - Path: `src/main/java/com/aryston/helion/render/scene/ClearStage.java`
@@ -139,9 +151,14 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 ### `com.aryston.helion.render.geometry`
 
-#### GeometryStage
-- Path: `src/main/java/com/aryston/helion/render/geometry/GeometryStage.java`
-- Role: Main world pass. Prepares fog, sampler, translucent buffers and lighting, then draws opaque terrain and features, sorted transparency with clouds, weather and border (or vanilla OIT), and finally outline, see-through and always-on-top features.
+#### OpaqueGeometryStage
+- Path: `src/main/java/com/aryston/helion/render/geometry/OpaqueGeometryStage.java`
+- Role: Prepares fog, chunk sampler, translucent buffers and lighting, then draws opaque terrain and solid features in one render pass.
+- Depends on: `TerrainSource`, `EntitySource`, `AtmosphereSource`.
+
+#### TransparentGeometryStage
+- Path: `src/main/java/com/aryston/helion/render/geometry/TransparentGeometryStage.java`
+- Role: Draws sorted transparency (translucent features, translucent terrain, particles, clouds, weather, world border) or vanilla order independent transparency, then outline, see-through and always-on-top features. Declares the auxiliary OIT and outline targets.
 - Depends on: `TerrainSource`, `EntitySource`, `AtmosphereSource`, `TransparencySource`.
 
 #### TerrainSource
@@ -155,6 +172,45 @@ Every class and source file of Helion with its purpose. Find the right file here
 #### TransparencySource
 - Path: `src/main/java/com/aryston/helion/render/geometry/TransparencySource.java`
 - Role: Contract for order independent transparency.
+
+### `com.aryston.helion.render.lighting`
+
+#### AmbientOcclusionStage
+- Path: `src/main/java/com/aryston/helion/render/lighting/AmbientOcclusionStage.java`
+- Role: Adds the ambient occlusion passes (`ao_depth`, `ao_main`, `ao_denoise_N`, `ao_apply`) with their internal targets to the frame graph. Inactive when disabled, when the scene color is not RGBA8 or when a shader failed to compile.
+- Depends on: `AmbientOcclusionResources`, `AmbientOcclusionPrograms`, `AmbientOcclusionPipelines`, `FullscreenPass`.
+
+#### AmbientOcclusionPipelines
+- Path: `src/main/java/com/aryston/helion/render/lighting/AmbientOcclusionPipelines.java`
+- Role: Pipeline definitions of every ambient occlusion pass, the uniform and sampler names they bind and the target formats.
+- Depends on: `HelionPipelines`.
+
+#### AmbientOcclusionPrograms
+- Path: `src/main/java/com/aryston/helion/render/lighting/AmbientOcclusionPrograms.java`
+- Role: The compiled pipelines for one frame; empty when any of them is missing.
+
+#### AmbientOcclusionResources
+- Path: `src/main/java/com/aryston/helion/render/lighting/AmbientOcclusionResources.java`
+- Role: Persistent ambient occlusion state owned by the core: the settings uniform ring, the fixed tuning values (falloff, distribution power, thin occluder compensation, final power, blur beta, max screen radius) and the one-time missing shader warning.
+- Depends on: `UniformRing`.
+
+#### AmbientOcclusionSettings
+- Path: `src/main/java/com/aryston/helion/render/lighting/AmbientOcclusionSettings.java`
+- Role: Player settings: enabled, quality, strength, radius, debug view.
+
+#### AmbientOcclusionQuality
+- Path: `src/main/java/com/aryston/helion/render/lighting/AmbientOcclusionQuality.java`
+- Role: Quality presets with slice count, steps per slice and denoise passes.
+
+### `com.aryston.helion.render.shader`
+
+#### HelionPipelines
+- Path: `src/main/java/com/aryston/helion/render/shader/HelionPipelines.java`
+- Role: Registry of every Helion pipeline, builder for fullscreen pipelines on the vanilla screen quad, lookup of compiled pipelines.
+
+#### FullscreenPass
+- Path: `src/main/java/com/aryston/helion/render/shader/FullscreenPass.java`
+- Role: Draws one fullscreen triangle into a target with a pipeline and its bindings.
 
 ### `com.aryston.helion.render.atmosphere`
 
@@ -181,7 +237,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ClientEvents
 - Path: `src/main/java/com/aryston/helion/integration/ClientEvents.java`
-- Role: Wires every listener: client setup (compatibility check, passive notices), config loading, key handling and notices on client tick, client commands, shutdown.
+- Role: Wires every listener: client setup (compatibility check, passive notices), pipeline registration, config loading, key handling and notices on client tick, client commands, shutdown.
 - Depends on: `HelionRenderCore`, `HelionKeys`, `HelionCommands`, `CompatibilityGuard`, `PassiveModeNotice`, `HelionDebugEntry`, `LevelRenderHook`.
 
 #### HelionCommands
@@ -205,7 +261,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### LevelRenderHook
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/LevelRenderHook.java`
-- Role: Entry from the mixin. Chooses the Helion or vanilla frame, catches Helion failures, feeds the parity check after every level frame.
+- Role: Entry from the mixin. Chooses the Helion or vanilla frame and the render settings (foundation settings while the parity check captures), catches Helion failures, feeds the parity check after every level frame.
 - Depends on: `VanillaFrameDriver`, `HelionRenderCore`, `ParityCheck`.
 
 #### LevelFrameRequest
@@ -259,7 +315,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ParityCheck
 - Path: `src/main/java/com/aryston/helion/debug/ParityCheck.java`
-- Role: State machine behind `/helion parity`: renders three warm-up vanilla frames, captures the fourth, renders three warm-up Helion frames, captures the fourth, compares when both readbacks finish. Warm-up keeps cold first-use resources out of the comparison.
+- Role: State machine behind `/helion parity`: renders three warm-up vanilla frames, captures the fourth, renders three warm-up Helion frames, captures the fourth, compares when both readbacks finish. Warm-up keeps cold first-use resources out of the comparison. Helion frames use `RenderSettings.foundation()`, so effects never count as differences.
 
 #### FrameCapture
 - Path: `src/main/java/com/aryston/helion/debug/FrameCapture.java`
@@ -291,6 +347,8 @@ Every class and source file of Helion with its purpose. Find the right file here
 | Folder | Contents |
 |---|---|
 | `src/main/resources/assets/helion/lang/` | `en_us.json` and `tr_tr.json`: config, key, toast and command texts. |
+| `src/main/resources/assets/helion/shaders/ambient_occlusion/` | Ambient occlusion fragment shaders: `view_depth`, `gtao`, `denoise`, `denoise_resolve`, `apply`. |
+| `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_view` (depth and view position), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur). |
 
 ## Build Files
 

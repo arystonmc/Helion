@@ -3,6 +3,8 @@ package com.aryston.helion.render;
 import com.aryston.helion.render.backend.GpuDeviceSummary;
 import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.graph.GpuTimings;
+import com.aryston.helion.render.graph.RenderSettings;
+import com.aryston.helion.render.lighting.AmbientOcclusionResources;
 import com.aryston.helion.render.resource.GpuResources;
 import com.aryston.helion.render.resource.SceneTargets;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -19,6 +21,7 @@ public final class HelionRenderCore {
     private final GpuResources resources = new GpuResources();
     private final SceneTargets sceneTargets = new SceneTargets(resources);
     private final GpuTimings timings = new GpuTimings(resources);
+    private final AmbientOcclusionResources ambientOcclusion = new AmbientOcclusionResources(resources);
     private PassiveListener passiveListener = reason -> { };
     private @Nullable GpuDeviceSummary device;
     private @Nullable PassiveReason passiveReason;
@@ -26,6 +29,7 @@ public final class HelionRenderCore {
     private @Nullable HelionCamera lastCamera;
     private boolean enabled = true;
     private boolean measureGpuTimings = true;
+    private RenderSettings settings = RenderSettings.foundation();
 
     private HelionRenderCore() {
     }
@@ -38,9 +42,14 @@ public final class HelionRenderCore {
         passiveListener = listener;
     }
 
-    public void applySettings(boolean enabledSetting, boolean gpuTimingsSetting) {
+    public void applySettings(boolean enabledSetting, boolean gpuTimingsSetting, RenderSettings renderSettings) {
         enabled = enabledSetting;
         measureGpuTimings = gpuTimingsSetting;
+        settings = renderSettings;
+    }
+
+    public RenderSettings settings() {
+        return settings;
     }
 
     public boolean isActive() {
@@ -97,6 +106,7 @@ public final class HelionRenderCore {
     public void shutdown() {
         int released = resources.releaseAll();
         timings.close();
+        ambientOcclusion.close();
         sceneTargets.close();
         LOGGER.info("Helion released {} GPU resources on shutdown", released);
     }
@@ -119,6 +129,10 @@ public final class HelionRenderCore {
 
     public GpuResources resources() {
         return resources;
+    }
+
+    public AmbientOcclusionResources ambientOcclusion() {
+        return ambientOcclusion;
     }
 
     private GpuDeviceSummary detectDevice() {

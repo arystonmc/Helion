@@ -4,7 +4,7 @@ What the latest version of Helion can do. Written for players and ready to reuse
 
 ## Summary
 
-Helion is a client-side graphics mod for Minecraft built on the new Vulkan renderer. Version 0.1 lays the foundation: the whole world is drawn through Helion's own render core while the picture stays exactly like vanilla, ready for the visual features that follow.
+Helion is a client-side graphics mod for Minecraft built on the new Vulkan renderer. The whole world is drawn through Helion's own render core, which matches vanilla pixel for pixel on its own, and Helion's graphics features are layered on top of it. The first one is ambient occlusion.
 
 ## At a Glance
 
@@ -20,11 +20,20 @@ Helion is a client-side graphics mod for Minecraft built on the new Vulkan rende
 ## Features
 
 ### Vulkan Render Core
-The world is rendered through Helion's own pipeline on Minecraft's Vulkan renderer, pixel for pixel identical to vanilla.
+The world is rendered through Helion's own pipeline on Minecraft's Vulkan renderer. With all effects off, the result is pixel for pixel identical to vanilla.
 
 - Terrain, entities, particles, sky, clouds, weather, transparency and outlines all pass through Helion's stages
 - Helion draws into its own color and depth buffers before the image reaches the screen
 - Works with both transparency modes, including improved transparency (F3 + X)
+- Since: 0.1
+
+### Ambient Occlusion
+Soft, natural shadows wherever surfaces meet: in corners, under fences and stairs, around doors, beneath mobs and deep in caves.
+
+- Based on GTAO, the technique used in modern games, adapted to Minecraft blocks
+- Bright light sources, lava and glowing blocks stay bright; water, glass and particles are not darkened
+- Fades out with fog and distance so far terrain stays clean
+- Settings: on or off, quality (Low, Medium, High, Ultra), strength, radius in blocks, and a view that shows only the shadows
 - Since: 0.1
 
 ### Safe by Design
@@ -51,5 +60,5 @@ See exactly where the GPU spends its time.
 - Since: 0.1
 
 ### Settings
-- Mods screen → Helion → Config: turn the render core and GPU time measurement on or off
+- Mods screen → Helion → Config: turn the render core and GPU time measurement on or off, and adjust ambient occlusion
 - Since: 0.1

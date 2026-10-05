@@ -14,4 +14,5 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Toggle key (H) and the commands /helion status, /helion toggle and /helion parity
 - GPU time per render stage, active GPU and Helion memory use on the F3 screen
 - Settings screen with render core and GPU timing options
+- Ambient occlusion with quality presets, strength, radius and a shadow-only view
 - English and Turkish translations

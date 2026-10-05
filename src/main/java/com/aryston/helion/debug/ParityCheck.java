@@ -35,6 +35,10 @@ public final class ParityCheck {
         return phase == Phase.WARM_UP_VANILLA || phase == Phase.CAPTURE_VANILLA;
     }
 
+    public boolean forcesFoundationFrame() {
+        return phase == Phase.WARM_UP_HELION || phase == Phase.CAPTURE_HELION;
+    }
+
     public void afterLevelFrame(RenderTarget output) {
         switch (phase) {
             case WARM_UP_VANILLA -> warmUp(Phase.CAPTURE_VANILLA);

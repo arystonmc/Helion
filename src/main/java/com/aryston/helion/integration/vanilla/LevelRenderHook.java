@@ -2,6 +2,7 @@ package com.aryston.helion.integration.vanilla;
 
 import com.aryston.helion.debug.ParityCheck;
 import com.aryston.helion.render.HelionRenderCore;
+import com.aryston.helion.render.graph.RenderSettings;
 
 public final class LevelRenderHook {
     private static final VanillaFrameDriver DRIVER = new VanillaFrameDriver();
@@ -13,7 +14,8 @@ public final class LevelRenderHook {
         HelionRenderCore core = HelionRenderCore.get();
         ParityCheck parity = ParityCheck.get();
         if (core.isActive() && !parity.forcesVanillaFrame()) {
-            renderWithHelion(request, core);
+            RenderSettings settings = parity.forcesFoundationFrame() ? RenderSettings.foundation() : core.settings();
+            renderWithHelion(request, settings, core);
         } else {
             vanillaRenderer.run();
         }
@@ -24,9 +26,9 @@ public final class LevelRenderHook {
         DRIVER.close();
     }
 
-    private static void renderWithHelion(LevelFrameRequest request, HelionRenderCore core) {
+    private static void renderWithHelion(LevelFrameRequest request, RenderSettings settings, HelionRenderCore core) {
         try {
-            DRIVER.render(request);
+            DRIVER.render(request, settings);
         } catch (RuntimeException failure) {
             core.reportFailure(failure);
         }
