@@ -28,6 +28,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 | Pixel comparison with vanilla | `ParityCheck`, `FrameCapture`, `ParityResult` |
 | Vanilla hooks | `LevelRendererMixin`, `LevelRendererAccessor` |
 | Mod name, version, loader versions | `gradle.properties` |
+| Unit tests | `src/test/java/`, see Tests below |
 | Mod list metadata, dependencies, mixin config | `neoforge.mods.toml` |
 
 ## Overview
@@ -425,6 +426,21 @@ Every class and source file of Helion with its purpose. Find the right file here
 - Path: `src/main/java/com/aryston/helion/mixin/LevelRendererAccessor.java`
 - Role: Accessors and invokers for private `LevelRenderer` fields, constants and methods needed to rebuild `render`.
 
+## Tests
+
+Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI. Each test class sits in the package of the class it checks.
+
+| File | What it checks |
+|---|---|
+| `src/test/java/com/aryston/helion/LanguageFilesTest.java` | Every language file has the same keys, every config entry has a `.tooltip` and every config section a `.button` translation (lesson L-011). |
+| `src/test/java/com/aryston/helion/render/graph/RenderSettingsTest.java` | `RenderSettings.foundation()` turns every effect off and never needs the composite, so the parity check stays a plain copy. |
+| `src/test/java/com/aryston/helion/render/post/ImageSettingsTest.java` | `needsComposite()` for every tone mapper and effect combination. |
+| `src/test/java/com/aryston/helion/render/post/ImageResourcesTest.java` | Adaptive bloom threshold: half in darkness, eight times in daylight, rising with ambient light. |
+| `src/test/java/com/aryston/helion/render/post/ToneMapperTest.java` | Tone mapper shader ids are unique and match the constants in `helion_image.glsl`. |
+| `src/test/java/com/aryston/helion/render/camera/HelionFrustumTest.java` | Frustum culling with OpenGL, zero to one and reversed-Z projections. |
+| `src/test/java/com/aryston/helion/render/lighting/AmbientOcclusionQualityTest.java` | Higher quality presets never use fewer samples or denoise passes. |
+| `src/test/java/com/aryston/helion/debug/ParityResultTest.java` | Pixel comparison counts color and depth differences and the largest channel difference. |
+
 ## Source Files
 
 | File | Purpose |
@@ -445,6 +461,6 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 | File | Purpose |
 |---|---|
-| `build.gradle` | ModDevGradle setup, `client` run forced to Vulkan, metadata expansion, packs `branding/logo.png` into the jar as `helion.png`, jar name `helion-neoforge-<minecraft_version>-<version>.jar`. |
+| `build.gradle` | ModDevGradle setup, JUnit 5 for `src/test/java` with the Minecraft classpath of `main`, `client` run forced to Vulkan, metadata expansion, packs `branding/logo.png` into the jar as `helion.png`, jar name `helion-neoforge-<minecraft_version>-<version>.jar`. |
 | `gradle.properties` | Single place for versions and mod metadata. |
 | `settings.gradle` | Plugin repositories, Java toolchain resolver, project name. |
