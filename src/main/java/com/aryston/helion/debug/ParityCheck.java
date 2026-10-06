@@ -14,6 +14,7 @@ public final class ParityCheck {
     private @Nullable FrameCapture vanillaFrame;
     private @Nullable FrameCapture helionFrame;
     private Consumer<ParityResult> reporter = result -> { };
+    private Runnable abortReporter = () -> { };
 
     private ParityCheck() {
     }
@@ -22,11 +23,12 @@ public final class ParityCheck {
         return INSTANCE;
     }
 
-    public boolean start(Consumer<ParityResult> resultReporter) {
+    public boolean start(Consumer<ParityResult> resultReporter, Runnable abortedReporter) {
         if (phase != Phase.IDLE) {
             return false;
         }
         reporter = resultReporter;
+        abortReporter = abortedReporter;
         enter(Phase.WARM_UP_VANILLA);
         return true;
     }
@@ -39,7 +41,11 @@ public final class ParityCheck {
         return phase == Phase.WARM_UP_HELION || phase == Phase.CAPTURE_HELION;
     }
 
-    public void afterLevelFrame(RenderTarget output) {
+    public void afterLevelFrame(RenderTarget output, boolean renderedByHelion) {
+        if (forcesFoundationFrame() && !renderedByHelion) {
+            abort();
+            return;
+        }
         switch (phase) {
             case WARM_UP_VANILLA -> warmUp(Phase.CAPTURE_VANILLA);
             case CAPTURE_VANILLA -> {
@@ -67,6 +73,13 @@ public final class ParityCheck {
         if (warmUpFramesLeft <= 0) {
             enter(next);
         }
+    }
+
+    private void abort() {
+        vanillaFrame = null;
+        helionFrame = null;
+        enter(Phase.IDLE);
+        abortReporter.run();
     }
 
     private void compareWhenReady() {

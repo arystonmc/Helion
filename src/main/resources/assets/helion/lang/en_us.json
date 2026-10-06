@@ -59,6 +59,7 @@
   "helion.command.parity.started": "Comparing a vanilla frame with a Helion frame. Keep the camera still.",
   "helion.command.parity.inactive": "The parity check needs an active Helion render core.",
   "helion.command.parity.busy": "A parity check is already running.",
+  "helion.command.parity.aborted": "Parity check stopped: the Helion frame could not be rendered because the render core was turned off or hit an error.",
   "helion.command.parity.identical": "Parity check passed: all %s pixels match vanilla.",
   "helion.command.parity.different": "Parity check: %s of %s pixels differ in color (largest channel difference %s), %s differ in depth."
 }

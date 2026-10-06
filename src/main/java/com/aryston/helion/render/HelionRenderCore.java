@@ -86,6 +86,8 @@ public final class HelionRenderCore {
         GpuDeviceSummary summary = detectDevice();
         if (measureGpuTimings && summary.supportsTimestamps()) {
             timings.beginFrame(summary.timestampPeriod());
+        } else {
+            timings.pause();
         }
         mainTargetOverride = scene;
         return scene;

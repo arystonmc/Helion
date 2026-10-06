@@ -48,7 +48,7 @@ final class HelionCommands {
             context.getSource().sendFailure(Component.translatable("helion.command.parity.inactive"));
             return 0;
         }
-        if (!ParityCheck.get().start(HelionCommands::reportParity)) {
+        if (!ParityCheck.get().start(HelionCommands::reportParity, HelionCommands::reportParityAborted)) {
             context.getSource().sendFailure(Component.translatable("helion.command.parity.busy"));
             return 0;
         }
@@ -67,5 +67,9 @@ final class HelionCommands {
                 result.differentDepthPixels()
             );
         Minecraft.getInstance().gui.hud.getChat().addClientSystemMessage(message);
+    }
+
+    private static void reportParityAborted() {
+        Minecraft.getInstance().gui.hud.getChat().addClientSystemMessage(Component.translatable("helion.command.parity.aborted"));
     }
 }

@@ -130,7 +130,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### GpuTimings
 - Path: `src/main/java/com/aryston/helion/render/graph/GpuTimings.java`
-- Role: Timestamp query ring over four frames in flight, up to 32 stages per frame. Reads results without blocking and keeps a smoothed millisecond average per stage. Stages not measured for 120 frames are dropped, so a replaced stage (present and composite) disappears from F3.
+- Role: Timestamp query ring over four frames in flight, up to 32 stages per frame. Reads results without blocking and keeps a smoothed millisecond average per stage. Stages not measured for 120 frames are dropped, so a replaced stage (present and composite) disappears from F3. `pause()` stops measuring and clears every value; the core calls it for frames without GPU timing and the render hook for vanilla frames, so F3 never shows stale numbers.
 - Depends on: `GpuResources`.
 
 ### `com.aryston.helion.render.scene`
@@ -313,13 +313,13 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### PassiveModeNotice
 - Path: `src/main/java/com/aryston/helion/integration/PassiveModeNotice.java`
-- Role: Queues passive reasons and shows them as toasts once the GUI exists; also shows the toggle toast.
+- Role: Queues passive reasons and shows them as toasts once the GUI exists; also shows the toggle toast. The queue is thread safe because the incompatible mod check runs on a parallel setup thread.
 
 ### `com.aryston.helion.integration.vanilla`
 
 #### LevelRenderHook
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/LevelRenderHook.java`
-- Role: Entry from the mixin. Chooses the Helion or vanilla frame and the render settings (foundation settings while the parity check captures), catches Helion failures, feeds the parity check after every level frame.
+- Role: Entry from the mixin. Chooses the Helion or vanilla frame and the render settings (foundation settings while the parity check captures), catches Helion failures, feeds the parity check after every level frame together with whether Helion really rendered it, and pauses GPU timing on vanilla frames.
 - Depends on: `VanillaFrameDriver`, `HelionRenderCore`, `ParityCheck`.
 
 #### LevelFrameRequest
@@ -406,7 +406,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ParityCheck
 - Path: `src/main/java/com/aryston/helion/debug/ParityCheck.java`
-- Role: State machine behind `/helion parity`: renders three warm-up vanilla frames, captures the fourth, renders three warm-up Helion frames, captures the fourth, compares when both readbacks finish. Warm-up keeps cold first-use resources out of the comparison. Helion frames use `RenderSettings.foundation()`, so effects never count as differences.
+- Role: State machine behind `/helion parity`: renders three warm-up vanilla frames, captures the fourth, renders three warm-up Helion frames, captures the fourth, compares when both readbacks finish. Warm-up keeps cold first-use resources out of the comparison. Helion frames use `RenderSettings.foundation()`, so effects never count as differences. If a Helion frame is not rendered by Helion (core turned off or a render failure), the check aborts and reports that instead of comparing two vanilla frames.
 
 #### FrameCapture
 - Path: `src/main/java/com/aryston/helion/debug/FrameCapture.java`

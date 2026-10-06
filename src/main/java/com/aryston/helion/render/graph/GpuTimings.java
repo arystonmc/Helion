@@ -31,6 +31,7 @@ public final class GpuTimings {
     private @Nullable GpuQueryPool pool;
     private @Nullable TrackedResource tracked;
     private double nanosPerTick;
+    private boolean measuring;
     private int frame;
     private long frameCount;
 
@@ -45,6 +46,7 @@ public final class GpuTimings {
         if (pool == null) {
             open(timestampPeriod);
         }
+        measuring = true;
         frameCount++;
         frame = (frame + 1) % FRAMES_IN_FLIGHT;
         collect(frame);
@@ -55,7 +57,7 @@ public final class GpuTimings {
     public Runnable measure(String stage, Runnable task) {
         GpuQueryPool queries = pool;
         List<String> stages = stagesPerFrame.get(frame);
-        if (queries == null || stages.size() >= MAX_STAGES_PER_FRAME) {
+        if (!measuring || queries == null || stages.size() >= MAX_STAGES_PER_FRAME) {
             return task;
         }
         int begin = frame * QUERIES_PER_FRAME + stages.size() * QUERIES_PER_STAGE;
@@ -65,6 +67,11 @@ public final class GpuTimings {
             task.run();
             RenderSystem.getDevice().createCommandEncoder().writeTimestamp(queries, begin + 1);
         };
+    }
+
+    public void pause() {
+        measuring = false;
+        forgetMeasurements();
     }
 
     public Map<String, Double> averageMillis() {
@@ -77,6 +84,11 @@ public final class GpuTimings {
         }
         pool = null;
         tracked = null;
+        measuring = false;
+        forgetMeasurements();
+    }
+
+    private void forgetMeasurements() {
         averageMillis.clear();
         lastMeasuredFrame.clear();
         stagesPerFrame.forEach(List::clear);

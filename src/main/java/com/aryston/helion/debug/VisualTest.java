@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
@@ -37,6 +38,7 @@ public final class VisualTest {
     private boolean pausedOnLostFocus;
     private VisualTestScene scene = VisualTestScene.ALL.getFirst();
     private final AtomicReference<ParityResult> parityResult = new AtomicReference<>();
+    private final AtomicBoolean parityAborted = new AtomicBoolean();
     private boolean parityStarted;
 
     private VisualTest() {
@@ -117,12 +119,18 @@ public final class VisualTest {
 
     private boolean parityFinished(Shot shot, IntegratedServer server) {
         if (!parityStarted) {
-            parityStarted = ParityCheck.get().start(parityResult::set);
+            parityStarted = ParityCheck.get().start(parityResult::set, () -> parityAborted.set(true));
             if (!parityStarted) {
                 LOGGER.warn("Helion visual test {}: the parity check could not start", shot.name());
                 VisualTestWorld.freezeTicks(server, false);
             }
             return !parityStarted;
+        }
+        if (parityAborted.getAndSet(false)) {
+            parityStarted = false;
+            VisualTestWorld.freezeTicks(server, false);
+            LOGGER.warn("Helion visual test {}: parity aborted because the Helion frame could not be rendered", shot.name());
+            return true;
         }
         ParityResult result = parityResult.getAndSet(null);
         if (result == null) {

@@ -1,15 +1,15 @@
 package com.aryston.helion.integration;
 
 import com.aryston.helion.render.PassiveReason;
-import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.network.chat.Component;
 
 final class PassiveModeNotice {
     private static final SystemToast.SystemToastId TOAST_ID = new SystemToast.SystemToastId();
-    private static final Queue<PassiveReason> PENDING = new ArrayDeque<>();
+    private static final Queue<PassiveReason> PENDING = new ConcurrentLinkedQueue<>();
 
     private PassiveModeNotice() {
     }

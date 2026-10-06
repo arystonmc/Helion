@@ -59,6 +59,7 @@
   "helion.command.parity.started": "Bir vanilla frame ile bir Helion frame karşılaştırılıyor. Kamerayı sabit tutun.",
   "helion.command.parity.inactive": "Birebirlik testi için Helion render çekirdeğinin aktif olması gerekir.",
   "helion.command.parity.busy": "Zaten bir birebirlik testi çalışıyor.",
+  "helion.command.parity.aborted": "Parity kontrolü durdu: render çekirdeği kapatıldığı veya bir hataya düştüğü için Helion karesi çizilemedi.",
   "helion.command.parity.identical": "Birebirlik testi geçti: %s pikselin tamamı vanilla ile aynı.",
   "helion.command.parity.different": "Birebirlik testi: %2$s pikselden %1$s tanesinin rengi farklı (en büyük kanal farkı %3$s), %4$s tanesinin derinliği farklı."
 }

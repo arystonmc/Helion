@@ -173,7 +173,7 @@ Places that copy or depend on vanilla internals. Check each of them first when M
 
 ## Testing Tools
 
-- `/helion parity`: after warm-up frames on each side, captures one vanilla frame and one Helion foundation frame (all effects off), reads both main targets back from the GPU and reports differing pixels. Use `/tick freeze` and keep the camera still.
+- `/helion parity`: after warm-up frames on each side, captures one vanilla frame and one Helion foundation frame (all effects off), reads both main targets back from the GPU and reports differing pixels. It aborts with a message when a Helion frame could not be rendered by Helion. Use `/tick freeze` and keep the camera still.
 - `/helion toggle` or the `H` key: switches between Helion and vanilla rendering at runtime.
 - `/helion status`: shows whether the core is active, disabled or passive and why.
 - Development runs (the workspace launcher or `runClient`) write `Helion stats` lines to the log every 5 seconds while a world is open: frame rate, resolution, total and per stage GPU time, tone mapper, exposure, ambient light and the current bloom threshold. Start the launcher with `-World "<save folder>"` to load a world directly. Production installs never write these lines.
