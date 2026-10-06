@@ -16,12 +16,14 @@ public final class ImageResources {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String LABEL = "Helion Image Settings";
     private static final float EXPOSURE_BASE = 2.0F;
+    private static final float DARK_THRESHOLD_SCALE = 0.5F;
     private static final float DAYLIGHT_THRESHOLD_SCALE = 8.0F;
     private static final float THRESHOLD_KNEE_FRACTION = 0.5F;
     private static final int DITHER_ON = 1;
     private static final int DITHER_OFF = 0;
     private static final int UNIFORM_SIZE = new Std140SizeCalculator()
         .putVec4()
+        .putFloat()
         .putFloat()
         .putFloat()
         .putFloat()
@@ -73,8 +75,12 @@ public final class ImageResources {
     }
 
     public static float bloomThreshold(BloomSettings bloom, float ambientLight) {
-        float daylight = ambientLight * ambientLight;
-        return bloom.threshold() * (1.0F + daylight * (DAYLIGHT_THRESHOLD_SCALE - 1.0F));
+        float daylight = daylight(ambientLight);
+        return bloom.threshold() * (DARK_THRESHOLD_SCALE + daylight * (DAYLIGHT_THRESHOLD_SCALE - DARK_THRESHOLD_SCALE));
+    }
+
+    private static float daylight(float ambientLight) {
+        return ambientLight * ambientLight;
     }
 
     private GpuBuffer write(ImageSettings settings, SceneSnapshot scene) {
@@ -89,6 +95,7 @@ public final class ImageResources {
             .putFloat(bloom.enabled() ? bloom.intensity() / BLOOM_MIP_COUNT : 0.0F)
             .putFloat(threshold)
             .putFloat(threshold * THRESHOLD_KNEE_FRACTION)
+            .putFloat(daylight(scene.ambientLight()))
             .putInt(settings.toneMapper().shaderId())
             .putInt(settings.dither() ? DITHER_ON : DITHER_OFF));
     }

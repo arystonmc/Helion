@@ -41,7 +41,7 @@ Bright light sources glow softly into the darkness while the colors you know sta
 
 - Lava, torches, glowstone, sea lanterns, beacons, the sun and other bright lights get a soft cinematic glow
 - The glow adapts to its surroundings: at night and in caves lights glow clearly, in daylight only truly bright things glow, so snow and sand stay clean
-- Tone mapping keeps vanilla colors and only rolls off the brightest highlights; a Filmic option gives a softer, more cinematic look
+- Tone mapping keeps vanilla colors and only rolls off the brightest highlights; a Filmic option adds film-like contrast, richer colors and whiter cores in bright glows
 - Exposure control and invisible dithering that removes color banding in the sky
 - Settings: bloom on or off, intensity, threshold, a view that shows only the glow, tone mapping (Neutral, Filmic, None), exposure and dithering
 - Since: 0.1

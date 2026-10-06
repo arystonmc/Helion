@@ -9,29 +9,36 @@ layout(std140) uniform HelionImage {
     float BloomStrength;
     float BloomThreshold;
     float BloomKnee;
+    float Daylight;
     int ToneMapperId;
     int DitherEnabled;
 };
 
-const int HELION_TONE_MAPPER_NEUTRAL = 0;
 const int HELION_TONE_MAPPER_FILMIC = 1;
 const int HELION_TONE_MAPPER_NONE = 2;
 const int HELION_DITHER_OFF = 0;
 const float HELION_DISPLAY_LEVELS = 255.0;
 const float HELION_BLOOM_EPSILON = 1.0e-4;
+const float HELION_FILM_BLEACH = 0.25;
+const float HELION_FILM_BLEACH_HALF = 2.0;
 
 vec3 helionExpandScene(vec3 linearColor) {
     return ToneMapperId == HELION_TONE_MAPPER_NONE ? linearColor : helionInverseNeutral(linearColor);
 }
 
 vec3 helionToneMap(vec3 color) {
-    if (ToneMapperId == HELION_TONE_MAPPER_NEUTRAL) {
-        return helionNeutral(color);
+    return ToneMapperId == HELION_TONE_MAPPER_NONE ? clamp(color, 0.0, 1.0) : helionNeutral(color);
+}
+
+vec3 helionDisplay(vec3 base, vec3 lit) {
+    vec3 mapped = helionToneMap(lit);
+    if (ToneMapperId != HELION_TONE_MAPPER_FILMIC) {
+        return helionLinearToSrgb(mapped);
     }
-    if (ToneMapperId == HELION_TONE_MAPPER_FILMIC) {
-        return helionAgx(color);
-    }
-    return clamp(color, 0.0, 1.0);
+    float overshoot = max(helionMaxComponent(lit) - helionMaxComponent(base), 0.0);
+    float bleach = HELION_FILM_BLEACH * overshoot / (overshoot + HELION_FILM_BLEACH_HALF);
+    mapped = mix(mapped, vec3(helionMaxComponent(mapped)), bleach);
+    return helionFilmGrade(helionLinearToSrgb(mapped));
 }
 
 vec3 helionBloomThreshold(vec3 color) {

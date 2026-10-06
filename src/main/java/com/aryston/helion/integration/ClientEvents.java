@@ -3,12 +3,14 @@ package com.aryston.helion.integration;
 import com.aryston.helion.config.HelionConfig;
 import com.aryston.helion.debug.HelionDebugEntry;
 import com.aryston.helion.debug.HelionStatsLog;
+import com.aryston.helion.debug.VisualTest;
 import com.aryston.helion.integration.vanilla.LevelRenderHook;
 import com.aryston.helion.render.HelionRenderCore;
 import com.aryston.helion.render.PassiveReason;
 import com.aryston.helion.render.shader.HelionPipelines;
 import com.mojang.logging.LogUtils;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.neoforged.bus.api.IEventBus;
@@ -24,6 +26,7 @@ import org.slf4j.Logger;
 public final class ClientEvents {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final HelionStatsLog STATS_LOG = new HelionStatsLog();
+    private static final Optional<VisualTest> VISUAL_TEST = VisualTest.requested();
 
     private ClientEvents() {
     }
@@ -74,6 +77,7 @@ public final class ClientEvents {
         Minecraft minecraft = Minecraft.getInstance();
         PassiveModeNotice.showPending(minecraft);
         STATS_LOG.tick(minecraft);
+        VISUAL_TEST.ifPresent(test -> test.tick(minecraft));
         while (HelionKeys.TOGGLE.consumeClick()) {
             boolean enabled = HelionRenderCore.get().toggle();
             PassiveModeNotice.show(minecraft, Component.translatable("helion.toggle.title"), HelionCommands.enabledState(enabled));

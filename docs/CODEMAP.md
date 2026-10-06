@@ -256,7 +256,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ImageResources
 - Path: `src/main/java/com/aryston/helion/render/post/ImageResources.java`
-- Role: Persistent image state owned by the core: the `HelionImage` uniform ring, the fixed tuning values (bloom mip count, daylight threshold scale, threshold knee) and the one-time missing shader warning. Writes the uniforms once per frame and checks whether the image stages can run. `bloomThreshold` computes the effective threshold for the current ambient light.
+- Role: Persistent image state owned by the core: the `HelionImage` uniform ring, the fixed tuning values (bloom mip count, dark and daylight threshold scales, threshold knee) and the one-time missing shader warning. Writes the uniforms once per frame and checks whether the image stages can run. `bloomThreshold` computes the effective threshold for the current ambient light.
 - Depends on: `UniformRing`, `ImagePrograms`, `PostResults`.
 
 #### ImageSettings
@@ -270,7 +270,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ToneMapper
 - Path: `src/main/java/com/aryston/helion/render/post/ToneMapper.java`
-- Role: Tone mapping choices `NEUTRAL` (Khronos PBR Neutral), `FILMIC` (AgX) and `NONE`, each with the id the shaders switch on.
+- Role: Tone mapping choices `NEUTRAL` (Khronos PBR Neutral), `FILMIC` (Neutral plus a film grade) and `NONE`, each with the id the shaders switch on.
 
 #### PostResults
 - Path: `src/main/java/com/aryston/helion/render/post/PostResults.java`
@@ -285,7 +285,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 #### ClientEvents
 - Path: `src/main/java/com/aryston/helion/integration/ClientEvents.java`
 - Role: Wires every listener: client setup (compatibility check, passive notices), pipeline registration, config loading, key handling and notices on client tick, client commands, shutdown.
-- Depends on: `HelionRenderCore`, `HelionKeys`, `HelionCommands`, `CompatibilityGuard`, `PassiveModeNotice`, `HelionDebugEntry`, `HelionStatsLog`, `LevelRenderHook`.
+- Depends on: `HelionRenderCore`, `HelionKeys`, `HelionCommands`, `CompatibilityGuard`, `PassiveModeNotice`, `HelionDebugEntry`, `HelionStatsLog`, `VisualTest`, `LevelRenderHook`.
 
 #### HelionCommands
 - Path: `src/main/java/com/aryston/helion/integration/HelionCommands.java`
@@ -375,6 +375,24 @@ Every class and source file of Helion with its purpose. Find the right file here
 - Role: Text shared by the F3 entry and the stats log: per stage timings, their total and the image state line.
 - Depends on: `HelionRenderCore`, `ImageResources`.
 
+#### VisualTest
+- Path: `src/main/java/com/aryston/helion/debug/VisualTest.java`
+- Role: Automated visual test that runs when the JVM property `helion.visualTest=true` is set in a development run. Prepares the world, then for every scene and variant sets the time, holds the camera, applies the variant's settings, waits for the frame to settle, saves a half resolution screenshot and logs frame rate, GPU time and image state. The parity variant freezes ticks and runs `ParityCheck` instead, logging a pass or a `WARN` with the differing pixels. Restores the settings and the HUD and closes the game cleanly at the end.
+- Depends on: `VisualTestScene`, `VisualTestVariant`, `VisualTestWorld`, `ParityCheck`, `HelionStatsLines`, `HelionRenderCore`, `HelionConfig`.
+- Notes: changes blocks, time and game rules of the loaded world; run it on a copy of a save only.
+
+#### VisualTestScene
+- Path: `src/main/java/com/aryston/helion/debug/VisualTestScene.java`
+- Role: The photographed scenes: name, time of day, camera yaw and pitch.
+
+#### VisualTestVariant
+- Path: `src/main/java/com/aryston/helion/debug/VisualTestVariant.java`
+- Role: Render variants per scene: vanilla, None, Neutral, Filmic, bloom only and parity, each turning the core on or off and setting default image settings.
+
+#### VisualTestWorld
+- Path: `src/main/java/com/aryston/helion/debug/VisualTestWorld.java`
+- Role: Server commands of the visual test: freezes time and weather, stops mob spawning, switches to spectator, builds a stone platform with light blocks in front of the player, sets the time per scene and freezes ticks for the parity check.
+
 #### ParityCheck
 - Path: `src/main/java/com/aryston/helion/debug/ParityCheck.java`
 - Role: State machine behind `/helion parity`: renders three warm-up vanilla frames, captures the fourth, renders three warm-up Helion frames, captures the fourth, compares when both readbacks finish. Warm-up keeps cold first-use resources out of the comparison. Helion frames use `RenderSettings.foundation()`, so effects never count as differences.
@@ -411,7 +429,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 | `src/main/resources/assets/helion/lang/` | `en_us.json` and `tr_tr.json`: config, key, toast and command texts. |
 | `src/main/resources/assets/helion/shaders/ambient_occlusion/` | Ambient occlusion fragment shaders: `view_depth`, `gtao`, `denoise`, `denoise_resolve`, `apply`. |
 | `src/main/resources/assets/helion/shaders/image/` | Bloom and image fragment shaders: `bloom_prefilter`, `bloom_downsample`, `bloom_upsample`, `composite`, `bloom_debug`. |
-| `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_view` (depth and view position), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur), `helion_color` (sRGB conversion, PBR Neutral and its inverse, AgX, dither noise), `helion_image` (image settings block, scene expansion, tone mapper switch, bloom threshold, dither), `helion_bloom_downsample` (13-tap downsample with optional Karis average over a `helionBloomTap` function the including shader defines). |
+| `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_view` (depth and view position), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur), `helion_color` (sRGB conversion, saturation, the Neutral highlight curve and its inverse, film grade, dither noise), `helion_image` (image settings block, scene expansion, tone mapper switch, Filmic highlight bleach, bloom threshold, dither), `helion_bloom_downsample` (13-tap downsample with optional Karis average over a `helionBloomTap` function the including shader defines). |
 
 ## Build Files
 
