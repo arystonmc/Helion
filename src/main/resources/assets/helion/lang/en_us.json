@@ -70,5 +70,7 @@
   "helion.parity.busy": "A parity check is already running.",
   "helion.parity.aborted": "Parity check stopped: the Helion frame could not be rendered because the render core was turned off or hit an error.",
   "helion.parity.identical": "Parity check passed: all %s pixels match vanilla.",
-  "helion.parity.different": "Parity check: %s of %s pixels differ in color (largest channel difference %s), %s differ in depth."
+  "helion.parity.different": "Parity check: %s of %s pixels differ in color (largest channel difference %s), %s differ in depth (largest difference %s steps).",
+  "helion.parity.differences_image": "Differing pixels are marked in screenshots/helion_parity_differences.png: red color only, yellow color and depth, blue depth only.",
+  "helion.parity.not_frozen": "The game was not frozen, so clouds, particles and entities moved between the two frames. Run /tick freeze, keep the camera still and check again."
 }

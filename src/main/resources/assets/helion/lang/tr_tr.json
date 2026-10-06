@@ -70,5 +70,7 @@
   "helion.parity.busy": "Zaten bir birebirlik testi çalışıyor.",
   "helion.parity.aborted": "Parity kontrolü durdu: render çekirdeği kapatıldığı veya bir hataya düştüğü için Helion karesi çizilemedi.",
   "helion.parity.identical": "Birebirlik testi geçti: %s pikselin tamamı vanilla ile aynı.",
-  "helion.parity.different": "Birebirlik testi: %2$s pikselden %1$s tanesinin rengi farklı (en büyük kanal farkı %3$s), %4$s tanesinin derinliği farklı."
+  "helion.parity.different": "Birebirlik testi: %2$s pikselden %1$s tanesinin rengi farklı (en büyük kanal farkı %3$s), %4$s tanesinin derinliği farklı (en büyük fark %5$s adım).",
+  "helion.parity.differences_image": "Farklı pikseller screenshots/helion_parity_differences.png dosyasında işaretlendi: kırmızı yalnız renk, sarı renk ve derinlik, mavi yalnız derinlik.",
+  "helion.parity.not_frozen": "Oyun dondurulmamıştı, bu yüzden bulutlar, parçacıklar ve varlıklar iki kare arasında hareket etti. /tick freeze yazın, kamerayı sabit tutun ve testi tekrarlayın."
 }

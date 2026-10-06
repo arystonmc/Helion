@@ -81,7 +81,7 @@ Everything Helion knows, on screen and in a log file, only when you ask for it.
 
 - Shows every Helion value on screen without pressing F3: state, GPU and driver, resolution, camera, all effect settings, GPU time of every render stage, GPU memory per resource and culling statistics
 - Writes the same values once per second as JSON lines to `logs/helion-debug.jsonl`, together with events such as switching Helion on or off and parity check results
-- Press `J` in debug mode to compare a vanilla frame with a Helion frame pixel by pixel
+- Press `J` in debug mode to compare a vanilla frame with a Helion frame pixel by pixel. Use `/tick freeze` first; a failed check marks the differing pixels in `screenshots/helion_parity_differences.png` and warns when the game was not frozen
 - Off by default and costs nothing while off; turn it on in the settings
 - Since: 0.1
 

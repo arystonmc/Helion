@@ -17,12 +17,16 @@ final class FrameCapture {
     private static final int BASE_MIP_LEVEL = 0;
     private static final long BUFFER_OFFSET = 0L;
 
+    private final int width;
+    private final int height;
     private final int colorBlockSize;
     private final int depthBlockSize;
     private byte @Nullable [] color;
     private byte @Nullable [] depth;
 
-    private FrameCapture(int colorBlockSize, int depthBlockSize) {
+    private FrameCapture(int width, int height, int colorBlockSize, int depthBlockSize) {
+        this.width = width;
+        this.height = height;
         this.colorBlockSize = colorBlockSize;
         this.depthBlockSize = depthBlockSize;
     }
@@ -30,7 +34,12 @@ final class FrameCapture {
     static FrameCapture of(RenderTarget target, GpuResources resources) {
         GpuTexture colorTexture = Objects.requireNonNull(target.getColorTexture());
         GpuTexture depthTexture = Objects.requireNonNull(target.getDepthTexture());
-        FrameCapture capture = new FrameCapture(colorTexture.getFormat().blockSize(), depthTexture.getFormat().blockSize());
+        FrameCapture capture = new FrameCapture(
+            colorTexture.getWidth(BASE_MIP_LEVEL),
+            colorTexture.getHeight(BASE_MIP_LEVEL),
+            colorTexture.getFormat().blockSize(),
+            depthTexture.getFormat().blockSize()
+        );
         read(colorTexture, resources, bytes -> capture.color = bytes);
         read(depthTexture, resources, bytes -> capture.depth = bytes);
         return capture;
@@ -42,6 +51,14 @@ final class FrameCapture {
 
     ParityResult compareWith(FrameCapture other) {
         return ParityResult.compare(
+            Objects.requireNonNull(color), Objects.requireNonNull(other.color), colorBlockSize,
+            Objects.requireNonNull(depth), Objects.requireNonNull(other.depth), depthBlockSize
+        );
+    }
+
+    ParityDifferenceImage differencesTo(FrameCapture other) {
+        return new ParityDifferenceImage(
+            width, height,
             Objects.requireNonNull(color), Objects.requireNonNull(other.color), colorBlockSize,
             Objects.requireNonNull(depth), Objects.requireNonNull(other.depth), depthBlockSize
         );

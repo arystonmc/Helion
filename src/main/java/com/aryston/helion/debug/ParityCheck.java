@@ -2,10 +2,18 @@ package com.aryston.helion.debug;
 
 import com.aryston.helion.render.HelionRenderCore;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.logging.LogUtils;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.function.Consumer;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Screenshot;
+import net.minecraft.util.Util;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
 
 public final class ParityCheck {
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static final ParityCheck INSTANCE = new ParityCheck();
     private static final int WARM_UP_FRAMES = 3;
 
@@ -91,10 +99,24 @@ public final class ParityCheck {
             return;
         }
         ParityResult result = vanillaFrame.compareWith(helionFrame);
+        if (!result.isIdentical()) {
+            writeDifferences(vanillaFrame.differencesTo(helionFrame));
+        }
         vanillaFrame = null;
         helionFrame = null;
         enter(Phase.IDLE);
         reporter.accept(result);
+    }
+
+    private static void writeDifferences(ParityDifferenceImage image) {
+        Path directory = Minecraft.getInstance().gameDirectory.toPath().resolve(Screenshot.SCREENSHOT_DIR);
+        Util.ioPool().execute(() -> {
+            try {
+                LOGGER.info("Helion parity differences written to {}", image.writeTo(directory));
+            } catch (IOException exception) {
+                LOGGER.warn("Helion could not write the parity difference image", exception);
+            }
+        });
     }
 
     private enum Phase {

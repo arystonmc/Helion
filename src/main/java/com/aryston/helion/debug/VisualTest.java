@@ -141,8 +141,9 @@ public final class VisualTest {
             LOGGER.info("Helion visual test {}: parity passed, all {} pixels match vanilla", shot.name(), result.pixels());
         } else {
             LOGGER.warn(
-                "Helion visual test {}: parity failed, {} of {} pixels differ in color (largest difference {}), {} in depth",
-                shot.name(), result.differentColorPixels(), result.pixels(), result.maxColorDelta(), result.differentDepthPixels()
+                "Helion visual test {}: parity failed, {} of {} pixels differ in color (largest difference {}, {} of them also in depth), {} in depth (largest difference {} steps)",
+                shot.name(), result.differentColorPixels(), result.pixels(), result.maxColorDelta(), result.colorPixelsWithDifferentDepth(),
+                result.differentDepthPixels(), result.maxDepthDelta()
             );
         }
         return true;

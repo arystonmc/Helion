@@ -26,7 +26,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 | Settings | `HelionConfig`, `lang/*.json` |
 | Key bindings | `HelionKeys`, `ParityControl` |
 | Debug mode: on-screen values and JSON log | `HelionDebugSnapshot` (every value), `HelionDebugEntry` (screen), `DebugOverlayLines` (line layout), `HelionDebugLog` (`logs/helion-debug.jsonl`) |
-| Pixel comparison with vanilla | `ParityCheck`, `FrameCapture`, `ParityResult` |
+| Pixel comparison with vanilla | `ParityCheck`, `FrameCapture`, `ParityResult`, `ParityDifferenceImage` |
 | Vanilla hooks | `LevelRendererMixin`, `LevelRendererAccessor` |
 | Mod name, version, loader versions | `gradle.properties` |
 | Unit tests | `src/test/java/`, see Tests below |
@@ -327,7 +327,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ParityControl
 - Path: `src/main/java/com/aryston/helion/integration/ParityControl.java`
-- Role: Starts the parity check from the parity key (debug mode only), shows its result in chat and writes it to the debug log.
+- Role: Starts the parity check from the parity key (debug mode only), shows its result in chat and writes it to the debug log. A failed result points to the difference image and, when ticks were not frozen at the start, explains that clouds, particles and entities moved between the frames.
 - Depends on: `ParityCheck`, `HelionDebugLog`, `HelionRenderCore`.
 
 #### HelionKeys
@@ -443,15 +443,20 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ParityCheck
 - Path: `src/main/java/com/aryston/helion/debug/ParityCheck.java`
-- Role: State machine behind the parity key and the visual test: renders three warm-up vanilla frames, captures the fourth, renders three warm-up Helion frames, captures the fourth, compares when both readbacks finish. Warm-up keeps cold first-use resources out of the comparison. Helion frames use `RenderSettings.foundation()`, so effects never count as differences. If a Helion frame is not rendered by Helion (core turned off or a render failure), the check aborts and reports that instead of comparing two vanilla frames.
+- Role: State machine behind the parity key and the visual test: renders three warm-up vanilla frames, captures the fourth, renders three warm-up Helion frames, captures the fourth, compares when both readbacks finish. Warm-up keeps cold first-use resources out of the comparison. Helion frames use `RenderSettings.foundation()`, so effects never count as differences. If a Helion frame is not rendered by Helion (core turned off or a render failure), the check aborts and reports that instead of comparing two vanilla frames. A failed comparison writes `ParityDifferenceImage` to `screenshots/` on the IO pool.
 
 #### FrameCapture
 - Path: `src/main/java/com/aryston/helion/debug/FrameCapture.java`
-- Role: Copies a render target's color and depth into readback buffers and keeps the bytes.
+- Role: Copies a render target's color and depth into readback buffers and keeps the bytes and the frame size. `differencesTo` builds the difference image of two captures.
 
 #### ParityResult
 - Path: `src/main/java/com/aryston/helion/debug/ParityResult.java`
-- Role: Pixel comparison result: total pixels, differing color pixels, largest channel difference, differing depth pixels.
+- Role: Pixel comparison result: total pixels, differing color pixels, largest channel difference, differing depth pixels, largest depth difference in steps of the depth format (units in the last place for `D32_FLOAT`), and how many color differences also differ in depth.
+
+#### ParityDifferenceImage
+- Path: `src/main/java/com/aryston/helion/debug/ParityDifferenceImage.java`
+- Role: Writes `helion_parity_differences.png`: the vanilla frame darkened, pixels that differ only in color red, in color and depth yellow, only in depth blue.
+- Depends on: `ParityResult`.
 
 ### `com.aryston.helion.mixin`
 
@@ -482,7 +487,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | `src/test/java/com/aryston/helion/render/shader/ShaderCompilationTest.java` | Every vertex and fragment shader compiles with `glslangValidator` in three variants (default, zero to one depth, multi-draw with alpha cutout), with Helion and vanilla includes inlined from the classpath. Skipped when `glslangValidator` is not installed; the CI installs it. |
 | `src/test/java/com/aryston/helion/render/lighting/AmbientOcclusionQualityTest.java` | Higher quality presets never use fewer samples or denoise passes. |
 | `src/test/java/com/aryston/helion/render/lighting/AmbientOcclusionAlgorithmTest.java` | Algorithm shader ids are unique and match the constants in `helion_ambient_occlusion.glsl`. |
-| `src/test/java/com/aryston/helion/debug/ParityResultTest.java` | Pixel comparison counts color and depth differences and the largest channel difference. |
+| `src/test/java/com/aryston/helion/debug/ParityResultTest.java` | Pixel comparison counts color and depth differences, the largest channel and depth differences and color differences that also differ in depth. |
 | `src/test/java/com/aryston/helion/debug/DebugOverlayLinesTest.java` | Debug screen lines: one line per section, wrapping after four values, empty sections and plain values. |
 
 ## Source Files

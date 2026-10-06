@@ -19,14 +19,15 @@ final class ParityControl {
             chat(minecraft, Component.translatable("helion.parity.inactive"));
             return;
         }
-        if (!ParityCheck.get().start(result -> report(minecraft, log, result), () -> reportAborted(minecraft, log))) {
+        boolean frozen = isFrozen(minecraft);
+        if (!ParityCheck.get().start(result -> report(minecraft, log, result, frozen), () -> reportAborted(minecraft, log))) {
             chat(minecraft, Component.translatable("helion.parity.busy"));
             return;
         }
         chat(minecraft, Component.translatable("helion.parity.started"));
     }
 
-    private static void report(Minecraft minecraft, HelionDebugLog log, ParityResult result) {
+    private static void report(Minecraft minecraft, HelionDebugLog log, ParityResult result, boolean frozen) {
         chat(minecraft, result.isIdentical()
             ? Component.translatable("helion.parity.identical", result.pixels())
             : Component.translatable(
@@ -34,14 +35,24 @@ final class ParityControl {
                 result.differentColorPixels(),
                 result.pixels(),
                 result.maxColorDelta(),
-                result.differentDepthPixels()
+                result.differentDepthPixels(),
+                result.maxDepthDelta()
             ));
+        if (!result.isIdentical()) {
+            chat(minecraft, Component.translatable("helion.parity.differences_image"));
+        }
+        if (!result.isIdentical() && !frozen) {
+            chat(minecraft, Component.translatable("helion.parity.not_frozen"));
+        }
         JsonObject data = new JsonObject();
         data.addProperty("identical", result.isIdentical());
+        data.addProperty("frozen", frozen);
         data.addProperty("pixels", result.pixels());
         data.addProperty("differentColorPixels", result.differentColorPixels());
         data.addProperty("maxColorDelta", result.maxColorDelta());
         data.addProperty("differentDepthPixels", result.differentDepthPixels());
+        data.addProperty("maxDepthDelta", result.maxDepthDelta());
+        data.addProperty("colorPixelsWithDifferentDepth", result.colorPixelsWithDifferentDepth());
         log.event(EVENT, data);
     }
 
@@ -50,6 +61,10 @@ final class ParityControl {
         JsonObject data = new JsonObject();
         data.addProperty("aborted", true);
         log.event(EVENT, data);
+    }
+
+    private static boolean isFrozen(Minecraft minecraft) {
+        return minecraft.level != null && minecraft.level.tickRateManager().isFrozen();
     }
 
     private static void chat(Minecraft minecraft, Component message) {

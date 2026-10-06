@@ -13,6 +13,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Automatic fallback to vanilla rendering on OpenGL, with Sodium or Iris, or after a rendering error
 - Toggle key (H) to switch between Helion and vanilla rendering
 - Debug mode that shows every Helion value on screen, logs it as JSON and runs the parity check with the J key
+- Parity check image that marks every differing pixel, plus a warning when the game was not frozen during the check
 - Settings screen with render core and debug mode options
 - Ambient occlusion with quality presets, strength, radius and a shadow-only view
 - Visibility bitmask ambient occlusion as an alternative method that keeps thin objects from casting dark halos
