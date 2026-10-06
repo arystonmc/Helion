@@ -2,6 +2,7 @@ package com.aryston.helion.integration;
 
 import com.aryston.helion.config.HelionConfig;
 import com.aryston.helion.debug.HelionDebugEntry;
+import com.aryston.helion.debug.HelionStatsLog;
 import com.aryston.helion.integration.vanilla.LevelRenderHook;
 import com.aryston.helion.render.HelionRenderCore;
 import com.aryston.helion.render.PassiveReason;
@@ -22,6 +23,7 @@ import org.slf4j.Logger;
 
 public final class ClientEvents {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final HelionStatsLog STATS_LOG = new HelionStatsLog();
 
     private ClientEvents() {
     }
@@ -71,6 +73,7 @@ public final class ClientEvents {
     private static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
         PassiveModeNotice.showPending(minecraft);
+        STATS_LOG.tick(minecraft);
         while (HelionKeys.TOGGLE.consumeClick()) {
             boolean enabled = HelionRenderCore.get().toggle();
             PassiveModeNotice.show(minecraft, Component.translatable("helion.toggle.title"), HelionCommands.enabledState(enabled));

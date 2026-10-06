@@ -5,8 +5,10 @@ import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.graph.GpuTimings;
 import com.aryston.helion.render.graph.RenderSettings;
 import com.aryston.helion.render.lighting.AmbientOcclusionResources;
+import com.aryston.helion.render.post.ImageResources;
 import com.aryston.helion.render.resource.GpuResources;
 import com.aryston.helion.render.resource.SceneTargets;
+import com.aryston.helion.render.scene.SceneSnapshot;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.logging.LogUtils;
@@ -22,14 +24,16 @@ public final class HelionRenderCore {
     private final SceneTargets sceneTargets = new SceneTargets(resources);
     private final GpuTimings timings = new GpuTimings(resources);
     private final AmbientOcclusionResources ambientOcclusion = new AmbientOcclusionResources(resources);
+    private final ImageResources image = new ImageResources(resources);
     private PassiveListener passiveListener = reason -> { };
     private @Nullable GpuDeviceSummary device;
     private @Nullable PassiveReason passiveReason;
     private @Nullable RenderTarget mainTargetOverride;
     private @Nullable HelionCamera lastCamera;
-    private boolean enabled = true;
-    private boolean measureGpuTimings = true;
-    private RenderSettings settings = RenderSettings.foundation();
+    private @Nullable SceneSnapshot lastScene;
+    private volatile boolean enabled = true;
+    private volatile boolean measureGpuTimings = true;
+    private volatile RenderSettings settings = RenderSettings.foundation();
 
     private HelionRenderCore() {
     }
@@ -91,12 +95,17 @@ public final class HelionRenderCore {
         mainTargetOverride = null;
     }
 
-    public void recordCamera(HelionCamera camera) {
+    public void recordFrame(HelionCamera camera, SceneSnapshot scene) {
         lastCamera = camera;
+        lastScene = scene;
     }
 
     public Optional<HelionCamera> lastCamera() {
         return Optional.ofNullable(lastCamera);
+    }
+
+    public Optional<SceneSnapshot> lastScene() {
+        return Optional.ofNullable(lastScene);
     }
 
     public RenderTarget resolveMainTarget(RenderTarget original) {
@@ -107,6 +116,7 @@ public final class HelionRenderCore {
         int released = resources.releaseAll();
         timings.close();
         ambientOcclusion.close();
+        image.close();
         sceneTargets.close();
         LOGGER.info("Helion released {} GPU resources on shutdown", released);
     }
@@ -133,6 +143,10 @@ public final class HelionRenderCore {
 
     public AmbientOcclusionResources ambientOcclusion() {
         return ambientOcclusion;
+    }
+
+    public ImageResources image() {
+        return image;
     }
 
     private GpuDeviceSummary detectDevice() {

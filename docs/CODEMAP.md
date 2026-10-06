@@ -7,10 +7,12 @@ Every class and source file of Helion with its purpose. Find the right file here
 | I want to change | Go to |
 |---|---|
 | Stage order of a frame | `FrameStages` |
-| What a stage draws | `ClearStage`, `SkyStage`, `OpaqueGeometryStage`, `AmbientOcclusionStage`, `TransparentGeometryStage`, `PostProcessingStage`, `PresentStage` |
+| What a stage draws | `ClearStage`, `SkyStage`, `OpaqueGeometryStage`, `AmbientOcclusionStage`, `TransparentGeometryStage`, `PostProcessingStage`, `BloomStage`, `ImageCompositeStage`, `PresentStage` |
 | Ambient occlusion look and cost | `AmbientOcclusionResources` (tuning), `AmbientOcclusionQuality` (presets), `shaders/ambient_occlusion/` |
+| Bloom, tone mapping and exposure | `ImageResources` (tuning), `shaders/image/`, `shaders/include/helion_color.glsl`, `bloom_prefilter.fsh` (emissive detection) |
+| Bloom threshold in daylight and caves | `AmbientLightTracker`, `ImageResources` |
 | Effect settings per frame | `RenderSettings`, `HelionConfig.renderSettings` |
-| Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines` |
+| Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines`, `ImagePipelines` |
 | How vanilla terrain, entities, sky or OIT are called | `VanillaTerrainSource`, `VanillaEntitySource`, `VanillaAtmosphereSource`, `VanillaTransparencySource` |
 | The rebuilt vanilla `LevelRenderer.render` | `VanillaFrameDriver` |
 | Frame graph targets and OIT targets | `VanillaFrameTargets` |
@@ -21,7 +23,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 | Camera and frustum math | `HelionCamera`, `HelionFrustum` |
 | Settings | `HelionConfig`, `lang/*.json` |
 | Key bindings and commands | `HelionKeys`, `HelionCommands` |
-| F3 lines | `HelionDebugEntry` |
+| F3 lines and development stats in the log | `HelionDebugEntry`, `HelionStatsLog`, `HelionStatsLines` |
 | Pixel comparison with vanilla | `ParityCheck`, `FrameCapture`, `ParityResult` |
 | Vanilla hooks | `LevelRendererMixin`, `LevelRendererAccessor` |
 | Mod name, version, loader versions | `gradle.properties` |
@@ -47,16 +49,16 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### HelionConfig
 - Path: `src/main/java/com/aryston/helion/config/HelionConfig.java`
-- Role: Client config spec: `ENABLED` (render core on at startup), `GPU_TIMINGS`, and the `ambientOcclusion` section (enabled, quality, strength, radius, debugView). `renderSettings()` turns the config into a `RenderSettings` snapshot.
+- Role: Client config spec: `ENABLED` (render core on at startup), `GPU_TIMINGS`, the `ambientOcclusion` section (enabled, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, and the `bloom` subsection with enabled, intensity, threshold, debugView). `renderSettings()` turns the config into a `RenderSettings` snapshot.
 - Depends on: nothing inside the mod.
 
 ### `com.aryston.helion.render`
 
 #### HelionRenderCore
 - Path: `src/main/java/com/aryston/helion/render/HelionRenderCore.java`
-- Role: Singleton that owns the core state and shared GPU objects. Decides whether Helion renders, detects the backend on first use, starts and ends level frames, redirects the main target during a level frame, releases everything on shutdown.
-- Members: `get()`, `isActive()`, `toggle()`, `passivate(reason)`, `reportFailure(throwable)`, `beginLevelFrame(main)`, `endLevelFrame()`, `resolveMainTarget(original)`, `recordCamera(camera)`, `applySettings(enabled, gpuTimings, renderSettings)`, `settings()`, `ambientOcclusion()`, `setPassiveListener(listener)`, `shutdown()`.
-- Depends on: `GpuDeviceSummary`, `GpuResources`, `SceneTargets`, `GpuTimings`, `HelionCamera`.
+- Role: Singleton that owns the core state and shared GPU objects. Decides whether Helion renders, detects the backend on first use, starts and ends level frames, redirects the main target during a level frame, releases everything on shutdown. Setting fields are volatile because config reloads may arrive from another thread.
+- Members: `get()`, `isActive()`, `toggle()`, `passivate(reason)`, `reportFailure(throwable)`, `beginLevelFrame(main)`, `endLevelFrame()`, `resolveMainTarget(original)`, `recordFrame(camera, scene)`, `lastCamera()`, `lastScene()`, `applySettings(enabled, gpuTimings, renderSettings)`, `settings()`, `ambientOcclusion()`, `image()`, `setPassiveListener(listener)`, `shutdown()`.
+- Depends on: `GpuDeviceSummary`, `GpuResources`, `SceneTargets`, `GpuTimings`, `HelionCamera`, `AmbientOcclusionResources`, `ImageResources`.
 
 #### PassiveReason
 - Path: `src/main/java/com/aryston/helion/render/PassiveReason.java`
@@ -72,7 +74,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### FrameStages
 - Path: `src/main/java/com/aryston/helion/render/FrameStages.java`
-- Role: Single place that defines the stage order (clear, sky, geometry, post, present) and adds active stages to the frame.
+- Role: Single place that defines the stage order (clear, sky, geometry, ambient occlusion, post with bloom, output) and adds active stages to the frame. The output stage is `ImageCompositeStage` when an image effect is active, otherwise `PresentStage`.
 - Depends on: every stage class.
 
 ### `com.aryston.helion.render.backend`
@@ -108,7 +110,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### FrameContext
 - Path: `src/main/java/com/aryston/helion/render/graph/FrameContext.java`
-- Role: Everything a stage sees for one frame: graph, targets, camera, scene snapshot, render settings.
+- Role: Everything a stage sees for one frame: graph, targets, camera, scene snapshot, render settings and the post results that stages hand to each other.
 
 #### FrameTargets
 - Path: `src/main/java/com/aryston/helion/render/graph/FrameTargets.java`
@@ -117,7 +119,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 #### RenderSettings
 - Path: `src/main/java/com/aryston/helion/render/graph/RenderSettings.java`
 - Role: Immutable per-frame effect settings. `foundation()` turns every effect off for the parity check.
-- Depends on: `AmbientOcclusionSettings`.
+- Depends on: `AmbientOcclusionSettings`, `ImageSettings`.
 
 #### RenderGraph
 - Path: `src/main/java/com/aryston/helion/render/graph/RenderGraph.java`
@@ -126,14 +128,14 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### GpuTimings
 - Path: `src/main/java/com/aryston/helion/render/graph/GpuTimings.java`
-- Role: Timestamp query ring over four frames in flight, up to 16 stages per frame. Reads results without blocking and keeps a smoothed millisecond average per stage.
+- Role: Timestamp query ring over four frames in flight, up to 32 stages per frame. Reads results without blocking and keeps a smoothed millisecond average per stage. Stages not measured for 120 frames are dropped, so a replaced stage (present and composite) disappears from F3.
 - Depends on: `GpuResources`.
 
 ### `com.aryston.helion.render.scene`
 
 #### SceneSnapshot
 - Path: `src/main/java/com/aryston/helion/render/scene/SceneSnapshot.java`
-- Role: Immutable per-frame scene facts: fog color, sky visibility, transparency mode, target size, scene color format.
+- Role: Immutable per-frame scene facts: fog color, sky visibility, transparency mode, target size, scene color format, smoothed ambient sky light at the camera (0 to 1).
 
 #### ClearStage
 - Path: `src/main/java/com/aryston/helion/render/scene/ClearStage.java`
@@ -206,7 +208,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### HelionPipelines
 - Path: `src/main/java/com/aryston/helion/render/shader/HelionPipelines.java`
-- Role: Registry of every Helion pipeline, builder for fullscreen pipelines on the vanilla screen quad, lookup of compiled pipelines.
+- Role: Registry of every Helion pipeline (ambient occlusion and image), builder for fullscreen pipelines on the vanilla screen quad, lookup of compiled pipelines.
 
 #### FullscreenPass
 - Path: `src/main/java/com/aryston/helion/render/shader/FullscreenPass.java`
@@ -227,18 +229,63 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### PostProcessingStage
 - Path: `src/main/java/com/aryston/helion/render/post/PostProcessingStage.java`
-- Role: Runs its active post effects in order.
+- Role: Runs its active post effects in order: the effects of the frame sources (vanilla entity outline) first, then `BloomStage`.
 
 #### PresentStage
 - Path: `src/main/java/com/aryston/helion/render/post/PresentStage.java`
-- Role: Copies scene color and depth into the real main target at the end of the frame.
+- Role: Copies scene color and depth into the real main target at the end of the frame. Used when no image effect is active, so foundation frames stay identical to vanilla.
+
+#### BloomStage
+- Path: `src/main/java/com/aryston/helion/render/post/BloomStage.java`
+- Role: Post effect that builds the bloom mip chain: `bloom_prefilter` (scene to half resolution with emissive detection, adaptive threshold and Karis average), `bloom_down_N` (13-tap downsample) and `bloom_up_N` (tent upsample added onto the next larger mip). Publishes the half resolution result in `PostResults`. Inactive when bloom is off, the scene color is not RGBA8 or a shader failed to compile.
+- Depends on: `ImageResources`, `ImagePrograms`, `ImagePipelines`, `PostSampling`, `FullscreenPass`.
+
+#### ImageCompositeStage
+- Path: `src/main/java/com/aryston/helion/render/post/ImageCompositeStage.java`
+- Role: Output stage used instead of `PresentStage` when bloom, exposure or Filmic tone mapping is active. Expands the RGBA8 scene to HDR, adds bloom, applies exposure, tone mapping and dither, writes the main target in one fullscreen pass and copies depth. Shows only the bloom in the debug view.
+- Depends on: `ImageResources`, `ImagePrograms`, `ImagePipelines`, `PostSampling`, `FullscreenPass`.
+
+#### ImagePipelines
+- Path: `src/main/java/com/aryston/helion/render/post/ImagePipelines.java`
+- Role: Pipeline definitions of the bloom and composite passes, the uniform and sampler names they bind and the target formats (RGBA16_FLOAT bloom mips, RGBA8 output).
+- Depends on: `HelionPipelines`.
+
+#### ImagePrograms
+- Path: `src/main/java/com/aryston/helion/render/post/ImagePrograms.java`
+- Role: The compiled image pipelines for one frame; empty when any of them is missing.
+
+#### ImageResources
+- Path: `src/main/java/com/aryston/helion/render/post/ImageResources.java`
+- Role: Persistent image state owned by the core: the `HelionImage` uniform ring, the fixed tuning values (bloom mip count, daylight threshold scale, threshold knee) and the one-time missing shader warning. Writes the uniforms once per frame and checks whether the image stages can run. `bloomThreshold` computes the effective threshold for the current ambient light.
+- Depends on: `UniformRing`, `ImagePrograms`, `PostResults`.
+
+#### ImageSettings
+- Path: `src/main/java/com/aryston/helion/render/post/ImageSettings.java`
+- Role: Player image settings: tone mapper, exposure in stops, dither and bloom. `needsComposite()` tells whether the output must go through `ImageCompositeStage`. `FOUNDATION` keeps the plain copy.
+- Depends on: `ToneMapper`, `BloomSettings`.
+
+#### BloomSettings
+- Path: `src/main/java/com/aryston/helion/render/post/BloomSettings.java`
+- Role: Player bloom settings: enabled, intensity, threshold, debug view.
+
+#### ToneMapper
+- Path: `src/main/java/com/aryston/helion/render/post/ToneMapper.java`
+- Role: Tone mapping choices `NEUTRAL` (Khronos PBR Neutral), `FILMIC` (AgX) and `NONE`, each with the id the shaders switch on.
+
+#### PostResults
+- Path: `src/main/java/com/aryston/helion/render/post/PostResults.java`
+- Role: Per-frame results that post stages hand to each other: the bloom target handle and the image uniform buffer written this frame.
+
+#### PostSampling
+- Path: `src/main/java/com/aryston/helion/render/post/PostSampling.java`
+- Role: Texture view and clamp-to-edge sampler helpers shared by the image stages.
 
 ### `com.aryston.helion.integration`
 
 #### ClientEvents
 - Path: `src/main/java/com/aryston/helion/integration/ClientEvents.java`
 - Role: Wires every listener: client setup (compatibility check, passive notices), pipeline registration, config loading, key handling and notices on client tick, client commands, shutdown.
-- Depends on: `HelionRenderCore`, `HelionKeys`, `HelionCommands`, `CompatibilityGuard`, `PassiveModeNotice`, `HelionDebugEntry`, `LevelRenderHook`.
+- Depends on: `HelionRenderCore`, `HelionKeys`, `HelionCommands`, `CompatibilityGuard`, `PassiveModeNotice`, `HelionDebugEntry`, `HelionStatsLog`, `LevelRenderHook`.
 
 #### HelionCommands
 - Path: `src/main/java/com/aryston/helion/integration/HelionCommands.java`
@@ -307,11 +354,26 @@ Every class and source file of Helion with its purpose. Find the right file here
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/SceneSkyRenderer.java`
 - Role: Helion's own vanilla `SkyRenderer` bound to the scene target, recreated when the target or the sky reset flag changes.
 
+#### AmbientLightTracker
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/AmbientLightTracker.java`
+- Role: Sky light that reaches the camera block after the time of day and weather darkening, smoothed over frame time (1.5 s). Feeds `SceneSnapshot.ambientLight`, which raises the bloom threshold in daylight and lowers it in caves and at night.
+
 ### `com.aryston.helion.debug`
 
 #### HelionDebugEntry
 - Path: `src/main/java/com/aryston/helion/debug/HelionDebugEntry.java`
-- Role: F3 lines: core state, GPU and backend, GPU time per stage, tracked resources, Helion frustum versus vanilla visible sections.
+- Role: F3 lines: core state, GPU and backend, total and per stage GPU time, image state (tone mapper, exposure, ambient light, bloom threshold), tracked resources, Helion frustum versus vanilla visible sections.
+- Depends on: `HelionStatsLines`.
+
+#### HelionStatsLog
+- Path: `src/main/java/com/aryston/helion/debug/HelionStatsLog.java`
+- Role: Writes `Helion stats`, `Helion stages` and `Helion image` lines to the log every 100 client ticks while a world is open, so test runs can be measured without reading F3. Only in development runs (`FMLEnvironment.isProduction()` is false), never in player installs.
+- Depends on: `HelionStatsLines`, `HelionRenderCore`.
+
+#### HelionStatsLines
+- Path: `src/main/java/com/aryston/helion/debug/HelionStatsLines.java`
+- Role: Text shared by the F3 entry and the stats log: per stage timings, their total and the image state line.
+- Depends on: `HelionRenderCore`, `ImageResources`.
 
 #### ParityCheck
 - Path: `src/main/java/com/aryston/helion/debug/ParityCheck.java`
@@ -348,7 +410,8 @@ Every class and source file of Helion with its purpose. Find the right file here
 |---|---|
 | `src/main/resources/assets/helion/lang/` | `en_us.json` and `tr_tr.json`: config, key, toast and command texts. |
 | `src/main/resources/assets/helion/shaders/ambient_occlusion/` | Ambient occlusion fragment shaders: `view_depth`, `gtao`, `denoise`, `denoise_resolve`, `apply`. |
-| `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_view` (depth and view position), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur). |
+| `src/main/resources/assets/helion/shaders/image/` | Bloom and image fragment shaders: `bloom_prefilter`, `bloom_downsample`, `bloom_upsample`, `composite`, `bloom_debug`. |
+| `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_view` (depth and view position), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur), `helion_color` (sRGB conversion, PBR Neutral and its inverse, AgX, dither noise), `helion_image` (image settings block, scene expansion, tone mapper switch, bloom threshold, dither), `helion_bloom_downsample` (13-tap downsample with optional Karis average over a `helionBloomTap` function the including shader defines). |
 
 ## Build Files
 

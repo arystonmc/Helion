@@ -15,4 +15,6 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - GPU time per render stage, active GPU and Helion memory use on the F3 screen
 - Settings screen with render core and GPU timing options
 - Ambient occlusion with quality presets, strength, radius and a shadow-only view
+- Bloom around bright light sources that adapts to daylight, caves and night, with intensity, threshold and a glow-only view
+- Neutral and Filmic tone mapping, exposure control and dithering against color banding
 - English and Turkish translations

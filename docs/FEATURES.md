@@ -4,7 +4,7 @@ What the latest version of Helion can do. Written for players and ready to reuse
 
 ## Summary
 
-Helion is a client-side graphics mod for Minecraft built on the new Vulkan renderer. The whole world is drawn through Helion's own render core, which matches vanilla pixel for pixel on its own, and Helion's graphics features are layered on top of it. The first one is ambient occlusion.
+Helion is a client-side graphics mod for Minecraft built on the new Vulkan renderer. The whole world is drawn through Helion's own render core, which matches vanilla pixel for pixel on its own, and Helion's graphics features are layered on top of it. The first ones are ambient occlusion and bloom with tone mapping.
 
 ## At a Glance
 
@@ -36,6 +36,16 @@ Soft, natural shadows wherever surfaces meet: in corners, under fences and stair
 - Settings: on or off, quality (Low, Medium, High, Ultra), strength, radius in blocks, and a view that shows only the shadows
 - Since: 0.1
 
+### Bloom and Tone Mapping
+Bright light sources glow softly into the darkness while the colors you know stay the same.
+
+- Lava, torches, glowstone, sea lanterns, beacons, the sun and other bright lights get a soft cinematic glow
+- The glow adapts to its surroundings: at night and in caves lights glow clearly, in daylight only truly bright things glow, so snow and sand stay clean
+- Tone mapping keeps vanilla colors and only rolls off the brightest highlights; a Filmic option gives a softer, more cinematic look
+- Exposure control and invisible dithering that removes color banding in the sky
+- Settings: bloom on or off, intensity, threshold, a view that shows only the glow, tone mapping (Neutral, Filmic, None), exposure and dithering
+- Since: 0.1
+
 ### Safe by Design
 Helion never stands between you and the game.
 
@@ -55,10 +65,10 @@ Switch between Helion and vanilla rendering at any moment.
 ### Performance Insight
 See exactly where the GPU spends its time.
 
-- The F3 screen shows the GPU time of every Helion render stage, the active GPU and graphics API, and the GPU memory Helion uses
+- The F3 screen shows the GPU time of every Helion render stage and their total, the active GPU and graphics API, the GPU memory Helion uses, and the current tone mapping, exposure and bloom threshold
 - GPU time measurement can be turned off in the settings
 - Since: 0.1
 
 ### Settings
-- Mods screen → Helion → Config: turn the render core and GPU time measurement on or off, and adjust ambient occlusion
+- Mods screen → Helion → Config: turn the render core and GPU time measurement on or off, and adjust ambient occlusion, bloom, tone mapping and exposure
 - Since: 0.1

@@ -6,6 +6,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.commands.GpuQueryPool;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,20 +16,23 @@ import org.jspecify.annotations.Nullable;
 public final class GpuTimings {
     private static final String LABEL = "Helion GPU Timings";
     private static final int FRAMES_IN_FLIGHT = 4;
-    private static final int MAX_STAGES_PER_FRAME = 16;
+    private static final int MAX_STAGES_PER_FRAME = 32;
     private static final int QUERIES_PER_STAGE = 2;
     private static final int QUERIES_PER_FRAME = MAX_STAGES_PER_FRAME * QUERIES_PER_STAGE;
     private static final int QUERY_BYTES = Long.BYTES;
     private static final double NANOS_PER_MILLI = 1_000_000.0;
     private static final double SMOOTHING = 0.1;
+    private static final long STALE_AFTER_FRAMES = 120;
 
     private final GpuResources resources;
     private final List<List<String>> stagesPerFrame = new ArrayList<>();
     private final Map<String, Double> averageMillis = new LinkedHashMap<>();
+    private final Map<String, Long> lastMeasuredFrame = new HashMap<>();
     private @Nullable GpuQueryPool pool;
     private @Nullable TrackedResource tracked;
     private double nanosPerTick;
     private int frame;
+    private long frameCount;
 
     public GpuTimings(GpuResources resources) {
         this.resources = resources;
@@ -41,9 +45,11 @@ public final class GpuTimings {
         if (pool == null) {
             open(timestampPeriod);
         }
+        frameCount++;
         frame = (frame + 1) % FRAMES_IN_FLIGHT;
         collect(frame);
         stagesPerFrame.get(frame).clear();
+        dropStaleStages();
     }
 
     public Runnable measure(String stage, Runnable task) {
@@ -72,6 +78,7 @@ public final class GpuTimings {
         pool = null;
         tracked = null;
         averageMillis.clear();
+        lastMeasuredFrame.clear();
         stagesPerFrame.forEach(List::clear);
     }
 
@@ -100,5 +107,17 @@ public final class GpuTimings {
 
     private void record(String stage, double millis) {
         averageMillis.merge(stage, millis, (previous, latest) -> previous + (latest - previous) * SMOOTHING);
+        lastMeasuredFrame.put(stage, frameCount);
+    }
+
+    private void dropStaleStages() {
+        List<String> stale = lastMeasuredFrame.entrySet().stream()
+            .filter(entry -> frameCount - entry.getValue() > STALE_AFTER_FRAMES)
+            .map(Map.Entry::getKey)
+            .toList();
+        stale.forEach(stage -> {
+            averageMillis.remove(stage);
+            lastMeasuredFrame.remove(stage);
+        });
     }
 }

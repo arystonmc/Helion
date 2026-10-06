@@ -10,7 +10,8 @@ public record SceneSnapshot(
     boolean orderIndependentTransparency,
     int width,
     int height,
-    GpuFormat colorFormat
+    GpuFormat colorFormat,
+    float ambientLight
 ) {
     public SceneSnapshot {
         fogColor = new Vector4f(fogColor);

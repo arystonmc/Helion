@@ -2,12 +2,14 @@ package com.aryston.helion.render.shader;
 
 import com.aryston.helion.Helion;
 import com.aryston.helion.render.lighting.AmbientOcclusionPipelines;
+import com.aryston.helion.render.post.ImagePipelines;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import net.minecraft.resources.Identifier;
 
 public final class HelionPipelines {
@@ -18,7 +20,7 @@ public final class HelionPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return AmbientOcclusionPipelines.all();
+        return Stream.concat(AmbientOcclusionPipelines.all().stream(), ImagePipelines.all().stream()).toList();
     }
 
     public static RenderPipeline.Builder fullscreen(String fragmentShader) {

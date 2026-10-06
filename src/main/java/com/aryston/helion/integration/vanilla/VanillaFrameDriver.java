@@ -8,6 +8,7 @@ import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderGraph;
 import com.aryston.helion.render.graph.RenderSettings;
+import com.aryston.helion.render.post.PostResults;
 import com.aryston.helion.render.scene.SceneSnapshot;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -32,6 +33,7 @@ import org.jspecify.annotations.Nullable;
 
 final class VanillaFrameDriver {
     private final SceneSkyRenderer sky = new SceneSkyRenderer();
+    private final AmbientLightTracker ambientLight = new AmbientLightTracker();
 
     void render(LevelFrameRequest request, RenderSettings settings) {
         LevelRendererAccessor level = request.level();
@@ -90,11 +92,13 @@ final class VanillaFrameDriver {
                     orderIndependent,
                     scene.width,
                     scene.height,
-                    Objects.requireNonNull(scene.getColorTexture()).getFormat()
+                    Objects.requireNonNull(scene.getColorTexture()).getFormat(),
+                    ambientLight.update(camera.blockPos)
                 ),
-                settings
+                settings,
+                new PostResults()
             );
-            HelionRenderCore.get().recordCamera(frame.camera());
+            HelionRenderCore.get().recordFrame(frame.camera(), frame.scene());
             FrameStages.build(frame, sources(request, sections, featureFrame));
             profiler.popPush("executeFrameGraph");
             builder.execute(request.resourceAllocator(), new ProfilerInspector(profiler));

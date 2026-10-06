@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.debug.DebugScreenDisplayer;
 import net.minecraft.client.gui.components.debug.DebugScreenEntry;
@@ -36,9 +35,11 @@ public final class HelionDebugEntry implements DebugScreenEntry {
         List<String> lines = new ArrayList<>();
         lines.add("Helion: " + status(core));
         core.device().ifPresent(device -> lines.add("Helion GPU: " + device.backend() + ", " + device.name()));
-        if (!core.timings().averageMillis().isEmpty()) {
-            lines.add("Helion stages: " + timings(core.timings().averageMillis()));
+        Map<String, Double> timings = core.timings().averageMillis();
+        if (!timings.isEmpty()) {
+            lines.add(String.format(Locale.ROOT, "Helion stages (%.2f ms): %s", HelionStatsLines.totalMillis(timings), HelionStatsLines.timings(timings)));
         }
+        HelionStatsLines.image(core).ifPresent(lines::add);
         lines.add(String.format(Locale.ROOT, "Helion resources: %d, %.1f MiB", core.resources().count(), core.resources().totalBytes() / BYTES_PER_MEBIBYTE));
         core.lastCamera().ifPresent(camera -> lines.add(frustumLine(camera.frustum())));
         displayer.addToGroup(ID, lines);
@@ -48,12 +49,6 @@ public final class HelionDebugEntry implements DebugScreenEntry {
         return core.passiveReason()
             .map(reason -> "passive (" + reason.name().toLowerCase(Locale.ROOT) + ")")
             .orElseGet(() -> core.isEnabled() ? "active" : "disabled");
-    }
-
-    private static String timings(Map<String, Double> averageMillis) {
-        return averageMillis.entrySet().stream()
-            .map(entry -> String.format(Locale.ROOT, "%s %.2f ms", entry.getKey(), entry.getValue()))
-            .collect(Collectors.joining(", "));
     }
 
     private static String frustumLine(HelionFrustum frustum) {
