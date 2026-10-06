@@ -35,7 +35,8 @@ enum VisualTestVariant {
         );
         return new RenderSettings(
             settings.ambientOcclusion(),
-            new ImageSettings(toneMapper, ImageSettings.DEFAULT_EXPOSURE, true, bloom, SharpeningSettings.DISABLED)
+            new ImageSettings(toneMapper, ImageSettings.DEFAULT_EXPOSURE, true, bloom, SharpeningSettings.DISABLED),
+            settings.geometry()
         );
     }
 

@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -27,10 +28,14 @@ import org.junit.jupiter.api.io.TempDir;
 class ShaderCompilationTest {
     private static final String SHADER_ROOT = "assets/helion/shaders";
     private static final String INCLUDE_PATH = "assets/%s/shaders/include/%s";
-    private static final String FRAGMENT_EXTENSION = ".fsh";
-    private static final Pattern INCLUDE = Pattern.compile("^#include <([a-z0-9_]+):([a-z0-9_./]+)>$", Pattern.MULTILINE);
+    private static final Map<String, String> STAGE_BY_EXTENSION = Map.of(".fsh", ".frag", ".vsh", ".vert");
+    private static final Pattern INCLUDE = Pattern.compile("^[ \\t]*#include <([a-z0-9_]+):([a-z0-9_./]+)>[ \\t]*$", Pattern.MULTILINE);
     private static final Pattern VERSION = Pattern.compile("^#version .*$", Pattern.MULTILINE);
-    private static final String ZERO_TO_ONE_DEFINE = "#define RENDERPEARL_DEPTH_IS_ZERO_TO_ONE";
+    private static final List<Variant> VARIANTS = List.of(
+        new Variant("default", ""),
+        new Variant("zero_to_one_depth", "#define RENDERPEARL_DEPTH_IS_ZERO_TO_ONE"),
+        new Variant("multidraw_cutout", "#define MULTIDRAW_TERRAIN\n#define ALPHA_CUTOUT 0.5")
+    );
     private static final String VALIDATOR = "glslangValidator";
     private static final long VALIDATOR_TIMEOUT_SECONDS = 60;
     private static final int SUCCESS = 0;
@@ -39,23 +44,23 @@ class ShaderCompilationTest {
     static Path workDirectory;
 
     @TestFactory
-    Stream<DynamicTest> everyFragmentShaderCompiles() throws IOException, URISyntaxException {
+    Stream<DynamicTest> everyShaderCompiles() throws IOException, URISyntaxException {
         assumeTrue(validatorInstalled(), VALIDATOR + " is not installed, shader compilation is not checked");
-        List<Path> shaders = fragmentShaders();
-        assertFalse(shaders.isEmpty(), "no fragment shaders found under " + SHADER_ROOT);
-        return shaders.stream().flatMap(shader -> Stream.of(
-            DynamicTest.dynamicTest(name(shader) + " with depth -1 to 1", () -> compile(shader, false)),
-            DynamicTest.dynamicTest(name(shader) + " with depth 0 to 1", () -> compile(shader, true))
+        List<Path> shaders = shaders();
+        assertFalse(shaders.isEmpty(), "no shaders found under " + SHADER_ROOT);
+        return shaders.stream().flatMap(shader -> VARIANTS.stream().map(variant ->
+            DynamicTest.dynamicTest(name(shader) + " " + variant.name(), () -> compile(shader, variant))
         ));
     }
 
-    private static void compile(Path shader, boolean zeroToOneDepth) throws IOException, InterruptedException {
+    private static void compile(Path shader, Variant variant) throws IOException, InterruptedException {
         String source = expand(Files.readString(shader, StandardCharsets.UTF_8), new HashSet<>());
-        if (zeroToOneDepth) {
-            source = VERSION.matcher(source).replaceFirst(match -> Matcher.quoteReplacement(match.group() + "\n" + ZERO_TO_ONE_DEFINE));
+        if (!variant.defines().isEmpty()) {
+            source = VERSION.matcher(source).replaceFirst(match -> Matcher.quoteReplacement(match.group() + "\n" + variant.defines()));
         }
-        String fileName = name(shader).replace(FRAGMENT_EXTENSION, "").replace('/', '_') + (zeroToOneDepth ? "_zero_to_one" : "");
-        Path input = workDirectory.resolve(fileName + ".frag");
+        String extension = extension(shader);
+        String fileName = name(shader).replace(extension, "").replace('/', '_') + "_" + variant.name();
+        Path input = workDirectory.resolve(fileName + STAGE_BY_EXTENSION.get(extension));
         Files.writeString(input, source, StandardCharsets.UTF_8);
         Process process = new ProcessBuilder(
             VALIDATOR, "-G", "--auto-map-bindings", "--auto-map-locations",
@@ -63,7 +68,7 @@ class ShaderCompilationTest {
         ).redirectErrorStream(true).start();
         String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         assertTrue(process.waitFor(VALIDATOR_TIMEOUT_SECONDS, TimeUnit.SECONDS), VALIDATOR + " timed out");
-        assertEquals(SUCCESS, process.exitValue(), name(shader) + "\n" + output);
+        assertEquals(SUCCESS, process.exitValue(), name(shader) + " " + variant.name() + "\n" + output);
     }
 
     private static String expand(String source, Set<String> included) throws IOException {
@@ -85,12 +90,18 @@ class ShaderCompilationTest {
         }
     }
 
-    private static List<Path> fragmentShaders() throws IOException, URISyntaxException {
+    private static List<Path> shaders() throws IOException, URISyntaxException {
         URL root = ShaderCompilationTest.class.getClassLoader().getResource(SHADER_ROOT);
         assertNotNull(root, SHADER_ROOT);
         try (Stream<Path> files = Files.walk(Path.of(root.toURI()))) {
-            return files.filter(file -> file.toString().endsWith(FRAGMENT_EXTENSION)).sorted().toList();
+            return files.filter(file -> STAGE_BY_EXTENSION.containsKey(extension(file))).sorted().toList();
         }
+    }
+
+    private static String extension(Path file) {
+        String fileName = file.getFileName().toString();
+        int dot = fileName.lastIndexOf('.');
+        return dot < 0 ? "" : fileName.substring(dot);
     }
 
     private static String name(Path shader) {
@@ -109,5 +120,8 @@ class ShaderCompilationTest {
             Thread.currentThread().interrupt();
             return false;
         }
+    }
+
+    private record Variant(String name, String defines) {
     }
 }

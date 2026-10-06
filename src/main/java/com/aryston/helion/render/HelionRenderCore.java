@@ -33,7 +33,7 @@ public final class HelionRenderCore {
     private @Nullable SceneSnapshot lastScene;
     private volatile boolean enabled = true;
     private volatile boolean debugMode;
-    private volatile RenderSettings settings = RenderSettings.foundation();
+    private volatile RenderSettings settings = RenderSettings.OFF;
 
     private HelionRenderCore() {
     }

@@ -5,6 +5,7 @@ import com.aryston.helion.debug.HelionDebugEntry;
 import com.aryston.helion.debug.HelionDebugLog;
 import com.aryston.helion.debug.VisualTest;
 import com.aryston.helion.integration.vanilla.LevelRenderHook;
+import com.aryston.helion.integration.vanilla.VanillaGeometryPipelines;
 import com.aryston.helion.render.HelionRenderCore;
 import com.aryston.helion.render.PassiveReason;
 import com.aryston.helion.render.shader.HelionPipelines;
@@ -61,6 +62,7 @@ public final class ClientEvents {
 
     private static void onRegisterPipelines(RegisterRenderPipelinesEvent event) {
         HelionPipelines.all().forEach(event::registerOptionalPipeline);
+        VanillaGeometryPipelines.all().forEach(event::registerOptionalPipeline);
     }
 
     private static void onConfigLoading(ModConfigEvent.Loading event) {

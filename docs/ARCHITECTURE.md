@@ -16,7 +16,7 @@ integration/vanilla          Minecraft adapter: builds the frame, owns every van
    │  LevelRenderHook → VanillaFrameDriver → Vanilla*Source, VanillaFrameTargets, StageEvents
    ▼
 render/                      Helion render core: stages, graph, resources, camera
-   │  FrameStages: clear → sky → opaque geometry → ambient occlusion → transparent geometry → post (bloom, sharpen) → present or image composite
+   │  FrameStages: clear → sky → opaque geometry → ambient occlusion → transparent geometry → post (bloom, sharpen) → present or image composite → geometry buffer view
    ▼
 renderpearl api + blaze3d    Mojang GPU abstraction (Vulkan backend)
 ```
@@ -47,18 +47,19 @@ renderpearl api + blaze3d    Mojang GPU abstraction (Vulkan backend)
 |---|---|---|---|
 | 1 | clear | `render.scene.ClearStage` | Clears scene color to the fog color and scene depth to the reversed-Z far value |
 | 2 | sky | `render.atmosphere.SkyStage` | Draws the sky through `AtmosphereSource` |
-| 3 | opaque_geometry | `render.geometry.OpaqueGeometryStage` | Prepares fog, chunk sampler, translucent buffers and lighting, then draws opaque terrain and solid features |
+| 3 | opaque_geometry | `render.geometry.OpaqueGeometryStage` | Prepares fog, chunk sampler, translucent buffers and lighting, then draws opaque terrain and solid features. With the geometry buffer on, opaque terrain is drawn first in its own render pass through Helion's terrain shaders, see Geometry Buffer below |
 | 4 | ambient_occlusion | `render.lighting.AmbientOcclusionStage` | Screen space ambient occlusion on the opaque scene, see below. Skipped when disabled or when its shaders failed to compile |
 | 5 | transparent_geometry | `render.geometry.TransparentGeometryStage` | Sorted or order independent transparency, clouds, weather, world border, then outline, see-through and always-on-top features |
 | 6 | post | `render.post.PostProcessingStage` | Runs post effects in order: the vanilla entity outline effect, then `render.post.BloomStage`, then `render.post.SharpeningStage`, see Image Pipeline below |
 | 7 | present | `render.post.PresentStage` | Copies the scene target into the main target when no image effect is active |
 | 7 | composite | `render.post.ImageCompositeStage` | Replaces present when bloom, sharpening, exposure or Filmic tone mapping is active: tone maps the scene (or its sharpened copy) with bloom into the main target and copies depth |
+| 8 | geometry_view | `render.geometry.GeometryBufferDebugStage` | Only with a geometry buffer view selected: draws normals, block light, sky light or albedo over the main target |
 
 Planned stages and where they go: shadows next to ambient occlusion in `render.lighting`, atmosphere effects after transparent geometry, further Helion post effects inside `PostProcessingStage` after sharpening.
 
 ## Render Settings
 
-`RenderSettings` is an immutable snapshot of every effect setting, taken from the client config and carried in `FrameContext`. Stages decide in `isActive` whether they run. `RenderSettings.foundation()` turns every effect off and keeps the plain present copy; the parity check renders its Helion frame with it, so the foundation can always be compared with vanilla while effects are on.
+`RenderSettings` is an immutable snapshot of every effect setting, taken from the client config and carried in `FrameContext`. Stages decide in `isActive` whether they run. `RenderSettings.foundation()` turns every effect off and keeps the plain present copy, but keeps the geometry buffer when it is on (without its view), because the geometry buffer is part of the core and must stay identical to vanilla; the parity check renders its Helion frame with it, so the foundation can always be compared with vanilla while effects are on.
 
 ## Shaders and Pipelines
 
@@ -119,6 +120,26 @@ scene RGBA8 ──► bloom_prefilter ──► bloom_down_1 … bloom_down_5 �
 - Until then HDR is reconstructed in post as described above, and bloom runs on RGBA16_FLOAT internal targets of the frame graph.
 - The composite cannot use `copyTextureToTexture` from a float target into the RGBA8 main target because `vkCmdCopyImage` needs matching texel sizes, so it draws a fullscreen pass into main.
 
+## Geometry Buffer
+
+Foundation for Helion's own lighting. Off by default (`geometryBuffer.enabled`). Nothing reads it yet except its debug view; deferred lighting, sky light and shadows will.
+
+- `VanillaGeometryPipelines` copies the vanilla `SOLID_TERRAIN`, `CUTOUT_TERRAIN` and their multi-draw pipelines with `toBuilder()`, so every define (`ALPHA_CUTOUT`), bind group, vertex format and depth state stays vanilla, and replaces the shaders with `helion:terrain/geometry` plus three more color targets.
+- `terrain/geometry.vsh` and `.fsh` repeat the vanilla `core/terrain` math line by line for target 0, so the scene color stays identical to vanilla (the parity check runs with the geometry buffer when it is on). The extra targets are filled from data vanilla throws away: the lightmap coordinates before they become a color, the vertex color before light, and the face normal from screen derivatives of the camera relative position.
+- Renderpearl requires the color attachment count of a render pass to match the pipeline, so opaque terrain gets its own render pass with four attachments. Solid features, the `AFTER_OPAQUE_BLOCKS` event and other mods keep drawing into the usual one-attachment pass afterwards, in the same order as vanilla.
+- Per layer pipelines go through `ChunkSectionsToRender.renderLayers` (invoker mixin) with the vanilla override parameters, the same mechanism vanilla uses for wireframe and OIT terrain. Wireframe terrain (F3 debug) and missing shaders fall back to the vanilla path.
+
+| Target | Format | Content |
+|---|---|---|
+| 0 | scene RGBA8 | vanilla terrain color with fog |
+| 1 `helion:geometry_normal` | RGB10A2_UNORM | world space face normal as `n * 0.5 + 0.5`, alpha 1 where terrain was drawn |
+| 2 `helion:geometry_light` | RGBA8_UNORM | R block light, G sky light (lightmap coordinate / 240), alpha 1 where terrain was drawn |
+| 3 `helion:geometry_albedo` | RGBA8_UNORM | texture color times vertex color (biome tint and vanilla shading), before light and fog |
+
+Translucent terrain, entities, particles and the sky are not in the geometry buffer yet; their pixels keep alpha 0.
+
+Renderpearl in 26.3 has no compute shaders (`ShaderType` only has vertex and fragment), so every geometry buffer consumer is a fragment pass.
+
 ## Sources
 
 Stages never call vanilla code directly. They talk to sources:
@@ -155,6 +176,9 @@ Places that copy or depend on vanilla internals. Check each of them first when M
 | `VanillaAtmosphereSource.hasSky`, `renderSky` | `LevelRenderer.addSkyPass` |
 | `ClearStage` | the `clear` pass in `LevelRenderer.render` |
 | `LevelRendererAccessor` | private fields and methods of `LevelRenderer` |
+| `terrain/geometry.vsh`, `terrain/geometry.fsh` | `core/terrain.vsh`, `core/terrain.fsh` (non-OIT path) |
+| `VanillaGeometryPipelines` | `RenderPipelines.SOLID_TERRAIN`, `CUTOUT_TERRAIN` and their multi-draw variants |
+| `VanillaTerrainSource.renderOpaqueGeometry` | `ChunkSectionsToRender.renderGroup` and `renderLayers` |
 
 `SkyRenderer` keeps the render target it was created with, so Helion owns a separate `SkyRenderer` bound to the scene target (`SceneSkyRenderer`).
 
@@ -165,6 +189,7 @@ Places that copy or depend on vanilla internals. Check each of them first when M
 | `LevelRendererMixin.helion$render` | `LevelRenderer.render` | NeoForge can add passes but cannot replace the vanilla pass structure |
 | `LevelRendererMixin.helion$redirectMainTarget` | `GameRenderer.mainRenderTarget()` calls inside `LevelRenderer` | Vanilla OIT and depth bounds code reads the main target directly instead of the frame graph handle |
 | `LevelRendererAccessor` | private members of `LevelRenderer` | Required to rebuild `render` with vanilla behavior |
+| `ChunkSectionsToRenderAccessor.helion$renderLayers` | private `ChunkSectionsToRender.renderLayers` | Only this method takes per layer pipeline overrides; the public `renderGroup` applies one override to every layer, and solid and cutout terrain need different pipelines |
 
 ## Porting Checklist for a New Minecraft Version
 

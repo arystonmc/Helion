@@ -1,6 +1,7 @@
 package com.aryston.helion.render;
 
 import com.aryston.helion.render.atmosphere.SkyStage;
+import com.aryston.helion.render.geometry.GeometryBufferDebugStage;
 import com.aryston.helion.render.geometry.OpaqueGeometryStage;
 import com.aryston.helion.render.geometry.TransparentGeometryStage;
 import com.aryston.helion.render.graph.FrameContext;
@@ -34,7 +35,8 @@ public final class FrameStages {
             new AmbientOcclusionStage(core.ambientOcclusion()),
             new TransparentGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere(), sources.transparency()),
             new PostProcessingStage(postEffects(sources, core)),
-            output(frame, core)
+            output(frame, core),
+            new GeometryBufferDebugStage()
         );
     }
 

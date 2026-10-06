@@ -5,6 +5,7 @@ import com.aryston.helion.render.FrameSources;
 import com.aryston.helion.render.FrameStages;
 import com.aryston.helion.render.HelionRenderCore;
 import com.aryston.helion.render.camera.HelionCamera;
+import com.aryston.helion.render.geometry.GeometryBuffer;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderGraph;
 import com.aryston.helion.render.graph.RenderSettings;
@@ -96,6 +97,7 @@ final class VanillaFrameDriver {
                     ambientLight.update(camera.blockPos)
                 ),
                 settings,
+                new GeometryBuffer(),
                 new PostResults()
             );
             HelionRenderCore.get().recordFrame(frame.camera(), frame.scene());

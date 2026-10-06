@@ -54,6 +54,14 @@ Crisper block textures without the halos of ordinary sharpening filters.
 - Settings: sharpening on or off and its strength; off by default
 - Since: 0.1
 
+### Geometry Buffer (Experimental)
+The foundation for Helion's own lighting, sky and shadows.
+
+- Terrain is drawn by Helion's own shaders, which also record the surface direction, block light, sky light and base color of every pixel
+- The picture stays exactly like vanilla; nothing changes until Helion's lighting is built on top of it
+- Settings: on or off, and a view that shows each recorded value for checking; off by default while it is experimental
+- Since: 0.1
+
 ### Safe by Design
 Helion never stands between you and the game.
 
@@ -78,5 +86,5 @@ Everything Helion knows, on screen and in a log file, only when you ask for it.
 - Since: 0.1
 
 ### Settings
-- Mods screen → Helion → Config: turn the render core and debug mode on or off, and adjust ambient occlusion, bloom, sharpening, tone mapping and exposure
+- Mods screen → Helion → Config: turn the render core and debug mode on or off, and adjust ambient occlusion, bloom, sharpening, tone mapping, exposure and the geometry buffer
 - Since: 0.1

@@ -15,7 +15,7 @@ public final class LevelRenderHook {
         ParityCheck parity = ParityCheck.get();
         boolean renderedByHelion = false;
         if (core.isActive() && !parity.forcesVanillaFrame()) {
-            RenderSettings settings = parity.forcesFoundationFrame() ? RenderSettings.foundation() : core.settings();
+            RenderSettings settings = parity.forcesFoundationFrame() ? core.settings().foundation() : core.settings();
             renderedByHelion = renderWithHelion(request, settings, core);
         } else {
             core.timings().pause();

@@ -1,5 +1,6 @@
 package com.aryston.helion.integration.vanilla;
 
+import com.aryston.helion.mixin.ChunkSectionsToRenderAccessor;
 import com.aryston.helion.mixin.LevelRendererAccessor;
 import com.aryston.helion.render.geometry.TerrainSource;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -12,6 +13,7 @@ import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.util.Objects;
 import java.util.OptionalDouble;
 import net.minecraft.client.TextureFilteringMethod;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.state.OptionsRenderState;
@@ -43,10 +45,40 @@ final class VanillaTerrainSource implements TerrainSource {
     }
 
     @Override
+    public boolean supportsGeometryBuffer() {
+        return !level.helion$levelRenderState().renderWireframeTerrain && VanillaGeometryPipelines.compiled();
+    }
+
+    @Override
     public void renderOpaque(RenderPass pass) {
         Profiler.get().push("solidTerrain");
         renderGroup(ChunkSectionLayerGroup.OPAQUE, pass);
         Profiler.get().pop();
+        afterOpaque(pass);
+    }
+
+    @Override
+    public void renderOpaqueGeometry(RenderPass geometryPass) {
+        Profiler.get().push("solidTerrainGeometry");
+        ChunkSectionsToRenderAccessor accessor = (ChunkSectionsToRenderAccessor) sections;
+        GpuTextureView lightmap = level.helion$gameRenderer().lightmap();
+        for (ChunkSectionLayer layer : ChunkSectionLayerGroup.OPAQUE.layers()) {
+            VanillaGeometryPipelines.LayerPipelines pipelines = VanillaGeometryPipelines.forLayer(layer);
+            accessor.helion$renderLayers(
+                new ChunkSectionLayer[] {layer},
+                chunkSampler(),
+                geometryPass,
+                blockAtlas(),
+                lightmap,
+                pipelines.direct(),
+                pipelines.multiDraw()
+            );
+        }
+        Profiler.get().pop();
+    }
+
+    @Override
+    public void afterOpaque(RenderPass pass) {
         events.afterOpaqueBlocks(pass);
     }
 
@@ -60,8 +92,15 @@ final class VanillaTerrainSource implements TerrainSource {
 
     private void renderGroup(ChunkSectionLayerGroup group, RenderPass pass) {
         LevelRenderState state = level.helion$levelRenderState();
-        GpuTextureView blockAtlas = level.helion$atlasManager().getAtlasOrThrow(AtlasIds.BLOCKS).getTextureView();
-        sections.renderGroup(group, pass, Objects.requireNonNull(level.helion$chunkLayerSampler()), blockAtlas, state.renderWireframeTerrain);
+        sections.renderGroup(group, pass, chunkSampler(), blockAtlas(), state.renderWireframeTerrain);
+    }
+
+    private GpuSampler chunkSampler() {
+        return Objects.requireNonNull(level.helion$chunkLayerSampler());
+    }
+
+    private GpuTextureView blockAtlas() {
+        return level.helion$atlasManager().getAtlasOrThrow(AtlasIds.BLOCKS).getTextureView();
     }
 
     private void replaceSampler() {

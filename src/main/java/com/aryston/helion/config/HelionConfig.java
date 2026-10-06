@@ -1,5 +1,7 @@
 package com.aryston.helion.config;
 
+import com.aryston.helion.render.geometry.GeometryBufferSettings;
+import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.graph.RenderSettings;
 import com.aryston.helion.render.lighting.AmbientOcclusionAlgorithm;
 import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
@@ -48,6 +50,8 @@ public final class HelionConfig {
     private static final ModConfigSpec.BooleanValue BLOOM_DEBUG_VIEW;
     private static final ModConfigSpec.BooleanValue SHARPENING_ENABLED;
     private static final ModConfigSpec.DoubleValue SHARPENING_STRENGTH;
+    private static final ModConfigSpec.BooleanValue GEOMETRY_BUFFER_ENABLED;
+    private static final ModConfigSpec.EnumValue<GeometryBufferView> GEOMETRY_BUFFER_VIEW;
 
     static {
         BUILDER.translation("helion.configuration.ambientOcclusion").push("ambientOcclusion");
@@ -104,6 +108,15 @@ public final class HelionConfig {
             .defineInRange("strength", SharpeningSettings.DEFAULT_STRENGTH, MIN_SHARPENING_STRENGTH, MAX_SHARPENING_STRENGTH);
         BUILDER.pop();
         BUILDER.pop();
+
+        BUILDER.translation("helion.configuration.geometryBuffer").push("geometryBuffer");
+        GEOMETRY_BUFFER_ENABLED = BUILDER
+            .translation("helion.configuration.geometryBuffer.enabled")
+            .define("enabled", false);
+        GEOMETRY_BUFFER_VIEW = BUILDER
+            .translation("helion.configuration.geometryBuffer.view")
+            .defineEnum("view", GeometryBufferView.NONE);
+        BUILDER.pop();
     }
 
     public static final ModConfigSpec SPEC = BUILDER.build();
@@ -112,7 +125,7 @@ public final class HelionConfig {
     }
 
     public static RenderSettings renderSettings() {
-        return new RenderSettings(ambientOcclusionSettings(), imageSettings());
+        return new RenderSettings(ambientOcclusionSettings(), imageSettings(), geometryBufferSettings());
     }
 
     private static AmbientOcclusionSettings ambientOcclusionSettings() {
@@ -124,6 +137,10 @@ public final class HelionConfig {
             AMBIENT_OCCLUSION_RADIUS.get().floatValue(),
             AMBIENT_OCCLUSION_DEBUG_VIEW.getAsBoolean()
         );
+    }
+
+    private static GeometryBufferSettings geometryBufferSettings() {
+        return new GeometryBufferSettings(GEOMETRY_BUFFER_ENABLED.getAsBoolean(), GEOMETRY_BUFFER_VIEW.get());
     }
 
     private static ImageSettings imageSettings() {
