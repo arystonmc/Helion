@@ -7,14 +7,15 @@ Every class and source file of Helion with its purpose. Find the right file here
 | I want to change | Go to |
 |---|---|
 | Stage order of a frame | `FrameStages` |
-| What a stage draws | `ClearStage`, `SkyStage`, `OpaqueGeometryStage`, `AmbientOcclusionStage`, `TransparentGeometryStage`, `PostProcessingStage`, `BloomStage`, `SharpeningStage`, `ImageCompositeStage`, `PresentStage` |
+| What a stage draws | `ClearStage`, `SkyStage`, `OpaqueGeometryStage`, `DeferredLightingStage`, `SolidFeatureStage`, `AmbientOcclusionStage`, `TransparentGeometryStage`, `PostProcessingStage`, `BloomStage`, `SharpeningStage`, `ImageCompositeStage`, `PresentStage` |
 | Ambient occlusion look and cost | `AmbientOcclusionResources` (tuning), `AmbientOcclusionQuality` (presets), `shaders/ambient_occlusion/` |
 | Bloom, tone mapping and exposure | `ImageResources` (tuning), `shaders/image/`, `shaders/include/helion_color.glsl`, `bloom_prefilter.fsh` (emissive detection) |
 | Sharpening | `SharpeningStage`, `shaders/image/sharpen.fsh` |
 | Bloom threshold in daylight and caves | `AmbientLightTracker`, `ImageResources` |
 | Effect settings per frame | `RenderSettings`, `HelionConfig.renderSettings` |
 | Geometry buffer (normals, light, albedo of terrain) | `OpaqueGeometryStage`, `VanillaGeometryPipelines`, `GeometryBufferPipelines`, `shaders/terrain/`, `shaders/geometry/` |
-| Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines`, `ImagePipelines` |
+| Deferred terrain lighting in HDR (block and sky light) | `DeferredLightingStage`, `DeferredLightingResources`, `LightEnvironment`, `shaders/lighting/`, `shaders/include/helion_lighting.glsl` |
+| Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines`, `DeferredLightingPipelines`, `ImagePipelines` |
 | How vanilla terrain, entities, sky or OIT are called | `VanillaTerrainSource`, `VanillaEntitySource`, `VanillaAtmosphereSource`, `VanillaTransparencySource` |
 | The rebuilt vanilla `LevelRenderer.render` | `VanillaFrameDriver` |
 | Frame graph targets and OIT targets | `VanillaFrameTargets` |
@@ -52,7 +53,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### HelionConfig
 - Path: `src/main/java/com/aryston/helion/config/HelionConfig.java`
-- Role: Client config spec: `ENABLED` (render core on at startup), `DEBUG_MODE` (off by default), the `ambientOcclusion` section (enabled, algorithm, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, the `bloom` subsection with enabled, intensity, threshold, debugView, and the `sharpening` subsection with enabled, strength) and the `geometryBuffer` section (enabled, view). `renderSettings()` turns the config into a `RenderSettings` snapshot.
+- Role: Client config spec: `ENABLED` (render core on at startup), `DEBUG_MODE` (off by default), the `ambientOcclusion` section (enabled, algorithm, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, the `bloom` subsection with enabled, intensity, threshold, debugView, and the `sharpening` subsection with enabled, strength), the `geometryBuffer` section (enabled, view) and the `lighting` section (enabled, blockLightIntensity, skyLightIntensity, lightOnlyView). `renderSettings()` turns the config into a `RenderSettings` snapshot.
 - Depends on: nothing inside the mod.
 
 ### `com.aryston.helion.render`
@@ -60,8 +61,8 @@ Every class and source file of Helion with its purpose. Find the right file here
 #### HelionRenderCore
 - Path: `src/main/java/com/aryston/helion/render/HelionRenderCore.java`
 - Role: Singleton that owns the core state and shared GPU objects. Decides whether Helion renders, detects the backend on first use, starts and ends level frames, redirects the main target during a level frame, releases everything on shutdown. Setting fields are volatile because config reloads may arrive from another thread.
-- Members: `get()`, `isActive()`, `toggle()`, `passivate(reason)`, `reportFailure(throwable)`, `beginLevelFrame(main)`, `endLevelFrame()`, `resolveMainTarget(original)`, `recordFrame(camera, scene)`, `lastCamera()`, `lastScene()`, `applySettings(enabled, debugMode, renderSettings)`, `isDebugMode()`, `settings()`, `ambientOcclusion()`, `image()`, `setPassiveListener(listener)`, `shutdown()`.
-- Depends on: `GpuDeviceSummary`, `GpuResources`, `SceneTargets`, `GpuTimings`, `HelionCamera`, `AmbientOcclusionResources`, `ImageResources`.
+- Members: `get()`, `isActive()`, `toggle()`, `passivate(reason)`, `reportFailure(throwable)`, `beginLevelFrame(main)`, `endLevelFrame()`, `resolveMainTarget(original)`, `recordFrame(camera, scene)`, `lastCamera()`, `lastScene()`, `applySettings(enabled, debugMode, renderSettings)`, `isDebugMode()`, `settings()`, `ambientOcclusion()`, `image()`, `lighting()`, `setPassiveListener(listener)`, `shutdown()`.
+- Depends on: `GpuDeviceSummary`, `GpuResources`, `SceneTargets`, `GpuTimings`, `HelionCamera`, `AmbientOcclusionResources`, `ImageResources`, `DeferredLightingResources`.
 
 #### PassiveReason
 - Path: `src/main/java/com/aryston/helion/render/PassiveReason.java`
@@ -77,7 +78,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### FrameStages
 - Path: `src/main/java/com/aryston/helion/render/FrameStages.java`
-- Role: Single place that defines the stage order (clear, sky, geometry, ambient occlusion, post with bloom and sharpening, output, geometry buffer view) and adds active stages to the frame. The output stage is `ImageCompositeStage` when an image effect is active, otherwise `PresentStage`.
+- Role: Single place that defines the stage order (clear, sky, opaque geometry, deferred lighting, solid features, ambient occlusion, post with bloom and sharpening, output, geometry buffer view) and adds active stages to the frame one by one, so a stage can see what earlier stages published (the geometry buffer). The output stage is `ImageCompositeStage` when an image effect is active, otherwise `PresentStage`.
 - Depends on: every stage class.
 
 ### `com.aryston.helion.render.backend`
@@ -121,8 +122,8 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### RenderSettings
 - Path: `src/main/java/com/aryston/helion/render/graph/RenderSettings.java`
-- Role: Immutable per-frame effect settings. `OFF` is the startup value; `foundation()` turns every effect off for the parity check but keeps the geometry buffer (without its view) because it belongs to the core.
-- Depends on: `AmbientOcclusionSettings`, `ImageSettings`.
+- Role: Immutable per-frame effect settings. `OFF` is the startup value; `foundation()` turns every effect off for the parity check, deferred lighting included, but keeps the geometry buffer (without its view) because it belongs to the core.
+- Depends on: `AmbientOcclusionSettings`, `ImageSettings`, `GeometryBufferSettings`, `DeferredLightingSettings`.
 
 #### RenderGraph
 - Path: `src/main/java/com/aryston/helion/render/graph/RenderGraph.java`
@@ -138,7 +139,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### SceneSnapshot
 - Path: `src/main/java/com/aryston/helion/render/scene/SceneSnapshot.java`
-- Role: Immutable per-frame scene facts: fog color, sky visibility, transparency mode, target size, scene color format, smoothed ambient sky light at the camera (0 to 1).
+- Role: Immutable per-frame scene facts: fog color, sky visibility, transparency mode, target size, scene color format, smoothed ambient sky light at the camera (0 to 1) and the vanilla light map inputs (`LightEnvironment`).
 
 #### ClearStage
 - Path: `src/main/java/com/aryston/helion/render/scene/ClearStage.java`
@@ -158,8 +159,13 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### OpaqueGeometryStage
 - Path: `src/main/java/com/aryston/helion/render/geometry/OpaqueGeometryStage.java`
-- Role: Prepares fog, chunk sampler, translucent buffers and lighting, then draws opaque terrain and solid features. With the geometry buffer on, creates the normal, light and albedo targets, draws opaque terrain into them and the scene in a four-attachment render pass, publishes them in `GeometryBuffer`, then draws solid features in the usual pass.
+- Role: Prepares fog, chunk sampler, translucent buffers and lighting, then draws opaque terrain and solid features in one pass, as vanilla does. With the geometry buffer on, creates the normal, light and albedo targets (cleared to zero, so alpha 0 marks pixels without terrain), draws only opaque terrain into them and the scene in a four-attachment render pass and publishes them in `GeometryBuffer`; `SolidFeatureStage` draws the rest after deferred lighting.
 - Depends on: `TerrainSource`, `EntitySource`, `AtmosphereSource`.
+
+#### SolidFeatureStage
+- Path: `src/main/java/com/aryston/helion/render/geometry/SolidFeatureStage.java`
+- Role: Only when the geometry buffer was written: fires the after-opaque-blocks event and draws solid entities, block entities and particles into the scene, after deferred lighting so the lighting never paints over them.
+- Depends on: `TerrainSource`, `EntitySource`.
 
 #### TransparentGeometryStage
 - Path: `src/main/java/com/aryston/helion/render/geometry/TransparentGeometryStage.java`
@@ -232,6 +238,33 @@ Every class and source file of Helion with its purpose. Find the right file here
 #### AmbientOcclusionAlgorithm
 - Path: `src/main/java/com/aryston/helion/render/lighting/AmbientOcclusionAlgorithm.java`
 - Role: Horizon method of the main pass: `GTAO` (two horizon angles per slice, occluders of infinite thickness) or `VISIBILITY_BITMASK` (32 sectors per slice, occluders of fixed thickness). Each carries the id the shader switches on.
+
+#### DeferredLightingStage
+- Path: `src/main/java/com/aryston/helion/render/lighting/DeferredLightingStage.java`
+- Role: Lights terrain from the geometry buffer. `deferred_lighting` writes the RGBA16_FLOAT light buffer `helion:light_buffer` (linear light in vanilla units without the vanilla cap, alpha the daylight reference, 0 where there is no terrain); `deferred_shading` multiplies it with the albedo and writes the scene with fog and chunk fade-in, or the light-only view. Inactive when lighting is off, the geometry buffer was not written, the scene color is not RGBA8 or a shader failed to compile.
+- Depends on: `DeferredLightingResources`, `DeferredLightingPrograms`, `DeferredLightingPipelines`, `GeometryBuffer`, `FullscreenPass`.
+
+#### DeferredLightingPipelines
+- Path: `src/main/java/com/aryston/helion/render/lighting/DeferredLightingPipelines.java`
+- Role: Pipeline definitions of the light pass, the shading pass and the light-only view (`HELION_LIGHT_ONLY`), the uniform and sampler names they bind and the target formats.
+- Depends on: `HelionPipelines`.
+
+#### DeferredLightingPrograms
+- Path: `src/main/java/com/aryston/helion/render/lighting/DeferredLightingPrograms.java`
+- Role: The compiled lighting pipelines for one frame; empty when any of them is missing.
+
+#### DeferredLightingResources
+- Path: `src/main/java/com/aryston/helion/render/lighting/DeferredLightingResources.java`
+- Role: Persistent lighting state owned by the core: the `HelionLighting` uniform ring (light environment and intensities) and the one-time missing shader warning.
+- Depends on: `UniformRing`, `LightEnvironment`, `DeferredLightingSettings`.
+
+#### DeferredLightingSettings
+- Path: `src/main/java/com/aryston/helion/render/lighting/DeferredLightingSettings.java`
+- Role: Player settings: enabled, block light intensity, sky light intensity, light-only view. `DISABLED` for the foundation.
+
+#### LightEnvironment
+- Path: `src/main/java/com/aryston/helion/render/lighting/LightEnvironment.java`
+- Role: Per-frame copy of the vanilla light map inputs (sky and block factors, night vision, darkness, boss fog darkening, brightness option, block light tint, sky light, ambient and night vision colors), filled by the integration layer from `LightmapRenderState`.
 
 ### `com.aryston.helion.render.shader`
 
@@ -355,7 +388,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### VanillaFrameDriver
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaFrameDriver.java`
-- Role: Rebuilds `LevelRenderer.render` with Helion stages: feature preparation, targets, NeoForge frame graph event, chunk draw preparation, stage building, graph execution, then section compile, upload and occlusion update.
+- Role: Rebuilds `LevelRenderer.render` with Helion stages: feature preparation, targets, NeoForge frame graph event, chunk draw preparation, the scene snapshot with the light map inputs, stage building, graph execution, then section compile, upload and occlusion update.
 - Depends on: every class in this package, `FrameStages`, `HelionRenderCore`.
 - Notes: mirrors vanilla code; see Vanilla Coupling in `docs/ARCHITECTURE.md`.
 
@@ -405,7 +438,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### HelionDebugSnapshot
 - Path: `src/main/java/com/aryston/helion/debug/HelionDebugSnapshot.java`
-- Role: Single source of every debug value, as a JSON object with one section per topic: `core` (version, active, enabled, debug mode, passive reason, parity running), `device`, `frame` (fps, window and scene size, color format, sky, improved transparency, ambient light, fog color), `camera`, `ambientOcclusion`, `image`, `bloom` (with the effective threshold), `sharpening`, `gpu` (total), `gpuStages` (milliseconds per pass), `resources`, `resourceList` (MiB per label) and `frustum` (Helion versus vanilla visible sections). Numbers are rounded to three decimals.
+- Role: Single source of every debug value, as a JSON object with one section per topic: `core` (version, active, enabled, debug mode, passive reason, parity running), `device`, `frame` (fps, window and scene size, color format, sky, improved transparency, ambient light, fog color), `camera`, `ambientOcclusion`, `image`, `bloom` (with the effective threshold), `sharpening`, `geometryBuffer`, `lighting`, `gpu` (total), `gpuStages` (milliseconds per pass), `resources`, `resourceList` (MiB per label) and `frustum` (Helion versus vanilla visible sections). Numbers are rounded to three decimals.
 - Depends on: `HelionRenderCore`, `ParityCheck`, `ImageResources`.
 
 #### HelionDebugEntry
@@ -435,7 +468,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### VisualTestVariant
 - Path: `src/main/java/com/aryston/helion/debug/VisualTestVariant.java`
-- Role: Render variants per scene: vanilla, None, Neutral, Filmic, bloom only and parity, each turning the core on or off and setting default image settings.
+- Role: Render variants per scene: vanilla, None, Neutral, Filmic, bloom only, lighting and light only (geometry buffer and deferred lighting on, every other effect off, for comparison with vanilla) and parity, each turning the core on or off and setting default image settings.
 
 #### VisualTestWorld
 - Path: `src/main/java/com/aryston/helion/debug/VisualTestWorld.java`
@@ -479,7 +512,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | File | What it checks |
 |---|---|
 | `src/test/java/com/aryston/helion/LanguageFilesTest.java` | Every language file has the same keys, every config entry has a `.tooltip` and every config section a `.button` translation (lesson L-011). |
-| `src/test/java/com/aryston/helion/render/graph/RenderSettingsTest.java` | `foundation()` turns every effect off, never needs the composite and keeps the geometry buffer without its view; `OFF` renders nothing extra. |
+| `src/test/java/com/aryston/helion/render/graph/RenderSettingsTest.java` | `foundation()` turns every effect off including deferred lighting, never needs the composite and keeps the geometry buffer without its view; `OFF` renders nothing extra. |
 | `src/test/java/com/aryston/helion/render/post/ImageSettingsTest.java` | `needsComposite()` for every tone mapper and effect combination. |
 | `src/test/java/com/aryston/helion/render/post/ImageResourcesTest.java` | Adaptive bloom threshold: half in darkness, eight times in daylight, rising with ambient light. |
 | `src/test/java/com/aryston/helion/render/post/ToneMapperTest.java` | Tone mapper shader ids are unique and match the constants in `helion_image.glsl`. |
@@ -504,9 +537,10 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | `src/main/resources/assets/helion/lang/` | `en_us.json` and `tr_tr.json`: config, key, toast and parity check texts. |
 | `src/main/resources/assets/helion/shaders/ambient_occlusion/` | Ambient occlusion fragment shaders: `view_depth`, `gtao`, `denoise`, `denoise_resolve`, `apply`. |
 | `src/main/resources/assets/helion/shaders/image/` | Bloom and image fragment shaders: `bloom_prefilter`, `bloom_downsample`, `bloom_upsample`, `composite`, `bloom_debug`, `sharpen`. |
-| `src/main/resources/assets/helion/shaders/terrain/` | Geometry buffer terrain shaders `geometry.vsh` and `geometry.fsh`: vanilla terrain color plus normal, light and albedo targets. |
+| `src/main/resources/assets/helion/shaders/terrain/` | Geometry buffer terrain shaders `geometry.vsh` and `geometry.fsh`: vanilla terrain color plus normal, light (with chunk fade-in) and albedo (with the fog amount in alpha) targets. |
 | `src/main/resources/assets/helion/shaders/geometry/` | `debug.fsh`: geometry buffer debug views. |
-| `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_geometry` (geometry buffer constants and normal encoding), `helion_view` (depth and view position), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur), `helion_color` (sRGB conversion, saturation, the Neutral highlight curve and its inverse, film grade, dither noise), `helion_image` (image settings block including the sharpening strength, scene expansion, tone mapper switch, Filmic highlight bleach, bloom threshold, dither), `helion_bloom_downsample` (13-tap downsample with optional Karis average over a `helionBloomTap` function the including shader defines). |
+| `src/main/resources/assets/helion/shaders/lighting/` | Deferred lighting fragment shaders: `deferred_light` (light buffer from the geometry buffer light levels) and `deferred_shading` (albedo times light, HDR above the vanilla cap, fog and chunk fade-in; light-only view with `HELION_LIGHT_ONLY`). |
+| `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_geometry` (geometry buffer constants and normal encoding), `helion_view` (depth and view position), `helion_lighting` (lighting settings block and the vanilla light map terms with bilinear level interpolation and the brightness option), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur), `helion_color` (sRGB conversion, saturation, the Neutral highlight curve and its inverse, film grade, dither noise), `helion_image` (image settings block including the sharpening strength, scene expansion, tone mapper switch, Filmic highlight bleach, bloom threshold, dither), `helion_bloom_downsample` (13-tap downsample with optional Karis average over a `helionBloomTap` function the including shader defines). |
 
 ## Build Files
 

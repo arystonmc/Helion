@@ -7,14 +7,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.aryston.helion.render.geometry.GeometryBufferSettings;
 import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
+import com.aryston.helion.render.lighting.DeferredLightingSettings;
 import com.aryston.helion.render.post.ImageSettings;
 import org.junit.jupiter.api.Test;
 
 class RenderSettingsTest {
+    private static final float STRONG_BLOCK_LIGHT = 2.0F;
     private static final RenderSettings GEOMETRY_WITH_VIEW = new RenderSettings(
         AmbientOcclusionSettings.DISABLED,
         ImageSettings.FOUNDATION,
-        new GeometryBufferSettings(true, GeometryBufferView.NORMALS)
+        new GeometryBufferSettings(true, GeometryBufferView.NORMALS),
+        new DeferredLightingSettings(true, STRONG_BLOCK_LIGHT, DeferredLightingSettings.DEFAULT_SKY_LIGHT_INTENSITY, true)
     );
 
     @Test
@@ -24,6 +27,7 @@ class RenderSettingsTest {
         assertFalse(foundation.ambientOcclusion().enabled());
         assertFalse(foundation.image().bloom().enabled());
         assertFalse(foundation.image().sharpening().enabled());
+        assertFalse(foundation.lighting().enabled());
     }
 
     @Test
@@ -45,5 +49,6 @@ class RenderSettingsTest {
         assertFalse(RenderSettings.OFF.geometry().enabled());
         assertFalse(RenderSettings.OFF.image().needsComposite());
         assertFalse(RenderSettings.OFF.ambientOcclusion().enabled());
+        assertFalse(RenderSettings.OFF.lighting().enabled());
     }
 }

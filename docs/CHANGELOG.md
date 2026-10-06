@@ -18,6 +18,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Ambient occlusion with quality presets, strength, radius and a shadow-only view
 - Visibility bitmask ambient occlusion as an alternative method that keeps thin objects from casting dark halos
 - Experimental geometry buffer: terrain drawn by Helion shaders that also record normals, block light, sky light and base color
+- Experimental HDR lighting for terrain with separate block and sky light and intensity settings
 - Bloom around bright light sources that adapts to daylight, caves and night, with intensity, threshold and a glow-only view
 - Neutral and Filmic tone mapping, exposure control and dithering against color banding
 - Optional contrast adaptive sharpening with a strength setting

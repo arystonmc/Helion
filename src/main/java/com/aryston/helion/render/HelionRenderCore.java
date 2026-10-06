@@ -5,6 +5,7 @@ import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.graph.GpuTimings;
 import com.aryston.helion.render.graph.RenderSettings;
 import com.aryston.helion.render.lighting.AmbientOcclusionResources;
+import com.aryston.helion.render.lighting.DeferredLightingResources;
 import com.aryston.helion.render.post.ImageResources;
 import com.aryston.helion.render.resource.GpuResources;
 import com.aryston.helion.render.resource.SceneTargets;
@@ -25,6 +26,7 @@ public final class HelionRenderCore {
     private final GpuTimings timings = new GpuTimings(resources);
     private final AmbientOcclusionResources ambientOcclusion = new AmbientOcclusionResources(resources);
     private final ImageResources image = new ImageResources(resources);
+    private final DeferredLightingResources lighting = new DeferredLightingResources(resources);
     private PassiveListener passiveListener = reason -> { };
     private @Nullable GpuDeviceSummary device;
     private @Nullable PassiveReason passiveReason;
@@ -119,6 +121,7 @@ public final class HelionRenderCore {
         timings.close();
         ambientOcclusion.close();
         image.close();
+        lighting.close();
         sceneTargets.close();
         LOGGER.info("Helion released {} GPU resources on shutdown", released);
     }
@@ -153,6 +156,10 @@ public final class HelionRenderCore {
 
     public ImageResources image() {
         return image;
+    }
+
+    public DeferredLightingResources lighting() {
+        return lighting;
     }
 
     private GpuDeviceSummary detectDevice() {

@@ -9,6 +9,7 @@ import com.aryston.helion.render.geometry.GeometryBuffer;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderGraph;
 import com.aryston.helion.render.graph.RenderSettings;
+import com.aryston.helion.render.lighting.LightEnvironment;
 import com.aryston.helion.render.post.PostResults;
 import com.aryston.helion.render.scene.SceneSnapshot;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
@@ -21,6 +22,7 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
+import net.minecraft.client.renderer.state.LightmapRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.util.Util;
@@ -94,7 +96,8 @@ final class VanillaFrameDriver {
                     scene.width,
                     scene.height,
                     Objects.requireNonNull(scene.getColorTexture()).getFormat(),
-                    ambientLight.update(camera.blockPos)
+                    ambientLight.update(camera.blockPos),
+                    lightEnvironment(gameRenderer.gameRenderState().lightmapRenderState)
                 ),
                 settings,
                 new GeometryBuffer(),
@@ -141,6 +144,21 @@ final class VanillaFrameDriver {
         boolean zeroToOneDepth = RenderSystem.getDevice().getDeviceInfo().isZZeroToOne();
         Vector3d position = new Vector3d(camera.pos.x, camera.pos.y, camera.pos.z);
         return new HelionCamera(position, camera.viewRotationMatrix, camera.projectionMatrix, zeroToOneDepth);
+    }
+
+    private static LightEnvironment lightEnvironment(LightmapRenderState lightmap) {
+        return new LightEnvironment(
+            lightmap.skyFactor,
+            lightmap.blockFactor,
+            lightmap.nightVisionEffectIntensity,
+            lightmap.darknessEffectScale,
+            lightmap.bossOverlayWorldDarkening,
+            lightmap.brightness,
+            lightmap.blockLightTint,
+            lightmap.skyLightColor,
+            lightmap.ambientColor,
+            lightmap.nightVisionColor
+        );
     }
 
     private static void finishLevel(LevelFrameRequest request) {

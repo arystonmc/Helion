@@ -1,5 +1,6 @@
 package com.aryston.helion.render.scene;
 
+import com.aryston.helion.render.lighting.LightEnvironment;
 import com.mojang.renderpearl.api.GpuFormat;
 import org.joml.Vector4f;
 import org.joml.Vector4fc;
@@ -11,7 +12,8 @@ public record SceneSnapshot(
     int width,
     int height,
     GpuFormat colorFormat,
-    float ambientLight
+    float ambientLight,
+    LightEnvironment light
 ) {
     public SceneSnapshot {
         fogColor = new Vector4f(fogColor);

@@ -8,6 +8,7 @@ import com.aryston.helion.render.camera.HelionFrustum;
 import com.aryston.helion.render.geometry.GeometryBufferSettings;
 import com.aryston.helion.render.graph.RenderSettings;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
+import com.aryston.helion.render.lighting.DeferredLightingSettings;
 import com.aryston.helion.render.post.BloomSettings;
 import com.aryston.helion.render.post.ImageResources;
 import com.aryston.helion.render.post.ImageSettings;
@@ -51,6 +52,7 @@ public final class HelionDebugSnapshot {
         snapshot.add("bloom", bloom(settings.image().bloom(), ambientLight));
         snapshot.add("sharpening", sharpening(settings.image().sharpening()));
         snapshot.add("geometryBuffer", geometryBuffer(settings.geometry()));
+        snapshot.add("lighting", lighting(settings.lighting()));
         snapshot.add("gpu", gpu(core));
         snapshot.add("gpuStages", gpuStages(core.timings().averageMillis()));
         snapshot.add("resources", resources(core.resources().live()));
@@ -151,6 +153,15 @@ public final class HelionDebugSnapshot {
         JsonObject section = new JsonObject();
         section.addProperty("enabled", settings.enabled());
         section.addProperty("view", settings.view().name());
+        return section;
+    }
+
+    private static JsonObject lighting(DeferredLightingSettings settings) {
+        JsonObject section = new JsonObject();
+        section.addProperty("enabled", settings.enabled());
+        section.addProperty("blockLightIntensity", round(settings.blockLightIntensity()));
+        section.addProperty("skyLightIntensity", round(settings.skyLightIntensity()));
+        section.addProperty("lightOnlyView", settings.lightOnlyView());
         return section;
     }
 

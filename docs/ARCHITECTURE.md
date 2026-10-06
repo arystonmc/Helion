@@ -16,7 +16,7 @@ integration/vanilla          Minecraft adapter: builds the frame, owns every van
    │  LevelRenderHook → VanillaFrameDriver → Vanilla*Source, VanillaFrameTargets, StageEvents
    ▼
 render/                      Helion render core: stages, graph, resources, camera
-   │  FrameStages: clear → sky → opaque geometry → ambient occlusion → transparent geometry → post (bloom, sharpen) → present or image composite → geometry buffer view
+   │  FrameStages: clear → sky → opaque geometry → deferred lighting → solid features → ambient occlusion → transparent geometry → post (bloom, sharpen) → present or image composite → geometry buffer view
    ▼
 renderpearl api + blaze3d    Mojang GPU abstraction (Vulkan backend)
 ```
@@ -47,7 +47,9 @@ renderpearl api + blaze3d    Mojang GPU abstraction (Vulkan backend)
 |---|---|---|---|
 | 1 | clear | `render.scene.ClearStage` | Clears scene color to the fog color and scene depth to the reversed-Z far value |
 | 2 | sky | `render.atmosphere.SkyStage` | Draws the sky through `AtmosphereSource` |
-| 3 | opaque_geometry | `render.geometry.OpaqueGeometryStage` | Prepares fog, chunk sampler, translucent buffers and lighting, then draws opaque terrain and solid features. With the geometry buffer on, opaque terrain is drawn first in its own render pass through Helion's terrain shaders, see Geometry Buffer below |
+| 3 | opaque_geometry | `render.geometry.OpaqueGeometryStage` | Prepares fog, chunk sampler, translucent buffers and lighting, then draws opaque terrain and solid features. With the geometry buffer on, only opaque terrain, in its own render pass through Helion's terrain shaders, see Geometry Buffer below |
+| 3a | deferred_lighting, deferred_shading | `render.lighting.DeferredLightingStage` | Only with lighting and the geometry buffer on: lights terrain in HDR from the geometry buffer, see Deferred Lighting below |
+| 3b | solid_features | `render.geometry.SolidFeatureStage` | Only with the geometry buffer on: the after-opaque-blocks event and solid features, in the same order as vanilla |
 | 4 | ambient_occlusion | `render.lighting.AmbientOcclusionStage` | Screen space ambient occlusion on the opaque scene, see below. Skipped when disabled or when its shaders failed to compile |
 | 5 | transparent_geometry | `render.geometry.TransparentGeometryStage` | Sorted or order independent transparency, clouds, weather, world border, then outline, see-through and always-on-top features |
 | 6 | post | `render.post.PostProcessingStage` | Runs post effects in order: the vanilla entity outline effect, then `render.post.BloomStage`, then `render.post.SharpeningStage`, see Image Pipeline below |
@@ -122,24 +124,40 @@ scene RGBA8 ──► bloom_prefilter ──► bloom_down_1 … bloom_down_5 �
 
 ## Geometry Buffer
 
-Foundation for Helion's own lighting. Off by default (`geometryBuffer.enabled`). Nothing reads it yet except its debug view; deferred lighting, sky light and shadows will.
+Foundation for Helion's own lighting. Off by default (`geometryBuffer.enabled`). Read by deferred lighting and the debug view; shadows will read it too. Its targets are cleared to zero in the geometry pass, so alpha 0 marks pixels without terrain.
 
 - `VanillaGeometryPipelines` copies the vanilla `SOLID_TERRAIN`, `CUTOUT_TERRAIN` and their multi-draw pipelines with `toBuilder()`, so every define (`ALPHA_CUTOUT`), bind group, vertex format and depth state stays vanilla, and replaces the shaders with `helion:terrain/geometry` plus three more color targets.
 - `terrain/geometry.vsh` and `.fsh` repeat the vanilla `core/terrain` math line by line for target 0, so the scene color stays identical to vanilla (the parity check runs with the geometry buffer when it is on). The extra targets are filled from data vanilla throws away: the lightmap coordinates before they become a color, the vertex color before light, and the face normal from screen derivatives of the camera relative position.
 - GLSL only promises the same `gl_Position` in two programs when both declare it `invariant`, and vanilla does not. The geometry pipelines still produced bit-identical depth on NVIDIA (RTX 4050, driver 616.92) in every visual test scene and in game with ticks frozen. If the parity check ever shows depth-only differences on terrain with ticks frozen on another GPU, leave color and depth to the vanilla terrain pass and fill the geometry buffer in a second pass that tests against the scene depth without writing it, with a small depth bias toward the camera (`DepthStencilState` supports it, vanilla uses it for block cracks).
-- Renderpearl requires the color attachment count of a render pass to match the pipeline, so opaque terrain gets its own render pass with four attachments. Solid features, the `AFTER_OPAQUE_BLOCKS` event and other mods keep drawing into the usual one-attachment pass afterwards, in the same order as vanilla.
+- Renderpearl requires the color attachment count of a render pass to match the pipeline, so opaque terrain gets its own render pass with four attachments. Solid features, the `AFTER_OPAQUE_BLOCKS` event and other mods keep drawing into the usual one-attachment pass afterwards (`SolidFeatureStage`), in the same order as vanilla, after deferred lighting.
 - Per layer pipelines go through `ChunkSectionsToRender.renderLayers` (invoker mixin) with the vanilla override parameters, the same mechanism vanilla uses for wireframe and OIT terrain. Wireframe terrain (F3 debug) and missing shaders fall back to the vanilla path.
 
 | Target | Format | Content |
 |---|---|---|
 | 0 | scene RGBA8 | vanilla terrain color with fog |
 | 1 `helion:geometry_normal` | RGB10A2_UNORM | world space face normal as `n * 0.5 + 0.5`, alpha 1 where terrain was drawn |
-| 2 `helion:geometry_light` | RGBA8_UNORM | R block light, G sky light (lightmap coordinate / 240), alpha 1 where terrain was drawn |
-| 3 `helion:geometry_albedo` | RGBA8_UNORM | texture color times vertex color (biome tint and vanilla shading), before light and fog |
+| 2 `helion:geometry_light` | RGBA8_UNORM | R block light, G sky light (lightmap coordinate / 240), B chunk fade-in visibility, alpha 1 where terrain was drawn |
+| 3 `helion:geometry_albedo` | RGBA8_UNORM | texture color times vertex color (biome tint and vanilla shading), before light and fog; alpha is the vanilla fog amount of the pixel |
 
 Translucent terrain, entities, particles and the sky are not in the geometry buffer yet; their pixels keep alpha 0.
 
 Renderpearl in 26.3 has no compute shaders (`ShaderType` only has vertex and fragment), so every geometry buffer consumer is a fragment pass.
+
+## Deferred Lighting
+
+Helion lights opaque terrain itself from the geometry buffer, in high dynamic range. Off by default (`lighting.enabled`) and only active while the geometry buffer is written. It runs between the terrain pass and the solid features, so entities are never lit twice, and before ambient occlusion and transparent geometry, which work on its result exactly as on vanilla terrain.
+
+| Pass | Reads | Writes | Shader |
+|---|---|---|---|
+| `deferred_lighting` | geometry light | `helion:light_buffer` RGBA16_FLOAT | `deferred_light.fsh`: ambient, sky and block light computed separately from the vanilla light map formula, each with its own intensity, without the vanilla clamp, in linear space; alpha is the daylight reference, 0 where there is no terrain |
+| `deferred_shading` | light buffer, albedo, geometry light | scene color (color channels only) | `deferred_shading.fsh`: albedo times the clamped light gives the vanilla color, which is expanded with the inverse Neutral shoulder and multiplied by how far the light exceeds the reference, then encoded with the Neutral shoulder, faded in and fogged like vanilla |
+
+- **Vanilla first.** `helion_lighting.glsl` repeats `core/lightmap.fsh` term by term (ambient or night vision, sky color times sky brightness, block tint times block brightness, boss fog darkening, darkness effect, brightness option) and interpolates between whole light levels like the bilinear light map lookup. Where the light stays at or below the vanilla cap of 1, the result is the vanilla pixel; the visual test `lighting` variant differs from `vanilla` only on light blocks, their surroundings at night, moving clouds and particles.
+- **HDR.** Vanilla cuts light at 1, so a block lit by a torch at level 15 (block factor 1.4) looks the same as one in full daylight. Helion keeps the excess: `radiance = inverseNeutral(vanilla color) × max(light / reference, 1)`. The scene stays RGBA8 and display referred, encoded with the same Neutral shoulder the composite inverts (see Image Pipeline), so bloom and exposure see the real brightness.
+- **Daylight reference.** Without eye adaptation, torches would double the brightness of the ground at noon. The reference is the light without block light times `HELION_SKY_ADAPTATION` (8), at least 1: in daylight block light hardly adds anything, at night and in caves it adds fully. Histogram exposure will replace this fixed adaptation.
+- **Intensities.** Block light intensity scales the block term (1.0 = vanilla levels, without the cap). Sky light intensity scales the sky term; above 1.0 it brightens shade, dusk and night, full daylight keeps the vanilla brightness because of the reference.
+- **Light-only view** (`lighting.lightOnlyView`) shades with white albedo, for checking the light alone.
+- The geometry pass stores what the shading needs per pixel (fog amount, chunk fade-in), so the lighting passes never reconstruct positions from depth.
 
 ## Sources
 
@@ -179,6 +197,7 @@ Places that copy or depend on vanilla internals. Check each of them first when M
 | `LevelRendererAccessor` | private fields and methods of `LevelRenderer` |
 | `terrain/geometry.vsh`, `terrain/geometry.fsh` | `core/terrain.vsh`, `core/terrain.fsh` (non-OIT path) |
 | `VanillaGeometryPipelines` | `RenderPipelines.SOLID_TERRAIN`, `CUTOUT_TERRAIN` and their multi-draw variants |
+| `helion_lighting.glsl`, `VanillaFrameDriver.lightEnvironment` | `core/lightmap.fsh`, `sample_lightmap.glsl`, `Lightmap`, `LightmapRenderStateExtractor` |
 | `VanillaTerrainSource.renderOpaqueGeometry` | `ChunkSectionsToRender.renderGroup` and `renderLayers` |
 
 `SkyRenderer` keeps the render target it was created with, so Helion owns a separate `SkyRenderer` bound to the scene target (`SceneSkyRenderer`).
@@ -204,7 +223,7 @@ Places that copy or depend on vanilla internals. Check each of them first when M
 - Debug mode (Mods → Helion → Config → Debug Mode, off by default): shows every value of `HelionDebugSnapshot` on screen without F3 and writes it as one JSON line per second to `logs/helion-debug.jsonl`, together with `toggle`, `passive` and `parity` events. GPU time per stage is only measured in debug mode (up to 32 timed passes per frame, including every `bloom_*` pass and `composite`). While it is off the debug entry, the JSON log and the timestamp queries do no work at all.
 - Parity check, `J` key in debug mode: after warm-up frames on each side, captures one vanilla frame and one Helion foundation frame (all effects off), reads both main targets back from the GPU and reports differing pixels in chat and in the JSON log. It aborts with a message when a Helion frame could not be rendered by Helion. Use `/tick freeze` and keep the camera still: without it clouds, particles and entities move between the two captured frames, and the chat says so. A failed check reports the largest depth difference in steps of the depth format and writes `screenshots/helion_parity_differences.png` (red color only, yellow color and depth, blue depth only), so the location of a difference is known before its cause is guessed.
 - `H` key: switches between Helion and vanilla rendering at runtime.
-- Automated visual test: `launcher/launch.ps1 -World "Helion Visual Test" -Define helion.visualTest=true` loads a copy of a save, builds a row of light blocks in front of the player, switches to spectator, freezes time and weather, and photographs seven scenes (noon sky, sunrise sun, horizon, light blocks by day, sunset, night sky, light blocks by night) in five variants each (vanilla, None, Neutral, Filmic, bloom only) into `screenshots/helion_<scene>_<variant>.png` at half resolution, then runs the parity check in every scene with ticks frozen and logs whether all pixels match vanilla (a failure is a `WARN` line). Every shot also writes a `Helion visual test` log line with the full debug snapshot as JSON, and the game closes cleanly afterwards. Run it on a copy of a world, never on a real save, because it changes blocks, time and game rules. Development runs only.
+- Automated visual test: `launcher/launch.ps1 -World "Helion Visual Test" -Define helion.visualTest=true` loads a copy of a save, builds a row of light blocks in front of the player, switches to spectator, freezes time and weather, and photographs seven scenes (noon sky, sunrise sun, horizon, light blocks by day, sunset, night sky, light blocks by night) in seven variants each (vanilla, None, Neutral, Filmic, bloom only, lighting, light only) into `screenshots/helion_<scene>_<variant>.png` at half resolution, then runs the parity check in every scene with ticks frozen and logs whether all pixels match vanilla (a failure is a `WARN` line). Every shot also writes a `Helion visual test` log line with the full debug snapshot as JSON, and the game closes cleanly afterwards. Run it on a copy of a world, never on a real save, because it changes blocks, time and game rules. Development runs only.
 
 ## Parity Scenes
 

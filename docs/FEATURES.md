@@ -58,8 +58,16 @@ Crisper block textures without the halos of ordinary sharpening filters.
 The foundation for Helion's own lighting, sky and shadows.
 
 - Terrain is drawn by Helion's own shaders, which also record the surface direction, block light, sky light and base color of every pixel
-- The picture stays exactly like vanilla; nothing changes until Helion's lighting is built on top of it
+- The picture stays exactly like vanilla on its own; Helion's lighting builds on top of it
 - Settings: on or off, and a view that shows each recorded value for checking; off by default while it is experimental
+- Since: 0.1
+
+### HDR Lighting (Experimental)
+Torches, lanterns and lava finally shine brighter than the vanilla light limit.
+
+- Helion lights terrain itself, with block light and sky light computed separately and nothing cut off at full brightness
+- In daylight and wherever lights are weak the world looks exactly like vanilla; at night and in caves, blocks next to a light glow and bloom picks them up
+- Settings: on or off, block light intensity, sky light intensity, and a view that shows the light alone; needs the geometry buffer, off by default while it is experimental
 - Since: 0.1
 
 ### Safe by Design

@@ -6,6 +6,7 @@ import com.aryston.helion.render.graph.RenderSettings;
 import com.aryston.helion.render.lighting.AmbientOcclusionAlgorithm;
 import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
+import com.aryston.helion.render.lighting.DeferredLightingSettings;
 import com.aryston.helion.render.post.BloomSettings;
 import com.aryston.helion.render.post.ImageSettings;
 import com.aryston.helion.render.post.SharpeningSettings;
@@ -25,6 +26,10 @@ public final class HelionConfig {
     private static final double MAX_BLOOM_THRESHOLD = 3.0;
     private static final double MIN_SHARPENING_STRENGTH = 0.0;
     private static final double MAX_SHARPENING_STRENGTH = 1.0;
+    private static final double MIN_BLOCK_LIGHT_INTENSITY = 0.5;
+    private static final double MAX_BLOCK_LIGHT_INTENSITY = 4.0;
+    private static final double MIN_SKY_LIGHT_INTENSITY = 0.5;
+    private static final double MAX_SKY_LIGHT_INTENSITY = 2.0;
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
     public static final ModConfigSpec.BooleanValue ENABLED = BUILDER
@@ -52,6 +57,10 @@ public final class HelionConfig {
     private static final ModConfigSpec.DoubleValue SHARPENING_STRENGTH;
     private static final ModConfigSpec.BooleanValue GEOMETRY_BUFFER_ENABLED;
     private static final ModConfigSpec.EnumValue<GeometryBufferView> GEOMETRY_BUFFER_VIEW;
+    private static final ModConfigSpec.BooleanValue LIGHTING_ENABLED;
+    private static final ModConfigSpec.DoubleValue BLOCK_LIGHT_INTENSITY;
+    private static final ModConfigSpec.DoubleValue SKY_LIGHT_INTENSITY;
+    private static final ModConfigSpec.BooleanValue LIGHT_ONLY_VIEW;
 
     static {
         BUILDER.translation("helion.configuration.ambientOcclusion").push("ambientOcclusion");
@@ -117,6 +126,23 @@ public final class HelionConfig {
             .translation("helion.configuration.geometryBuffer.view")
             .defineEnum("view", GeometryBufferView.NONE);
         BUILDER.pop();
+
+        BUILDER.translation("helion.configuration.lighting").push("lighting");
+        LIGHTING_ENABLED = BUILDER
+            .translation("helion.configuration.lighting.enabled")
+            .define("enabled", false);
+        BLOCK_LIGHT_INTENSITY = BUILDER
+            .translation("helion.configuration.lighting.blockLightIntensity")
+            .defineInRange(
+                "blockLightIntensity", DeferredLightingSettings.DEFAULT_BLOCK_LIGHT_INTENSITY, MIN_BLOCK_LIGHT_INTENSITY, MAX_BLOCK_LIGHT_INTENSITY
+            );
+        SKY_LIGHT_INTENSITY = BUILDER
+            .translation("helion.configuration.lighting.skyLightIntensity")
+            .defineInRange("skyLightIntensity", DeferredLightingSettings.DEFAULT_SKY_LIGHT_INTENSITY, MIN_SKY_LIGHT_INTENSITY, MAX_SKY_LIGHT_INTENSITY);
+        LIGHT_ONLY_VIEW = BUILDER
+            .translation("helion.configuration.lighting.lightOnlyView")
+            .define("lightOnlyView", false);
+        BUILDER.pop();
     }
 
     public static final ModConfigSpec SPEC = BUILDER.build();
@@ -125,7 +151,7 @@ public final class HelionConfig {
     }
 
     public static RenderSettings renderSettings() {
-        return new RenderSettings(ambientOcclusionSettings(), imageSettings(), geometryBufferSettings());
+        return new RenderSettings(ambientOcclusionSettings(), imageSettings(), geometryBufferSettings(), lightingSettings());
     }
 
     private static AmbientOcclusionSettings ambientOcclusionSettings() {
@@ -141,6 +167,15 @@ public final class HelionConfig {
 
     private static GeometryBufferSettings geometryBufferSettings() {
         return new GeometryBufferSettings(GEOMETRY_BUFFER_ENABLED.getAsBoolean(), GEOMETRY_BUFFER_VIEW.get());
+    }
+
+    private static DeferredLightingSettings lightingSettings() {
+        return new DeferredLightingSettings(
+            LIGHTING_ENABLED.getAsBoolean(),
+            BLOCK_LIGHT_INTENSITY.get().floatValue(),
+            SKY_LIGHT_INTENSITY.get().floatValue(),
+            LIGHT_ONLY_VIEW.getAsBoolean()
+        );
     }
 
     private static ImageSettings imageSettings() {

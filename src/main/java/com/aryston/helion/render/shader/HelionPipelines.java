@@ -3,6 +3,7 @@ package com.aryston.helion.render.shader;
 import com.aryston.helion.Helion;
 import com.aryston.helion.render.geometry.GeometryBufferPipelines;
 import com.aryston.helion.render.lighting.AmbientOcclusionPipelines;
+import com.aryston.helion.render.lighting.DeferredLightingPipelines;
 import com.aryston.helion.render.post.ImagePipelines;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
@@ -21,7 +22,7 @@ public final class HelionPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return Stream.of(AmbientOcclusionPipelines.all(), ImagePipelines.all(), GeometryBufferPipelines.all())
+        return Stream.of(AmbientOcclusionPipelines.all(), DeferredLightingPipelines.all(), ImagePipelines.all(), GeometryBufferPipelines.all())
             .flatMap(List::stream)
             .toList();
     }

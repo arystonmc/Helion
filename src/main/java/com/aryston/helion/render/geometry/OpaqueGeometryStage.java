@@ -25,7 +25,7 @@ public final class OpaqueGeometryStage implements RenderStage {
     private static final String NORMAL_TARGET = "helion:geometry_normal";
     private static final String LIGHT_TARGET = "helion:geometry_light";
     private static final String ALBEDO_TARGET = "helion:geometry_albedo";
-    private static final Optional<Vector4fc> CLEAR = Optional.of(new Vector4f());
+    private static final Optional<Vector4fc> CLEAR = Optional.of(new Vector4f(0.0F, 0.0F, 0.0F, 0.0F));
 
     private final TerrainSource terrain;
     private final EntitySource entities;
@@ -77,7 +77,10 @@ public final class OpaqueGeometryStage implements RenderStage {
         terrain.prepareFrame();
         atmosphere.prepareTranslucents();
         entities.prepareLighting();
-        geometry.ifPresent(targets -> renderGeometry(target, targets));
+        if (geometry.isPresent()) {
+            renderGeometry(target, geometry.get());
+            return;
+        }
         try (RenderPass pass = RenderSystem.getDevice()
                 .createCommandEncoder()
                 .createRenderPass(
@@ -88,11 +91,7 @@ public final class OpaqueGeometryStage implements RenderStage {
                     OptionalDouble.empty()
                 )) {
             RenderSystem.bindDefaultUniforms(pass);
-            if (geometry.isPresent()) {
-                terrain.afterOpaque(pass);
-            } else {
-                terrain.renderOpaque(pass);
-            }
+            terrain.renderOpaque(pass);
             entities.renderSolid(pass);
         }
     }
