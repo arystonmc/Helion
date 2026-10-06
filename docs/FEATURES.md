@@ -79,6 +79,18 @@ Smooth block edges and calm, shimmer-free distant textures.
 - Settings: on or off; off by default while it is experimental
 - Since: 0.1
 
+### Physical Sky (Experimental)
+A sky that behaves like real air: deep blue overhead, a bright glow around the sun and a moonlit night.
+
+- The sky color comes from how sunlight and moonlight scatter in an Earth-like atmosphere instead of a single vanilla color, computed across the visible spectrum for natural blues, golden sunrises and red sunsets
+- Distant terrain fades into the real sky color in every direction, so the horizon no longer changes color when you turn your head; clouds fade into the horizon color
+- With HDR lighting on, sunlight, moonlight and skylight tint the terrain: warm on faces toward a low sun, cool blue in shade, at vanilla brightness
+- The blocky sun, the moon phases and the stars stay exactly as in vanilla
+- Rain dims and greys the sky; the glow around the sun can bloom
+- Works in the Overworld; other dimensions and views under water keep the vanilla sky
+- Settings: on or off; off by default while it is experimental
+- Since: 0.1
+
 ### Safe by Design
 Helion never stands between you and the game.
 

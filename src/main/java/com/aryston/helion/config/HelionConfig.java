@@ -1,5 +1,6 @@
 package com.aryston.helion.config;
 
+import com.aryston.helion.render.atmosphere.PhysicalSkySettings;
 import com.aryston.helion.render.geometry.GeometryBufferSettings;
 import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.graph.RenderSettings;
@@ -63,6 +64,7 @@ public final class HelionConfig {
     private static final ModConfigSpec.DoubleValue SKY_LIGHT_INTENSITY;
     private static final ModConfigSpec.BooleanValue LIGHT_ONLY_VIEW;
     private static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
+    private static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
 
     static {
         BUILDER.translation("helion.configuration.ambientOcclusion").push("ambientOcclusion");
@@ -151,6 +153,12 @@ public final class HelionConfig {
             .translation("helion.configuration.temporalAntiAliasing.enabled")
             .define("enabled", false);
         BUILDER.pop();
+
+        BUILDER.translation("helion.configuration.physicalSky").push("physicalSky");
+        PHYSICAL_SKY_ENABLED = BUILDER
+            .translation("helion.configuration.physicalSky.enabled")
+            .define("enabled", false);
+        BUILDER.pop();
     }
 
     public static final ModConfigSpec SPEC = BUILDER.build();
@@ -164,7 +172,8 @@ public final class HelionConfig {
             imageSettings(),
             geometryBufferSettings(),
             lightingSettings(),
-            new TemporalSettings(TEMPORAL_ENABLED.getAsBoolean())
+            new TemporalSettings(TEMPORAL_ENABLED.getAsBoolean()),
+            new PhysicalSkySettings(PHYSICAL_SKY_ENABLED.getAsBoolean())
         );
     }
 

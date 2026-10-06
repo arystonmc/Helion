@@ -1,5 +1,6 @@
 package com.aryston.helion.debug;
 
+import com.aryston.helion.render.atmosphere.PhysicalSkySettings;
 import com.aryston.helion.render.geometry.GeometryBufferSettings;
 import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.graph.RenderSettings;
@@ -21,6 +22,7 @@ enum VisualTestVariant {
     LIGHTING(true, ToneMapper.NEUTRAL, false),
     LIGHT_ONLY(true, ToneMapper.NEUTRAL, false),
     TEMPORAL(true, ToneMapper.NEUTRAL, false),
+    PHYSICAL_SKY(true, ToneMapper.NEUTRAL, false),
     PARITY(true, ToneMapper.NEUTRAL, false);
 
     private final boolean helion;
@@ -49,7 +51,8 @@ enum VisualTestVariant {
                     DeferredLightingSettings.DEFAULT_SKY_LIGHT_INTENSITY,
                     this == LIGHT_ONLY
                 ),
-                TemporalSettings.DISABLED
+                TemporalSettings.DISABLED,
+                PhysicalSkySettings.DISABLED
             );
         }
         if (this == TEMPORAL) {
@@ -58,7 +61,18 @@ enum VisualTestVariant {
                 ImageSettings.FOUNDATION,
                 settings.geometry().withoutView(),
                 DeferredLightingSettings.DISABLED,
-                new TemporalSettings(true)
+                new TemporalSettings(true),
+                PhysicalSkySettings.DISABLED
+            );
+        }
+        if (this == PHYSICAL_SKY) {
+            return new RenderSettings(
+                AmbientOcclusionSettings.DISABLED,
+                ImageSettings.FOUNDATION,
+                settings.geometry().withoutView(),
+                DeferredLightingSettings.DISABLED,
+                TemporalSettings.DISABLED,
+                new PhysicalSkySettings(true)
             );
         }
         BloomSettings bloom = new BloomSettings(
@@ -69,7 +83,8 @@ enum VisualTestVariant {
             new ImageSettings(toneMapper, ImageSettings.DEFAULT_EXPOSURE, true, bloom, SharpeningSettings.DISABLED),
             settings.geometry(),
             settings.lighting(),
-            settings.temporal()
+            settings.temporal(),
+            settings.sky()
         );
     }
 

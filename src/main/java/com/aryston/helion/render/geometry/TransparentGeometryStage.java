@@ -1,6 +1,7 @@
 package com.aryston.helion.render.geometry;
 
 import com.aryston.helion.render.atmosphere.AtmosphereSource;
+import com.aryston.helion.render.atmosphere.SceneFogPass;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.mojang.blaze3d.framegraph.FramePass;
@@ -44,13 +45,18 @@ public final class TransparentGeometryStage implements RenderStage {
         ResourceHandle<RenderTarget> scene = pass.readsAndWrites(frame.targets().scene());
         frame.targets().updateScene(scene);
         frame.targets().declareGeometryAttachments(pass);
+        Optional<SceneFogPass> fog = frame.atmosphere().fog();
+        fog.ifPresent(fogPass -> fogPass.declareReads(pass));
         boolean orderIndependent = frame.scene().orderIndependentTransparency();
-        pass.executes(frame.graph().timed(NAME, () -> render(scene.get(), orderIndependent)));
+        pass.executes(frame.graph().timed(NAME, () -> render(scene.get(), orderIndependent, fog)));
     }
 
-    private void render(RenderTarget target, boolean orderIndependent) {
+    private void render(RenderTarget target, boolean orderIndependent, Optional<SceneFogPass> fog) {
         if (orderIndependent) {
             transparency.renderOrderIndependent();
+            fog.ifPresent(fogPass -> fogPass.draw(target));
+        } else if (fog.isPresent()) {
+            renderSortedThroughFog(target, fog.get());
         } else {
             renderSorted(target);
         }
@@ -58,22 +64,45 @@ public final class TransparentGeometryStage implements RenderStage {
     }
 
     private void renderSorted(RenderTarget target) {
-        try (RenderPass pass = RenderSystem.getDevice()
-                .createCommandEncoder()
-                .createRenderPass(
-                    () -> PASS_LABEL,
-                    Objects.requireNonNull(target.getColorTextureView()),
-                    Optional.empty(),
-                    target.getDepthTextureView(),
-                    OptionalDouble.empty()
-                )) {
-            RenderSystem.bindDefaultUniforms(pass);
-            entities.renderTranslucent(pass);
-            terrain.renderTranslucent(pass);
-            entities.renderTranslucentAfterTerrain(pass);
-            atmosphere.renderClouds(pass);
-            atmosphere.renderWeather(pass);
-            atmosphere.renderWorldBorder(pass);
+        try (RenderPass pass = openPass(target)) {
+            renderTranslucents(pass);
+            renderAtmosphere(pass);
         }
+    }
+
+    private void renderSortedThroughFog(RenderTarget target, SceneFogPass fog) {
+        try (RenderPass pass = openPass(target)) {
+            renderTranslucents(pass);
+        }
+        fog.draw(target);
+        try (RenderPass pass = openPass(target)) {
+            renderAtmosphere(pass);
+        }
+    }
+
+    private void renderTranslucents(RenderPass pass) {
+        entities.renderTranslucent(pass);
+        terrain.renderTranslucent(pass);
+        entities.renderTranslucentAfterTerrain(pass);
+    }
+
+    private void renderAtmosphere(RenderPass pass) {
+        atmosphere.renderClouds(pass);
+        atmosphere.renderWeather(pass);
+        atmosphere.renderWorldBorder(pass);
+    }
+
+    private static RenderPass openPass(RenderTarget target) {
+        RenderPass pass = RenderSystem.getDevice()
+            .createCommandEncoder()
+            .createRenderPass(
+                () -> PASS_LABEL,
+                Objects.requireNonNull(target.getColorTextureView()),
+                Optional.empty(),
+                target.getDepthTextureView(),
+                OptionalDouble.empty()
+            );
+        RenderSystem.bindDefaultUniforms(pass);
+        return pass;
     }
 }

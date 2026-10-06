@@ -15,17 +15,22 @@ public final class DeferredLightingPipelines {
     public static final String GEOMETRY_LIGHT_SAMPLER = "GeometryLightSampler";
     public static final String ALBEDO_SAMPLER = "AlbedoSampler";
     public static final String LIGHT_BUFFER_SAMPLER = "LightBufferSampler";
+    public static final String GEOMETRY_NORMAL_SAMPLER = "GeometryNormalSampler";
+    public static final String SKY_LIGHT_SAMPLER = "SkyLightSampler";
     public static final GpuFormat LIGHT_BUFFER_FORMAT = GpuFormat.RGBA16_FLOAT;
     public static final GpuFormat SCENE_COLOR_FORMAT = GpuFormat.RGBA8_UNORM;
     private static final String LIGHT_ONLY_DEFINE = "HELION_LIGHT_ONLY";
     private static final String SHADING_SHADER = "lighting/deferred_shading";
+    private static final String LIGHT_SHADER = "lighting/deferred_light";
+    private static final String PHYSICAL_SKY_LIGHT_DEFINE = "HELION_PHYSICAL_SKY_LIGHT";
 
-    public static final RenderPipeline LIGHT = HelionPipelines.fullscreen("lighting/deferred_light")
-        .withBindGroupLayout(BindGroupLayout.builder()
-            .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
-            .withUniform(GEOMETRY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-            .build())
-        .withColorTargetState(new ColorTargetState(Optional.empty(), LIGHT_BUFFER_FORMAT, ColorTargetState.WRITE_ALL))
+    public static final RenderPipeline LIGHT = light(LIGHT_SHADER, lightBindings().build()).build();
+
+    public static final RenderPipeline PHYSICAL_SKY_LIGHT = light("lighting/deferred_light_physical_sky", lightBindings()
+        .withUniform(GEOMETRY_NORMAL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+        .withUniform(SKY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+        .build())
+        .withShaderDefine(PHYSICAL_SKY_LIGHT_DEFINE)
         .build();
 
     public static final RenderPipeline SHADING = shading(SHADING_SHADER).build();
@@ -38,7 +43,19 @@ public final class DeferredLightingPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(LIGHT, SHADING, LIGHT_ONLY_VIEW);
+        return List.of(LIGHT, PHYSICAL_SKY_LIGHT, SHADING, LIGHT_ONLY_VIEW);
+    }
+
+    private static RenderPipeline.Builder light(String name, BindGroupLayout bindings) {
+        return HelionPipelines.fullscreen(name, LIGHT_SHADER)
+            .withBindGroupLayout(bindings)
+            .withColorTargetState(new ColorTargetState(Optional.empty(), LIGHT_BUFFER_FORMAT, ColorTargetState.WRITE_ALL));
+    }
+
+    private static BindGroupLayout.Builder lightBindings() {
+        return BindGroupLayout.builder()
+            .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
+            .withUniform(GEOMETRY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER);
     }
 
     private static RenderPipeline.Builder shading(String name) {

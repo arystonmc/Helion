@@ -1,11 +1,18 @@
 package com.aryston.helion.integration.vanilla;
 
 import com.aryston.helion.mixin.LevelRendererAccessor;
+import com.aryston.helion.render.atmosphere.AtmosphereFog;
 import com.aryston.helion.render.atmosphere.AtmosphereSource;
+import com.aryston.helion.render.atmosphere.SkyEnvironment;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.renderpearl.api.commands.RenderPass;
+import java.util.Optional;
 import net.minecraft.client.CloudStatus;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.SkyRenderer;
+import net.minecraft.client.renderer.fog.FogData;
 import net.minecraft.client.renderer.state.OptionsRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
@@ -22,23 +29,24 @@ final class VanillaAtmosphereSource implements AtmosphereSource {
 
     private final LevelRendererAccessor level;
     private final SceneSkyRenderer sky;
-    private final GpuBufferSlice skyFog;
+    private final SceneFog fog;
     private final StageEvents events;
 
-    VanillaAtmosphereSource(LevelFrameRequest request, SceneSkyRenderer sky, StageEvents events) {
+    VanillaAtmosphereSource(LevelFrameRequest request, SceneSkyRenderer sky, SceneFog fog, StageEvents events) {
         this.level = request.level();
         this.sky = sky;
-        this.skyFog = request.terrainFog();
+        this.fog = fog;
         this.events = events;
     }
 
     @Override
     public boolean hasSky() {
-        CameraRenderState camera = state().cameraRenderState;
+        return isSkyVisible(state().cameraRenderState) && state().skyRenderState.skybox != DimensionType.Skybox.NONE;
+    }
+
+    static boolean isSkyVisible(CameraRenderState camera) {
         boolean skyHiddenByFog = camera.fogType == FogType.POWDER_SNOW || camera.fogType == FogType.LAVA;
-        return !skyHiddenByFog
-            && !camera.entityRenderState.doesMobEffectBlockSky
-            && state().skyRenderState.skybox != DimensionType.Skybox.NONE;
+        return !skyHiddenByFog && !camera.entityRenderState.doesMobEffectBlockSky;
     }
 
     @Override
@@ -47,10 +55,54 @@ final class VanillaAtmosphereSource implements AtmosphereSource {
         SkyRenderState skyState = state.skyRenderState;
         CustomSkyboxRenderer customSkybox = state.customSkyboxRenderer;
         boolean renderedByCustomSkybox = customSkybox != null
-            && customSkybox.renderSky(state, skyState, state.cameraRenderState.viewRotationMatrix, skyFog);
+            && customSkybox.renderSky(state, skyState, state.cameraRenderState.viewRotationMatrix, fog.current());
         if (!renderedByCustomSkybox) {
-            sky.obtain(level, target, state.shouldResetSkyRenderer).render(skyFog, skyState);
+            sky.obtain(level, target, state.shouldResetSkyRenderer).render(fog.current(), skyState);
         }
+        events.afterSky();
+    }
+
+    @Override
+    public Optional<SkyEnvironment> skyEnvironment() {
+        LevelRenderState state = state();
+        SkyRenderState skyState = state.skyRenderState;
+        ClientLevel clientLevel = Minecraft.getInstance().level;
+        CameraRenderState camera = state.cameraRenderState;
+        if (skyState.skybox != DimensionType.Skybox.OVERWORLD
+            || state.customSkyboxRenderer != null
+            || camera.fogType != FogType.NONE
+            || clientLevel == null) {
+            return Optional.empty();
+        }
+        float altitude = (float) (camera.pos.y - clientLevel.getSeaLevel());
+        FogData fogData = camera.fogData;
+        return Optional.of(new SkyEnvironment(
+            SkyEnvironment.celestialDirection(skyState.sunAngle),
+            SkyEnvironment.celestialDirection(skyState.moonAngle),
+            skyState.rainBrightness,
+            altitude,
+            new AtmosphereFog(
+                fogData.color,
+                fogData.environmentalStart,
+                fogData.environmentalEnd,
+                fogData.renderDistanceStart,
+                fogData.renderDistanceEnd,
+                fogData.skyEnd,
+                fogData.cloudEnd
+            )
+        ));
+    }
+
+    @Override
+    public void useFog(GpuBufferSlice replacement) {
+        fog.replace(replacement);
+    }
+
+    @Override
+    public void renderCelestials(RenderTarget target) {
+        LevelRenderState state = state();
+        SkyRenderer renderer = sky.obtain(level, target, state.shouldResetSkyRenderer);
+        CelestialOnlySky.draw(() -> renderer.render(fog.current(), state.skyRenderState));
         events.afterSky();
     }
 

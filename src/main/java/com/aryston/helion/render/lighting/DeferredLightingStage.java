@@ -1,5 +1,6 @@
 package com.aryston.helion.render.lighting;
 
+import com.aryston.helion.render.atmosphere.SkyLight;
 import com.aryston.helion.render.geometry.GeometryBuffer;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
@@ -56,13 +57,23 @@ public final class DeferredLightingStage implements RenderStage {
     public void addTo(FrameContext frame) {
         DeferredLightingPrograms compiled = Objects.requireNonNull(programs);
         GeometryBuffer.Targets geometry = frame.geometry().targets().orElseThrow();
-        ResourceHandle<RenderTarget> lightBuffer = addLightPass(frame, compiled, geometry);
+        ResourceHandle<RenderTarget> lightBuffer = addLightPass(frame, compiled, geometry, frame.atmosphere().skyLight());
         addShadingPass(frame, compiled, geometry, lightBuffer);
     }
 
-    private ResourceHandle<RenderTarget> addLightPass(FrameContext frame, DeferredLightingPrograms compiled, GeometryBuffer.Targets geometry) {
+    private ResourceHandle<RenderTarget> addLightPass(
+        FrameContext frame,
+        DeferredLightingPrograms compiled,
+        GeometryBuffer.Targets geometry,
+        Optional<SkyLight> skyLight
+    ) {
         FramePass pass = frame.graph().addPass(NAME);
         pass.reads(geometry.light());
+        skyLight.ifPresent(light -> {
+            pass.reads(geometry.normal());
+            pass.reads(light.irradiance());
+        });
+        CompiledRenderPipeline pipeline = skyLight.isPresent() ? compiled.physicalSkyLight() : compiled.light();
         ResourceHandle<RenderTarget> lightBuffer = pass.createsInternal(LIGHT_BUFFER, new RenderTargetDescriptor(
             frame.scene().width(),
             frame.scene().height(),
@@ -72,10 +83,14 @@ public final class DeferredLightingStage implements RenderStage {
         LightEnvironment environment = frame.scene().light();
         DeferredLightingSettings settings = frame.settings().lighting();
         pass.executes(frame.graph().timed(NAME, () -> {
-            frameUniforms = resources.writeUniforms(environment, settings);
-            FullscreenPass.draw("Helion Deferred Light", lightBuffer.get(), compiled.light(), renderPass -> {
+            frameUniforms = resources.writeUniforms(environment, settings, skyLight);
+            FullscreenPass.draw("Helion Deferred Light", lightBuffer.get(), pipeline, renderPass -> {
                 renderPass.setUniform(DeferredLightingPipelines.SETTINGS, Objects.requireNonNull(frameUniforms));
                 renderPass.setUniform(DeferredLightingPipelines.GEOMETRY_LIGHT_SAMPLER, colorView(geometry.light()), nearest());
+                skyLight.ifPresent(light -> {
+                    renderPass.setUniform(DeferredLightingPipelines.GEOMETRY_NORMAL_SAMPLER, colorView(geometry.normal()), nearest());
+                    renderPass.setUniform(DeferredLightingPipelines.SKY_LIGHT_SAMPLER, colorView(light.irradiance()), nearest());
+                });
             });
         }));
         return lightBuffer;

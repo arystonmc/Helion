@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.aryston.helion.render.atmosphere.PhysicalSkySettings;
 import com.aryston.helion.render.geometry.GeometryBufferSettings;
 import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
@@ -19,7 +20,8 @@ class RenderSettingsTest {
         ImageSettings.FOUNDATION,
         new GeometryBufferSettings(true, GeometryBufferView.NORMALS),
         new DeferredLightingSettings(true, STRONG_BLOCK_LIGHT, DeferredLightingSettings.DEFAULT_SKY_LIGHT_INTENSITY, true),
-        new TemporalSettings(true)
+        new TemporalSettings(true),
+        new PhysicalSkySettings(true)
     );
 
     @Test
@@ -31,6 +33,7 @@ class RenderSettingsTest {
         assertFalse(foundation.image().sharpening().enabled());
         assertFalse(foundation.lighting().enabled());
         assertFalse(foundation.temporal().enabled());
+        assertFalse(foundation.sky().enabled());
     }
 
     @Test
@@ -54,5 +57,6 @@ class RenderSettingsTest {
         assertFalse(RenderSettings.OFF.ambientOcclusion().enabled());
         assertFalse(RenderSettings.OFF.lighting().enabled());
         assertFalse(RenderSettings.OFF.temporal().enabled());
+        assertFalse(RenderSettings.OFF.sky().enabled());
     }
 }

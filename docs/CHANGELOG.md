@@ -21,6 +21,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental geometry buffer: terrain drawn by Helion shaders that also record normals, block light, sky light and base color
 - Experimental HDR lighting for terrain with separate block and sky light and intensity settings
 - Experimental temporal anti-aliasing that smooths block edges and distant textures
+- Experimental physical sky with spectral sky colors and fog that matches the sky in every direction
 - Bloom around bright light sources that adapts to daylight, caves and night, with intensity, threshold and a glow-only view
 - Neutral and Filmic tone mapping, exposure control and dithering against color banding
 - Optional contrast adaptive sharpening with a strength setting

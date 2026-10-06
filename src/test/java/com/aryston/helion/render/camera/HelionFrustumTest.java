@@ -42,7 +42,7 @@ class HelionFrustumTest {
     }
 
     private static HelionFrustum frustum(Matrix4f projection, boolean zeroToOneDepth) {
-        return new HelionCamera(ORIGIN, new Matrix4f(), projection, zeroToOneDepth).frustum();
+        return new HelionCamera(ORIGIN, new Matrix4f(), projection, projection, zeroToOneDepth).frustum();
     }
 
     private static boolean intersectsBoxAt(HelionFrustum frustum, double x, double z) {

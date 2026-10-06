@@ -4,6 +4,7 @@ import com.aryston.helion.render.backend.GpuDeviceSummary;
 import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.graph.GpuTimings;
 import com.aryston.helion.render.graph.RenderSettings;
+import com.aryston.helion.render.atmosphere.PhysicalSkyResources;
 import com.aryston.helion.render.lighting.AmbientOcclusionResources;
 import com.aryston.helion.render.lighting.DeferredLightingResources;
 import com.aryston.helion.render.post.ImageResources;
@@ -15,6 +16,8 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.logging.LogUtils;
 import java.util.Optional;
+import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -29,11 +32,14 @@ public final class HelionRenderCore {
     private final ImageResources image = new ImageResources(resources);
     private final DeferredLightingResources lighting = new DeferredLightingResources(resources);
     private final TemporalResources temporal = new TemporalResources(resources);
+    private final PhysicalSkyResources sky = new PhysicalSkyResources(resources);
     private PassiveListener passiveListener = reason -> { };
     private @Nullable GpuDeviceSummary device;
     private @Nullable PassiveReason passiveReason;
     private @Nullable RenderTarget mainTargetOverride;
     private @Nullable HelionCamera lastCamera;
+    private @Nullable Matrix4f levelProjection;
+    private volatile boolean shutDown;
     private @Nullable SceneSnapshot lastScene;
     private volatile boolean enabled = true;
     private volatile boolean debugMode;
@@ -62,7 +68,7 @@ public final class HelionRenderCore {
 
     public boolean isActive() {
         detectDevice();
-        return passiveReason == null && enabled;
+        return !shutDown && passiveReason == null && enabled;
     }
 
     public boolean toggle() {
@@ -106,6 +112,14 @@ public final class HelionRenderCore {
         lastScene = scene;
     }
 
+    public void recordLevelProjection(Matrix4fc projection) {
+        levelProjection = new Matrix4f(projection);
+    }
+
+    public Optional<Matrix4fc> levelProjection() {
+        return Optional.ofNullable(levelProjection);
+    }
+
     public Optional<HelionCamera> lastCamera() {
         return Optional.ofNullable(lastCamera);
     }
@@ -119,12 +133,14 @@ public final class HelionRenderCore {
     }
 
     public void shutdown() {
+        shutDown = true;
         int released = resources.releaseAll();
         timings.close();
         ambientOcclusion.close();
         image.close();
         lighting.close();
         temporal.close();
+        sky.close();
         sceneTargets.close();
         LOGGER.info("Helion released {} GPU resources on shutdown", released);
     }
@@ -167,6 +183,10 @@ public final class HelionRenderCore {
 
     public TemporalResources temporal() {
         return temporal;
+    }
+
+    public PhysicalSkyResources sky() {
+        return sky;
     }
 
     private GpuDeviceSummary detectDevice() {

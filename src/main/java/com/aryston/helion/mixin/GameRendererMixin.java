@@ -17,7 +17,7 @@ abstract class GameRendererMixin {
         )
     )
     private Matrix4f helion$captureLevelProjection(Matrix4f projection) {
-        HelionRenderCore.get().temporal().recordLevelProjection(projection);
+        HelionRenderCore.get().recordLevelProjection(projection);
         return projection;
     }
 }

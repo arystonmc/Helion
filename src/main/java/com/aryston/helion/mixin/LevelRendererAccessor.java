@@ -8,6 +8,7 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LevelTargetBundle;
 import net.minecraft.client.renderer.SectionOcclusionGraph;
 import net.minecraft.client.renderer.ShaderManager;
+import net.minecraft.client.renderer.SkyRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.WeatherEffectRenderer;
@@ -88,6 +89,9 @@ public interface LevelRendererAccessor {
 
     @Accessor("sectionRenderDispatcher")
     @Nullable SectionRenderDispatcher helion$sectionRenderDispatcher();
+
+    @Accessor("skyRenderer")
+    void helion$setSkyRenderer(SkyRenderer renderer);
 
     @Accessor("chunkLayerSampler")
     @Nullable GpuSampler helion$chunkLayerSampler();

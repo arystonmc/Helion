@@ -1,5 +1,6 @@
 package com.aryston.helion.render.graph;
 
+import com.aryston.helion.render.atmosphere.PhysicalSkySettings;
 import com.aryston.helion.render.geometry.GeometryBufferSettings;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.lighting.DeferredLightingSettings;
@@ -11,14 +12,16 @@ public record RenderSettings(
     ImageSettings image,
     GeometryBufferSettings geometry,
     DeferredLightingSettings lighting,
-    TemporalSettings temporal
+    TemporalSettings temporal,
+    PhysicalSkySettings sky
 ) {
     public static final RenderSettings OFF = new RenderSettings(
         AmbientOcclusionSettings.DISABLED,
         ImageSettings.FOUNDATION,
         GeometryBufferSettings.DISABLED,
         DeferredLightingSettings.DISABLED,
-        TemporalSettings.DISABLED
+        TemporalSettings.DISABLED,
+        PhysicalSkySettings.DISABLED
     );
 
     public RenderSettings foundation() {
@@ -27,7 +30,8 @@ public record RenderSettings(
             ImageSettings.FOUNDATION,
             geometry.withoutView(),
             DeferredLightingSettings.DISABLED,
-            TemporalSettings.DISABLED
+            TemporalSettings.DISABLED,
+            PhysicalSkySettings.DISABLED
         );
     }
 }

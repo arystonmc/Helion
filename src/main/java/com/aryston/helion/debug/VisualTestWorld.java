@@ -14,7 +14,7 @@ final class VisualTestWorld {
         "gamemode spectator @a"
     );
     private static final BlockPos AREA_START = new BlockPos(-6, 0, -11);
-    private static final BlockPos AREA_END = new BlockPos(6, 5, -3);
+    private static final BlockPos AREA_END = new BlockPos(6, 8, 3);
     private static final int FLOOR = -1;
     private static final List<Placement> LIGHTS = List.of(
         new Placement(-6, 0, -6, "glowstone"),

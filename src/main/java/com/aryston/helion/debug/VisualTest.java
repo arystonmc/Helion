@@ -1,6 +1,7 @@
 package com.aryston.helion.debug;
 
 import com.aryston.helion.config.HelionConfig;
+import com.aryston.helion.mixin.LevelRendererAccessor;
 import com.aryston.helion.render.HelionRenderCore;
 import com.mojang.logging.LogUtils;
 import java.util.Arrays;
@@ -10,8 +11,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.server.IntegratedServer;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.neoforged.fml.loading.FMLEnvironment;
 import org.slf4j.Logger;
 
@@ -87,6 +90,7 @@ public final class VisualTest {
 
     private void prepare(Minecraft minecraft, LocalPlayer player, IntegratedServer server) {
         prepared = true;
+        checkSkyBeforeVanillaFrames(minecraft);
         hudWasHidden = minecraft.gui.hud.isHidden();
         if (!hudWasHidden) {
             minecraft.gui.hud.toggle();
@@ -95,6 +99,20 @@ public final class VisualTest {
         minecraft.options.pauseOnLostFocus = false;
         VisualTestWorld.prepare(server, player.blockPosition());
         LOGGER.info("Helion visual test started with {} shots", shots.size());
+    }
+
+    private static void checkSkyBeforeVanillaFrames(Minecraft minecraft) {
+        ClientLevel level = minecraft.level;
+        if (level == null || !HelionRenderCore.get().isActive()) {
+            return;
+        }
+        DimensionType.Skybox expected = level.dimensionType().skybox();
+        DimensionType.Skybox extracted = ((LevelRendererAccessor) minecraft.levelRenderer).helion$levelRenderState().skyRenderState.skybox;
+        if (extracted == expected) {
+            LOGGER.info("Helion visual test startup: the sky state ({}) is extracted before any vanilla frame", extracted);
+        } else {
+            LOGGER.warn("Helion visual test startup: the sky state is {} instead of {} before any vanilla frame, so Helion draws no sky", extracted, expected);
+        }
     }
 
     private void beginShot(IntegratedServer server) {

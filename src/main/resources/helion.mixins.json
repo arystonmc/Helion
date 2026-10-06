@@ -6,7 +6,8 @@
     "ChunkSectionsToRenderAccessor",
     "GameRendererMixin",
     "LevelRendererAccessor",
-    "LevelRendererMixin"
+    "LevelRendererMixin",
+    "SkyRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

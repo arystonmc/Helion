@@ -4,7 +4,6 @@ import com.aryston.helion.mixin.ChunkSectionsToRenderAccessor;
 import com.aryston.helion.mixin.LevelRendererAccessor;
 import com.aryston.helion.render.geometry.TerrainSource;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.textures.AddressMode;
 import com.mojang.renderpearl.api.textures.FilterMode;
@@ -26,19 +25,19 @@ final class VanillaTerrainSource implements TerrainSource {
 
     private final LevelRendererAccessor level;
     private final ChunkSectionsToRender sections;
-    private final GpuBufferSlice terrainFog;
+    private final SceneFog fog;
     private final StageEvents events;
 
-    VanillaTerrainSource(LevelFrameRequest request, ChunkSectionsToRender sections, StageEvents events) {
+    VanillaTerrainSource(LevelFrameRequest request, ChunkSectionsToRender sections, SceneFog fog, StageEvents events) {
         this.level = request.level();
         this.sections = sections;
-        this.terrainFog = request.terrainFog();
+        this.fog = fog;
         this.events = events;
     }
 
     @Override
     public void prepareFrame() {
-        RenderSystem.setShaderFog(terrainFog);
+        RenderSystem.setShaderFog(fog.current());
         if (level.helion$levelRenderState().shouldResetChunkLayerSampler || level.helion$chunkLayerSampler() == null) {
             replaceSampler();
         }

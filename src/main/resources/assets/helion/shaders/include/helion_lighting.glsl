@@ -14,6 +14,8 @@ layout(std140) uniform HelionLighting {
     vec3 SkyLightColor;
     vec3 AmbientColor;
     vec3 NightVisionColor;
+    vec3 SunDirection;
+    vec3 MoonDirection;
 };
 
 const float HELION_LIGHT_LEVELS = 15.0;
@@ -25,8 +27,8 @@ float helionLevelBrightness(float level) {
     return level / (HELION_BRIGHTNESS_CURVE + 1.0 - HELION_BRIGHTNESS_CURVE * level);
 }
 
-vec3 helionSkyTerm(float level) {
-    return SkyLightColor * helionLevelBrightness(level) * SkyFactor;
+vec3 helionSkyTerm(float level, vec3 skyColor) {
+    return skyColor * helionLevelBrightness(level) * SkyFactor;
 }
 
 vec3 helionBlockTerm(float level) {
@@ -35,11 +37,11 @@ vec3 helionBlockTerm(float level) {
     return color * helionLevelBrightness(level) * BlockFactor;
 }
 
-vec3 helionInterpolatedSkyTerm(float coordinate) {
+vec3 helionInterpolatedSkyTerm(float coordinate, vec3 skyColor) {
     float level = clamp(coordinate, 0.0, 1.0) * HELION_LIGHT_LEVELS;
     float lower = floor(level);
     float upper = min(lower + 1.0, HELION_LIGHT_LEVELS);
-    return mix(helionSkyTerm(lower / HELION_LIGHT_LEVELS), helionSkyTerm(upper / HELION_LIGHT_LEVELS), level - lower);
+    return mix(helionSkyTerm(lower / HELION_LIGHT_LEVELS, skyColor), helionSkyTerm(upper / HELION_LIGHT_LEVELS, skyColor), level - lower);
 }
 
 vec3 helionInterpolatedBlockTerm(float coordinate) {

@@ -1,5 +1,6 @@
 package com.aryston.helion.render;
 
+import com.aryston.helion.render.atmosphere.PhysicalSkyStage;
 import com.aryston.helion.render.atmosphere.SkyStage;
 import com.aryston.helion.render.geometry.GeometryBufferDebugStage;
 import com.aryston.helion.render.geometry.OpaqueGeometryStage;
@@ -35,7 +36,7 @@ public final class FrameStages {
         HelionRenderCore core = HelionRenderCore.get();
         return List.of(
             new ClearStage(),
-            new SkyStage(sources.atmosphere()),
+            sky(frame, sources, core),
             new OpaqueGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere()),
             new DeferredLightingStage(core.lighting()),
             new SolidFeatureStage(sources.terrain(), sources.entities()),
@@ -53,6 +54,11 @@ public final class FrameStages {
         effects.add(new BloomStage(core.image()));
         effects.add(new SharpeningStage(core.image()));
         return effects;
+    }
+
+    private static RenderStage sky(FrameContext frame, FrameSources sources, HelionRenderCore core) {
+        PhysicalSkyStage physical = new PhysicalSkyStage(sources.atmosphere(), core.sky());
+        return physical.isActive(frame) ? physical : new SkyStage(sources.atmosphere());
     }
 
     private static RenderStage output(FrameContext frame, HelionRenderCore core) {

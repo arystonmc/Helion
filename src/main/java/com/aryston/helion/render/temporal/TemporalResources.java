@@ -31,7 +31,6 @@ public final class TemporalResources {
     private final GpuResources resources;
     private final TemporalHistory history;
     private @Nullable UniformRing uniforms;
-    private @Nullable Matrix4f levelProjection;
     private @Nullable PreviousView previous;
     private @Nullable TemporalPrograms programs;
     private int frameIndex;
@@ -43,13 +42,9 @@ public final class TemporalResources {
         this.history = new TemporalHistory(resources);
     }
 
-    public void recordLevelProjection(Matrix4fc projection) {
-        levelProjection = new Matrix4f(projection);
-    }
-
     public TemporalFrame begin(TemporalSettings settings, HelionCamera camera, int width, int height) {
-        Matrix4f projection = levelProjection;
-        if (!settings.enabled() || projection == null || !compilePrograms()) {
+        Matrix4fc projection = camera.levelProjection();
+        if (!settings.enabled() || !compilePrograms()) {
             invalidate();
             return TemporalFrame.INACTIVE;
         }

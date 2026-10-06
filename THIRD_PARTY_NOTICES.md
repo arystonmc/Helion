@@ -244,3 +244,40 @@ SOFTWARE.
    See the License for the specific language governing permissions and
    limitations under the License.
 ```
+
+## Precomputed Atmospheric Scattering (Eric Bruneton)
+
+- Source: https://github.com/ebruneton/precomputed_atmospheric_scattering
+- Used in: `src/main/java/com/aryston/helion/render/atmosphere/AtmosphereSpectrum.java` (tables and spectral constants) and `src/main/resources/assets/helion/shaders/include/helion_atmosphere.glsl` (atmosphere parameters)
+- What was taken: data and parameters only, from the demo setup of the atmosphere model: the solar irradiance and ozone cross section tables (360 to 830 nm), the CIE 1931 2° color matching functions from 390 to 710 nm, the XYZ to linear sRGB matrix, and the Earth atmosphere parameters (Rayleigh scattering coefficient, ozone column density and layer thickness, Rayleigh and Mie density profiles and the Mie phase asymmetry). The sky rendering itself is an own implementation of Hillaire's method and does not use code from this project.
+- Changes: the tables were copied into Java arrays, the colors are integrated over 20 nm bands and white balanced to the solar spectrum, and the constants were given descriptive names.
+
+```
+Copyright (c) 2017 Eric Bruneton
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors
+may be used to endorse or promote products derived from this software without
+specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
