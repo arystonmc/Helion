@@ -32,6 +32,9 @@ sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
 
 tasks.named("test", Test) {
     useJUnitPlatform()
+    testLogging {
+        events "skipped", "failed"
+    }
 }
 
 neoForge {
