@@ -26,6 +26,10 @@ const float FAST_ACOS_SLOPE = -0.156583;
 const float GOLDEN_RATIO_FRACTION = 0.6180339887498948;
 const vec2 R2_SEQUENCE = vec2(0.75487766624669276, 0.56984029099805327);
 const uint NOISE_TILE = 64u;
+const uint SECTOR_COUNT = 32u;
+const uint ALL_SECTORS = 0xFFFFFFFFu;
+const float OCCLUDER_THICKNESS = 0.75;
+const float SECTOR_CENTER = 0.5;
 
 float viewDepthAt(ivec2 pixel) {
     ivec2 bounds = textureSize(ViewDepthSampler, 0) - 1;
@@ -154,6 +158,64 @@ float sliceVisibility(ivec2 pixel, vec3 center, vec3 viewVector, vec3 normal, fl
     return projectedNormalLength * (arc0 + arc1);
 }
 
+uint countSectors(uint bits) {
+    bits = bits - ((bits >> 1u) & 0x55555555u);
+    bits = (bits & 0x33333333u) + ((bits >> 2u) & 0x33333333u);
+    return (((bits + (bits >> 4u)) & 0x0F0F0F0Fu) * 0x01010101u) >> 24u;
+}
+
+float cosineWeightedPosition(float angle, float n) {
+    return SECTOR_CENTER + SECTOR_CENTER * sin(clamp(angle - n, -HALF_PI, HALF_PI));
+}
+
+uint occludedSectors(vec2 samplePixel, vec3 center, vec3 viewVector, float n, float side, float effectRadius) {
+    vec3 delta = viewPositionAt(samplePixel, viewDepthAt(ivec2(floor(samplePixel)))) - center;
+    float distance = length(delta);
+    if (distance <= 0.0 || distance > effectRadius) {
+        return 0u;
+    }
+    vec3 back = delta - viewVector * OCCLUDER_THICKNESS;
+    float frontAngle = side * fastAcos(clamp(dot(delta / distance, viewVector), -1.0, 1.0));
+    float backAngle = side * fastAcos(clamp(dot(normalize(back), viewVector), -1.0, 1.0));
+    float low = cosineWeightedPosition(min(frontAngle, backAngle), n);
+    float high = cosineWeightedPosition(max(frontAngle, backAngle), n);
+    uint first = uint(low * float(SECTOR_COUNT));
+    uint count = uint(ceil((high - low) * float(SECTOR_COUNT)));
+    if (count == 0u || first >= SECTOR_COUNT) {
+        return 0u;
+    }
+    uint span = count >= SECTOR_COUNT ? ALL_SECTORS : (1u << count) - 1u;
+    return span << first;
+}
+
+float sliceVisibilityBitmask(ivec2 pixel, vec3 center, vec3 viewVector, vec3 normal, float sliceK, float noiseSample, int slice, float screenRadius, float minS) {
+    float effectRadius = EffectRadius * RADIUS_MULTIPLIER;
+    float phi = sliceK * PI;
+    vec2 omega = vec2(cos(phi), -sin(phi)) * screenRadius;
+    vec3 direction = vec3(cos(phi), sin(phi), 0.0);
+    vec3 orthoDirection = direction - dot(direction, viewVector) * viewVector;
+    vec3 axis = normalize(cross(orthoDirection, viewVector));
+    vec3 projectedNormal = normal - axis * dot(normal, axis);
+    float signNormal = sign(dot(orthoDirection, projectedNormal));
+    float projectedNormalLength = length(projectedNormal);
+    float cosNormal = clamp(dot(projectedNormal, viewVector) / projectedNormalLength, 0.0, 1.0);
+    float n = signNormal * fastAcos(cosNormal);
+    vec2 pixelCenter = vec2(pixel) + 0.5;
+    uint occluded = 0u;
+
+    for (int step = 0; step < StepsPerSlice; step++) {
+        float stepNoise = fract(noiseSample + float(slice + step * StepsPerSlice) * GOLDEN_RATIO_FRACTION);
+        float s = (float(step) + stepNoise) / float(StepsPerSlice);
+        s = pow(s, SampleDistributionPower) + minS;
+        vec2 sampleOffset = round(s * omega);
+        occluded |= occludedSectors(pixelCenter + sampleOffset, center, viewVector, n, 1.0, effectRadius);
+        occluded |= occludedSectors(pixelCenter - sampleOffset, center, viewVector, n, -1.0, effectRadius);
+    }
+
+    projectedNormalLength = mix(projectedNormalLength, 1.0, NORMAL_LENGTH_FUDGE);
+    return projectedNormalLength * (1.0 - float(countSectors(occluded)) / float(SECTOR_COUNT));
+}
+
 float visibilityAt(ivec2 pixel, vec3 center, vec3 viewVector, vec3 normal) {
     float effectRadius = EffectRadius * RADIUS_MULTIPLIER;
     float pixelViewSize = helionTanHalfFov().x * 2.0 * ViewportPixelSize.x * center.z;
@@ -167,7 +229,9 @@ float visibilityAt(ivec2 pixel, vec3 center, vec3 viewVector, vec3 normal) {
     vec2 noise = spatialNoise(pixel);
     for (int slice = 0; slice < SliceCount; slice++) {
         float sliceK = (float(slice) + noise.x) / float(SliceCount);
-        visibility += sliceVisibility(pixel, center, viewVector, normal, sliceK, noise.y, slice, screenRadius, minS);
+        visibility += AlgorithmId == HELION_AO_ALGORITHM_VISIBILITY_BITMASK
+            ? sliceVisibilityBitmask(pixel, center, viewVector, normal, sliceK, noise.y, slice, screenRadius, minS)
+            : sliceVisibility(pixel, center, viewVector, normal, sliceK, noise.y, slice, screenRadius, minS);
     }
     visibility /= float(SliceCount);
     visibility = pow(clamp(visibility, 0.0, 1.0), FinalValuePower);

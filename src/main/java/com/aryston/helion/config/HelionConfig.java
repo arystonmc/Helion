@@ -1,6 +1,7 @@
 package com.aryston.helion.config;
 
 import com.aryston.helion.render.graph.RenderSettings;
+import com.aryston.helion.render.lighting.AmbientOcclusionAlgorithm;
 import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.post.BloomSettings;
@@ -33,6 +34,7 @@ public final class HelionConfig {
         .define("debugMode", false);
 
     private static final ModConfigSpec.BooleanValue AMBIENT_OCCLUSION_ENABLED;
+    private static final ModConfigSpec.EnumValue<AmbientOcclusionAlgorithm> AMBIENT_OCCLUSION_ALGORITHM;
     private static final ModConfigSpec.EnumValue<AmbientOcclusionQuality> AMBIENT_OCCLUSION_QUALITY;
     private static final ModConfigSpec.DoubleValue AMBIENT_OCCLUSION_STRENGTH;
     private static final ModConfigSpec.DoubleValue AMBIENT_OCCLUSION_RADIUS;
@@ -52,6 +54,9 @@ public final class HelionConfig {
         AMBIENT_OCCLUSION_ENABLED = BUILDER
             .translation("helion.configuration.ambientOcclusion.enabled")
             .define("enabled", true);
+        AMBIENT_OCCLUSION_ALGORITHM = BUILDER
+            .translation("helion.configuration.ambientOcclusion.algorithm")
+            .defineEnum("algorithm", AmbientOcclusionAlgorithm.GTAO);
         AMBIENT_OCCLUSION_QUALITY = BUILDER
             .translation("helion.configuration.ambientOcclusion.quality")
             .defineEnum("quality", AmbientOcclusionQuality.MEDIUM);
@@ -113,6 +118,7 @@ public final class HelionConfig {
     private static AmbientOcclusionSettings ambientOcclusionSettings() {
         return new AmbientOcclusionSettings(
             AMBIENT_OCCLUSION_ENABLED.getAsBoolean(),
+            AMBIENT_OCCLUSION_ALGORITHM.get(),
             AMBIENT_OCCLUSION_QUALITY.get(),
             AMBIENT_OCCLUSION_STRENGTH.get().floatValue(),
             AMBIENT_OCCLUSION_RADIUS.get().floatValue(),

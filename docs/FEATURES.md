@@ -33,7 +33,7 @@ Soft, natural shadows wherever surfaces meet: in corners, under fences and stair
 - Based on GTAO, the technique used in modern games, adapted to Minecraft blocks
 - Bright light sources, lava and glowing blocks stay bright; water, glass and particles are not darkened
 - Fades out with fog and distance so far terrain stays clean
-- Settings: on or off, quality (Low, Medium, High, Ultra), strength, radius in blocks, and a view that shows only the shadows
+- Settings: on or off, method (GTAO or Visibility Bitmask, which lets light pass behind thin objects like fences, grass and torches), quality (Low, Medium, High, Ultra), strength, radius in blocks, and a view that shows only the shadows
 - Since: 0.1
 
 ### Bloom and Tone Mapping

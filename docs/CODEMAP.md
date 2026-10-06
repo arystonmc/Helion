@@ -51,7 +51,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### HelionConfig
 - Path: `src/main/java/com/aryston/helion/config/HelionConfig.java`
-- Role: Client config spec: `ENABLED` (render core on at startup), `DEBUG_MODE` (off by default), the `ambientOcclusion` section (enabled, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, the `bloom` subsection with enabled, intensity, threshold, debugView, and the `sharpening` subsection with enabled, strength). `renderSettings()` turns the config into a `RenderSettings` snapshot.
+- Role: Client config spec: `ENABLED` (render core on at startup), `DEBUG_MODE` (off by default), the `ambientOcclusion` section (enabled, algorithm, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, the `bloom` subsection with enabled, intensity, threshold, debugView, and the `sharpening` subsection with enabled, strength). `renderSettings()` turns the config into a `RenderSettings` snapshot.
 - Depends on: nothing inside the mod.
 
 ### `com.aryston.helion.render`
@@ -200,11 +200,15 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### AmbientOcclusionSettings
 - Path: `src/main/java/com/aryston/helion/render/lighting/AmbientOcclusionSettings.java`
-- Role: Player settings: enabled, quality, strength, radius, debug view.
+- Role: Player settings: enabled, algorithm, quality, strength, radius, debug view.
 
 #### AmbientOcclusionQuality
 - Path: `src/main/java/com/aryston/helion/render/lighting/AmbientOcclusionQuality.java`
 - Role: Quality presets with slice count, steps per slice and denoise passes.
+
+#### AmbientOcclusionAlgorithm
+- Path: `src/main/java/com/aryston/helion/render/lighting/AmbientOcclusionAlgorithm.java`
+- Role: Horizon method of the main pass: `GTAO` (two horizon angles per slice, occluders of infinite thickness) or `VISIBILITY_BITMASK` (32 sectors per slice, occluders of fixed thickness). Each carries the id the shader switches on.
 
 ### `com.aryston.helion.render.shader`
 
@@ -445,6 +449,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | `src/test/java/com/aryston/helion/render/camera/HelionFrustumTest.java` | Frustum culling with OpenGL, zero to one and reversed-Z projections. |
 | `src/test/java/com/aryston/helion/render/shader/ShaderCompilationTest.java` | Every fragment shader compiles with `glslangValidator` for both depth ranges, with Helion and vanilla includes inlined from the classpath. Skipped when `glslangValidator` is not installed; the CI installs it. |
 | `src/test/java/com/aryston/helion/render/lighting/AmbientOcclusionQualityTest.java` | Higher quality presets never use fewer samples or denoise passes. |
+| `src/test/java/com/aryston/helion/render/lighting/AmbientOcclusionAlgorithmTest.java` | Algorithm shader ids are unique and match the constants in `helion_ambient_occlusion.glsl`. |
 | `src/test/java/com/aryston/helion/debug/ParityResultTest.java` | Pixel comparison counts color and depth differences and the largest channel difference. |
 | `src/test/java/com/aryston/helion/debug/DebugOverlayLinesTest.java` | Debug screen lines: one line per section, wrapping after four values, empty sections and plain values. |
 

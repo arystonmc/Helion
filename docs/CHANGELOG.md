@@ -15,6 +15,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Debug mode that shows every Helion value on screen, logs it as JSON and runs the parity check with the J key
 - Settings screen with render core and debug mode options
 - Ambient occlusion with quality presets, strength, radius and a shadow-only view
+- Visibility bitmask ambient occlusion as an alternative method that keeps thin objects from casting dark halos
 - Bloom around bright light sources that adapts to daylight, caves and night, with intensity, threshold and a glow-only view
 - Neutral and Filmic tone mapping, exposure control and dithering against color banding
 - Optional contrast adaptive sharpening with a strength setting

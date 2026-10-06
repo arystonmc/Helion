@@ -11,6 +11,8 @@
   "helion.configuration.ambientOcclusion.button": "Düzenle",
   "helion.configuration.ambientOcclusion.enabled": "Açık",
   "helion.configuration.ambientOcclusion.enabled.tooltip": "Ortam kapatmasını açar veya kapatır.",
+  "helion.configuration.ambientOcclusion.algorithm": "Yöntem",
+  "helion.configuration.ambientOcclusion.algorithm.tooltip": "GTAO klasik yöntemdir. VISIBILITY_BITMASK her nesneye bir kalınlık verir; böylece çit, ot ve meşale gibi ince nesnelerin arkasından ışık geçer ve arkalarında koyu halkalar oluşmaz.",
   "helion.configuration.ambientOcclusion.quality": "Kalite",
   "helion.configuration.ambientOcclusion.quality.tooltip": "Yüksek kalite daha yumuşak gölgeler için daha çok örnek kullanır ve daha fazla GPU süresi harcar.",
   "helion.configuration.ambientOcclusion.strength": "Güç",

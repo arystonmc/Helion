@@ -11,6 +11,8 @@
   "helion.configuration.ambientOcclusion.button": "Edit",
   "helion.configuration.ambientOcclusion.enabled": "Enabled",
   "helion.configuration.ambientOcclusion.enabled.tooltip": "Turns ambient occlusion on or off.",
+  "helion.configuration.ambientOcclusion.algorithm": "Method",
+  "helion.configuration.ambientOcclusion.algorithm.tooltip": "GTAO is the classic method. VISIBILITY_BITMASK gives every occluder a thickness so light passes behind thin objects like fences, grass and torches, which avoids dark halos behind them.",
   "helion.configuration.ambientOcclusion.quality": "Quality",
   "helion.configuration.ambientOcclusion.quality.tooltip": "Higher quality uses more samples for smoother shadows and costs more GPU time.",
   "helion.configuration.ambientOcclusion.strength": "Strength",

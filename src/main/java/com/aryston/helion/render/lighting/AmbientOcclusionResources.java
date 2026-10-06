@@ -29,6 +29,7 @@ public final class AmbientOcclusionResources {
         .putFloat()
         .putInt()
         .putInt()
+        .putInt()
         .get();
 
     private final GpuResources resources;
@@ -54,7 +55,8 @@ public final class AmbientOcclusionResources {
             .putFloat(settings.strength())
             .putFloat(height * MAX_SCREEN_RADIUS_FRACTION)
             .putInt(settings.quality().slices())
-            .putInt(settings.quality().stepsPerSlice()));
+            .putInt(settings.quality().stepsPerSlice())
+            .putInt(settings.algorithm().shaderId()));
     }
 
     void finishFrame() {

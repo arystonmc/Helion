@@ -111,6 +111,7 @@ public final class HelionDebugSnapshot {
     private static JsonObject ambientOcclusion(AmbientOcclusionSettings settings) {
         JsonObject section = new JsonObject();
         section.addProperty("enabled", settings.enabled());
+        section.addProperty("algorithm", settings.algorithm().name());
         section.addProperty("quality", settings.quality().name());
         section.addProperty("strength", round(settings.strength()));
         section.addProperty("radius", round(settings.radius()));
