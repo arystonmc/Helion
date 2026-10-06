@@ -65,18 +65,18 @@ Helion never stands between you and the game.
 ### Instant Comparison
 Switch between Helion and vanilla rendering at any moment.
 
-- Press `H` or use `/helion toggle` to switch without restarting
-- `/helion status` shows whether Helion is active and why not
-- `/helion parity` compares a vanilla frame with a Helion frame pixel by pixel and reports the result
+- Press `H` to switch without restarting
 - Since: 0.1
 
-### Performance Insight
-See exactly where the GPU spends its time.
+### Debug Mode
+Everything Helion knows, on screen and in a log file, only when you ask for it.
 
-- The F3 screen shows the GPU time of every Helion render stage and their total, the active GPU and graphics API, the GPU memory Helion uses, and the current tone mapping, exposure and bloom threshold
-- GPU time measurement can be turned off in the settings
+- Shows every Helion value on screen without pressing F3: state, GPU and driver, resolution, camera, all effect settings, GPU time of every render stage, GPU memory per resource and culling statistics
+- Writes the same values once per second as JSON lines to `logs/helion-debug.jsonl`, together with events such as switching Helion on or off and parity check results
+- Press `J` in debug mode to compare a vanilla frame with a Helion frame pixel by pixel
+- Off by default and costs nothing while off; turn it on in the settings
 - Since: 0.1
 
 ### Settings
-- Mods screen → Helion → Config: turn the render core and GPU time measurement on or off, and adjust ambient occlusion, bloom, sharpening, tone mapping and exposure
+- Mods screen → Helion → Config: turn the render core and debug mode on or off, and adjust ambient occlusion, bloom, sharpening, tone mapping and exposure
 - Since: 0.1

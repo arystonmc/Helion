@@ -28,9 +28,9 @@ public final class HelionConfig {
         .translation("helion.configuration.enabled")
         .define("enabled", true);
 
-    public static final ModConfigSpec.BooleanValue GPU_TIMINGS = BUILDER
-        .translation("helion.configuration.gpuTimings")
-        .define("gpuTimings", true);
+    public static final ModConfigSpec.BooleanValue DEBUG_MODE = BUILDER
+        .translation("helion.configuration.debugMode")
+        .define("debugMode", false);
 
     private static final ModConfigSpec.BooleanValue AMBIENT_OCCLUSION_ENABLED;
     private static final ModConfigSpec.EnumValue<AmbientOcclusionQuality> AMBIENT_OCCLUSION_QUALITY;

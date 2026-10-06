@@ -32,7 +32,7 @@ public final class HelionRenderCore {
     private @Nullable HelionCamera lastCamera;
     private @Nullable SceneSnapshot lastScene;
     private volatile boolean enabled = true;
-    private volatile boolean measureGpuTimings = true;
+    private volatile boolean debugMode;
     private volatile RenderSettings settings = RenderSettings.foundation();
 
     private HelionRenderCore() {
@@ -46,9 +46,9 @@ public final class HelionRenderCore {
         passiveListener = listener;
     }
 
-    public void applySettings(boolean enabledSetting, boolean gpuTimingsSetting, RenderSettings renderSettings) {
+    public void applySettings(boolean enabledSetting, boolean debugModeSetting, RenderSettings renderSettings) {
         enabled = enabledSetting;
-        measureGpuTimings = gpuTimingsSetting;
+        debugMode = debugModeSetting;
         settings = renderSettings;
     }
 
@@ -84,7 +84,7 @@ public final class HelionRenderCore {
     public RenderTarget beginLevelFrame(RenderTarget mainTarget) {
         RenderTarget scene = sceneTargets.matching(mainTarget);
         GpuDeviceSummary summary = detectDevice();
-        if (measureGpuTimings && summary.supportsTimestamps()) {
+        if (debugMode && summary.supportsTimestamps()) {
             timings.beginFrame(summary.timestampPeriod());
         } else {
             timings.pause();
@@ -133,6 +133,10 @@ public final class HelionRenderCore {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public boolean isDebugMode() {
+        return debugMode;
     }
 
     public GpuTimings timings() {

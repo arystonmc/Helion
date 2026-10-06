@@ -30,6 +30,10 @@ public final class GpuResources {
         return released;
     }
 
+    public List<TrackedResource> live() {
+        return List.copyOf(live);
+    }
+
     public int count() {
         return live.size();
     }

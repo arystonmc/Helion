@@ -27,6 +27,10 @@ final class PassiveModeNotice {
         }
     }
 
+    static Component enabledState(boolean enabled) {
+        return Component.translatable(enabled ? "helion.state.enabled" : "helion.state.disabled");
+    }
+
     static void show(Minecraft minecraft, Component title, Component message) {
         SystemToast.addOrUpdate(minecraft.gui.toastManager(), TOAST_ID, title, message);
     }

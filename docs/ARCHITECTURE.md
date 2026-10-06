@@ -168,21 +168,19 @@ Places that copy or depend on vanilla internals. Check each of them first when M
 
 1. Diff `LevelRenderer.render`, `addSkyPass`, `addMainPass`, `executeSolid`, `executeClassicTransparency` against the previous version.
 2. Update the classes in the Vanilla Coupling table.
-3. Build, start the game with `--graphicsBackend vulkan` and run `/helion parity` in every scene of the Parity Scenes list below.
+3. Build, start the game with `--graphicsBackend vulkan` and turn on debug mode and run the parity check (`J`) in every scene of the Parity Scenes list below.
 4. Record anything surprising as a lesson in the workspace `docs/RULES.md`.
 
 ## Testing Tools
 
-- `/helion parity`: after warm-up frames on each side, captures one vanilla frame and one Helion foundation frame (all effects off), reads both main targets back from the GPU and reports differing pixels. It aborts with a message when a Helion frame could not be rendered by Helion. Use `/tick freeze` and keep the camera still.
-- `/helion toggle` or the `H` key: switches between Helion and vanilla rendering at runtime.
-- `/helion status`: shows whether the core is active, disabled or passive and why.
-- Development runs (the workspace launcher or `runClient`) write `Helion stats` lines to the log every 5 seconds while a world is open: frame rate, resolution, total and per stage GPU time, tone mapper, exposure, ambient light and the current bloom threshold. Start the launcher with `-World "<save folder>"` to load a world directly. Production installs never write these lines.
-- Automated visual test: `launcher/launch.ps1 -World "Helion Visual Test" -Define helion.visualTest=true` loads a copy of a save, builds a row of light blocks in front of the player, switches to spectator, freezes time and weather, and photographs seven scenes (noon sky, sunrise sun, horizon, light blocks by day, sunset, night sky, light blocks by night) in five variants each (vanilla, None, Neutral, Filmic, bloom only) into `screenshots/helion_<scene>_<variant>.png` at half resolution, then runs the parity check in every scene with ticks frozen and logs whether all pixels match vanilla (a failure is a `WARN` line). Every shot also writes a `Helion visual test` log line with frame rate, GPU time and image state, and the game closes cleanly afterwards. Run it on a copy of a world, never on a real save, because it changes blocks, time and game rules. Development runs only.
-- F3 debug screen: backend, GPU, total and smoothed GPU time per stage (up to 32 timed passes per frame, including every `bloom_*` pass and `composite`), the image line with tone mapper, exposure, ambient light, bloom threshold and sharpening strength, tracked GPU memory and Helion frustum check against vanilla visible sections.
+- Debug mode (Mods → Helion → Config → Debug Mode, off by default): shows every value of `HelionDebugSnapshot` on screen without F3 and writes it as one JSON line per second to `logs/helion-debug.jsonl`, together with `toggle`, `passive` and `parity` events. GPU time per stage is only measured in debug mode (up to 32 timed passes per frame, including every `bloom_*` pass and `composite`). While it is off the debug entry, the JSON log and the timestamp queries do no work at all.
+- Parity check, `J` key in debug mode: after warm-up frames on each side, captures one vanilla frame and one Helion foundation frame (all effects off), reads both main targets back from the GPU and reports differing pixels in chat and in the JSON log. It aborts with a message when a Helion frame could not be rendered by Helion. Use `/tick freeze` and keep the camera still.
+- `H` key: switches between Helion and vanilla rendering at runtime.
+- Automated visual test: `launcher/launch.ps1 -World "Helion Visual Test" -Define helion.visualTest=true` loads a copy of a save, builds a row of light blocks in front of the player, switches to spectator, freezes time and weather, and photographs seven scenes (noon sky, sunrise sun, horizon, light blocks by day, sunset, night sky, light blocks by night) in five variants each (vanilla, None, Neutral, Filmic, bloom only) into `screenshots/helion_<scene>_<variant>.png` at half resolution, then runs the parity check in every scene with ticks frozen and logs whether all pixels match vanilla (a failure is a `WARN` line). Every shot also writes a `Helion visual test` log line with the full debug snapshot as JSON, and the game closes cleanly afterwards. Run it on a copy of a world, never on a real save, because it changes blocks, time and game rules. Development runs only.
 
 ## Parity Scenes
 
-Run `/helion parity` in each scene before committing a change to the render core:
+Run the parity check (`J` in debug mode) in each scene before committing a change to the render core:
 
 - Overworld at day and at night, during rain, under water
 - Nether and End

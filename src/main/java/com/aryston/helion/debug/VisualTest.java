@@ -5,8 +5,6 @@ import com.aryston.helion.render.HelionRenderCore;
 import com.mojang.logging.LogUtils;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,6 +24,7 @@ public final class VisualTest {
     private static final int SCREENSHOT_DOWNSCALE = 2;
     private static final String SCREENSHOT_PREFIX = "helion_";
     private static final String SCREENSHOT_EXTENSION = ".png";
+    private static final boolean DEBUG_MODE_DURING_TEST = true;
 
     private final List<Shot> shots = VisualTestScene.ALL.stream()
         .flatMap(scene -> Arrays.stream(VisualTestVariant.values()).map(variant -> new Shot(scene, variant)))
@@ -112,7 +111,7 @@ public final class VisualTest {
         }
         HelionRenderCore.get().applySettings(
             shot.variant().helion(),
-            HelionConfig.GPU_TIMINGS.getAsBoolean(),
+            DEBUG_MODE_DURING_TEST,
             shot.variant().applyTo(HelionConfig.renderSettings())
         );
     }
@@ -160,23 +159,14 @@ public final class VisualTest {
     private static void capture(Minecraft minecraft, Shot shot) {
         String fileName = SCREENSHOT_PREFIX + shot.name() + SCREENSHOT_EXTENSION;
         Screenshot.grab(minecraft.gameDirectory, fileName, minecraft.gameRenderer.mainRenderTarget(), SCREENSHOT_DOWNSCALE, message -> { });
-        HelionRenderCore core = HelionRenderCore.get();
-        Map<String, Double> timings = core.timings().averageMillis();
-        LOGGER.info(String.format(
-            Locale.ROOT,
-            "Helion visual test %s: %d fps, Helion GPU total %.2f ms, %s",
-            shot.name(),
-            minecraft.getFps(),
-            HelionStatsLines.totalMillis(timings),
-            HelionStatsLines.image(core).orElse("no image state")
-        ));
+        LOGGER.info("Helion visual test {}: {}", shot.name(), HelionDebugSnapshot.capture(minecraft));
     }
 
     private void finish(Minecraft minecraft) {
         finished = true;
         HelionRenderCore.get().applySettings(
             HelionConfig.ENABLED.getAsBoolean(),
-            HelionConfig.GPU_TIMINGS.getAsBoolean(),
+            HelionConfig.DEBUG_MODE.getAsBoolean(),
             HelionConfig.renderSettings()
         );
         if (!hudWasHidden) {

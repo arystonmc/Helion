@@ -23,8 +23,8 @@ Every class and source file of Helion with its purpose. Find the right file here
 | GPU time per stage | `GpuTimings` |
 | Camera and frustum math | `HelionCamera`, `HelionFrustum` |
 | Settings | `HelionConfig`, `lang/*.json` |
-| Key bindings and commands | `HelionKeys`, `HelionCommands` |
-| F3 lines and development stats in the log | `HelionDebugEntry`, `HelionStatsLog`, `HelionStatsLines` |
+| Key bindings | `HelionKeys`, `ParityControl` |
+| Debug mode: on-screen values and JSON log | `HelionDebugSnapshot` (every value), `HelionDebugEntry` (screen), `DebugOverlayLines` (line layout), `HelionDebugLog` (`logs/helion-debug.jsonl`) |
 | Pixel comparison with vanilla | `ParityCheck`, `FrameCapture`, `ParityResult` |
 | Vanilla hooks | `LevelRendererMixin`, `LevelRendererAccessor` |
 | Mod name, version, loader versions | `gradle.properties` |
@@ -51,7 +51,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### HelionConfig
 - Path: `src/main/java/com/aryston/helion/config/HelionConfig.java`
-- Role: Client config spec: `ENABLED` (render core on at startup), `GPU_TIMINGS`, the `ambientOcclusion` section (enabled, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, the `bloom` subsection with enabled, intensity, threshold, debugView, and the `sharpening` subsection with enabled, strength). `renderSettings()` turns the config into a `RenderSettings` snapshot.
+- Role: Client config spec: `ENABLED` (render core on at startup), `DEBUG_MODE` (off by default), the `ambientOcclusion` section (enabled, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, the `bloom` subsection with enabled, intensity, threshold, debugView, and the `sharpening` subsection with enabled, strength). `renderSettings()` turns the config into a `RenderSettings` snapshot.
 - Depends on: nothing inside the mod.
 
 ### `com.aryston.helion.render`
@@ -59,7 +59,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 #### HelionRenderCore
 - Path: `src/main/java/com/aryston/helion/render/HelionRenderCore.java`
 - Role: Singleton that owns the core state and shared GPU objects. Decides whether Helion renders, detects the backend on first use, starts and ends level frames, redirects the main target during a level frame, releases everything on shutdown. Setting fields are volatile because config reloads may arrive from another thread.
-- Members: `get()`, `isActive()`, `toggle()`, `passivate(reason)`, `reportFailure(throwable)`, `beginLevelFrame(main)`, `endLevelFrame()`, `resolveMainTarget(original)`, `recordFrame(camera, scene)`, `lastCamera()`, `lastScene()`, `applySettings(enabled, gpuTimings, renderSettings)`, `settings()`, `ambientOcclusion()`, `image()`, `setPassiveListener(listener)`, `shutdown()`.
+- Members: `get()`, `isActive()`, `toggle()`, `passivate(reason)`, `reportFailure(throwable)`, `beginLevelFrame(main)`, `endLevelFrame()`, `resolveMainTarget(original)`, `recordFrame(camera, scene)`, `lastCamera()`, `lastScene()`, `applySettings(enabled, debugMode, renderSettings)`, `isDebugMode()`, `settings()`, `ambientOcclusion()`, `image()`, `setPassiveListener(listener)`, `shutdown()`.
 - Depends on: `GpuDeviceSummary`, `GpuResources`, `SceneTargets`, `GpuTimings`, `HelionCamera`, `AmbientOcclusionResources`, `ImageResources`.
 
 #### PassiveReason
@@ -89,7 +89,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### GpuResources
 - Path: `src/main/java/com/aryston/helion/render/resource/GpuResources.java`
-- Role: Registry of every GPU resource Helion owns. `release` frees through `RenderSystem.queueFencedTask` so in-flight frames are safe; `releaseAll` runs on shutdown. Feeds the F3 resource line.
+- Role: Registry of every GPU resource Helion owns. `release` frees through `RenderSystem.queueFencedTask` so in-flight frames are safe; `releaseAll` runs on shutdown. Feeds the resource values of the debug snapshot through `live()`.
 
 #### UniformRing
 - Path: `src/main/java/com/aryston/helion/render/resource/UniformRing.java`
@@ -295,17 +295,17 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ClientEvents
 - Path: `src/main/java/com/aryston/helion/integration/ClientEvents.java`
-- Role: Wires every listener: client setup (compatibility check, passive notices), pipeline registration, config loading, key handling and notices on client tick, client commands, shutdown.
-- Depends on: `HelionRenderCore`, `HelionKeys`, `HelionCommands`, `CompatibilityGuard`, `PassiveModeNotice`, `HelionDebugEntry`, `HelionStatsLog`, `VisualTest`, `LevelRenderHook`.
+- Role: Wires every listener: client setup (compatibility check, passive notices), pipeline registration, config loading, toggle and parity keys, notices and the debug log on client tick, debug log events for toggles and passive mode, shutdown.
+- Depends on: `HelionRenderCore`, `HelionKeys`, `ParityControl`, `CompatibilityGuard`, `PassiveModeNotice`, `HelionDebugEntry`, `HelionDebugLog`, `VisualTest`, `LevelRenderHook`.
 
-#### HelionCommands
-- Path: `src/main/java/com/aryston/helion/integration/HelionCommands.java`
-- Role: Client commands `/helion status`, `/helion toggle`, `/helion parity` and their chat messages.
-- Depends on: `HelionRenderCore`, `ParityCheck`.
+#### ParityControl
+- Path: `src/main/java/com/aryston/helion/integration/ParityControl.java`
+- Role: Starts the parity check from the parity key (debug mode only), shows its result in chat and writes it to the debug log.
+- Depends on: `ParityCheck`, `HelionDebugLog`, `HelionRenderCore`.
 
 #### HelionKeys
 - Path: `src/main/java/com/aryston/helion/integration/HelionKeys.java`
-- Role: "Helion" key category and the toggle key (default `H`).
+- Role: "Helion" key category, the toggle key (default `H`) and the parity key (default `J`, only acts in debug mode).
 
 #### CompatibilityGuard
 - Path: `src/main/java/com/aryston/helion/integration/CompatibilityGuard.java`
@@ -313,7 +313,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### PassiveModeNotice
 - Path: `src/main/java/com/aryston/helion/integration/PassiveModeNotice.java`
-- Role: Queues passive reasons and shows them as toasts once the GUI exists; also shows the toggle toast. The queue is thread safe because the incompatible mod check runs on a parallel setup thread.
+- Role: Queues passive reasons and shows them as toasts once the GUI exists; also shows the toggle toast and builds its enabled or disabled text. The queue is thread safe because the incompatible mod check runs on a parallel setup thread.
 
 ### `com.aryston.helion.integration.vanilla`
 
@@ -371,25 +371,30 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 ### `com.aryston.helion.debug`
 
+#### HelionDebugSnapshot
+- Path: `src/main/java/com/aryston/helion/debug/HelionDebugSnapshot.java`
+- Role: Single source of every debug value, as a JSON object with one section per topic: `core` (version, active, enabled, debug mode, passive reason, parity running), `device`, `frame` (fps, window and scene size, color format, sky, improved transparency, ambient light, fog color), `camera`, `ambientOcclusion`, `image`, `bloom` (with the effective threshold), `sharpening`, `gpu` (total), `gpuStages` (milliseconds per pass), `resources`, `resourceList` (MiB per label) and `frustum` (Helion versus vanilla visible sections). Numbers are rounded to three decimals.
+- Depends on: `HelionRenderCore`, `ParityCheck`, `ImageResources`.
+
 #### HelionDebugEntry
 - Path: `src/main/java/com/aryston/helion/debug/HelionDebugEntry.java`
-- Role: F3 lines: core state, GPU and backend, total and per stage GPU time, image state (tone mapper, exposure, ambient light, bloom threshold), tracked resources, Helion frustum versus vanilla visible sections.
-- Depends on: `HelionStatsLines`.
+- Role: Debug screen entry registered as always on. Shows nothing unless debug mode is on; then shows every value of `HelionDebugSnapshot` on screen without F3.
+- Depends on: `HelionDebugSnapshot`, `DebugOverlayLines`.
+- Notes: the entry id is `helion:debug_mode`; players can still hide it in the vanilla debug options screen.
 
-#### HelionStatsLog
-- Path: `src/main/java/com/aryston/helion/debug/HelionStatsLog.java`
-- Role: Writes `Helion stats`, `Helion stages` and `Helion image` lines to the log every 100 client ticks while a world is open, so test runs can be measured without reading F3. Only in development runs (`FMLEnvironment.isProduction()` is false), never in player installs.
-- Depends on: `HelionStatsLines`, `HelionRenderCore`.
+#### DebugOverlayLines
+- Path: `src/main/java/com/aryston/helion/debug/DebugOverlayLines.java`
+- Role: Turns a snapshot into screen lines: `Helion <section>: key=value, …` with at most four values per line and indented continuation lines.
 
-#### HelionStatsLines
-- Path: `src/main/java/com/aryston/helion/debug/HelionStatsLines.java`
-- Role: Text shared by the F3 entry and the stats log: per stage timings, their total and the image state line.
-- Depends on: `HelionRenderCore`, `ImageResources`.
+#### HelionDebugLog
+- Path: `src/main/java/com/aryston/helion/debug/HelionDebugLog.java`
+- Role: JSON Lines writer for debug mode. Writes a `snapshot` line every 20 client ticks while a world is open and event lines (`toggle`, `passive`, `parity`) when they happen, each as `{"time", "type", "data"}`, to `logs/helion-debug.jsonl` in the game folder. The file is recreated on the first line of every game start. Does nothing while debug mode is off; stops writing after an I/O error and says so once in the game log.
+- Depends on: `HelionDebugSnapshot`, `HelionRenderCore`.
 
 #### VisualTest
 - Path: `src/main/java/com/aryston/helion/debug/VisualTest.java`
-- Role: Automated visual test that runs when the JVM property `helion.visualTest=true` is set in a development run. Prepares the world, then for every scene and variant sets the time, holds the camera, applies the variant's settings, waits for the frame to settle, saves a half resolution screenshot and logs frame rate, GPU time and image state. The parity variant freezes ticks and runs `ParityCheck` instead, logging a pass or a `WARN` with the differing pixels. Restores the settings and the HUD and closes the game cleanly at the end.
-- Depends on: `VisualTestScene`, `VisualTestVariant`, `VisualTestWorld`, `ParityCheck`, `HelionStatsLines`, `HelionRenderCore`, `HelionConfig`.
+- Role: Automated visual test that runs when the JVM property `helion.visualTest=true` is set in a development run. Prepares the world, then for every scene and variant sets the time, holds the camera, applies the variant's settings, waits for the frame to settle, saves a half resolution screenshot and logs the full debug snapshot as JSON. Debug mode is on during the test so GPU times are measured. The parity variant freezes ticks and runs `ParityCheck` instead, logging a pass or a `WARN` with the differing pixels. Restores the settings and the HUD and closes the game cleanly at the end.
+- Depends on: `VisualTestScene`, `VisualTestVariant`, `VisualTestWorld`, `ParityCheck`, `HelionDebugSnapshot`, `HelionRenderCore`, `HelionConfig`.
 - Notes: changes blocks, time and game rules of the loaded world; run it on a copy of a save only.
 
 #### VisualTestScene
@@ -406,7 +411,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ParityCheck
 - Path: `src/main/java/com/aryston/helion/debug/ParityCheck.java`
-- Role: State machine behind `/helion parity`: renders three warm-up vanilla frames, captures the fourth, renders three warm-up Helion frames, captures the fourth, compares when both readbacks finish. Warm-up keeps cold first-use resources out of the comparison. Helion frames use `RenderSettings.foundation()`, so effects never count as differences. If a Helion frame is not rendered by Helion (core turned off or a render failure), the check aborts and reports that instead of comparing two vanilla frames.
+- Role: State machine behind the parity key and the visual test: renders three warm-up vanilla frames, captures the fourth, renders three warm-up Helion frames, captures the fourth, compares when both readbacks finish. Warm-up keeps cold first-use resources out of the comparison. Helion frames use `RenderSettings.foundation()`, so effects never count as differences. If a Helion frame is not rendered by Helion (core turned off or a render failure), the check aborts and reports that instead of comparing two vanilla frames.
 
 #### FrameCapture
 - Path: `src/main/java/com/aryston/helion/debug/FrameCapture.java`
@@ -441,6 +446,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | `src/test/java/com/aryston/helion/render/shader/ShaderCompilationTest.java` | Every fragment shader compiles with `glslangValidator` for both depth ranges, with Helion and vanilla includes inlined from the classpath. Skipped when `glslangValidator` is not installed; the CI installs it. |
 | `src/test/java/com/aryston/helion/render/lighting/AmbientOcclusionQualityTest.java` | Higher quality presets never use fewer samples or denoise passes. |
 | `src/test/java/com/aryston/helion/debug/ParityResultTest.java` | Pixel comparison counts color and depth differences and the largest channel difference. |
+| `src/test/java/com/aryston/helion/debug/DebugOverlayLinesTest.java` | Debug screen lines: one line per section, wrapping after four values, empty sections and plain values. |
 
 ## Source Files
 
@@ -453,7 +459,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 
 | Folder | Contents |
 |---|---|
-| `src/main/resources/assets/helion/lang/` | `en_us.json` and `tr_tr.json`: config, key, toast and command texts. |
+| `src/main/resources/assets/helion/lang/` | `en_us.json` and `tr_tr.json`: config, key, toast and parity check texts. |
 | `src/main/resources/assets/helion/shaders/ambient_occlusion/` | Ambient occlusion fragment shaders: `view_depth`, `gtao`, `denoise`, `denoise_resolve`, `apply`. |
 | `src/main/resources/assets/helion/shaders/image/` | Bloom and image fragment shaders: `bloom_prefilter`, `bloom_downsample`, `bloom_upsample`, `composite`, `bloom_debug`, `sharpen`. |
 | `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_view` (depth and view position), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur), `helion_color` (sRGB conversion, saturation, the Neutral highlight curve and its inverse, film grade, dither noise), `helion_image` (image settings block including the sharpening strength, scene expansion, tone mapper switch, Filmic highlight bleach, bloom threshold, dither), `helion_bloom_downsample` (13-tap downsample with optional Karis average over a `helionBloomTap` function the including shader defines). |

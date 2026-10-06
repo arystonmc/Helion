@@ -18,11 +18,20 @@ public final class HelionKeys {
         CATEGORY
     );
 
+    public static final KeyMapping PARITY = new KeyMapping(
+        "key.helion.parity",
+        KeyConflictContext.IN_GAME,
+        InputConstants.Type.KEYBOARD,
+        InputConstants.KEY_J,
+        CATEGORY
+    );
+
     private HelionKeys() {
     }
 
     public static void register(RegisterKeyMappingsEvent event) {
         event.registerCategory(CATEGORY);
         event.register(TOGGLE);
+        event.register(PARITY);
     }
 }

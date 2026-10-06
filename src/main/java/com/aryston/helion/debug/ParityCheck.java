@@ -33,6 +33,10 @@ public final class ParityCheck {
         return true;
     }
 
+    public boolean isRunning() {
+        return phase != Phase.IDLE;
+    }
+
     public boolean forcesVanillaFrame() {
         return phase == Phase.WARM_UP_VANILLA || phase == Phase.CAPTURE_VANILLA;
     }
