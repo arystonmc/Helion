@@ -3,6 +3,7 @@ package com.aryston.helion.integration;
 import com.aryston.helion.config.HelionConfig;
 import com.aryston.helion.debug.HelionDebugEntry;
 import com.aryston.helion.debug.HelionDebugLog;
+import com.aryston.helion.debug.ParityCheck;
 import com.aryston.helion.debug.VisualTest;
 import com.aryston.helion.integration.vanilla.LevelRenderHook;
 import com.aryston.helion.integration.vanilla.VanillaGeometryPipelines;
@@ -83,6 +84,7 @@ public final class ClientEvents {
 
     private static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
+        ParityCheck.get().clientTick();
         PassiveModeNotice.showPending(minecraft);
         DEBUG_LOG.tick(minecraft);
         VISUAL_TEST.ifPresent(test -> test.tick(minecraft));

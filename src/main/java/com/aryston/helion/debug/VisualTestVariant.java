@@ -9,6 +9,7 @@ import com.aryston.helion.render.post.BloomSettings;
 import com.aryston.helion.render.post.ImageSettings;
 import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.post.ToneMapper;
+import com.aryston.helion.render.temporal.TemporalSettings;
 import java.util.Locale;
 
 enum VisualTestVariant {
@@ -19,6 +20,7 @@ enum VisualTestVariant {
     BLOOM_ONLY(true, ToneMapper.NEUTRAL, true),
     LIGHTING(true, ToneMapper.NEUTRAL, false),
     LIGHT_ONLY(true, ToneMapper.NEUTRAL, false),
+    TEMPORAL(true, ToneMapper.NEUTRAL, false),
     PARITY(true, ToneMapper.NEUTRAL, false);
 
     private final boolean helion;
@@ -46,7 +48,17 @@ enum VisualTestVariant {
                     DeferredLightingSettings.DEFAULT_BLOCK_LIGHT_INTENSITY,
                     DeferredLightingSettings.DEFAULT_SKY_LIGHT_INTENSITY,
                     this == LIGHT_ONLY
-                )
+                ),
+                TemporalSettings.DISABLED
+            );
+        }
+        if (this == TEMPORAL) {
+            return new RenderSettings(
+                AmbientOcclusionSettings.DISABLED,
+                ImageSettings.FOUNDATION,
+                settings.geometry().withoutView(),
+                DeferredLightingSettings.DISABLED,
+                new TemporalSettings(true)
             );
         }
         BloomSettings bloom = new BloomSettings(
@@ -56,7 +68,8 @@ enum VisualTestVariant {
             settings.ambientOcclusion(),
             new ImageSettings(toneMapper, ImageSettings.DEFAULT_EXPOSURE, true, bloom, SharpeningSettings.DISABLED),
             settings.geometry(),
-            settings.lighting()
+            settings.lighting(),
+            settings.temporal()
         );
     }
 

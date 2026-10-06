@@ -12,13 +12,17 @@ import com.aryston.helion.render.graph.RenderSettings;
 import com.aryston.helion.render.lighting.LightEnvironment;
 import com.aryston.helion.render.post.PostResults;
 import com.aryston.helion.render.scene.SceneSnapshot;
+import com.aryston.helion.render.temporal.TemporalFrame;
+import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import java.util.List;
 import java.util.Objects;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.ProjectionMatrixBuffer;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
@@ -35,8 +39,11 @@ import org.joml.Vector3d;
 import org.jspecify.annotations.Nullable;
 
 final class VanillaFrameDriver {
+    private static final String JITTERED_PROJECTION_LABEL = "Helion Jittered Projection";
+
     private final SceneSkyRenderer sky = new SceneSkyRenderer();
     private final AmbientLightTracker ambientLight = new AmbientLightTracker();
+    private @Nullable ProjectionMatrixBuffer jitteredProjection;
 
     void render(LevelFrameRequest request, RenderSettings settings) {
         LevelRendererAccessor level = request.level();
@@ -71,6 +78,8 @@ final class VanillaFrameDriver {
         modelView.pushMatrix();
         modelView.mul(camera.viewRotationMatrix);
         FeatureRenderDispatcher.PreparedFrame featureFrame = null;
+        GpuBufferSlice levelProjection = RenderSystem.getProjectionMatrixBuffer();
+        ProjectionType levelProjectionType = RenderSystem.getProjectionType();
         try {
             profiler.popPush("submitFeatures");
             level.helion$submitFeatures(state, level.helion$submitNodeStorage(), request.renderOutline());
@@ -85,10 +94,15 @@ final class VanillaFrameDriver {
             ClientHooks.fireFrameGraphSetup(builder, level.helion$targets(), camera, camera.viewRotationMatrix, profiler);
             targets.importEntityOutline(builder);
             ChunkSectionsToRender sections = prepareSections(request, orderIndependent);
+            HelionCamera helionCamera = camera(camera);
+            TemporalFrame temporal = HelionRenderCore.get().temporal().begin(settings.temporal(), helionCamera, scene.width, scene.height);
+            if (temporal.active()) {
+                RenderSystem.setProjectionMatrix(jitteredProjection(temporal), ProjectionType.PERSPECTIVE);
+            }
             FrameContext frame = new FrameContext(
                 new RenderGraph(builder, HelionRenderCore.get().timings()),
                 targets,
-                camera(camera),
+                helionCamera,
                 new SceneSnapshot(
                     request.fogColor(),
                     request.shouldRenderSky(),
@@ -101,6 +115,7 @@ final class VanillaFrameDriver {
                 ),
                 settings,
                 new GeometryBuffer(),
+                temporal,
                 new PostResults()
             );
             HelionRenderCore.get().recordFrame(frame.camera(), frame.scene());
@@ -109,12 +124,25 @@ final class VanillaFrameDriver {
             builder.execute(request.resourceAllocator(), new ProfilerInspector(profiler));
             profiler.pop();
         } finally {
+            if (levelProjection != null) {
+                RenderSystem.setProjectionMatrix(levelProjection, levelProjectionType);
+            }
             level.helion$targets().clear();
             modelView.popMatrix();
             if (featureFrame != null) {
                 featureFrame.close();
             }
         }
+    }
+
+    private GpuBufferSlice jitteredProjection(TemporalFrame temporal) {
+        ProjectionMatrixBuffer buffer = jitteredProjection;
+        if (buffer == null) {
+            buffer = new ProjectionMatrixBuffer(JITTERED_PROJECTION_LABEL);
+            HelionRenderCore.get().resources().track(JITTERED_PROJECTION_LABEL, RenderSystem.PROJECTION_MATRIX_UBO_SIZE, buffer::close);
+            jitteredProjection = buffer;
+        }
+        return buffer.getBuffer(new Matrix4f(temporal.jitteredProjection()));
     }
 
     private FrameSources sources(LevelFrameRequest request, ChunkSectionsToRender sections, FeatureRenderDispatcher.PreparedFrame featureFrame) {

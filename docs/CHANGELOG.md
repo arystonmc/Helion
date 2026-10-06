@@ -14,11 +14,13 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Toggle key (H) to switch between Helion and vanilla rendering
 - Debug mode that shows every Helion value on screen, logs it as JSON and runs the parity check with the J key
 - Parity check image that marks every differing pixel, plus a warning when the game was not frozen during the check
+- Parity check that compares two frames from the same tick, so flickering torch light no longer counts as a difference
 - Settings screen with render core and debug mode options
 - Ambient occlusion with quality presets, strength, radius and a shadow-only view
 - Visibility bitmask ambient occlusion as an alternative method that keeps thin objects from casting dark halos
 - Experimental geometry buffer: terrain drawn by Helion shaders that also record normals, block light, sky light and base color
 - Experimental HDR lighting for terrain with separate block and sky light and intensity settings
+- Experimental temporal anti-aliasing that smooths block edges and distant textures
 - Bloom around bright light sources that adapts to daylight, caves and night, with intensity, threshold and a glow-only view
 - Neutral and Filmic tone mapping, exposure control and dithering against color banding
 - Optional contrast adaptive sharpening with a strength setting

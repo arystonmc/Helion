@@ -70,6 +70,15 @@ Torches, lanterns and lava finally shine brighter than the vanilla light limit.
 - Settings: on or off, block light intensity, sky light intensity, and a view that shows the light alone; needs the geometry buffer, off by default while it is experimental
 - Since: 0.1
 
+### Temporal Anti-Aliasing (Experimental)
+Smooth block edges and calm, shimmer-free distant textures.
+
+- Moves the camera by less than a pixel every frame and blends each frame with the previous ones, like modern games do
+- Works while you walk and turn; the picture gets a little softer, which the sharpening option makes up for
+- Fast moving mobs can leave a faint trail for now
+- Settings: on or off; off by default while it is experimental
+- Since: 0.1
+
 ### Safe by Design
 Helion never stands between you and the game.
 

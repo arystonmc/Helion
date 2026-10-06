@@ -15,6 +15,7 @@ import com.aryston.helion.render.post.ImageSettings;
 import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.resource.TrackedResource;
 import com.aryston.helion.render.scene.SceneSnapshot;
+import com.aryston.helion.render.temporal.TemporalSettings;
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.platform.Window;
 import java.util.List;
@@ -53,6 +54,7 @@ public final class HelionDebugSnapshot {
         snapshot.add("sharpening", sharpening(settings.image().sharpening()));
         snapshot.add("geometryBuffer", geometryBuffer(settings.geometry()));
         snapshot.add("lighting", lighting(settings.lighting()));
+        snapshot.add("temporal", temporal(settings.temporal()));
         snapshot.add("gpu", gpu(core));
         snapshot.add("gpuStages", gpuStages(core.timings().averageMillis()));
         snapshot.add("resources", resources(core.resources().live()));
@@ -162,6 +164,12 @@ public final class HelionDebugSnapshot {
         section.addProperty("blockLightIntensity", round(settings.blockLightIntensity()));
         section.addProperty("skyLightIntensity", round(settings.skyLightIntensity()));
         section.addProperty("lightOnlyView", settings.lightOnlyView());
+        return section;
+    }
+
+    private static JsonObject temporal(TemporalSettings settings) {
+        JsonObject section = new JsonObject();
+        section.addProperty("enabled", settings.enabled());
         return section;
     }
 

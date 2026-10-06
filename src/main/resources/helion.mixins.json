@@ -4,6 +4,7 @@
   "package": "com.aryston.helion.mixin",
   "client": [
     "ChunkSectionsToRenderAccessor",
+    "GameRendererMixin",
     "LevelRendererAccessor",
     "LevelRendererMixin"
   ],

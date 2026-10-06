@@ -19,6 +19,7 @@ public final class LevelRenderHook {
             renderedByHelion = renderWithHelion(request, settings, core);
         } else {
             core.timings().pause();
+            core.temporal().invalidate();
             vanillaRenderer.run();
         }
         parity.afterLevelFrame(request.level().helion$gameRenderer().mainRenderTarget(), renderedByHelion);

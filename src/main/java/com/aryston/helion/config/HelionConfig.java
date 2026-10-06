@@ -11,6 +11,7 @@ import com.aryston.helion.render.post.BloomSettings;
 import com.aryston.helion.render.post.ImageSettings;
 import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.post.ToneMapper;
+import com.aryston.helion.render.temporal.TemporalSettings;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class HelionConfig {
@@ -61,6 +62,7 @@ public final class HelionConfig {
     private static final ModConfigSpec.DoubleValue BLOCK_LIGHT_INTENSITY;
     private static final ModConfigSpec.DoubleValue SKY_LIGHT_INTENSITY;
     private static final ModConfigSpec.BooleanValue LIGHT_ONLY_VIEW;
+    private static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
 
     static {
         BUILDER.translation("helion.configuration.ambientOcclusion").push("ambientOcclusion");
@@ -143,6 +145,12 @@ public final class HelionConfig {
             .translation("helion.configuration.lighting.lightOnlyView")
             .define("lightOnlyView", false);
         BUILDER.pop();
+
+        BUILDER.translation("helion.configuration.temporalAntiAliasing").push("temporalAntiAliasing");
+        TEMPORAL_ENABLED = BUILDER
+            .translation("helion.configuration.temporalAntiAliasing.enabled")
+            .define("enabled", false);
+        BUILDER.pop();
     }
 
     public static final ModConfigSpec SPEC = BUILDER.build();
@@ -151,7 +159,13 @@ public final class HelionConfig {
     }
 
     public static RenderSettings renderSettings() {
-        return new RenderSettings(ambientOcclusionSettings(), imageSettings(), geometryBufferSettings(), lightingSettings());
+        return new RenderSettings(
+            ambientOcclusionSettings(),
+            imageSettings(),
+            geometryBufferSettings(),
+            lightingSettings(),
+            new TemporalSettings(TEMPORAL_ENABLED.getAsBoolean())
+        );
     }
 
     private static AmbientOcclusionSettings ambientOcclusionSettings() {

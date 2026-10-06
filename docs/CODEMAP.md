@@ -7,7 +7,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 | I want to change | Go to |
 |---|---|
 | Stage order of a frame | `FrameStages` |
-| What a stage draws | `ClearStage`, `SkyStage`, `OpaqueGeometryStage`, `DeferredLightingStage`, `SolidFeatureStage`, `AmbientOcclusionStage`, `TransparentGeometryStage`, `PostProcessingStage`, `BloomStage`, `SharpeningStage`, `ImageCompositeStage`, `PresentStage` |
+| What a stage draws | `ClearStage`, `SkyStage`, `OpaqueGeometryStage`, `DeferredLightingStage`, `SolidFeatureStage`, `AmbientOcclusionStage`, `TransparentGeometryStage`, `TemporalStage`, `PostProcessingStage`, `BloomStage`, `SharpeningStage`, `ImageCompositeStage`, `PresentStage` |
 | Ambient occlusion look and cost | `AmbientOcclusionResources` (tuning), `AmbientOcclusionQuality` (presets), `shaders/ambient_occlusion/` |
 | Bloom, tone mapping and exposure | `ImageResources` (tuning), `shaders/image/`, `shaders/include/helion_color.glsl`, `bloom_prefilter.fsh` (emissive detection) |
 | Sharpening | `SharpeningStage`, `shaders/image/sharpen.fsh` |
@@ -15,7 +15,8 @@ Every class and source file of Helion with its purpose. Find the right file here
 | Effect settings per frame | `RenderSettings`, `HelionConfig.renderSettings` |
 | Geometry buffer (normals, light, albedo of terrain) | `OpaqueGeometryStage`, `VanillaGeometryPipelines`, `GeometryBufferPipelines`, `shaders/terrain/`, `shaders/geometry/` |
 | Deferred terrain lighting in HDR (block and sky light) | `DeferredLightingStage`, `DeferredLightingResources`, `LightEnvironment`, `shaders/lighting/`, `shaders/include/helion_lighting.glsl` |
-| Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines`, `DeferredLightingPipelines`, `ImagePipelines` |
+| Temporal anti-aliasing: jitter, history, reprojection | `TemporalStage`, `TemporalResources`, `JitterSequence`, `PreviousView`, `GameRendererMixin`, `shaders/temporal/` |
+| Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines`, `DeferredLightingPipelines`, `TemporalPipelines`, `ImagePipelines` |
 | How vanilla terrain, entities, sky or OIT are called | `VanillaTerrainSource`, `VanillaEntitySource`, `VanillaAtmosphereSource`, `VanillaTransparencySource` |
 | The rebuilt vanilla `LevelRenderer.render` | `VanillaFrameDriver` |
 | Frame graph targets and OIT targets | `VanillaFrameTargets` |
@@ -28,7 +29,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 | Key bindings | `HelionKeys`, `ParityControl` |
 | Debug mode: on-screen values and JSON log | `HelionDebugSnapshot` (every value), `HelionDebugEntry` (screen), `DebugOverlayLines` (line layout), `HelionDebugLog` (`logs/helion-debug.jsonl`) |
 | Pixel comparison with vanilla | `ParityCheck`, `FrameCapture`, `ParityResult`, `ParityDifferenceImage` |
-| Vanilla hooks | `LevelRendererMixin`, `LevelRendererAccessor` |
+| Vanilla hooks | `LevelRendererMixin`, `LevelRendererAccessor`, `ChunkSectionsToRenderAccessor`, `GameRendererMixin` |
 | Mod name, version, loader versions | `gradle.properties` |
 | Unit tests | `src/test/java/`, see Tests below |
 | Mod list metadata, dependencies, mixin config | `neoforge.mods.toml` |
@@ -53,7 +54,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### HelionConfig
 - Path: `src/main/java/com/aryston/helion/config/HelionConfig.java`
-- Role: Client config spec: `ENABLED` (render core on at startup), `DEBUG_MODE` (off by default), the `ambientOcclusion` section (enabled, algorithm, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, the `bloom` subsection with enabled, intensity, threshold, debugView, and the `sharpening` subsection with enabled, strength), the `geometryBuffer` section (enabled, view) and the `lighting` section (enabled, blockLightIntensity, skyLightIntensity, lightOnlyView). `renderSettings()` turns the config into a `RenderSettings` snapshot.
+- Role: Client config spec: `ENABLED` (render core on at startup), `DEBUG_MODE` (off by default), the `ambientOcclusion` section (enabled, algorithm, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, the `bloom` subsection with enabled, intensity, threshold, debugView, and the `sharpening` subsection with enabled, strength), the `geometryBuffer` section (enabled, view) the `lighting` section (enabled, blockLightIntensity, skyLightIntensity, lightOnlyView) and the `temporalAntiAliasing` section (enabled). `renderSettings()` turns the config into a `RenderSettings` snapshot.
 - Depends on: nothing inside the mod.
 
 ### `com.aryston.helion.render`
@@ -61,8 +62,8 @@ Every class and source file of Helion with its purpose. Find the right file here
 #### HelionRenderCore
 - Path: `src/main/java/com/aryston/helion/render/HelionRenderCore.java`
 - Role: Singleton that owns the core state and shared GPU objects. Decides whether Helion renders, detects the backend on first use, starts and ends level frames, redirects the main target during a level frame, releases everything on shutdown. Setting fields are volatile because config reloads may arrive from another thread.
-- Members: `get()`, `isActive()`, `toggle()`, `passivate(reason)`, `reportFailure(throwable)`, `beginLevelFrame(main)`, `endLevelFrame()`, `resolveMainTarget(original)`, `recordFrame(camera, scene)`, `lastCamera()`, `lastScene()`, `applySettings(enabled, debugMode, renderSettings)`, `isDebugMode()`, `settings()`, `ambientOcclusion()`, `image()`, `lighting()`, `setPassiveListener(listener)`, `shutdown()`.
-- Depends on: `GpuDeviceSummary`, `GpuResources`, `SceneTargets`, `GpuTimings`, `HelionCamera`, `AmbientOcclusionResources`, `ImageResources`, `DeferredLightingResources`.
+- Members: `get()`, `isActive()`, `toggle()`, `passivate(reason)`, `reportFailure(throwable)`, `beginLevelFrame(main)`, `endLevelFrame()`, `resolveMainTarget(original)`, `recordFrame(camera, scene)`, `lastCamera()`, `lastScene()`, `applySettings(enabled, debugMode, renderSettings)`, `isDebugMode()`, `settings()`, `ambientOcclusion()`, `image()`, `lighting()`, `temporal()`, `setPassiveListener(listener)`, `shutdown()`.
+- Depends on: `GpuDeviceSummary`, `GpuResources`, `SceneTargets`, `GpuTimings`, `HelionCamera`, `AmbientOcclusionResources`, `ImageResources`, `DeferredLightingResources`, `TemporalResources`.
 
 #### PassiveReason
 - Path: `src/main/java/com/aryston/helion/render/PassiveReason.java`
@@ -78,7 +79,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### FrameStages
 - Path: `src/main/java/com/aryston/helion/render/FrameStages.java`
-- Role: Single place that defines the stage order (clear, sky, opaque geometry, deferred lighting, solid features, ambient occlusion, post with bloom and sharpening, output, geometry buffer view) and adds active stages to the frame one by one, so a stage can see what earlier stages published (the geometry buffer). The output stage is `ImageCompositeStage` when an image effect is active, otherwise `PresentStage`.
+- Role: Single place that defines the stage order (clear, sky, opaque geometry, deferred lighting, solid features, ambient occlusion, transparent geometry, temporal anti-aliasing, post with bloom and sharpening, output, geometry buffer view) and adds active stages to the frame one by one, so a stage can see what earlier stages published (the geometry buffer). The output stage is `ImageCompositeStage` when an image effect is active, otherwise `PresentStage`.
 - Depends on: every stage class.
 
 ### `com.aryston.helion.render.backend`
@@ -114,7 +115,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### FrameContext
 - Path: `src/main/java/com/aryston/helion/render/graph/FrameContext.java`
-- Role: Everything a stage sees for one frame: graph, targets, camera, scene snapshot, render settings, the geometry buffer and the post results that stages hand to each other.
+- Role: Everything a stage sees for one frame: graph, targets, camera, scene snapshot, render settings, the geometry buffer, the temporal frame (jittered projection, reprojection) and the post results that stages hand to each other.
 
 #### FrameTargets
 - Path: `src/main/java/com/aryston/helion/render/graph/FrameTargets.java`
@@ -122,8 +123,8 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### RenderSettings
 - Path: `src/main/java/com/aryston/helion/render/graph/RenderSettings.java`
-- Role: Immutable per-frame effect settings. `OFF` is the startup value; `foundation()` turns every effect off for the parity check, deferred lighting included, but keeps the geometry buffer (without its view) because it belongs to the core.
-- Depends on: `AmbientOcclusionSettings`, `ImageSettings`, `GeometryBufferSettings`, `DeferredLightingSettings`.
+- Role: Immutable per-frame effect settings. `OFF` is the startup value; `foundation()` turns every effect off for the parity check, deferred lighting and temporal anti-aliasing included, but keeps the geometry buffer (without its view) because it belongs to the core.
+- Depends on: `AmbientOcclusionSettings`, `ImageSettings`, `GeometryBufferSettings`, `DeferredLightingSettings`, `TemporalSettings`.
 
 #### RenderGraph
 - Path: `src/main/java/com/aryston/helion/render/graph/RenderGraph.java`
@@ -266,6 +267,48 @@ Every class and source file of Helion with its purpose. Find the right file here
 - Path: `src/main/java/com/aryston/helion/render/lighting/LightEnvironment.java`
 - Role: Per-frame copy of the vanilla light map inputs (sky and block factors, night vision, darkness, boss fog darkening, brightness option, block light tint, sky light, ambient and night vision colors), filled by the integration layer from `LightmapRenderState`.
 
+### `com.aryston.helion.render.temporal`
+
+#### TemporalStage
+- Path: `src/main/java/com/aryston/helion/render/temporal/TemporalStage.java`
+- Role: Temporal anti-aliasing after transparent geometry. `taa_resolve` blends the jittered scene with the reprojected history into the next history target, `taa_apply` writes the result back into the scene. Both history targets are imported into the frame graph. Inactive when the temporal frame is inactive or the scene color is not RGBA8.
+- Depends on: `TemporalResources`, `TemporalPrograms`, `TemporalPipelines`, `FullscreenPass`.
+
+#### TemporalResources
+- Path: `src/main/java/com/aryston/helion/render/temporal/TemporalResources.java`
+- Role: Persistent temporal state owned by the core: the level projection captured each frame, the jitter frame index, the previous view, the history targets, the `HelionTemporal` uniform ring and the one-time missing shader warning. `begin` returns the `TemporalFrame` of a level frame (jittered projection, reprojection, whether the history is usable); the history is dropped after a resize, a jump of 16 blocks or more, a frame without temporal anti-aliasing and every vanilla frame (`invalidate`).
+- Depends on: `TemporalHistory`, `PreviousView`, `JitterSequence`, `TemporalPrograms`, `UniformRing`, `HelionCamera`.
+
+#### TemporalFrame
+- Path: `src/main/java/com/aryston/helion/render/temporal/TemporalFrame.java`
+- Role: Per-frame temporal data: active, the jittered level projection, the reprojection matrix from current device coordinates to the previous frame, history valid. `INACTIVE` for frames without temporal anti-aliasing.
+
+#### PreviousView
+- Path: `src/main/java/com/aryston/helion/render/temporal/PreviousView.java`
+- Role: Unjittered projection, view rotation and camera position of the previous frame. `reprojection` builds the matrix that maps current device coordinates and depth to the previous frame, including the camera movement and the current jitter.
+
+#### JitterSequence
+- Path: `src/main/java/com/aryston/helion/render/temporal/JitterSequence.java`
+- Role: Sub-pixel camera offsets from the Halton (2, 3) sequence, eight per cycle, in pixels and in device coordinates.
+
+#### TemporalHistory
+- Path: `src/main/java/com/aryston/helion/render/temporal/TemporalHistory.java`
+- Role: Two persistent RGBA16_FLOAT history targets used in turn, recreated on resize and registered in `GpuResources`.
+- Depends on: `GpuResources`.
+
+#### TemporalPipelines
+- Path: `src/main/java/com/aryston/helion/render/temporal/TemporalPipelines.java`
+- Role: Pipeline definitions of the resolve and apply passes, the uniform and sampler names they bind and the target formats.
+- Depends on: `HelionPipelines`.
+
+#### TemporalPrograms
+- Path: `src/main/java/com/aryston/helion/render/temporal/TemporalPrograms.java`
+- Role: The compiled temporal pipelines; empty when any of them is missing.
+
+#### TemporalSettings
+- Path: `src/main/java/com/aryston/helion/render/temporal/TemporalSettings.java`
+- Role: Player setting: enabled. `DISABLED` for the foundation.
+
 ### `com.aryston.helion.render.shader`
 
 #### HelionPipelines
@@ -355,7 +398,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ClientEvents
 - Path: `src/main/java/com/aryston/helion/integration/ClientEvents.java`
-- Role: Wires every listener: client setup (compatibility check, passive notices), pipeline registration, config loading, toggle and parity keys, notices and the debug log on client tick, debug log events for toggles and passive mode, shutdown.
+- Role: Wires every listener: client setup (compatibility check, passive notices), pipeline registration, config loading, toggle and parity keys, notices and the debug log on client tick, the parity tick counter, debug log events for toggles and passive mode, shutdown.
 - Depends on: `HelionRenderCore`, `HelionKeys`, `ParityControl`, `CompatibilityGuard`, `PassiveModeNotice`, `HelionDebugEntry`, `HelionDebugLog`, `VisualTest`, `LevelRenderHook`.
 
 #### ParityControl
@@ -379,7 +422,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### LevelRenderHook
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/LevelRenderHook.java`
-- Role: Entry from the mixin. Chooses the Helion or vanilla frame and the render settings (`settings().foundation()` while the parity check captures), catches Helion failures, feeds the parity check after every level frame together with whether Helion really rendered it, and pauses GPU timing on vanilla frames.
+- Role: Entry from the mixin. Chooses the Helion or vanilla frame and the render settings (`settings().foundation()` while the parity check captures), catches Helion failures, feeds the parity check after every level frame together with whether Helion really rendered it, and pauses GPU timing and drops the temporal history on vanilla frames.
 - Depends on: `VanillaFrameDriver`, `HelionRenderCore`, `ParityCheck`.
 
 #### LevelFrameRequest
@@ -388,7 +431,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### VanillaFrameDriver
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaFrameDriver.java`
-- Role: Rebuilds `LevelRenderer.render` with Helion stages: feature preparation, targets, NeoForge frame graph event, chunk draw preparation, the scene snapshot with the light map inputs, stage building, graph execution, then section compile, upload and occlusion update.
+- Role: Rebuilds `LevelRenderer.render` with Helion stages: feature preparation, targets, NeoForge frame graph event, chunk draw preparation, the scene snapshot with the light map inputs, the temporal frame with the jittered projection uploaded for the level and restored afterwards, stage building, graph execution, then section compile, upload and occlusion update.
 - Depends on: every class in this package, `FrameStages`, `HelionRenderCore`.
 - Notes: mirrors vanilla code; see Vanilla Coupling in `docs/ARCHITECTURE.md`.
 
@@ -438,7 +481,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### HelionDebugSnapshot
 - Path: `src/main/java/com/aryston/helion/debug/HelionDebugSnapshot.java`
-- Role: Single source of every debug value, as a JSON object with one section per topic: `core` (version, active, enabled, debug mode, passive reason, parity running), `device`, `frame` (fps, window and scene size, color format, sky, improved transparency, ambient light, fog color), `camera`, `ambientOcclusion`, `image`, `bloom` (with the effective threshold), `sharpening`, `geometryBuffer`, `lighting`, `gpu` (total), `gpuStages` (milliseconds per pass), `resources`, `resourceList` (MiB per label) and `frustum` (Helion versus vanilla visible sections). Numbers are rounded to three decimals.
+- Role: Single source of every debug value, as a JSON object with one section per topic: `core` (version, active, enabled, debug mode, passive reason, parity running), `device`, `frame` (fps, window and scene size, color format, sky, improved transparency, ambient light, fog color), `camera`, `ambientOcclusion`, `image`, `bloom` (with the effective threshold), `sharpening`, `geometryBuffer`, `lighting`, `temporal`, `gpu` (total), `gpuStages` (milliseconds per pass), `resources`, `resourceList` (MiB per label) and `frustum` (Helion versus vanilla visible sections). Numbers are rounded to three decimals.
 - Depends on: `HelionRenderCore`, `ParityCheck`, `ImageResources`.
 
 #### HelionDebugEntry
@@ -468,7 +511,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### VisualTestVariant
 - Path: `src/main/java/com/aryston/helion/debug/VisualTestVariant.java`
-- Role: Render variants per scene: vanilla, None, Neutral, Filmic, bloom only, lighting and light only (geometry buffer and deferred lighting on, every other effect off, for comparison with vanilla) and parity, each turning the core on or off and setting default image settings.
+- Role: Render variants per scene: vanilla, None, Neutral, Filmic, bloom only, lighting and light only (geometry buffer and deferred lighting on, every other effect off), temporal (only temporal anti-aliasing on), all for comparison with vanilla, and parity, each turning the core on or off and setting default image settings.
 
 #### VisualTestWorld
 - Path: `src/main/java/com/aryston/helion/debug/VisualTestWorld.java`
@@ -476,7 +519,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ParityCheck
 - Path: `src/main/java/com/aryston/helion/debug/ParityCheck.java`
-- Role: State machine behind the parity key and the visual test: renders three warm-up vanilla frames, captures the fourth, renders three warm-up Helion frames, captures the fourth, compares when both readbacks finish. Warm-up keeps cold first-use resources out of the comparison. Helion frames use `RenderSettings.foundation()`, so effects never count as differences. If a Helion frame is not rendered by Helion (core turned off or a render failure), the check aborts and reports that instead of comparing two vanilla frames. A failed comparison writes `ParityDifferenceImage` to `screenshots/` on the IO pool.
+- Role: State machine behind the parity key and the visual test: renders three warm-up vanilla frames and three warm-up Helion frames, then captures a vanilla frame and the Helion frame right after it, compares when both readbacks finish. Both captures must come from the same client tick, because the torch flicker changes the light map every tick even with ticks frozen; if a tick passed in between, the pair is captured again (up to 20 times). `clientTick()` is called from the client tick event. Warm-up keeps cold first-use resources out of the comparison. Helion frames use `RenderSettings.foundation()`, so effects never count as differences. If a Helion frame is not rendered by Helion (core turned off or a render failure), the check aborts and reports that instead of comparing two vanilla frames. A failed comparison writes `ParityDifferenceImage` to `screenshots/` on the IO pool.
 
 #### FrameCapture
 - Path: `src/main/java/com/aryston/helion/debug/FrameCapture.java`
@@ -496,6 +539,11 @@ Every class and source file of Helion with its purpose. Find the right file here
 #### LevelRendererMixin
 - Path: `src/main/java/com/aryston/helion/mixin/LevelRendererMixin.java`
 - Role: Wraps `LevelRenderer.render` to hand the frame to `LevelRenderHook`, and wraps `GameRenderer.mainRenderTarget()` calls inside `LevelRenderer` so they resolve to the scene target during a Helion frame.
+
+#### GameRendererMixin
+- Path: `src/main/java/com/aryston/helion/mixin/GameRendererMixin.java`
+- Role: Hands the level projection matrix that `GameRenderer.renderLevel` uploads (camera projection with view bobbing and nausea distortion) to `TemporalResources`, unchanged.
+- Notes: no event exposes the final level projection, and temporal anti-aliasing must jitter and reproject exactly the matrix the level is drawn with.
 
 #### ChunkSectionsToRenderAccessor
 - Path: `src/main/java/com/aryston/helion/mixin/ChunkSectionsToRenderAccessor.java`
@@ -517,6 +565,8 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | `src/test/java/com/aryston/helion/render/post/ImageResourcesTest.java` | Adaptive bloom threshold: half in darkness, eight times in daylight, rising with ambient light. |
 | `src/test/java/com/aryston/helion/render/post/ToneMapperTest.java` | Tone mapper shader ids are unique and match the constants in `helion_image.glsl`. |
 | `src/test/java/com/aryston/helion/render/camera/HelionFrustumTest.java` | Frustum culling with OpenGL, zero to one and reversed-Z projections. |
+| `src/test/java/com/aryston/helion/render/temporal/JitterSequenceTest.java` | Halton values, jitter offsets inside the pixel, repetition after eight frames, mean near the pixel center, device coordinate scale. |
+| `src/test/java/com/aryston/helion/render/temporal/PreviousViewTest.java` | The reprojection matrix maps a point seen by a moved and turned camera to where the previous camera saw it (plus the jitter), and keeps every pixel in place for a still camera. |
 | `src/test/java/com/aryston/helion/render/shader/ShaderCompilationTest.java` | Every vertex and fragment shader compiles with `glslangValidator` in three variants (default, zero to one depth, multi-draw with alpha cutout), with Helion and vanilla includes inlined from the classpath. Skipped when `glslangValidator` is not installed; the CI installs it. |
 | `src/test/java/com/aryston/helion/render/lighting/AmbientOcclusionQualityTest.java` | Higher quality presets never use fewer samples or denoise passes. |
 | `src/test/java/com/aryston/helion/render/lighting/AmbientOcclusionAlgorithmTest.java` | Algorithm shader ids are unique and match the constants in `helion_ambient_occlusion.glsl`. |
@@ -528,7 +578,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | File | Purpose |
 |---|---|
 | `src/main/templates/META-INF/neoforge.mods.toml` | Mod metadata template filled from `gradle.properties`: dependencies, discouraged Sodium and Iris, mixin config. |
-| `src/main/resources/helion.mixins.json` | Mixin configuration listing `ChunkSectionsToRenderAccessor`, `LevelRendererAccessor` and `LevelRendererMixin`. |
+| `src/main/resources/helion.mixins.json` | Mixin configuration listing `ChunkSectionsToRenderAccessor`, `GameRendererMixin`, `LevelRendererAccessor` and `LevelRendererMixin`. |
 
 ## Asset Folders
 
@@ -540,6 +590,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | `src/main/resources/assets/helion/shaders/terrain/` | Geometry buffer terrain shaders `geometry.vsh` and `geometry.fsh`: vanilla terrain color plus normal, light (with chunk fade-in) and albedo (with the fog amount in alpha) targets. |
 | `src/main/resources/assets/helion/shaders/geometry/` | `debug.fsh`: geometry buffer debug views. |
 | `src/main/resources/assets/helion/shaders/lighting/` | Deferred lighting fragment shaders: `deferred_light` (light buffer from the geometry buffer light levels) and `deferred_shading` (albedo times light, HDR above the vanilla cap, fog and chunk fade-in; light-only view with `HELION_LIGHT_ONLY`). |
+| `src/main/resources/assets/helion/shaders/temporal/` | Temporal anti-aliasing fragment shaders: `resolve` (closest-depth reprojection, Catmull-Rom history sample, YCoCg variance clipping, luminance weighted blend) and `apply` (history back into the scene). |
 | `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_geometry` (geometry buffer constants and normal encoding), `helion_view` (depth and view position), `helion_lighting` (lighting settings block and the vanilla light map terms with bilinear level interpolation and the brightness option), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur), `helion_color` (sRGB conversion, saturation, the Neutral highlight curve and its inverse, film grade, dither noise), `helion_image` (image settings block including the sharpening strength, scene expansion, tone mapper switch, Filmic highlight bleach, bloom threshold, dither), `helion_bloom_downsample` (13-tap downsample with optional Karis average over a `helionBloomTap` function the including shader defines). |
 
 ## Build Files

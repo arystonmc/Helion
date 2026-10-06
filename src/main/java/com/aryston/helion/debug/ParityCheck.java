@@ -16,9 +16,13 @@ public final class ParityCheck {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final ParityCheck INSTANCE = new ParityCheck();
     private static final int WARM_UP_FRAMES = 3;
+    private static final int MAX_CAPTURE_ATTEMPTS = 20;
 
     private Phase phase = Phase.IDLE;
     private int warmUpFramesLeft;
+    private int clientTicks;
+    private int vanillaCaptureTick;
+    private int captureAttempts;
     private @Nullable FrameCapture vanillaFrame;
     private @Nullable FrameCapture helionFrame;
     private Consumer<ParityResult> reporter = result -> { };
@@ -41,6 +45,10 @@ public final class ParityCheck {
         return true;
     }
 
+    public void clientTick() {
+        clientTicks++;
+    }
+
     public boolean isRunning() {
         return phase != Phase.IDLE;
     }
@@ -59,25 +67,35 @@ public final class ParityCheck {
             return;
         }
         switch (phase) {
-            case WARM_UP_VANILLA -> warmUp(Phase.CAPTURE_VANILLA);
+            case WARM_UP_VANILLA -> warmUp(Phase.WARM_UP_HELION);
+            case WARM_UP_HELION -> warmUp(Phase.CAPTURE_VANILLA);
             case CAPTURE_VANILLA -> {
                 vanillaFrame = FrameCapture.of(output, HelionRenderCore.get().resources());
-                enter(Phase.WARM_UP_HELION);
+                vanillaCaptureTick = clientTicks;
+                phase = Phase.CAPTURE_HELION;
             }
-            case WARM_UP_HELION -> warmUp(Phase.CAPTURE_HELION);
-            case CAPTURE_HELION -> {
-                helionFrame = FrameCapture.of(output, HelionRenderCore.get().resources());
-                enter(Phase.COMPARE);
-            }
+            case CAPTURE_HELION -> captureHelion(output);
             case COMPARE -> compareWhenReady();
             case IDLE -> {
             }
         }
     }
 
+    private void captureHelion(RenderTarget output) {
+        if (clientTicks != vanillaCaptureTick && captureAttempts < MAX_CAPTURE_ATTEMPTS) {
+            captureAttempts++;
+            vanillaFrame = null;
+            phase = Phase.CAPTURE_VANILLA;
+            return;
+        }
+        helionFrame = FrameCapture.of(output, HelionRenderCore.get().resources());
+        enter(Phase.COMPARE);
+    }
+
     private void enter(Phase next) {
         phase = next;
         warmUpFramesLeft = WARM_UP_FRAMES;
+        captureAttempts = 0;
     }
 
     private void warmUp(Phase next) {
@@ -122,8 +140,8 @@ public final class ParityCheck {
     private enum Phase {
         IDLE,
         WARM_UP_VANILLA,
-        CAPTURE_VANILLA,
         WARM_UP_HELION,
+        CAPTURE_VANILLA,
         CAPTURE_HELION,
         COMPARE
     }

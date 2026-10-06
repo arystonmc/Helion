@@ -5,6 +5,7 @@ import com.aryston.helion.render.geometry.GeometryBufferPipelines;
 import com.aryston.helion.render.lighting.AmbientOcclusionPipelines;
 import com.aryston.helion.render.lighting.DeferredLightingPipelines;
 import com.aryston.helion.render.post.ImagePipelines;
+import com.aryston.helion.render.temporal.TemporalPipelines;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
@@ -22,9 +23,13 @@ public final class HelionPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return Stream.of(AmbientOcclusionPipelines.all(), DeferredLightingPipelines.all(), ImagePipelines.all(), GeometryBufferPipelines.all())
-            .flatMap(List::stream)
-            .toList();
+        return Stream.of(
+            AmbientOcclusionPipelines.all(),
+            DeferredLightingPipelines.all(),
+            TemporalPipelines.all(),
+            ImagePipelines.all(),
+            GeometryBufferPipelines.all()
+        ).flatMap(List::stream).toList();
     }
 
     public static RenderPipeline.Builder fullscreen(String fragmentShader) {

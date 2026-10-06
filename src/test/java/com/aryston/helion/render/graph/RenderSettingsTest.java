@@ -9,6 +9,7 @@ import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.lighting.DeferredLightingSettings;
 import com.aryston.helion.render.post.ImageSettings;
+import com.aryston.helion.render.temporal.TemporalSettings;
 import org.junit.jupiter.api.Test;
 
 class RenderSettingsTest {
@@ -17,7 +18,8 @@ class RenderSettingsTest {
         AmbientOcclusionSettings.DISABLED,
         ImageSettings.FOUNDATION,
         new GeometryBufferSettings(true, GeometryBufferView.NORMALS),
-        new DeferredLightingSettings(true, STRONG_BLOCK_LIGHT, DeferredLightingSettings.DEFAULT_SKY_LIGHT_INTENSITY, true)
+        new DeferredLightingSettings(true, STRONG_BLOCK_LIGHT, DeferredLightingSettings.DEFAULT_SKY_LIGHT_INTENSITY, true),
+        new TemporalSettings(true)
     );
 
     @Test
@@ -28,6 +30,7 @@ class RenderSettingsTest {
         assertFalse(foundation.image().bloom().enabled());
         assertFalse(foundation.image().sharpening().enabled());
         assertFalse(foundation.lighting().enabled());
+        assertFalse(foundation.temporal().enabled());
     }
 
     @Test
@@ -50,5 +53,6 @@ class RenderSettingsTest {
         assertFalse(RenderSettings.OFF.image().needsComposite());
         assertFalse(RenderSettings.OFF.ambientOcclusion().enabled());
         assertFalse(RenderSettings.OFF.lighting().enabled());
+        assertFalse(RenderSettings.OFF.temporal().enabled());
     }
 }

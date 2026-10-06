@@ -16,7 +16,7 @@ integration/vanilla          Minecraft adapter: builds the frame, owns every van
    │  LevelRenderHook → VanillaFrameDriver → Vanilla*Source, VanillaFrameTargets, StageEvents
    ▼
 render/                      Helion render core: stages, graph, resources, camera
-   │  FrameStages: clear → sky → opaque geometry → deferred lighting → solid features → ambient occlusion → transparent geometry → post (bloom, sharpen) → present or image composite → geometry buffer view
+   │  FrameStages: clear → sky → opaque geometry → deferred lighting → solid features → ambient occlusion → transparent geometry → temporal anti-aliasing → post (bloom, sharpen) → present or image composite → geometry buffer view
    ▼
 renderpearl api + blaze3d    Mojang GPU abstraction (Vulkan backend)
 ```
@@ -52,6 +52,7 @@ renderpearl api + blaze3d    Mojang GPU abstraction (Vulkan backend)
 | 3b | solid_features | `render.geometry.SolidFeatureStage` | Only with the geometry buffer on: the after-opaque-blocks event and solid features, in the same order as vanilla |
 | 4 | ambient_occlusion | `render.lighting.AmbientOcclusionStage` | Screen space ambient occlusion on the opaque scene, see below. Skipped when disabled or when its shaders failed to compile |
 | 5 | transparent_geometry | `render.geometry.TransparentGeometryStage` | Sorted or order independent transparency, clouds, weather, world border, then outline, see-through and always-on-top features |
+| 5a | taa_resolve, taa_apply | `render.temporal.TemporalStage` | Only with temporal anti-aliasing on: blends the jittered frame with the reprojected history, see Temporal Anti-Aliasing below |
 | 6 | post | `render.post.PostProcessingStage` | Runs post effects in order: the vanilla entity outline effect, then `render.post.BloomStage`, then `render.post.SharpeningStage`, see Image Pipeline below |
 | 7 | present | `render.post.PresentStage` | Copies the scene target into the main target when no image effect is active |
 | 7 | composite | `render.post.ImageCompositeStage` | Replaces present when bloom, sharpening, exposure or Filmic tone mapping is active: tone maps the scene (or its sharpened copy) with bloom into the main target and copies depth |
@@ -86,7 +87,7 @@ GTAO style horizon based ambient occlusion, ported from Intel XeGTAO (MIT, see `
 
 Fixed tuning values live in `AmbientOcclusionResources`; per-quality slice, step and denoise counts in `AmbientOcclusionQuality`.
 
-The visibility bitmask method follows Therrien, Levesque and Gilet, "Screen Space Indirect Lighting with Visibility Bitmask" (2023), as an own implementation inside the XeGTAO slice loop: every sample marks the sectors between its front angle and the angle of a point `OCCLUDER_THICKNESS` (0.75 blocks) behind it, sectors are spaced by the sine of the angle to the projected normal so their count is cosine weighted, and samples beyond the effect radius mark nothing. Unlike GTAO it lets light pass behind thin occluders (fences, grass, torches, bars), which removes their dark halos. The noise never changes between frames because Helion has no temporal accumulation; animated noise would shimmer.
+The visibility bitmask method follows Therrien, Levesque and Gilet, "Screen Space Indirect Lighting with Visibility Bitmask" (2023), as an own implementation inside the XeGTAO slice loop: every sample marks the sectors between its front angle and the angle of a point `OCCLUDER_THICKNESS` (0.75 blocks) behind it, sectors are spaced by the sine of the angle to the projected normal so their count is cosine weighted, and samples beyond the effect radius mark nothing. Unlike GTAO it lets light pass behind thin occluders (fences, grass, torches, bars), which removes their dark halos. The noise never changes between frames; animated noise would shimmer without temporal anti-aliasing, and with it on the noise can be animated later so the history averages it out.
 
 ## Image Pipeline
 
@@ -159,6 +160,18 @@ Helion lights opaque terrain itself from the geometry buffer, in high dynamic ra
 - **Light-only view** (`lighting.lightOnlyView`) shades with white albedo, for checking the light alone.
 - The geometry pass stores what the shading needs per pixel (fog amount, chunk fade-in), so the lighting passes never reconstruct positions from depth.
 
+## Temporal Anti-Aliasing
+
+Off by default (`temporalAntiAliasing.enabled`). Every frame the level is drawn with the camera moved by less than a pixel, and each frame is blended with the history of the previous ones, so edges and fine textures are averaged over many sample positions.
+
+1. **Projection.** `GameRendererMixin` hands the level projection that `GameRenderer.renderLevel` uploads (with view bobbing and nausea distortion) to `TemporalResources`. In a Helion frame with temporal anti-aliasing, `VanillaFrameDriver` uploads the same matrix with the jitter of `JitterSequence` (Halton 2, 3, eight offsets) added in device coordinates, and restores vanilla's projection after the frame. Vanilla frames, parity frames and the hand are never jittered.
+2. **Motion vectors** come from depth and the camera: `PreviousView.reprojection` builds one matrix from current device coordinates and depth to the previous frame (current jittered view projection inverted, camera movement, previous unjittered view projection, current jitter). Entities have no motion vectors of their own yet; their history is limited by the clipping below, which leaves a faint trail behind fast moving entities.
+3. **`taa_resolve`** reads the scene color and depth and the previous history. It takes the motion of the closest depth in the 3x3 neighborhood, so edges reproject with the foreground, samples the history with a five-tap Catmull-Rom filter, clips it to the variance box (mean ± one standard deviation in YCoCg) of the current neighborhood, and blends with weight 0.1 for the current frame, both sides weighted by 1 / (1 + luma) against flicker. History outside the screen or after a reset is replaced by the current frame.
+4. **`taa_apply`** copies the result into the scene, so ambient occlusion has already been applied and bloom, sharpening and the composite work on the anti-aliased image. Sharpening is the intended partner against the slight softness.
+5. **History** lives in two persistent RGBA16_FLOAT targets (`TemporalHistory`) used in turn and imported into the frame graph. It is dropped after a resize, a camera jump of 16 blocks or more, a frame without temporal anti-aliasing and every vanilla frame.
+
+The techniques follow Karis, "High Quality Temporal Supersampling" (SIGGRAPH 2014), Salvi's variance clipping (GDC 2016) and Jimenez's five-tap Catmull-Rom history filter (Filmic SMAA, SIGGRAPH 2016), implemented from the publications.
+
 ## Sources
 
 Stages never call vanilla code directly. They talk to sources:
@@ -198,6 +211,7 @@ Places that copy or depend on vanilla internals. Check each of them first when M
 | `terrain/geometry.vsh`, `terrain/geometry.fsh` | `core/terrain.vsh`, `core/terrain.fsh` (non-OIT path) |
 | `VanillaGeometryPipelines` | `RenderPipelines.SOLID_TERRAIN`, `CUTOUT_TERRAIN` and their multi-draw variants |
 | `helion_lighting.glsl`, `VanillaFrameDriver.lightEnvironment` | `core/lightmap.fsh`, `sample_lightmap.glsl`, `Lightmap`, `LightmapRenderStateExtractor` |
+| `GameRendererMixin`, `VanillaFrameDriver` (jittered projection) | the level projection upload in `GameRenderer.renderLevel` |
 | `VanillaTerrainSource.renderOpaqueGeometry` | `ChunkSectionsToRender.renderGroup` and `renderLayers` |
 
 `SkyRenderer` keeps the render target it was created with, so Helion owns a separate `SkyRenderer` bound to the scene target (`SceneSkyRenderer`).
@@ -208,6 +222,7 @@ Places that copy or depend on vanilla internals. Check each of them first when M
 |---|---|---|
 | `LevelRendererMixin.helion$render` | `LevelRenderer.render` | NeoForge can add passes but cannot replace the vanilla pass structure |
 | `LevelRendererMixin.helion$redirectMainTarget` | `GameRenderer.mainRenderTarget()` calls inside `LevelRenderer` | Vanilla OIT and depth bounds code reads the main target directly instead of the frame graph handle |
+| `GameRendererMixin.helion$captureLevelProjection` | `ProjectionMatrixBuffer.getBuffer` inside `GameRenderer.renderLevel` | The final level projection includes view bobbing and nausea distortion and is built inside `renderLevel`; no event exposes it, and temporal anti-aliasing must jitter and reproject exactly this matrix |
 | `LevelRendererAccessor` | private members of `LevelRenderer` | Required to rebuild `render` with vanilla behavior |
 | `ChunkSectionsToRenderAccessor.helion$renderLayers` | private `ChunkSectionsToRender.renderLayers` | Only this method takes per layer pipeline overrides; the public `renderGroup` applies one override to every layer, and solid and cutout terrain need different pipelines |
 
@@ -221,9 +236,9 @@ Places that copy or depend on vanilla internals. Check each of them first when M
 ## Testing Tools
 
 - Debug mode (Mods → Helion → Config → Debug Mode, off by default): shows every value of `HelionDebugSnapshot` on screen without F3 and writes it as one JSON line per second to `logs/helion-debug.jsonl`, together with `toggle`, `passive` and `parity` events. GPU time per stage is only measured in debug mode (up to 32 timed passes per frame, including every `bloom_*` pass and `composite`). While it is off the debug entry, the JSON log and the timestamp queries do no work at all.
-- Parity check, `J` key in debug mode: after warm-up frames on each side, captures one vanilla frame and one Helion foundation frame (all effects off), reads both main targets back from the GPU and reports differing pixels in chat and in the JSON log. It aborts with a message when a Helion frame could not be rendered by Helion. Use `/tick freeze` and keep the camera still: without it clouds, particles and entities move between the two captured frames, and the chat says so. A failed check reports the largest depth difference in steps of the depth format and writes `screenshots/helion_parity_differences.png` (red color only, yellow color and depth, blue depth only), so the location of a difference is known before its cause is guessed.
+- Parity check, `J` key in debug mode: after warm-up frames on each side, captures one vanilla frame and the Helion foundation frame right after it (all effects off) within the same client tick, because the torch flicker changes the light map every tick even with ticks frozen, reads both main targets back from the GPU and reports differing pixels in chat and in the JSON log. It aborts with a message when a Helion frame could not be rendered by Helion. Use `/tick freeze` and keep the camera still: without it clouds, particles and entities move between the two captured frames, and the chat says so. A failed check reports the largest depth difference in steps of the depth format and writes `screenshots/helion_parity_differences.png` (red color only, yellow color and depth, blue depth only), so the location of a difference is known before its cause is guessed.
 - `H` key: switches between Helion and vanilla rendering at runtime.
-- Automated visual test: `launcher/launch.ps1 -World "Helion Visual Test" -Define helion.visualTest=true` loads a copy of a save, builds a row of light blocks in front of the player, switches to spectator, freezes time and weather, and photographs seven scenes (noon sky, sunrise sun, horizon, light blocks by day, sunset, night sky, light blocks by night) in seven variants each (vanilla, None, Neutral, Filmic, bloom only, lighting, light only) into `screenshots/helion_<scene>_<variant>.png` at half resolution, then runs the parity check in every scene with ticks frozen and logs whether all pixels match vanilla (a failure is a `WARN` line). Every shot also writes a `Helion visual test` log line with the full debug snapshot as JSON, and the game closes cleanly afterwards. Run it on a copy of a world, never on a real save, because it changes blocks, time and game rules. Development runs only.
+- Automated visual test: `launcher/launch.ps1 -World "Helion Visual Test" -Define helion.visualTest=true` loads a copy of a save, builds a row of light blocks in front of the player, switches to spectator, freezes time and weather, and photographs seven scenes (noon sky, sunrise sun, horizon, light blocks by day, sunset, night sky, light blocks by night) in eight variants each (vanilla, None, Neutral, Filmic, bloom only, lighting, light only, temporal) into `screenshots/helion_<scene>_<variant>.png` at half resolution, then runs the parity check in every scene with ticks frozen and logs whether all pixels match vanilla (a failure is a `WARN` line). Every shot also writes a `Helion visual test` log line with the full debug snapshot as JSON, and the game closes cleanly afterwards. Run it on a copy of a world, never on a real save, because it changes blocks, time and game rules. Development runs only.
 
 ## Parity Scenes
 
