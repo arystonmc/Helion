@@ -12,6 +12,7 @@ layout(std140) uniform HelionImage {
     float Daylight;
     int ToneMapperId;
     int DitherEnabled;
+    float SharpenStrength;
 };
 
 const int HELION_TONE_MAPPER_FILMIC = 1;

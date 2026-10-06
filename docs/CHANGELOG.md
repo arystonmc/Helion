@@ -17,4 +17,5 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Ambient occlusion with quality presets, strength, radius and a shadow-only view
 - Bloom around bright light sources that adapts to daylight, caves and night, with intensity, threshold and a glow-only view
 - Neutral and Filmic tone mapping, exposure control and dithering against color banding
+- Optional contrast adaptive sharpening with a strength setting
 - English and Turkish translations

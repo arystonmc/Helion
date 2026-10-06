@@ -7,9 +7,10 @@ Every class and source file of Helion with its purpose. Find the right file here
 | I want to change | Go to |
 |---|---|
 | Stage order of a frame | `FrameStages` |
-| What a stage draws | `ClearStage`, `SkyStage`, `OpaqueGeometryStage`, `AmbientOcclusionStage`, `TransparentGeometryStage`, `PostProcessingStage`, `BloomStage`, `ImageCompositeStage`, `PresentStage` |
+| What a stage draws | `ClearStage`, `SkyStage`, `OpaqueGeometryStage`, `AmbientOcclusionStage`, `TransparentGeometryStage`, `PostProcessingStage`, `BloomStage`, `SharpeningStage`, `ImageCompositeStage`, `PresentStage` |
 | Ambient occlusion look and cost | `AmbientOcclusionResources` (tuning), `AmbientOcclusionQuality` (presets), `shaders/ambient_occlusion/` |
 | Bloom, tone mapping and exposure | `ImageResources` (tuning), `shaders/image/`, `shaders/include/helion_color.glsl`, `bloom_prefilter.fsh` (emissive detection) |
+| Sharpening | `SharpeningStage`, `shaders/image/sharpen.fsh` |
 | Bloom threshold in daylight and caves | `AmbientLightTracker`, `ImageResources` |
 | Effect settings per frame | `RenderSettings`, `HelionConfig.renderSettings` |
 | Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines`, `ImagePipelines` |
@@ -49,7 +50,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### HelionConfig
 - Path: `src/main/java/com/aryston/helion/config/HelionConfig.java`
-- Role: Client config spec: `ENABLED` (render core on at startup), `GPU_TIMINGS`, the `ambientOcclusion` section (enabled, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, and the `bloom` subsection with enabled, intensity, threshold, debugView). `renderSettings()` turns the config into a `RenderSettings` snapshot.
+- Role: Client config spec: `ENABLED` (render core on at startup), `GPU_TIMINGS`, the `ambientOcclusion` section (enabled, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, the `bloom` subsection with enabled, intensity, threshold, debugView, and the `sharpening` subsection with enabled, strength). `renderSettings()` turns the config into a `RenderSettings` snapshot.
 - Depends on: nothing inside the mod.
 
 ### `com.aryston.helion.render`
@@ -74,7 +75,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### FrameStages
 - Path: `src/main/java/com/aryston/helion/render/FrameStages.java`
-- Role: Single place that defines the stage order (clear, sky, geometry, ambient occlusion, post with bloom, output) and adds active stages to the frame. The output stage is `ImageCompositeStage` when an image effect is active, otherwise `PresentStage`.
+- Role: Single place that defines the stage order (clear, sky, geometry, ambient occlusion, post with bloom and sharpening, output) and adds active stages to the frame. The output stage is `ImageCompositeStage` when an image effect is active, otherwise `PresentStage`.
 - Depends on: every stage class.
 
 ### `com.aryston.helion.render.backend`
@@ -229,7 +230,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### PostProcessingStage
 - Path: `src/main/java/com/aryston/helion/render/post/PostProcessingStage.java`
-- Role: Runs its active post effects in order: the effects of the frame sources (vanilla entity outline) first, then `BloomStage`.
+- Role: Runs its active post effects in order: the effects of the frame sources (vanilla entity outline) first, then `BloomStage`, then `SharpeningStage`.
 
 #### PresentStage
 - Path: `src/main/java/com/aryston/helion/render/post/PresentStage.java`
@@ -242,12 +243,12 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ImageCompositeStage
 - Path: `src/main/java/com/aryston/helion/render/post/ImageCompositeStage.java`
-- Role: Output stage used instead of `PresentStage` when bloom, exposure or Filmic tone mapping is active. Expands the RGBA8 scene to HDR, adds bloom, applies exposure, tone mapping and dither, writes the main target in one fullscreen pass and copies depth. Shows only the bloom in the debug view.
+- Role: Output stage used instead of `PresentStage` when bloom, sharpening, exposure or Filmic tone mapping is active. Expands the RGBA8 scene (the sharpened copy when sharpening is on) to HDR, adds bloom, applies exposure, tone mapping and dither, writes the main target in one fullscreen pass and copies depth. Shows only the bloom in the debug view.
 - Depends on: `ImageResources`, `ImagePrograms`, `ImagePipelines`, `PostSampling`, `FullscreenPass`.
 
 #### ImagePipelines
 - Path: `src/main/java/com/aryston/helion/render/post/ImagePipelines.java`
-- Role: Pipeline definitions of the bloom and composite passes, the uniform and sampler names they bind and the target formats (RGBA16_FLOAT bloom mips, RGBA8 output).
+- Role: Pipeline definitions of the bloom, sharpen and composite passes, the uniform and sampler names they bind and the target formats (RGBA16_FLOAT bloom mips, RGBA8 output).
 - Depends on: `HelionPipelines`.
 
 #### ImagePrograms
@@ -261,12 +262,21 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ImageSettings
 - Path: `src/main/java/com/aryston/helion/render/post/ImageSettings.java`
-- Role: Player image settings: tone mapper, exposure in stops, dither and bloom. `needsComposite()` tells whether the output must go through `ImageCompositeStage`. `FOUNDATION` keeps the plain copy.
+- Role: Player image settings: tone mapper, exposure in stops, dither, bloom and sharpening. `needsComposite()` tells whether the output must go through `ImageCompositeStage`. `FOUNDATION` keeps the plain copy.
 - Depends on: `ToneMapper`, `BloomSettings`.
 
 #### BloomSettings
 - Path: `src/main/java/com/aryston/helion/render/post/BloomSettings.java`
 - Role: Player bloom settings: enabled, intensity, threshold, debug view.
+
+#### SharpeningSettings
+- Path: `src/main/java/com/aryston/helion/render/post/SharpeningSettings.java`
+- Role: Player sharpening settings: enabled, strength. Off by default.
+
+#### SharpeningStage
+- Path: `src/main/java/com/aryston/helion/render/post/SharpeningStage.java`
+- Role: Post effect that writes a contrast adaptive sharpened copy of the scene into `helion:sharpened` (full resolution, RGBA8) and publishes it in `PostResults`, so `ImageCompositeStage` reads it instead of the scene. Inactive when sharpening is off, the scene color is not RGBA8 or a shader failed to compile.
+- Depends on: `ImageResources`, `ImagePrograms`, `ImagePipelines`, `PostSampling`, `FullscreenPass`.
 
 #### ToneMapper
 - Path: `src/main/java/com/aryston/helion/render/post/ToneMapper.java`
@@ -274,7 +284,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### PostResults
 - Path: `src/main/java/com/aryston/helion/render/post/PostResults.java`
-- Role: Per-frame results that post stages hand to each other: the bloom target handle and the image uniform buffer written this frame.
+- Role: Per-frame results that post stages hand to each other: the bloom target handle, the sharpened scene handle and the image uniform buffer written this frame.
 
 #### PostSampling
 - Path: `src/main/java/com/aryston/helion/render/post/PostSampling.java`
@@ -428,8 +438,8 @@ Every class and source file of Helion with its purpose. Find the right file here
 |---|---|
 | `src/main/resources/assets/helion/lang/` | `en_us.json` and `tr_tr.json`: config, key, toast and command texts. |
 | `src/main/resources/assets/helion/shaders/ambient_occlusion/` | Ambient occlusion fragment shaders: `view_depth`, `gtao`, `denoise`, `denoise_resolve`, `apply`. |
-| `src/main/resources/assets/helion/shaders/image/` | Bloom and image fragment shaders: `bloom_prefilter`, `bloom_downsample`, `bloom_upsample`, `composite`, `bloom_debug`. |
-| `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_view` (depth and view position), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur), `helion_color` (sRGB conversion, saturation, the Neutral highlight curve and its inverse, film grade, dither noise), `helion_image` (image settings block, scene expansion, tone mapper switch, Filmic highlight bleach, bloom threshold, dither), `helion_bloom_downsample` (13-tap downsample with optional Karis average over a `helionBloomTap` function the including shader defines). |
+| `src/main/resources/assets/helion/shaders/image/` | Bloom and image fragment shaders: `bloom_prefilter`, `bloom_downsample`, `bloom_upsample`, `composite`, `bloom_debug`, `sharpen`. |
+| `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_view` (depth and view position), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur), `helion_color` (sRGB conversion, saturation, the Neutral highlight curve and its inverse, film grade, dither noise), `helion_image` (image settings block including the sharpening strength, scene expansion, tone mapper switch, Filmic highlight bleach, bloom threshold, dither), `helion_bloom_downsample` (13-tap downsample with optional Karis average over a `helionBloomTap` function the including shader defines). |
 
 ## Build Files
 

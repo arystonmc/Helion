@@ -16,7 +16,7 @@ integration/vanilla          Minecraft adapter: builds the frame, owns every van
    │  LevelRenderHook → VanillaFrameDriver → Vanilla*Source, VanillaFrameTargets, StageEvents
    ▼
 render/                      Helion render core: stages, graph, resources, camera
-   │  FrameStages: clear → sky → opaque geometry → ambient occlusion → transparent geometry → post (bloom) → present or image composite
+   │  FrameStages: clear → sky → opaque geometry → ambient occlusion → transparent geometry → post (bloom, sharpen) → present or image composite
    ▼
 renderpearl api + blaze3d    Mojang GPU abstraction (Vulkan backend)
 ```
@@ -50,11 +50,11 @@ renderpearl api + blaze3d    Mojang GPU abstraction (Vulkan backend)
 | 3 | opaque_geometry | `render.geometry.OpaqueGeometryStage` | Prepares fog, chunk sampler, translucent buffers and lighting, then draws opaque terrain and solid features |
 | 4 | ambient_occlusion | `render.lighting.AmbientOcclusionStage` | Screen space ambient occlusion on the opaque scene, see below. Skipped when disabled or when its shaders failed to compile |
 | 5 | transparent_geometry | `render.geometry.TransparentGeometryStage` | Sorted or order independent transparency, clouds, weather, world border, then outline, see-through and always-on-top features |
-| 6 | post | `render.post.PostProcessingStage` | Runs post effects in order: the vanilla entity outline effect, then `render.post.BloomStage`, see Image Pipeline below |
+| 6 | post | `render.post.PostProcessingStage` | Runs post effects in order: the vanilla entity outline effect, then `render.post.BloomStage`, then `render.post.SharpeningStage`, see Image Pipeline below |
 | 7 | present | `render.post.PresentStage` | Copies the scene target into the main target when no image effect is active |
-| 7 | composite | `render.post.ImageCompositeStage` | Replaces present when bloom, exposure or Filmic tone mapping is active: tone maps the scene with bloom into the main target and copies depth |
+| 7 | composite | `render.post.ImageCompositeStage` | Replaces present when bloom, sharpening, exposure or Filmic tone mapping is active: tone maps the scene (or its sharpened copy) with bloom into the main target and copies depth |
 
-Planned stages and where they go: shadows next to ambient occlusion in `render.lighting`, atmosphere effects after transparent geometry, further Helion post effects inside `PostProcessingStage` after bloom.
+Planned stages and where they go: shadows next to ambient occlusion in `render.lighting`, atmosphere effects after transparent geometry, further Helion post effects inside `PostProcessingStage` after sharpening.
 
 ## Render Settings
 
@@ -97,13 +97,15 @@ scene RGBA8 ──► bloom_prefilter ──► bloom_down_1 … bloom_down_5 �
 | `bloom_prefilter` | scene color and depth | `helion:bloom_mip_0` half resolution | `bloom_prefilter.fsh`: sRGB to linear, inverse Neutral shoulder, emissive weight with fog rejection, adaptive soft threshold, negative values clamped, 13-tap downsample with Karis average |
 | `bloom_down_N` | mip N-1 | `helion:bloom_mip_N` | `bloom_downsample.fsh`: 13-tap downsample |
 | `bloom_up_N` | mip N+1 | mip N, added with `ONE, ONE` blend | `bloom_upsample.fsh`: 3x3 tent filter |
-| `composite` | scene color, mip 0 | main color, depth copied with `copyDepthFrom` | `composite.fsh`, or `bloom_debug.fsh` for the bloom-only view |
+| `sharpen` | scene color | `helion:sharpened` RGBA8, full resolution | `sharpen.fsh`: contrast adaptive sharpening on the display-referred scene |
+| `composite` | scene color (or `helion:sharpened`), mip 0 | main color, depth copied with `copyDepthFrom` | `composite.fsh`, or `bloom_debug.fsh` for the bloom-only view |
 
 - **Bloom** follows Jimenez, "Next Generation Post Processing in Call of Duty: Advanced Warfare" (SIGGRAPH 2014): six mips from half resolution, Karis average on the first downsample against flickering single bright pixels, tent upsample. The result is added to the HDR scene with `intensity / mip count`.
 - **Emissive detection** without a G-buffer: weight = brightness of the largest encoded channel inside a window times a saturation term, so lava, torch flames and glowstone glow more than white blocks. The window, the saturation floor and an emissive boost follow `Daylight` (the squared ambient light): in daylight only near-clipped pixels pass (window 0.75 to 0.95, floor 0.25, no boost); at night and in caves light blocks that vanilla draws at 200 to 230 pass too (window 0.6 to 0.85, floor 0.5, boost 8). Pixels close to the fog color get no weight, because distant terrain and the horizon are bright only through fog. Sky pixels (device depth `0.0`) only pass when very bright and almost unsaturated, which keeps the sun and moon disks and drops the sky gradient.
 - **Adaptive threshold**: `AmbientLightTracker` reads the sky light at the camera after time and weather darkening and smooths it over 1.5 s. `ImageResources.bloomThreshold` scales the threshold from half its value in caves to eight times in full daylight with the square of it, so lights glow clearly at night and in caves while snow and sand stay clean in daylight. The same idea as `eyeBrightnessSmooth` in shader packs.
 - **Tone mapping**: `NEUTRAL` uses the highlight shoulder of Khronos PBR Neutral on the largest channel and scales the color by the same factor. The scene is expanded with the exact inverse of that curve, so a frame without bloom and with 0 EV returns the vanilla pixels for every 8-bit color, and hue and saturation never change. The full PBR Neutral with its black offset and highlight desaturation is not used: its inverse is only valid for colors the forward curve can produce, and saturated display colors such as the sky blue gave negative channels that made bloom flash blue. `FILMIC` starts from the same Neutral result and adds a film look: bright cores that bloom pushes above the scene bleach gently toward white, then a gentle S-curve contrast in display space and a vibrance boost that lifts less saturated colors more. AgX was tried first and dropped: it is built for scene-referred light, so on the display-referred vanilla image it turned the sky white (the blue channel sits at 255) and removed about a third of the saturation everywhere. `NONE` skips expansion and clips. Exposure multiplies the HDR value by `2^EV` before tone mapping. A fixed triangular dither of one 8-bit step follows the sRGB encoding.
-- **Output selection**: `ImageSettings.needsComposite()` is true for bloom, a non-zero exposure or Filmic. Otherwise `PresentStage` copies the scene unchanged, so the foundation and the parity check never run the composite.
+- **Sharpening** follows the idea of AMD FidelityFX Contrast Adaptive Sharpening (own implementation, no code taken): a negative lobe on the four direct neighbors whose weight shrinks where the local minimum or maximum is close to black or white, so flat areas and already sharp edges are left alone and no halos appear. `SharpenStrength` blends the lobe peak from `-1/8` to `-1/5`. It runs on the RGBA8 scene before the composite, so bloom never gets sharpened and the Neutral round trip keeps the result exact. Off by default until it has been checked in game.
+- **Output selection**: `ImageSettings.needsComposite()` is true for bloom, sharpening, a non-zero exposure or Filmic. Otherwise `PresentStage` copies the scene unchanged, so the foundation and the parity check never run the composite.
 - Ported code (the PBR Neutral shoulder and its inverse) is listed in `THIRD_PARTY_NOTICES.md`. Fixed tuning values live in `ImageResources` and at the top of `bloom_prefilter.fsh`.
 
 ### Why There Is No Real HDR Scene Target
@@ -175,7 +177,7 @@ Places that copy or depend on vanilla internals. Check each of them first when M
 - `/helion status`: shows whether the core is active, disabled or passive and why.
 - Development runs (the workspace launcher or `runClient`) write `Helion stats` lines to the log every 5 seconds while a world is open: frame rate, resolution, total and per stage GPU time, tone mapper, exposure, ambient light and the current bloom threshold. Start the launcher with `-World "<save folder>"` to load a world directly. Production installs never write these lines.
 - Automated visual test: `launcher/launch.ps1 -World "Helion Visual Test" -Define helion.visualTest=true` loads a copy of a save, builds a row of light blocks in front of the player, switches to spectator, freezes time and weather, and photographs seven scenes (noon sky, sunrise sun, horizon, light blocks by day, sunset, night sky, light blocks by night) in five variants each (vanilla, None, Neutral, Filmic, bloom only) into `screenshots/helion_<scene>_<variant>.png` at half resolution, then runs the parity check in every scene with ticks frozen and logs whether all pixels match vanilla (a failure is a `WARN` line). Every shot also writes a `Helion visual test` log line with frame rate, GPU time and image state, and the game closes cleanly afterwards. Run it on a copy of a world, never on a real save, because it changes blocks, time and game rules. Development runs only.
-- F3 debug screen: backend, GPU, total and smoothed GPU time per stage (up to 32 timed passes per frame, including every `bloom_*` pass and `composite`), the image line with tone mapper, exposure, ambient light and bloom threshold, tracked GPU memory and Helion frustum check against vanilla visible sections.
+- F3 debug screen: backend, GPU, total and smoothed GPU time per stage (up to 32 timed passes per frame, including every `bloom_*` pass and `composite`), the image line with tone mapper, exposure, ambient light, bloom threshold and sharpening strength, tracked GPU memory and Helion frustum check against vanilla visible sections.
 
 ## Parity Scenes
 

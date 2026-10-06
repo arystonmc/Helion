@@ -44,6 +44,9 @@ public final class ImageCompositeStage implements RenderStage {
         FramePass pass = frame.graph().addPass(NAME);
         ResourceHandle<RenderTarget> scene = frame.targets().scene();
         pass.reads(scene);
+        Optional<ResourceHandle<RenderTarget>> sharpened = frame.post().sharpened();
+        sharpened.ifPresent(pass::reads);
+        ResourceHandle<RenderTarget> color = sharpened.orElse(scene);
         Optional<ResourceHandle<RenderTarget>> bloom = frame.post().bloom();
         bloom.ifPresent(pass::reads);
         ResourceHandle<RenderTarget> output = pass.readsAndWrites(frame.targets().output());
@@ -57,7 +60,7 @@ public final class ImageCompositeStage implements RenderStage {
             } else {
                 FullscreenPass.draw("Helion Image Composite", output.get(), compiled.composite(), bloomBindings(uniforms, bloomSource)
                     .andThen(renderPass -> renderPass.setUniform(
-                        ImagePipelines.SCENE_COLOR_SAMPLER, PostSampling.colorView(scene), PostSampling.nearest()
+                        ImagePipelines.SCENE_COLOR_SAMPLER, PostSampling.colorView(color), PostSampling.nearest()
                     )));
             }
             output.get().copyDepthFrom(scene.get());

@@ -30,6 +30,7 @@ public final class ImageResources {
         .putFloat()
         .putInt()
         .putInt()
+        .putFloat()
         .get();
 
     private final GpuResources resources;
@@ -88,6 +89,7 @@ public final class ImageResources {
             uniforms = new UniformRing(LABEL, UNIFORM_SIZE, resources);
         }
         BloomSettings bloom = settings.bloom();
+        SharpeningSettings sharpening = settings.sharpening();
         float threshold = bloomThreshold(bloom, scene.ambientLight());
         return uniforms.write(builder -> builder
             .putVec4(scene.fogColor())
@@ -97,7 +99,8 @@ public final class ImageResources {
             .putFloat(threshold * THRESHOLD_KNEE_FRACTION)
             .putFloat(daylight(scene.ambientLight()))
             .putInt(settings.toneMapper().shaderId())
-            .putInt(settings.dither() ? DITHER_ON : DITHER_OFF));
+            .putInt(settings.dither() ? DITHER_ON : DITHER_OFF)
+            .putFloat(sharpening.enabled() ? sharpening.strength() : 0.0F));
     }
 
     private void reportMissingPipelines() {

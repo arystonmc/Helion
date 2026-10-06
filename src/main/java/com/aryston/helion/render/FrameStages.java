@@ -10,6 +10,7 @@ import com.aryston.helion.render.post.BloomStage;
 import com.aryston.helion.render.post.ImageCompositeStage;
 import com.aryston.helion.render.post.PostProcessingStage;
 import com.aryston.helion.render.post.PresentStage;
+import com.aryston.helion.render.post.SharpeningStage;
 import com.aryston.helion.render.scene.ClearStage;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +41,7 @@ public final class FrameStages {
     private static List<RenderStage> postEffects(FrameSources sources, HelionRenderCore core) {
         List<RenderStage> effects = new ArrayList<>(sources.postEffects());
         effects.add(new BloomStage(core.image()));
+        effects.add(new SharpeningStage(core.image()));
         return effects;
     }
 

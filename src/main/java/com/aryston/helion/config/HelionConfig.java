@@ -5,6 +5,7 @@ import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.post.BloomSettings;
 import com.aryston.helion.render.post.ImageSettings;
+import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.post.ToneMapper;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -19,6 +20,8 @@ public final class HelionConfig {
     private static final double MAX_BLOOM_INTENSITY = 1.0;
     private static final double MIN_BLOOM_THRESHOLD = 0.5;
     private static final double MAX_BLOOM_THRESHOLD = 3.0;
+    private static final double MIN_SHARPENING_STRENGTH = 0.0;
+    private static final double MAX_SHARPENING_STRENGTH = 1.0;
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
     public static final ModConfigSpec.BooleanValue ENABLED = BUILDER
@@ -41,6 +44,8 @@ public final class HelionConfig {
     private static final ModConfigSpec.DoubleValue BLOOM_INTENSITY;
     private static final ModConfigSpec.DoubleValue BLOOM_THRESHOLD;
     private static final ModConfigSpec.BooleanValue BLOOM_DEBUG_VIEW;
+    private static final ModConfigSpec.BooleanValue SHARPENING_ENABLED;
+    private static final ModConfigSpec.DoubleValue SHARPENING_STRENGTH;
 
     static {
         BUILDER.translation("helion.configuration.ambientOcclusion").push("ambientOcclusion");
@@ -85,6 +90,14 @@ public final class HelionConfig {
             .translation("helion.configuration.image.bloom.debugView")
             .define("debugView", false);
         BUILDER.pop();
+        BUILDER.translation("helion.configuration.image.sharpening").push("sharpening");
+        SHARPENING_ENABLED = BUILDER
+            .translation("helion.configuration.image.sharpening.enabled")
+            .define("enabled", false);
+        SHARPENING_STRENGTH = BUILDER
+            .translation("helion.configuration.image.sharpening.strength")
+            .defineInRange("strength", SharpeningSettings.DEFAULT_STRENGTH, MIN_SHARPENING_STRENGTH, MAX_SHARPENING_STRENGTH);
+        BUILDER.pop();
         BUILDER.pop();
     }
 
@@ -117,7 +130,8 @@ public final class HelionConfig {
                 BLOOM_INTENSITY.get().floatValue(),
                 BLOOM_THRESHOLD.get().floatValue(),
                 BLOOM_DEBUG_VIEW.getAsBoolean()
-            )
+            ),
+            new SharpeningSettings(SHARPENING_ENABLED.getAsBoolean(), SHARPENING_STRENGTH.get().floatValue())
         );
     }
 }

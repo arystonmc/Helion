@@ -3,6 +3,7 @@ package com.aryston.helion.debug;
 import com.aryston.helion.render.graph.RenderSettings;
 import com.aryston.helion.render.post.BloomSettings;
 import com.aryston.helion.render.post.ImageSettings;
+import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.post.ToneMapper;
 import java.util.Locale;
 
@@ -34,7 +35,7 @@ enum VisualTestVariant {
         );
         return new RenderSettings(
             settings.ambientOcclusion(),
-            new ImageSettings(toneMapper, ImageSettings.DEFAULT_EXPOSURE, true, bloom)
+            new ImageSettings(toneMapper, ImageSettings.DEFAULT_EXPOSURE, true, bloom, SharpeningSettings.DISABLED)
         );
     }
 

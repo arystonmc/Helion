@@ -60,11 +60,19 @@ public final class ImagePipelines {
         .withColorTargetState(writeAll(OUTPUT_FORMAT))
         .build();
 
+    public static final RenderPipeline SHARPEN = HelionPipelines.fullscreen("image/sharpen")
+        .withBindGroupLayout(BindGroupLayout.builder()
+            .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
+            .withUniform(SCENE_COLOR_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .build())
+        .withColorTargetState(writeAll(OUTPUT_FORMAT))
+        .build();
+
     private ImagePipelines() {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(BLOOM_PREFILTER, BLOOM_DOWNSAMPLE, BLOOM_UPSAMPLE, COMPOSITE, BLOOM_DEBUG);
+        return List.of(BLOOM_PREFILTER, BLOOM_DOWNSAMPLE, BLOOM_UPSAMPLE, COMPOSITE, BLOOM_DEBUG, SHARPEN);
     }
 
     private static BindGroupLayout sourceOnly() {

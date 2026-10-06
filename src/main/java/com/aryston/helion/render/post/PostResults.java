@@ -8,6 +8,7 @@ import org.jspecify.annotations.Nullable;
 
 public final class PostResults {
     private @Nullable ResourceHandle<RenderTarget> bloom;
+    private @Nullable ResourceHandle<RenderTarget> sharpened;
     private @Nullable GpuBuffer imageUniforms;
 
     Optional<ResourceHandle<RenderTarget>> bloom() {
@@ -16,6 +17,14 @@ public final class PostResults {
 
     void publishBloom(ResourceHandle<RenderTarget> handle) {
         bloom = handle;
+    }
+
+    Optional<ResourceHandle<RenderTarget>> sharpened() {
+        return Optional.ofNullable(sharpened);
+    }
+
+    void publishSharpened(ResourceHandle<RenderTarget> handle) {
+        sharpened = handle;
     }
 
     Optional<GpuBuffer> imageUniforms() {

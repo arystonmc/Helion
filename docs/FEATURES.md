@@ -4,7 +4,7 @@ What the latest version of Helion can do. Written for players and ready to reuse
 
 ## Summary
 
-Helion is a client-side graphics mod for Minecraft built on the new Vulkan renderer. The whole world is drawn through Helion's own render core, which matches vanilla pixel for pixel on its own, and Helion's graphics features are layered on top of it. The first ones are ambient occlusion and bloom with tone mapping.
+Helion is a client-side graphics mod for Minecraft built on the new Vulkan renderer. The whole world is drawn through Helion's own render core, which matches vanilla pixel for pixel on its own, and Helion's graphics features are layered on top of it. The first ones are ambient occlusion, bloom with tone mapping and sharpening.
 
 ## At a Glance
 
@@ -46,6 +46,14 @@ Bright light sources glow softly into the darkness while the colors you know sta
 - Settings: bloom on or off, intensity, threshold, a view that shows only the glow, tone mapping (Neutral, Filmic, None), exposure and dithering
 - Since: 0.1
 
+### Sharpening
+Crisper block textures without the halos of ordinary sharpening filters.
+
+- Brings back fine texture detail that looks soft on large or high resolution screens
+- Adapts to the picture: flat areas and edges that are already sharp are left alone
+- Settings: sharpening on or off and its strength; off by default
+- Since: 0.1
+
 ### Safe by Design
 Helion never stands between you and the game.
 
@@ -70,5 +78,5 @@ See exactly where the GPU spends its time.
 - Since: 0.1
 
 ### Settings
-- Mods screen → Helion → Config: turn the render core and GPU time measurement on or off, and adjust ambient occlusion, bloom, tone mapping and exposure
+- Mods screen → Helion → Config: turn the render core and GPU time measurement on or off, and adjust ambient occlusion, bloom, sharpening, tone mapping and exposure
 - Since: 0.1
