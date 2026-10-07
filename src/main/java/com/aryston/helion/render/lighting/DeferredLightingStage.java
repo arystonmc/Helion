@@ -5,6 +5,8 @@ import com.aryston.helion.render.geometry.GeometryBuffer;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.shader.FullscreenPass;
+import com.aryston.helion.render.shadow.ShadowLight;
+import com.aryston.helion.render.shadow.ShadowResults;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
@@ -73,7 +75,10 @@ public final class DeferredLightingStage implements RenderStage {
             pass.reads(geometry.normal());
             pass.reads(light.irradiance());
         });
-        CompiledRenderPipeline pipeline = skyLight.isPresent() ? compiled.physicalSkyLight() : compiled.light();
+        Optional<ShadowResults.Shadows> shadows = skyLight.isPresent() ? frame.shadows().shadows() : Optional.empty();
+        shadows.ifPresent(shadow -> pass.reads(shadow.mask()));
+        CompiledRenderPipeline pipeline = lightPipeline(compiled, skyLight.isPresent(), shadows.isPresent());
+        Optional<ShadowLight> shadowLight = shadows.map(ShadowResults.Shadows::light);
         ResourceHandle<RenderTarget> lightBuffer = pass.createsInternal(LIGHT_BUFFER, new RenderTargetDescriptor(
             frame.scene().width(),
             frame.scene().height(),
@@ -83,7 +88,7 @@ public final class DeferredLightingStage implements RenderStage {
         LightEnvironment environment = frame.scene().light();
         DeferredLightingSettings settings = frame.settings().lighting();
         pass.executes(frame.graph().timed(NAME, () -> {
-            frameUniforms = resources.writeUniforms(environment, settings, skyLight);
+            frameUniforms = resources.writeUniforms(environment, settings, skyLight, shadowLight);
             FullscreenPass.draw("Helion Deferred Light", lightBuffer.get(), pipeline, renderPass -> {
                 renderPass.setUniform(DeferredLightingPipelines.SETTINGS, Objects.requireNonNull(frameUniforms));
                 renderPass.setUniform(DeferredLightingPipelines.GEOMETRY_LIGHT_SAMPLER, colorView(geometry.light()), nearest());
@@ -91,9 +96,19 @@ public final class DeferredLightingStage implements RenderStage {
                     renderPass.setUniform(DeferredLightingPipelines.GEOMETRY_NORMAL_SAMPLER, colorView(geometry.normal()), nearest());
                     renderPass.setUniform(DeferredLightingPipelines.SKY_LIGHT_SAMPLER, colorView(light.irradiance()), nearest());
                 });
+                shadows.ifPresent(shadow -> renderPass.setUniform(
+                    DeferredLightingPipelines.SHADOW_MASK_SAMPLER, colorView(shadow.mask()), nearest()
+                ));
             });
         }));
         return lightBuffer;
+    }
+
+    private static CompiledRenderPipeline lightPipeline(DeferredLightingPrograms compiled, boolean physicalSky, boolean shadows) {
+        if (shadows) {
+            return compiled.shadowedLight();
+        }
+        return physicalSky ? compiled.physicalSkyLight() : compiled.light();
     }
 
     private void addShadingPass(

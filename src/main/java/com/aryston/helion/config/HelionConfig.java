@@ -12,6 +12,8 @@ import com.aryston.helion.render.post.BloomSettings;
 import com.aryston.helion.render.post.ImageSettings;
 import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.post.ToneMapper;
+import com.aryston.helion.render.shadow.ShadowQuality;
+import com.aryston.helion.render.shadow.ShadowSettings;
 import com.aryston.helion.render.temporal.TemporalSettings;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -65,6 +67,8 @@ public final class HelionConfig {
     private static final ModConfigSpec.BooleanValue LIGHT_ONLY_VIEW;
     private static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
     private static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
+    private static final ModConfigSpec.BooleanValue SHADOWS_ENABLED;
+    private static final ModConfigSpec.EnumValue<ShadowQuality> SHADOW_QUALITY;
 
     static {
         BUILDER.translation("helion.configuration.ambientOcclusion").push("ambientOcclusion");
@@ -159,6 +163,15 @@ public final class HelionConfig {
             .translation("helion.configuration.physicalSky.enabled")
             .define("enabled", false);
         BUILDER.pop();
+
+        BUILDER.translation("helion.configuration.shadows").push("shadows");
+        SHADOWS_ENABLED = BUILDER
+            .translation("helion.configuration.shadows.enabled")
+            .define("enabled", false);
+        SHADOW_QUALITY = BUILDER
+            .translation("helion.configuration.shadows.quality")
+            .defineEnum("quality", ShadowQuality.MEDIUM);
+        BUILDER.pop();
     }
 
     public static final ModConfigSpec SPEC = BUILDER.build();
@@ -173,7 +186,8 @@ public final class HelionConfig {
             geometryBufferSettings(),
             lightingSettings(),
             new TemporalSettings(TEMPORAL_ENABLED.getAsBoolean()),
-            new PhysicalSkySettings(PHYSICAL_SKY_ENABLED.getAsBoolean())
+            new PhysicalSkySettings(PHYSICAL_SKY_ENABLED.getAsBoolean()),
+            new ShadowSettings(SHADOWS_ENABLED.getAsBoolean(), SHADOW_QUALITY.get())
         );
     }
 

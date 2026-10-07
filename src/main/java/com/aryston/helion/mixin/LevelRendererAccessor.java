@@ -2,6 +2,7 @@ package com.aryston.helion.mixin;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.renderpearl.api.textures.GpuSampler;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.renderer.CloudRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -11,6 +12,7 @@ import net.minecraft.client.renderer.ShaderManager;
 import net.minecraft.client.renderer.SkyRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeStorage;
+import net.minecraft.client.renderer.ViewArea;
 import net.minecraft.client.renderer.WeatherEffectRenderer;
 import net.minecraft.client.renderer.WorldBorderRenderer;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
@@ -87,6 +89,12 @@ public interface LevelRendererAccessor {
     @Accessor("targets")
     LevelTargetBundle helion$targets();
 
+    @Accessor("visibleSections")
+    ObjectArrayList<SectionRenderDispatcher.RenderSection> helion$visibleSections();
+
+    @Accessor("viewArea")
+    @Nullable ViewArea helion$viewArea();
+
     @Accessor("sectionRenderDispatcher")
     @Nullable SectionRenderDispatcher helion$sectionRenderDispatcher();
 
@@ -107,6 +115,9 @@ public interface LevelRendererAccessor {
 
     @Accessor("multiDrawIndirectAvailable")
     boolean helion$multiDrawIndirectAvailable();
+
+    @Accessor("usingMultiDrawIndirectForTerrain")
+    boolean helion$usingMultiDrawIndirectForTerrain();
 
     @Accessor("usingMultiDrawIndirectForTerrain")
     void helion$setUsingMultiDrawIndirectForTerrain(boolean usingMultiDrawIndirect);

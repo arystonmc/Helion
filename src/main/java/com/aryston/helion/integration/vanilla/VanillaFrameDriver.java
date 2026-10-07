@@ -12,6 +12,7 @@ import com.aryston.helion.render.graph.RenderGraph;
 import com.aryston.helion.render.graph.RenderSettings;
 import com.aryston.helion.render.lighting.LightEnvironment;
 import com.aryston.helion.render.post.PostResults;
+import com.aryston.helion.render.shadow.ShadowResults;
 import com.aryston.helion.render.scene.SceneSnapshot;
 import com.aryston.helion.render.temporal.TemporalFrame;
 import com.mojang.blaze3d.ProjectionType;
@@ -138,6 +139,7 @@ final class VanillaFrameDriver {
                 new GeometryBuffer(),
                 temporal,
                 new AtmosphereResults(),
+                new ShadowResults(),
                 new PostResults()
             );
             HelionRenderCore.get().recordFrame(frame.camera(), frame.scene());
@@ -175,6 +177,7 @@ final class VanillaFrameDriver {
             new VanillaEntitySource(request, featureFrame, events),
             new VanillaAtmosphereSource(request, sky, fog, events),
             new VanillaTransparencySource(request, sections, featureFrame),
+            new VanillaShadowCasterSource(request),
             List.of(new VanillaEntityOutlineEffect(request.level()))
         );
     }

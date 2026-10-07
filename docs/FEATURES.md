@@ -91,6 +91,18 @@ A sky that behaves like real air: deep blue overhead, a bright glow around the s
 - Settings: on or off; off by default while it is experimental
 - Since: 0.1
 
+### Sun and Moon Shadows (Experimental)
+Blocks cast real shadows that move with the sun through the day.
+
+- Hills, trees, buildings and every solid or cutout block cast shadows from the sun, and from the moon at night
+- Shadows stay sharp near you and reach up to 160 blocks away, then fade out softly
+- Shadow edges are smoothed and do not crawl or flicker when you move
+- Shadows fade in and out gently at sunrise and sunset instead of popping
+- Shade keeps the blue light of the sky, so shadowed areas look cool and natural instead of black
+- Needs the geometry buffer, HDR lighting and the physical sky to be on
+- Settings: on or off, and Low, Medium or High quality for sharper edges; off by default while it is experimental
+- Since: 0.1
+
 ### Safe by Design
 Helion never stands between you and the game.
 

@@ -10,6 +10,9 @@ uniform sampler2D GeometryLightSampler;
 uniform sampler2D GeometryNormalSampler;
 uniform sampler2D SkyLightSampler;
 #endif
+#ifdef HELION_SHADOWS
+uniform sampler2D ShadowMaskSampler;
+#endif
 
 layout(location = 0) in vec2 texCoord;
 
@@ -31,12 +34,17 @@ vec3 helionAdjustLight(vec3 light) {
 vec3 helionSkyLightColor(ivec2 pixel) {
     #ifdef HELION_PHYSICAL_SKY_LIGHT
     vec3 normal = texelFetch(GeometryNormalSampler, pixel, 0).rgb * 2.0 - 1.0;
-    vec3 irradiance = texelFetch(SkyLightSampler, HELION_SUN_TEXEL, 0).rgb * max(dot(normal, SunDirection), 0.0)
-        + texelFetch(SkyLightSampler, HELION_MOON_TEXEL, 0).rgb * max(dot(normal, MoonDirection), 0.0)
-        + texelFetch(SkyLightSampler, HELION_HEMISPHERE_TEXEL, 0).rgb;
-    float luminance = helionLuminance(irradiance);
+    vec3 sun = texelFetch(SkyLightSampler, HELION_SUN_TEXEL, 0).rgb * max(dot(normal, SunDirection), 0.0);
+    vec3 moon = texelFetch(SkyLightSampler, HELION_MOON_TEXEL, 0).rgb * max(dot(normal, MoonDirection), 0.0);
+    vec3 dome = texelFetch(SkyLightSampler, HELION_HEMISPHERE_TEXEL, 0).rgb;
+    float luminance = helionLuminance(sun + moon + dome);
     if (luminance > HELION_MIN_SKY_LUMINANCE) {
-        return irradiance / luminance * helionLuminance(SkyLightColor);
+        #ifdef HELION_SHADOWS
+        float shadow = 1.0 - texelFetch(ShadowMaskSampler, pixel, 0).r;
+        sun *= 1.0 - SunShadowStrength * shadow;
+        moon *= 1.0 - MoonShadowStrength * shadow;
+        #endif
+        return (sun + moon + dome) / luminance * helionLuminance(SkyLightColor);
     }
     #endif
     return SkyLightColor;

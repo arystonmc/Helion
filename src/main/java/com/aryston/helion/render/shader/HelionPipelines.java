@@ -6,6 +6,7 @@ import com.aryston.helion.render.geometry.GeometryBufferPipelines;
 import com.aryston.helion.render.lighting.AmbientOcclusionPipelines;
 import com.aryston.helion.render.lighting.DeferredLightingPipelines;
 import com.aryston.helion.render.post.ImagePipelines;
+import com.aryston.helion.render.shadow.ShadowPipelines;
 import com.aryston.helion.render.temporal.TemporalPipelines;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
@@ -29,6 +30,7 @@ public final class HelionPipelines {
             DeferredLightingPipelines.all(),
             TemporalPipelines.all(),
             PhysicalSkyPipelines.all(),
+            ShadowPipelines.all(),
             ImagePipelines.all(),
             GeometryBufferPipelines.all()
         ).flatMap(List::stream).toList();

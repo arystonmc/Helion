@@ -10,6 +10,8 @@ import com.aryston.helion.render.post.BloomSettings;
 import com.aryston.helion.render.post.ImageSettings;
 import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.post.ToneMapper;
+import com.aryston.helion.render.shadow.ShadowQuality;
+import com.aryston.helion.render.shadow.ShadowSettings;
 import com.aryston.helion.render.temporal.TemporalSettings;
 import java.util.Locale;
 
@@ -23,6 +25,8 @@ enum VisualTestVariant {
     LIGHT_ONLY(true, ToneMapper.NEUTRAL, false),
     TEMPORAL(true, ToneMapper.NEUTRAL, false),
     PHYSICAL_SKY(true, ToneMapper.NEUTRAL, false),
+    SHADOWS(true, ToneMapper.NEUTRAL, false),
+    SHADOW_LIGHT(true, ToneMapper.NEUTRAL, false),
     PARITY(true, ToneMapper.NEUTRAL, false);
 
     private final boolean helion;
@@ -49,10 +53,11 @@ enum VisualTestVariant {
                     true,
                     DeferredLightingSettings.DEFAULT_BLOCK_LIGHT_INTENSITY,
                     DeferredLightingSettings.DEFAULT_SKY_LIGHT_INTENSITY,
-                    this == LIGHT_ONLY
+                    this == LIGHT_ONLY || this == SHADOW_LIGHT
                 ),
                 TemporalSettings.DISABLED,
-                PhysicalSkySettings.DISABLED
+                new PhysicalSkySettings(showsShadows()),
+                showsShadows() ? new ShadowSettings(true, ShadowQuality.MEDIUM) : ShadowSettings.DISABLED
             );
         }
         if (this == TEMPORAL) {
@@ -62,7 +67,8 @@ enum VisualTestVariant {
                 settings.geometry().withoutView(),
                 DeferredLightingSettings.DISABLED,
                 new TemporalSettings(true),
-                PhysicalSkySettings.DISABLED
+                PhysicalSkySettings.DISABLED,
+                ShadowSettings.DISABLED
             );
         }
         if (this == PHYSICAL_SKY) {
@@ -72,7 +78,8 @@ enum VisualTestVariant {
                 settings.geometry().withoutView(),
                 DeferredLightingSettings.DISABLED,
                 TemporalSettings.DISABLED,
-                new PhysicalSkySettings(true)
+                new PhysicalSkySettings(true),
+                ShadowSettings.DISABLED
             );
         }
         BloomSettings bloom = new BloomSettings(
@@ -84,12 +91,17 @@ enum VisualTestVariant {
             settings.geometry(),
             settings.lighting(),
             settings.temporal(),
-            settings.sky()
+            settings.sky(),
+            settings.shadows()
         );
     }
 
     private boolean showsDeferredLighting() {
-        return this == LIGHTING || this == LIGHT_ONLY;
+        return this == LIGHTING || this == LIGHT_ONLY || showsShadows();
+    }
+
+    private boolean showsShadows() {
+        return this == SHADOWS || this == SHADOW_LIGHT;
     }
 
     boolean comparesWithVanilla() {

@@ -16,6 +16,7 @@ import com.aryston.helion.render.post.PostProcessingStage;
 import com.aryston.helion.render.post.PresentStage;
 import com.aryston.helion.render.post.SharpeningStage;
 import com.aryston.helion.render.scene.ClearStage;
+import com.aryston.helion.render.shadow.ShadowStage;
 import com.aryston.helion.render.temporal.TemporalStage;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,7 @@ public final class FrameStages {
             new ClearStage(),
             sky(frame, sources, core),
             new OpaqueGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere()),
+            new ShadowStage(sources.shadowCasters(), core.shadows()),
             new DeferredLightingStage(core.lighting()),
             new SolidFeatureStage(sources.terrain(), sources.entities()),
             new AmbientOcclusionStage(core.ambientOcclusion()),

@@ -2,6 +2,7 @@ package com.aryston.helion.render.lighting;
 
 import com.aryston.helion.render.atmosphere.SkyLight;
 import com.aryston.helion.render.resource.GpuResources;
+import com.aryston.helion.render.shadow.ShadowLight;
 import com.aryston.helion.render.resource.UniformRing;
 import com.mojang.blaze3d.buffers.Std140SizeCalculator;
 import com.mojang.logging.LogUtils;
@@ -16,6 +17,7 @@ public final class DeferredLightingResources {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String LABEL = "Helion Lighting Settings";
     private static final Vector3fc NO_DIRECTION = new Vector3f(0.0F, 0.0F, 0.0F);
+    private static final float NO_SHADOW = 0.0F;
     private static final int UNIFORM_SIZE = new Std140SizeCalculator()
         .putFloat()
         .putFloat()
@@ -31,6 +33,8 @@ public final class DeferredLightingResources {
         .putVec3()
         .putVec3()
         .putVec3()
+        .putFloat()
+        .putFloat()
         .get();
 
     private final GpuResources resources;
@@ -41,7 +45,14 @@ public final class DeferredLightingResources {
         this.resources = resources;
     }
 
-    GpuBuffer writeUniforms(LightEnvironment environment, DeferredLightingSettings settings, Optional<SkyLight> skyLight) {
+    GpuBuffer writeUniforms(
+        LightEnvironment environment,
+        DeferredLightingSettings settings,
+        Optional<SkyLight> skyLight,
+        Optional<ShadowLight> shadowLight
+    ) {
+        float sunShadowStrength = shadowLight.map(ShadowLight::sunStrength).orElse(NO_SHADOW);
+        float moonShadowStrength = shadowLight.map(ShadowLight::moonStrength).orElse(NO_SHADOW);
         Vector3fc sunDirection = skyLight.map(SkyLight::sunDirection).orElse(NO_DIRECTION);
         Vector3fc moonDirection = skyLight.map(SkyLight::moonDirection).orElse(NO_DIRECTION);
         if (uniforms == null) {
@@ -61,7 +72,9 @@ public final class DeferredLightingResources {
             .putVec3(environment.ambientColor())
             .putVec3(environment.nightVisionColor())
             .putVec3(sunDirection)
-            .putVec3(moonDirection));
+            .putVec3(moonDirection)
+            .putFloat(sunShadowStrength)
+            .putFloat(moonShadowStrength));
     }
 
     void finishFrame() {

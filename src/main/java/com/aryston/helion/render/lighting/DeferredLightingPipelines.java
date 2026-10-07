@@ -17,12 +17,14 @@ public final class DeferredLightingPipelines {
     public static final String LIGHT_BUFFER_SAMPLER = "LightBufferSampler";
     public static final String GEOMETRY_NORMAL_SAMPLER = "GeometryNormalSampler";
     public static final String SKY_LIGHT_SAMPLER = "SkyLightSampler";
+    public static final String SHADOW_MASK_SAMPLER = "ShadowMaskSampler";
     public static final GpuFormat LIGHT_BUFFER_FORMAT = GpuFormat.RGBA16_FLOAT;
     public static final GpuFormat SCENE_COLOR_FORMAT = GpuFormat.RGBA8_UNORM;
     private static final String LIGHT_ONLY_DEFINE = "HELION_LIGHT_ONLY";
     private static final String SHADING_SHADER = "lighting/deferred_shading";
     private static final String LIGHT_SHADER = "lighting/deferred_light";
     private static final String PHYSICAL_SKY_LIGHT_DEFINE = "HELION_PHYSICAL_SKY_LIGHT";
+    private static final String SHADOWS_DEFINE = "HELION_SHADOWS";
 
     public static final RenderPipeline LIGHT = light(LIGHT_SHADER, lightBindings().build()).build();
 
@@ -31,6 +33,15 @@ public final class DeferredLightingPipelines {
         .withUniform(SKY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
         .build())
         .withShaderDefine(PHYSICAL_SKY_LIGHT_DEFINE)
+        .build();
+
+    public static final RenderPipeline SHADOWED_LIGHT = light("lighting/deferred_light_shadowed", lightBindings()
+        .withUniform(GEOMETRY_NORMAL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+        .withUniform(SKY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+        .withUniform(SHADOW_MASK_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+        .build())
+        .withShaderDefine(PHYSICAL_SKY_LIGHT_DEFINE)
+        .withShaderDefine(SHADOWS_DEFINE)
         .build();
 
     public static final RenderPipeline SHADING = shading(SHADING_SHADER).build();
@@ -43,7 +54,7 @@ public final class DeferredLightingPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(LIGHT, PHYSICAL_SKY_LIGHT, SHADING, LIGHT_ONLY_VIEW);
+        return List.of(LIGHT, PHYSICAL_SKY_LIGHT, SHADOWED_LIGHT, SHADING, LIGHT_ONLY_VIEW);
     }
 
     private static RenderPipeline.Builder light(String name, BindGroupLayout bindings) {

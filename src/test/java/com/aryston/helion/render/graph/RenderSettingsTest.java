@@ -10,6 +10,8 @@ import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.lighting.DeferredLightingSettings;
 import com.aryston.helion.render.post.ImageSettings;
+import com.aryston.helion.render.shadow.ShadowQuality;
+import com.aryston.helion.render.shadow.ShadowSettings;
 import com.aryston.helion.render.temporal.TemporalSettings;
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +23,8 @@ class RenderSettingsTest {
         new GeometryBufferSettings(true, GeometryBufferView.NORMALS),
         new DeferredLightingSettings(true, STRONG_BLOCK_LIGHT, DeferredLightingSettings.DEFAULT_SKY_LIGHT_INTENSITY, true),
         new TemporalSettings(true),
-        new PhysicalSkySettings(true)
+        new PhysicalSkySettings(true),
+        new ShadowSettings(true, ShadowQuality.HIGH)
     );
 
     @Test
@@ -34,6 +37,7 @@ class RenderSettingsTest {
         assertFalse(foundation.lighting().enabled());
         assertFalse(foundation.temporal().enabled());
         assertFalse(foundation.sky().enabled());
+        assertFalse(foundation.shadows().enabled());
     }
 
     @Test
@@ -58,5 +62,6 @@ class RenderSettingsTest {
         assertFalse(RenderSettings.OFF.lighting().enabled());
         assertFalse(RenderSettings.OFF.temporal().enabled());
         assertFalse(RenderSettings.OFF.sky().enabled());
+        assertFalse(RenderSettings.OFF.shadows().enabled());
     }
 }

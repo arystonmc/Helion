@@ -16,6 +16,8 @@ layout(std140) uniform HelionLighting {
     vec3 NightVisionColor;
     vec3 SunDirection;
     vec3 MoonDirection;
+    float SunShadowStrength;
+    float MoonShadowStrength;
 };
 
 const float HELION_LIGHT_LEVELS = 15.0;
