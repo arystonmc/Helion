@@ -53,6 +53,15 @@ vec3 helionInterpolatedBlockTerm(float coordinate) {
     return mix(helionBlockTerm(lower / HELION_LIGHT_LEVELS), helionBlockTerm(upper / HELION_LIGHT_LEVELS), level - lower);
 }
 
+vec3 helionAmbientTerm() {
+    return max(AmbientColor, NightVisionColor * NightVisionFactor);
+}
+
+vec3 helionAdjustLight(vec3 light) {
+    light = mix(light, light * HELION_BOSS_DARKENING_TINT, BossOverlayDarkening);
+    return helionSrgbToLinear(max(light - vec3(DarknessScale), 0.0));
+}
+
 vec3 helionVanillaBrightness(vec3 light) {
     float peak = max(light.r, max(light.g, light.b));
     if (peak <= 0.0) {

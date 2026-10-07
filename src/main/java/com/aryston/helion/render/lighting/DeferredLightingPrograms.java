@@ -8,9 +8,10 @@ import java.util.Optional;
 record DeferredLightingPrograms(
     CompiledRenderPipeline light,
     CompiledRenderPipeline physicalSkyLight,
-    CompiledRenderPipeline shadowedLight,
     CompiledRenderPipeline shading,
-    CompiledRenderPipeline lightOnlyView
+    CompiledRenderPipeline lightOnlyView,
+    CompiledRenderPipeline shadowedShading,
+    CompiledRenderPipeline shadowedLightOnlyView
 ) {
     static Optional<DeferredLightingPrograms> compile() {
         if (DeferredLightingPipelines.all().stream().anyMatch(pipeline -> HelionPipelines.compiled(pipeline).isEmpty())) {
@@ -19,9 +20,10 @@ record DeferredLightingPrograms(
         return Optional.of(new DeferredLightingPrograms(
             get(DeferredLightingPipelines.LIGHT),
             get(DeferredLightingPipelines.PHYSICAL_SKY_LIGHT),
-            get(DeferredLightingPipelines.SHADOWED_LIGHT),
             get(DeferredLightingPipelines.SHADING),
-            get(DeferredLightingPipelines.LIGHT_ONLY_VIEW)
+            get(DeferredLightingPipelines.LIGHT_ONLY_VIEW),
+            get(DeferredLightingPipelines.SHADOWED_SHADING),
+            get(DeferredLightingPipelines.SHADOWED_LIGHT_ONLY_VIEW)
         ));
     }
 

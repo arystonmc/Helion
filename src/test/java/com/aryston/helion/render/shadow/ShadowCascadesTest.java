@@ -80,6 +80,25 @@ class ShadowCascadesTest {
     }
 
     @Test
+    void everyCascadeDrawsIntoItsOwnQuarterOfTheAtlasWithItsDepthUnchanged() {
+        Matrix4f projection = new Matrix4f(compute(new Vector3d(0.0, 64.0, 0.0)).get(1).projection());
+        Vector4f point = new Vector4f(5.0F, -3.0F, -40.0F, 1.0F);
+        Vector4f cascadeClip = projection.transform(new Vector4f(point));
+        Matrix4f inverse = projection.invert(new Matrix4f());
+        for (int index = 0; index < ShadowCascades.COUNT; index++) {
+            Matrix4f atlas = ShadowCascades.atlasProjection(index, projection);
+            Vector4f left = atlas.transform(inverse.transform(new Vector4f(-1.0F, 0.0F, 0.5F, 1.0F)));
+            Vector4f right = atlas.transform(inverse.transform(new Vector4f(1.0F, 0.0F, 0.5F, 1.0F)));
+            Vector4f atlasClip = atlas.transform(new Vector4f(point));
+
+            assertEquals(-1.0F + 2.0F * index / ShadowCascades.COUNT, left.x, TOLERANCE);
+            assertEquals(-1.0F + 2.0F * (index + 1) / ShadowCascades.COUNT, right.x, TOLERANCE);
+            assertEquals(cascadeClip.y, atlasClip.y, TOLERANCE);
+            assertEquals(cascadeClip.z, atlasClip.z, TOLERANCE);
+        }
+    }
+
+    @Test
     void shadowDistanceFollowsTheRenderDistance() {
         assertEquals(96.0F, ShadowCascades.distance(96), TOLERANCE);
         assertEquals(ShadowCascades.MAX_DISTANCE, ShadowCascades.distance(512), TOLERANCE);

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import org.joml.Matrix4fc;
 import org.jspecify.annotations.Nullable;
 
 public final class ShadowStage implements RenderStage {
@@ -99,10 +100,12 @@ public final class ShadowStage implements RenderStage {
             try (RenderPass renderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor)) {
                 RenderSystem.bindDefaultUniforms(renderPass);
                 for (int index = 0; index < cascades.size(); index++) {
-                    renderPass.setViewport(index * resolution, FIRST_ROW, resolution, resolution);
-                    renderPass.setUniform(ShadowPipelines.PROJECTION, resources.writeProjection(index, cascades.get(index).projection()));
+                    renderPass.enableScissor(index * resolution, FIRST_ROW, resolution, resolution);
+                    Matrix4fc atlasProjection = ShadowCascades.atlasProjection(index, cascades.get(index).projection());
+                    renderPass.setUniform(ShadowPipelines.PROJECTION, resources.writeProjection(index, atlasProjection));
                     casters.renderCascade(index, renderPass);
                 }
+                renderPass.disableScissor();
             }
         }));
         return shadowMap;

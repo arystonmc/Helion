@@ -28,6 +28,11 @@ final class VisualTestWorld {
         new Placement(3, -1, -9, "redstone_block"),
         new Placement(3, 0, -9, "redstone_lamp[lit=true]")
     );
+    private static final String CASTER_BLOCK = "stone";
+    private static final List<Volume> SHADOW_CASTERS = List.of(
+        new Volume(new BlockPos(5, 0, -4), new BlockPos(5, 3, -4)),
+        new Volume(new BlockPos(-6, 2, -5), new BlockPos(-4, 2, -3))
+    );
 
     private VisualTestWorld() {
     }
@@ -41,6 +46,7 @@ final class VisualTestWorld {
             "stone"
         ));
         LIGHTS.forEach(light -> run(server, light.command(origin)));
+        SHADOW_CASTERS.forEach(caster -> run(server, fill(origin.offset(caster.from()), origin.offset(caster.to()), CASTER_BLOCK)));
     }
 
     static void setTime(IntegratedServer server, int dayTime) {
@@ -64,6 +70,9 @@ final class VisualTestWorld {
             CommandSourceStack source = server.createCommandSourceStack().withSuppressedOutput();
             server.getCommands().performPrefixedCommand(source, command);
         });
+    }
+
+    private record Volume(BlockPos from, BlockPos to) {
     }
 
     private record Placement(int x, int y, int z, String block) {
