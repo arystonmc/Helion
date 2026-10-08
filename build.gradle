@@ -21,7 +21,7 @@ repositories {
     mavenCentral()
     maven {
         name = 'Arkea'
-        url = uri("https://raw.githubusercontent.com/lureidcom/Arkea/maven")
+        url = uri("https://raw.githubusercontent.com/arystonmc/Arkea/maven")
         content {
             includeGroup 'com.aryston.arkea'
         }

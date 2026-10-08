@@ -12,7 +12,7 @@ jobs:
       - name: Checkout Arkea
         uses: actions/checkout@v5
         with:
-          repository: lureidcom/Arkea
+          repository: arystonmc/Arkea
           path: arkea
 
       - name: Setup JDK 25
