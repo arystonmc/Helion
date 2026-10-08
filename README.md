@@ -43,6 +43,12 @@ Helion depends on Arkea. With an Arkea checkout next to Helion (`../arkea`) it i
 
 The jar is written to `build/libs/`.
 
+## Releasing
+
+Release Arkea first when Helion needs a new Arkea version. Then push a tag `v<mod_version>` (for example `v0.1`). The Release workflow checks that the tag matches `mod_version`, builds against the published Arkea and creates a GitHub release with the jar and the changelog of that version (or of Unreleased).
+
+Modrinth and CurseForge uploads run only when the repository has the secrets `MODRINTH_TOKEN` or `CURSEFORGE_TOKEN` and the variables `MODRINTH_ID` or `CURSEFORGE_ID`. They list Arkea as a required dependency.
+
 ## License
 
 [LGPL-3.0-only](COPYING.LESSER)
