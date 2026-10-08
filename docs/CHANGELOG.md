@@ -28,3 +28,6 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Neutral and Filmic tone mapping, exposure control and dithering against color banding
 - Optional contrast adaptive sharpening with a strength setting
 - English and Turkish translations
+
+### Changed
+- Adopt the Aryston Source-Available License

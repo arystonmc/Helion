@@ -15,7 +15,7 @@
 | Java | 25 |
 | Graphics API | Vulkan (Video Settings → Graphics API → Prefer Vulkan) |
 | Side | Client only |
-| Library | [Arkea](https://github.com/lureidcom/Arkea) 0.1 or newer (required) |
+| Library | [Arkea](https://github.com/arystonmc/Arkea) 0.1 or newer (required) |
 
 ## Features
 
@@ -51,4 +51,4 @@ Modrinth and CurseForge uploads run only when the repository has the secrets `MO
 
 ## License
 
-[LGPL-3.0-only](COPYING.LESSER)
+[Aryston Source-Available License](LICENSE.md)

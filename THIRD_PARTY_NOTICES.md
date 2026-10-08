@@ -1,6 +1,6 @@
 # Third Party Notices
 
-Helion is licensed under the GNU Lesser General Public License v3.0. Parts of it are derived from the following third party works, used under their own licenses.
+Helion is licensed under the Aryston Source-Available License. Parts of it are derived from the following third party works, used under their own licenses.
 
 ## XeGTAO
 

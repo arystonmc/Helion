@@ -94,7 +94,7 @@ tasks.named('processResources', ProcessResources) {
         rename 'logo.png', "${mod_id}.png"
     }
     from('.') {
-        include 'COPYING', 'COPYING.LESSER', 'THIRD_PARTY_NOTICES.md'
+        include 'LICENSE.md', 'THIRD_PARTY_NOTICES.md'
     }
 }
 
