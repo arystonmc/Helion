@@ -1,0 +1,23 @@
+name: Feature Request
+description: Propose an enhancement or new visual feature for Helion
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea to make Helion better? Let us know!
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Feature Description
+      description: Clear and concise description of the feature you want
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale / Use Case
+      description: Why would this be a great addition to Helion?
+    validations:
+      required: false
+
