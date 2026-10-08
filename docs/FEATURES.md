@@ -42,6 +42,7 @@ Bright light sources glow softly into the darkness while the colors you know sta
 
 - Lava, torches, glowstone, sea lanterns, beacons, the sun and other bright lights get a soft cinematic glow
 - The glow adapts to its surroundings: at night and in caves lights glow clearly, in daylight only truly bright things glow, so snow and sand stay clean
+- The moon shines softer than the sun and does not glow like it, so the two are easy to tell apart when both are in the sky
 - Tone mapping keeps vanilla colors and only rolls off the brightest highlights; a Filmic option adds film-like contrast, richer colors and whiter cores in bright glows
 - Exposure control and invisible dithering that removes color banding in the sky
 - Settings: bloom on or off, intensity, threshold, a view that shows only the glow, tone mapping (Neutral, Filmic, None), exposure and dithering
@@ -86,7 +87,7 @@ A sky that behaves like real air: deep blue overhead, a bright glow around the s
 - The sky color comes from how sunlight and moonlight scatter in an Earth-like atmosphere instead of a single vanilla color, computed across the visible spectrum for natural blues, golden sunrises and red sunsets
 - Distant terrain fades into the real sky color in every direction, so the horizon no longer changes color when you turn your head; clouds fade into the horizon color
 - With HDR lighting on, sunlight, moonlight and skylight tint the terrain: warm on faces toward a low sun, cool blue in shade, at vanilla brightness
-- The blocky sun, the moon phases and the stars stay exactly as in vanilla
+- The blocky sun, the moon phases and the stars keep their vanilla look; only the moon is a little dimmer
 - Rain dims and greys the sky; the glow around the sun can bloom
 - Works in the Overworld; other dimensions and views under water keep the vanilla sky
 - Settings: on or off; off by default while it is experimental

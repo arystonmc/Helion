@@ -57,7 +57,8 @@ final class VanillaAtmosphereSource implements AtmosphereSource {
         boolean renderedByCustomSkybox = customSkybox != null
             && customSkybox.renderSky(state, skyState, state.cameraRenderState.viewRotationMatrix, fog.current());
         if (!renderedByCustomSkybox) {
-            sky.obtain(level, target, state.shouldResetSkyRenderer).render(fog.current(), skyState);
+            SkyRenderer renderer = sky.obtain(level, target, state.shouldResetSkyRenderer);
+            HelionSky.draw(() -> renderer.render(fog.current(), skyState), false);
         }
         events.afterSky();
     }
@@ -102,7 +103,7 @@ final class VanillaAtmosphereSource implements AtmosphereSource {
     public void renderCelestials(RenderTarget target) {
         LevelRenderState state = state();
         SkyRenderer renderer = sky.obtain(level, target, state.shouldResetSkyRenderer);
-        CelestialOnlySky.draw(() -> renderer.render(fog.current(), state.skyRenderState));
+        HelionSky.draw(() -> renderer.render(fog.current(), state.skyRenderState), true);
         events.afterSky();
     }
 

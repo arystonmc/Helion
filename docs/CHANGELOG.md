@@ -31,3 +31,4 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 
 ### Changed
 - Adopt the Aryston Source-Available License
+- Draw the moon dimmer than the sun so it no longer glows like a second sun
