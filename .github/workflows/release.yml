@@ -66,14 +66,14 @@ jobs:
         if: github.ref_type == 'tag' && (env.MODRINTH_TOKEN != '' || env.CURSEFORGE_TOKEN != '')
         uses: Kir-Antipov/mc-publish@v3.3
         with:
-          modrinth-id: ${{ vars.MODRINTH_ID }}
+          modrinth-id: ${{ vars.MODRINTH_ID || 'helion' }}
           modrinth-token: ${{ env.MODRINTH_TOKEN }}
-          curseforge-id: ${{ vars.CURSEFORGE_ID }}
+          curseforge-id: ${{ vars.CURSEFORGE_ID || '1729118' }}
           curseforge-token: ${{ env.CURSEFORGE_TOKEN }}
           files: build/libs/helion-neoforge-${{ steps.version.outputs.minecraft }}-${{ steps.version.outputs.version }}.jar
           name: Helion ${{ steps.version.outputs.version }}
           version: ${{ steps.version.outputs.version }}
-          version-type: beta
+          version-type: alpha
           changelog-file: build/release-notes.md
           loaders: neoforge
           game-versions: ${{ steps.version.outputs.minecraft }}
