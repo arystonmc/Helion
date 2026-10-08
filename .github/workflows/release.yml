@@ -48,7 +48,7 @@ jobs:
 
       - name: Write release notes
         run: |
-          notes=$(awk -v version="## ${{ steps.version.outputs.version }}" '$0 == version {found = 1; next} found && /^## / {exit} found {print}' docs/CHANGELOG.md)
+          notes=$(awk -v version="${{ steps.version.outputs.version }}" '$0 == "## " version || index($0, "## [" version "]") == 1 {found = 1; next} found && /^## / {exit} found {print}' docs/CHANGELOG.md)
           if [ -z "$notes" ]; then
             notes=$(awk '$0 == "## Unreleased" {found = 1; next} found && /^## / {exit} found {print}' docs/CHANGELOG.md)
           fi

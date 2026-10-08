@@ -6,6 +6,8 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 
 ## Unreleased
 
+## [0.1] - 2026-10-09
+
 ### Added
 - New settings window built with Arkea: pages, presets, search, previews and a GPU impact meter
 - Initial mod setup for Minecraft 26.3 on NeoForge
