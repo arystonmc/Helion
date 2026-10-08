@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- New settings window built with Arkea: pages, presets, search, previews and a GPU impact meter
 - Initial mod setup for Minecraft 26.3 on NeoForge
 - Vulkan render core that draws the whole world through Helion's own stages with a picture identical to vanilla
 - Own color and depth buffers for the world image

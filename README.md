@@ -15,6 +15,7 @@
 | Java | 25 |
 | Graphics API | Vulkan (Video Settings → Graphics API → Prefer Vulkan) |
 | Side | Client only |
+| Library | [Arkea](https://github.com/lureidcom/Arkea) 0.1 or newer (required) |
 
 ## Features
 
@@ -37,6 +38,8 @@ If the game closes right after start on Vulkan, open `config/fml.toml` in the ga
 ```
 ./gradlew build
 ```
+
+Helion depends on Arkea. With an Arkea checkout next to Helion (`../arkea`) it is built from source; otherwise the published Arkea version is downloaded. Use `-Parkea_path=<folder>` for another location.
 
 The jar is written to `build/libs/`.
 

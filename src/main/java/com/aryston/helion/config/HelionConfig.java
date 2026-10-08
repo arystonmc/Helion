@@ -18,22 +18,22 @@ import com.aryston.helion.render.temporal.TemporalSettings;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class HelionConfig {
-    private static final double MIN_STRENGTH = 0.0;
-    private static final double MAX_STRENGTH = 2.0;
-    private static final double MIN_RADIUS = 0.5;
-    private static final double MAX_RADIUS = 4.0;
-    private static final double MIN_EXPOSURE = -2.0;
-    private static final double MAX_EXPOSURE = 2.0;
-    private static final double MIN_BLOOM_INTENSITY = 0.0;
-    private static final double MAX_BLOOM_INTENSITY = 1.0;
-    private static final double MIN_BLOOM_THRESHOLD = 0.5;
-    private static final double MAX_BLOOM_THRESHOLD = 3.0;
-    private static final double MIN_SHARPENING_STRENGTH = 0.0;
-    private static final double MAX_SHARPENING_STRENGTH = 1.0;
-    private static final double MIN_BLOCK_LIGHT_INTENSITY = 0.5;
-    private static final double MAX_BLOCK_LIGHT_INTENSITY = 4.0;
-    private static final double MIN_SKY_LIGHT_INTENSITY = 0.5;
-    private static final double MAX_SKY_LIGHT_INTENSITY = 2.0;
+    static final double MIN_STRENGTH = 0.0;
+    static final double MAX_STRENGTH = 2.0;
+    static final double MIN_RADIUS = 0.5;
+    static final double MAX_RADIUS = 4.0;
+    static final double MIN_EXPOSURE = -2.0;
+    static final double MAX_EXPOSURE = 2.0;
+    static final double MIN_BLOOM_INTENSITY = 0.0;
+    static final double MAX_BLOOM_INTENSITY = 1.0;
+    static final double MIN_BLOOM_THRESHOLD = 0.5;
+    static final double MAX_BLOOM_THRESHOLD = 3.0;
+    static final double MIN_SHARPENING_STRENGTH = 0.0;
+    static final double MAX_SHARPENING_STRENGTH = 1.0;
+    static final double MIN_BLOCK_LIGHT_INTENSITY = 0.5;
+    static final double MAX_BLOCK_LIGHT_INTENSITY = 4.0;
+    static final double MIN_SKY_LIGHT_INTENSITY = 0.5;
+    static final double MAX_SKY_LIGHT_INTENSITY = 2.0;
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
     public static final ModConfigSpec.BooleanValue ENABLED = BUILDER
@@ -44,31 +44,31 @@ public final class HelionConfig {
         .translation("helion.configuration.debugMode")
         .define("debugMode", false);
 
-    private static final ModConfigSpec.BooleanValue AMBIENT_OCCLUSION_ENABLED;
-    private static final ModConfigSpec.EnumValue<AmbientOcclusionAlgorithm> AMBIENT_OCCLUSION_ALGORITHM;
-    private static final ModConfigSpec.EnumValue<AmbientOcclusionQuality> AMBIENT_OCCLUSION_QUALITY;
-    private static final ModConfigSpec.DoubleValue AMBIENT_OCCLUSION_STRENGTH;
-    private static final ModConfigSpec.DoubleValue AMBIENT_OCCLUSION_RADIUS;
-    private static final ModConfigSpec.BooleanValue AMBIENT_OCCLUSION_DEBUG_VIEW;
-    private static final ModConfigSpec.EnumValue<ToneMapper> TONE_MAPPER;
-    private static final ModConfigSpec.DoubleValue EXPOSURE;
-    private static final ModConfigSpec.BooleanValue DITHER;
-    private static final ModConfigSpec.BooleanValue BLOOM_ENABLED;
-    private static final ModConfigSpec.DoubleValue BLOOM_INTENSITY;
-    private static final ModConfigSpec.DoubleValue BLOOM_THRESHOLD;
-    private static final ModConfigSpec.BooleanValue BLOOM_DEBUG_VIEW;
-    private static final ModConfigSpec.BooleanValue SHARPENING_ENABLED;
-    private static final ModConfigSpec.DoubleValue SHARPENING_STRENGTH;
-    private static final ModConfigSpec.BooleanValue GEOMETRY_BUFFER_ENABLED;
-    private static final ModConfigSpec.EnumValue<GeometryBufferView> GEOMETRY_BUFFER_VIEW;
-    private static final ModConfigSpec.BooleanValue LIGHTING_ENABLED;
-    private static final ModConfigSpec.DoubleValue BLOCK_LIGHT_INTENSITY;
-    private static final ModConfigSpec.DoubleValue SKY_LIGHT_INTENSITY;
-    private static final ModConfigSpec.BooleanValue LIGHT_ONLY_VIEW;
-    private static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
-    private static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
-    private static final ModConfigSpec.BooleanValue SHADOWS_ENABLED;
-    private static final ModConfigSpec.EnumValue<ShadowQuality> SHADOW_QUALITY;
+    static final ModConfigSpec.BooleanValue AMBIENT_OCCLUSION_ENABLED;
+    static final ModConfigSpec.EnumValue<AmbientOcclusionAlgorithm> AMBIENT_OCCLUSION_ALGORITHM;
+    static final ModConfigSpec.EnumValue<AmbientOcclusionQuality> AMBIENT_OCCLUSION_QUALITY;
+    static final ModConfigSpec.DoubleValue AMBIENT_OCCLUSION_STRENGTH;
+    static final ModConfigSpec.DoubleValue AMBIENT_OCCLUSION_RADIUS;
+    static final ModConfigSpec.BooleanValue AMBIENT_OCCLUSION_DEBUG_VIEW;
+    static final ModConfigSpec.EnumValue<ToneMapper> TONE_MAPPER;
+    static final ModConfigSpec.DoubleValue EXPOSURE;
+    static final ModConfigSpec.BooleanValue DITHER;
+    static final ModConfigSpec.BooleanValue BLOOM_ENABLED;
+    static final ModConfigSpec.DoubleValue BLOOM_INTENSITY;
+    static final ModConfigSpec.DoubleValue BLOOM_THRESHOLD;
+    static final ModConfigSpec.BooleanValue BLOOM_DEBUG_VIEW;
+    static final ModConfigSpec.BooleanValue SHARPENING_ENABLED;
+    static final ModConfigSpec.DoubleValue SHARPENING_STRENGTH;
+    static final ModConfigSpec.BooleanValue GEOMETRY_BUFFER_ENABLED;
+    static final ModConfigSpec.EnumValue<GeometryBufferView> GEOMETRY_BUFFER_VIEW;
+    static final ModConfigSpec.BooleanValue LIGHTING_ENABLED;
+    static final ModConfigSpec.DoubleValue BLOCK_LIGHT_INTENSITY;
+    static final ModConfigSpec.DoubleValue SKY_LIGHT_INTENSITY;
+    static final ModConfigSpec.BooleanValue LIGHT_ONLY_VIEW;
+    static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
+    static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
+    static final ModConfigSpec.BooleanValue SHADOWS_ENABLED;
+    static final ModConfigSpec.EnumValue<ShadowQuality> SHADOW_QUALITY;
 
     static {
         BUILDER.translation("helion.configuration.ambientOcclusion").push("ambientOcclusion");

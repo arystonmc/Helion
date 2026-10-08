@@ -9,3 +9,13 @@ plugins {
 }
 
 rootProject.name = 'helion'
+
+def arkeaPath = providers.gradleProperty('arkea_path').get()
+def minecraftVersion = providers.gradleProperty('minecraft_version').get()
+if (file(arkeaPath).isDirectory()) {
+    includeBuild(arkeaPath) {
+        dependencySubstitution {
+            substitute module("com.aryston.arkea:arkea-neoforge-${minecraftVersion}") using project(':')
+        }
+    }
+}

@@ -29,6 +29,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 | GPU time per stage | `GpuTimings` |
 | Camera and frustum math | `HelionCamera`, `HelionFrustum` |
 | Settings | `HelionConfig`, `lang/*.json` |
+| Settings screen (Arkea) | `HelionConfigScreen`, `HelionOptions`, `HelionPresets`, `HelionImpact` |
 | Key bindings | `HelionKeys`, `ParityControl` |
 | Debug mode: on-screen values and JSON log | `HelionDebugSnapshot` (every value), `HelionDebugEntry` (screen), `DebugOverlayLines` (line layout), `HelionDebugLog` (`logs/helion-debug.jsonl`) |
 | Pixel comparison with vanilla | `ParityCheck`, `FrameCapture`, `ParityResult`, `ParityDifferenceImage` |
@@ -49,16 +50,34 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### Helion
 - Path: `src/main/java/com/aryston/helion/Helion.java`
-- Role: Client entry point. Registers the client config, the config screen and all event listeners.
+- Role: Client entry point. Registers the client config, the Arkea config screen (`HelionConfigScreen`) and all event listeners.
 - Members: `MOD_ID`, `LOGGER`.
-- Depends on: `HelionConfig`, `ClientEvents`.
+- Depends on: `HelionConfig`, `HelionConfigScreen`, `ClientEvents`.
 
 ### `com.aryston.helion.config`
 
 #### HelionConfig
 - Path: `src/main/java/com/aryston/helion/config/HelionConfig.java`
-- Role: Client config spec: `ENABLED` (render core on at startup), `DEBUG_MODE` (off by default), the `ambientOcclusion` section (enabled, algorithm, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, the `bloom` subsection with enabled, intensity, threshold, debugView, and the `sharpening` subsection with enabled, strength), the `geometryBuffer` section (enabled, view) the `lighting` section (enabled, blockLightIntensity, skyLightIntensity, lightOnlyView), the `temporalAntiAliasing` section (enabled), the `physicalSky` section (enabled) and the `shadows` section (enabled, quality). `renderSettings()` turns the config into a `RenderSettings` snapshot.
+- Role: Client config spec: `ENABLED` (render core on at startup), `DEBUG_MODE` (off by default), the `ambientOcclusion` section (enabled, algorithm, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, the `bloom` subsection with enabled, intensity, threshold, debugView, and the `sharpening` subsection with enabled, strength), the `geometryBuffer` section (enabled, view) the `lighting` section (enabled, blockLightIntensity, skyLightIntensity, lightOnlyView), the `temporalAntiAliasing` section (enabled), the `physicalSky` section (enabled) and the `shadows` section (enabled, quality). `renderSettings()` turns the config into a `RenderSettings` snapshot. The values and range limits are package visible for `HelionOptions`.
 - Depends on: nothing inside the mod.
+
+#### HelionConfigScreen
+- Path: `src/main/java/com/aryston/helion/config/HelionConfigScreen.java`
+- Role: Settings screen built with the Arkea config API, following the Helion design of the Arkea handoff: Helion logo, sidebar groups Configuration (General with presets and the render core switch, Rendering, Lighting, Effects) and System (Performance with the quality settings, Advanced with debug mode and collapsible debug views), GPU impact meter, Apply and Reset.
+- Depends on: `HelionOptions`, `HelionPresets`, `HelionImpact`.
+- Notes: Needs Arkea (required dependency in `neoforge.mods.toml`).
+
+#### HelionOptions
+- Path: `src/main/java/com/aryston/helion/config/HelionOptions.java`
+- Role: One Arkea `ConfigOption` per `HelionConfig` value with icon, short description, the existing config tooltip, BETA tag for experimental features, cost pips, before and after previews, and requirements (shadows need HDR lighting and the physical sky, HDR lighting needs the geometry buffer, every effect needs the render core).
+
+#### HelionPresets
+- Path: `src/main/java/com/aryston/helion/config/HelionPresets.java`
+- Role: Vanilla, Balanced, Quality and Experimental presets that set the effect switches and quality levels together.
+
+#### HelionImpact
+- Path: `src/main/java/com/aryston/helion/config/HelionImpact.java`
+- Role: Sidebar meter that estimates the GPU impact from the costs of the effects that are on and their quality, using the values shown on screen.
 
 ### `com.aryston.helion.render`
 
@@ -706,14 +725,15 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 
 | File | Purpose |
 |---|---|
-| `src/main/templates/META-INF/neoforge.mods.toml` | Mod metadata template filled from `gradle.properties`: dependencies, discouraged Sodium and Iris, mixin config. |
+| `src/main/templates/META-INF/neoforge.mods.toml` | Mod metadata template filled from `gradle.properties`: dependencies (Arkea required, so the game refuses to start without it), discouraged Sodium and Iris, mixin config. |
 | `src/main/resources/helion.mixins.json` | Mixin configuration listing `ChunkSectionsToRenderAccessor`, `GameRendererMixin`, `LevelRendererAccessor`, `LevelRendererMixin` and `SkyRendererMixin`. |
 
 ## Asset Folders
 
 | Folder | Contents |
 |---|---|
-| `src/main/resources/assets/helion/lang/` | `en_us.json` and `tr_tr.json`: config, key, toast and parity check texts. |
+| `src/main/resources/assets/helion/lang/` | `en_us.json` and `tr_tr.json`: config, settings screen (`helion.config.*`), key, toast and parity check texts. |
+| `src/main/resources/assets/helion/textures/gui/` | `logo.png` (48 x 48, linear filtered through `logo.png.mcmeta`) for the settings sidebar, and `preview/`: placeholder before and after images of ambient occlusion, bloom, shadows and the physical sky from the design handoff, to be replaced with real captures. |
 | `src/main/resources/assets/helion/shaders/ambient_occlusion/` | Ambient occlusion fragment shaders: `view_depth`, `gtao`, `denoise`, `denoise_resolve`, `apply`. |
 | `src/main/resources/assets/helion/shaders/image/` | Bloom and image fragment shaders: `bloom_prefilter`, `bloom_downsample`, `bloom_upsample`, `composite`, `bloom_debug`, `sharpen`. |
 | `src/main/resources/assets/helion/shaders/terrain/` | Geometry buffer terrain shaders `geometry.vsh` and `geometry.fsh`: vanilla terrain color plus normal, light (with chunk fade-in) and albedo (with the fog amount in alpha) targets. |
@@ -728,7 +748,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 
 | File | Purpose |
 |---|---|
-| `build.gradle` | ModDevGradle setup, JUnit 5 for `src/test/java` with the Minecraft classpath of `main` and skipped or failed tests in the log, `client` run forced to Vulkan, metadata expansion, packs `branding/logo.png` into the jar as `helion.png`, jar name `helion-neoforge-<minecraft_version>-<version>.jar`. |
-| `gradle.properties` | Single place for versions and mod metadata. |
-| `settings.gradle` | Plugin repositories, Java toolchain resolver, project name. |
+| `build.gradle` | ModDevGradle setup, JUnit 5 for `src/test/java` with the Minecraft classpath of `main` and skipped or failed tests in the log, `client` run forced to Vulkan, metadata expansion, packs `branding/logo.png` into the jar as `helion.png`, jar name `helion-neoforge-<minecraft_version>-<version>.jar`. Depends on Arkea (`arkea_version`) from the Arkea Maven repository on GitHub. |
+| `gradle.properties` | Single place for versions and mod metadata, including `arkea_version`, `arkea_version_range` and `arkea_path`. |
+| `settings.gradle` | Plugin repositories, Java toolchain resolver, project name. When an Arkea checkout exists at `arkea_path` (`../arkea` in the workspace, `-Parkea_path=arkea` in CI) it is included as a composite build, so Helion compiles and runs against the local Arkea sources. |
 | `.github/workflows/build.yml` | CI on every push and pull request: JDK 25, installs `glslangValidator` for the shader test, runs `./gradlew build` and uploads the jar. |

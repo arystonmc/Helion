@@ -15,6 +15,7 @@ Helion is a client-side graphics mod for Minecraft built on the new Vulkan rende
 | Loader | NeoForge |
 | Graphics API | Vulkan |
 | Side | Client only, safe to join any server |
+| Requires | Arkea 0.1 or newer |
 | Status | In development |
 
 ## Features
@@ -127,5 +128,15 @@ Everything Helion knows, on screen and in a log file, only when you ask for it.
 - Since: 0.1
 
 ### Settings
-- Mods screen → Helion → Config: turn the render core and debug mode on or off, and adjust ambient occlusion, bloom, sharpening, tone mapping, exposure and the geometry buffer
+A clear settings window in the Arkea style, with presets and a live estimate of the GPU cost.
+
+- Pages for General, Rendering, Lighting, Effects, Performance and Advanced, with search across every setting
+- Presets: Vanilla, Balanced, Quality and Experimental
+- Every setting has a short description, the full explanation on hover, and a reset button when it differs from its default
+- Before and after previews for ambient occlusion, bloom, shadows and the physical sky
+- Settings that need another one (shadows need HDR lighting and the physical sky) stay disabled until it is on and say why
+- Changes wait for Apply; leaving with unapplied changes asks first
+- The GPU impact meter estimates the cost of the current settings
+- Open it from Mods → Helion → Config or from the Arkea options window
+- Needs the Arkea library; the game refuses to start without it
 - Since: 0.1

@@ -19,9 +19,18 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(java_version as int)
 
 repositories {
     mavenCentral()
+    maven {
+        name = 'Arkea'
+        url = uri("https://raw.githubusercontent.com/lureidcom/Arkea/maven")
+        content {
+            includeGroup 'com.aryston.arkea'
+        }
+    }
 }
 
 dependencies {
+    implementation "com.aryston.arkea:arkea-neoforge-${minecraft_version}:${arkea_version}"
+
     testImplementation platform("org.junit:junit-bom:${junit_version}")
     testImplementation "org.junit.jupiter:junit-jupiter"
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
@@ -68,6 +77,7 @@ var generateModMetadata = tasks.register('generateModMetadata', ProcessResources
             mod_version            : mod_version,
             mod_authors            : mod_authors,
             mod_url                : mod_url,
+            arkea_version_range    : arkea_version_range,
     ]
     inputs.properties replaceProperties
     expand replaceProperties

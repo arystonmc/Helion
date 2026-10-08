@@ -31,6 +31,14 @@ config="${mod_id}.mixins.json"
     side="CLIENT"
 
 [[dependencies.${mod_id}]]
+    modId="arkea"
+    type="required"
+    reason="Helion draws its settings screen with the Arkea interface library. Install Arkea next to Helion."
+    versionRange="${arkea_version_range}"
+    ordering="AFTER"
+    side="CLIENT"
+
+[[dependencies.${mod_id}]]
     modId="sodium"
     type="discouraged"
     reason="Sodium replaces the terrain renderer that Helion controls. Helion stays inactive while Sodium is installed."
