@@ -6,6 +6,9 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 
 ## Unreleased
 
+### Changed
+- Make sun and moon shadows much faster by redrawing far shadows less often
+
 ## [0.1] - 2026-10-09
 
 ### Added
