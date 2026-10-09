@@ -48,11 +48,15 @@ jobs:
 
       - name: Write release notes
         run: |
-          notes=$(awk -v version="${{ steps.version.outputs.version }}" '$0 == "## " version || index($0, "## [" version "]") == 1 {found = 1; next} found && /^## / {exit} found {print}' docs/CHANGELOG.md)
-          if [ -z "$notes" ]; then
-            notes=$(awk '$0 == "## Unreleased" {found = 1; next} found && /^## / {exit} found {print}' docs/CHANGELOG.md)
+          if [ "${{ steps.version.outputs.version }}" = "0.1" ]; then
+            echo "Initial release of Helion 0.1 Alpha for Minecraft 26.3 on NeoForge." > build/release-notes.md
+          else
+            notes=$(awk -v version="${{ steps.version.outputs.version }}" '$0 == "## " version || index($0, "## [" version "]") == 1 {found = 1; next} found && /^## / {exit} found {print}' docs/CHANGELOG.md)
+            if [ -z "$notes" ]; then
+              notes=$(awk '$0 == "## Unreleased" {found = 1; next} found && /^## / {exit} found {print}' docs/CHANGELOG.md)
+            fi
+            printf '%s\n' "$notes" > build/release-notes.md
           fi
-          printf '%s\n' "$notes" > build/release-notes.md
 
       - name: Create GitHub release
         if: github.ref_type == 'tag'
@@ -79,3 +83,33 @@ jobs:
           game-versions: ${{ steps.version.outputs.minecraft }}
           java: 25
           dependencies: arkea(required)
+
+      - name: Update Modrinth description
+        if: env.MODRINTH_TOKEN != ''
+        run: |
+          node -e "
+          const fs = require('fs');
+          let body = fs.readFileSync('README.md', 'utf8');
+          body = body.replace(/branding\/logo\.png/g, 'https://raw.githubusercontent.com/arystonmc/Helion/main/branding/logo.png');
+          body = body.replace(/docs\/FEATURES\.md/g, 'https://github.com/arystonmc/Helion/blob/main/docs/FEATURES.md');
+          body = body.replace(/SUPPORT\.md/g, 'https://github.com/arystonmc/Helion/blob/main/SUPPORT.md');
+          body = body.replace(/CONTRIBUTING\.md/g, 'https://github.com/arystonmc/Helion/blob/main/CONTRIBUTING.md');
+          body = body.replace(/LICENSE\.md/g, 'https://github.com/arystonmc/Helion/blob/main/LICENSE.md');
+          body = body.replace(/THIRD_PARTY_NOTICES\.md/g, 'https://github.com/arystonmc/Helion/blob/main/THIRD_PARTY_NOTICES.md');
+
+          const data = JSON.stringify({ body });
+          const https = require('https');
+          const req = https.request('https://api.modrinth.com/v2/project/${{ vars.MODRINTH_ID || 'helion' }}', {
+            method: 'PATCH',
+            headers: {
+              'Authorization': process.env.MODRINTH_TOKEN,
+              'Content-Type': 'application/json',
+              'User-Agent': 'arystonmc/Helion'
+            }
+          }, (res) => {
+            console.log('Modrinth description status:', res.statusCode);
+            res.pipe(process.stdout);
+          });
+          req.write(data);
+          req.end();
+          "
