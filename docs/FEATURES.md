@@ -77,6 +77,7 @@ Smooth block edges and calm, shimmer-free distant textures.
 
 - Moves the camera by less than a pixel every frame and blends each frame with the previous ones, like modern games do
 - Works while you walk and turn; the picture gets a little softer, which the sharpening option makes up for
+- Also smooths ambient occlusion, which varies its samples every frame while anti-aliasing is on
 - Fast moving mobs can leave a faint trail for now
 - Settings: on or off; off by default while it is experimental
 - Since: 0.1

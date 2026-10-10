@@ -247,7 +247,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### AmbientOcclusionResources
 - Path: `src/main/java/com/aryston/helion/render/lighting/AmbientOcclusionResources.java`
-- Role: Persistent ambient occlusion state owned by the core: the settings uniform ring, the fixed tuning values (falloff, distribution power, thin occluder compensation, final power, blur beta, max screen radius) and the one-time missing shader warning.
+- Role: Persistent ambient occlusion state owned by the core: the settings uniform ring, the fixed tuning values (falloff, distribution power, thin occluder compensation, final power, blur beta, max screen radius), the noise frame (advanced every frame through 64 frames while temporal anti-aliasing runs, 0 otherwise) and the one-time missing shader warning.
 - Depends on: `UniformRing`.
 
 #### AmbientOcclusionSettings

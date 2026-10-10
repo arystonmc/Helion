@@ -26,6 +26,7 @@ const float FAST_ACOS_SLOPE = -0.156583;
 const float GOLDEN_RATIO_FRACTION = 0.6180339887498948;
 const vec2 R2_SEQUENCE = vec2(0.75487766624669276, 0.56984029099805327);
 const uint NOISE_TILE = 64u;
+const uint TEMPORAL_NOISE_STRIDE = 288u;
 const uint SECTOR_COUNT = 32u;
 const uint ALL_SECTORS = 0xFFFFFFFFu;
 const float OCCLUDER_THICKNESS = 0.75;
@@ -66,7 +67,7 @@ uint hilbertIndex(uint positionX, uint positionY) {
 }
 
 vec2 spatialNoise(ivec2 pixel) {
-    uint index = hilbertIndex(uint(pixel.x) % NOISE_TILE, uint(pixel.y) % NOISE_TILE);
+    uint index = hilbertIndex(uint(pixel.x) % NOISE_TILE, uint(pixel.y) % NOISE_TILE) + TEMPORAL_NOISE_STRIDE * uint(NoiseIndex);
     return fract(0.5 + float(index) * R2_SEQUENCE);
 }
 

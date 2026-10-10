@@ -17,6 +17,8 @@ public final class AmbientOcclusionResources {
     private static final float FINAL_VALUE_POWER = 1.6F;
     private static final float DENOISE_BLUR_BETA = 1.2F;
     private static final float MAX_SCREEN_RADIUS_FRACTION = 0.2F;
+    private static final int NOISE_FRAMES = 64;
+    private static final int STATIC_NOISE_FRAME = 0;
     private static final int UNIFORM_SIZE = new Std140SizeCalculator()
         .putVec2()
         .putFloat()
@@ -30,20 +32,24 @@ public final class AmbientOcclusionResources {
         .putInt()
         .putInt()
         .putInt()
+        .putInt()
         .get();
 
     private final GpuResources resources;
     private @Nullable UniformRing uniforms;
     private boolean missingPipelinesReported;
+    private int noiseFrame;
 
     public AmbientOcclusionResources(GpuResources resources) {
         this.resources = resources;
     }
 
-    GpuBuffer writeUniforms(AmbientOcclusionSettings settings, int width, int height) {
+    GpuBuffer writeUniforms(AmbientOcclusionSettings settings, int width, int height, boolean temporal) {
         if (uniforms == null) {
             uniforms = new UniformRing(LABEL, UNIFORM_SIZE, resources);
         }
+        noiseFrame = temporal ? (noiseFrame + 1) % NOISE_FRAMES : STATIC_NOISE_FRAME;
+        int noiseIndex = noiseFrame;
         return uniforms.write(builder -> builder
             .putVec2(1.0F / width, 1.0F / height)
             .putFloat(settings.radius())
@@ -56,7 +62,8 @@ public final class AmbientOcclusionResources {
             .putFloat(height * MAX_SCREEN_RADIUS_FRACTION)
             .putInt(settings.quality().slices())
             .putInt(settings.quality().stepsPerSlice())
-            .putInt(settings.algorithm().shaderId()));
+            .putInt(settings.algorithm().shaderId())
+            .putInt(noiseIndex));
     }
 
     void finishFrame() {

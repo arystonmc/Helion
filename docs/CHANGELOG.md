@@ -8,6 +8,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 
 ### Changed
 - Make sun and moon shadows much faster by redrawing far shadows less often
+- Make ambient occlusion smoother while temporal anti-aliasing is on
 
 ## [0.1] - 2026-10-09
 
