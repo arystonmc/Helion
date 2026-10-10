@@ -46,12 +46,6 @@ public final class ShadowCascades {
         return List.copyOf(cascades);
     }
 
-    public static Matrix4f atlasProjection(int index, Matrix4fc projection) {
-        float scale = 1.0F / COUNT;
-        float offset = (2.0F * index + 1.0F) * scale - 1.0F;
-        return new Matrix4f().translate(offset, 0.0F, 0.0F).scale(scale, 1.0F, 1.0F).mul(projection);
-    }
-
     static float splitDistance(int index, float maxDistance) {
         return SPLITS[index] * maxDistance;
     }

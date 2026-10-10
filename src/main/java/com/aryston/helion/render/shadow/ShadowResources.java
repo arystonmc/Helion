@@ -22,15 +22,16 @@ public final class ShadowResources {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String SETTINGS_LABEL = "Helion Shadow Settings";
     private static final String PROJECTION_LABEL = "Helion Shadow Projection #";
-    private static final String SHADOW_MAP_LABEL = "Helion Shadow Map";
+    private static final String SHADOW_MAP_LABEL = "Helion Shadow Map #";
     private static final int SETTINGS_SIZE = settingsSize();
     private static final int PROJECTION_SIZE = new Std140SizeCalculator().putMat4f().get();
 
     private final GpuResources resources;
     private final List<UniformRing> projections = new ArrayList<>();
+    private final List<TextureTarget> shadowMaps = new ArrayList<>();
+    private final List<TrackedResource> trackedShadowMaps = new ArrayList<>();
+    private final ShadowCascadeCache cache = new ShadowCascadeCache();
     private @Nullable UniformRing settings;
-    private @Nullable TextureTarget shadowMap;
-    private @Nullable TrackedResource trackedShadowMap;
     private int shadowMapResolution;
     private boolean missingPipelinesReported;
 
@@ -38,18 +39,24 @@ public final class ShadowResources {
         this.resources = resources;
     }
 
-    RenderTarget shadowMap(int resolution) {
-        if (shadowMap == null || shadowMapResolution != resolution) {
-            releaseShadowMap();
-            int width = resolution * ShadowCascades.COUNT;
-            TextureTarget created = new TextureTarget(SHADOW_MAP_LABEL, width, resolution, null, ShadowPipelines.SHADOW_MAP_FORMAT);
-            trackedShadowMap = resources.track(
-                SHADOW_MAP_LABEL, (long) width * resolution * ShadowPipelines.SHADOW_MAP_FORMAT.blockSize(), created::destroyBuffers
-            );
-            shadowMap = created;
+    List<RenderTarget> shadowMaps(int resolution) {
+        if (shadowMaps.isEmpty() || shadowMapResolution != resolution) {
+            releaseShadowMaps();
+            for (int cascade = 0; cascade < ShadowCascades.COUNT; cascade++) {
+                String label = SHADOW_MAP_LABEL + cascade;
+                TextureTarget created = new TextureTarget(label, resolution, resolution, null, ShadowPipelines.SHADOW_MAP_FORMAT);
+                trackedShadowMaps.add(resources.track(
+                    label, (long) resolution * resolution * ShadowPipelines.SHADOW_MAP_FORMAT.blockSize(), created::destroyBuffers
+                ));
+                shadowMaps.add(created);
+            }
             shadowMapResolution = resolution;
         }
-        return shadowMap;
+        return List.copyOf(shadowMaps);
+    }
+
+    ShadowCascadeCache cache() {
+        return cache;
     }
 
     GpuBuffer writeProjection(int cascade, Matrix4fc projection) {
@@ -59,16 +66,16 @@ public final class ShadowResources {
         return projections.get(cascade).write(builder -> builder.putMat4f(projection));
     }
 
-    GpuBuffer writeSettings(HelionCamera camera, List<ShadowCascade> cascades, ShadowLight light, float distance, int resolution) {
+    GpuBuffer writeSettings(HelionCamera camera, ShadowLight light, float distance, int resolution) {
         if (settings == null) {
             settings = new UniformRing(SETTINGS_LABEL, SETTINGS_SIZE, resources);
         }
-        Vector4f texelSizes = new Vector4f(
-            cascades.get(0).texelSize(), cascades.get(1).texelSize(), cascades.get(2).texelSize(), cascades.get(3).texelSize()
-        );
+        Vector4f texelSizes = new Vector4f(cache.texelSize(0), cache.texelSize(1), cache.texelSize(2), cache.texelSize(3));
         return Objects.requireNonNull(settings).write(builder -> {
             builder.putMat4f(camera.levelViewProjection().invert());
-            cascades.forEach(cascade -> builder.putMat4f(cascade.lightViewProjection()));
+            for (int cascade = 0; cascade < ShadowCascades.COUNT; cascade++) {
+                builder.putMat4f(cache.maskMatrix(cascade, camera.position()));
+            }
             builder.putVec4(texelSizes)
                 .putVec3(light.direction())
                 .putFloat(distance)
@@ -97,16 +104,15 @@ public final class ShadowResources {
             settings.close();
         }
         settings = null;
-        releaseShadowMap();
+        releaseShadowMaps();
     }
 
-    private void releaseShadowMap() {
-        if (trackedShadowMap != null) {
-            resources.release(trackedShadowMap);
-        }
-        trackedShadowMap = null;
-        shadowMap = null;
+    private void releaseShadowMaps() {
+        trackedShadowMaps.forEach(resources::release);
+        trackedShadowMaps.clear();
+        shadowMaps.clear();
         shadowMapResolution = 0;
+        cache.clear();
     }
 
     private static int settingsSize() {

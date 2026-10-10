@@ -77,6 +77,7 @@ Smooth block edges and calm, shimmer-free distant textures.
 
 - Moves the camera by less than a pixel every frame and blends each frame with the previous ones, like modern games do
 - Works while you walk and turn; the picture gets a little softer, which the sharpening option makes up for
+- Also smooths ambient occlusion, which varies its samples every frame while anti-aliasing is on
 - Fast moving mobs can leave a faint trail for now
 - Settings: on or off; off by default while it is experimental
 - Since: 0.1
@@ -99,6 +100,7 @@ Blocks cast real shadows that move with the sun through the day.
 - Hills, trees, buildings and every solid or cutout block cast shadows from the sun, and from the moon at night
 - Shadows stay sharp near you and reach up to 160 blocks away, then fade out softly
 - Shadow edges are smoothed and do not crawl or flicker when you move
+- Far shadows are redrawn only every few frames, so shadows cost far fewer frames per second
 - Shadows fade in and out gently at sunrise and sunset instead of popping
 - Shade keeps the blue light of the sky, so shadowed areas look cool and natural instead of black
 - Needs the geometry buffer, HDR lighting and the physical sky to be on

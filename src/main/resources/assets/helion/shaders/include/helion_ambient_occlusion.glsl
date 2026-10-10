@@ -14,6 +14,7 @@ layout(std140) uniform HelionAmbientOcclusion {
     int SliceCount;
     int StepsPerSlice;
     int AlgorithmId;
+    int NoiseIndex;
 };
 
 const int HELION_AO_ALGORITHM_VISIBILITY_BITMASK = 1;

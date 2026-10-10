@@ -12,7 +12,14 @@ layout(std140) uniform HelionShadow {
     float CascadeResolution;
 };
 
-uniform sampler2D ShadowMapSampler;
+uniform sampler2D ShadowMapSampler0;
+uniform sampler2D ShadowMapSampler1;
+uniform sampler2D ShadowMapSampler2;
+uniform sampler2D ShadowMapSampler3;
+
+const int HELION_NEAR_CASCADE = 0;
+const int HELION_MIDDLE_CASCADE = 1;
+const int HELION_FAR_CASCADE = 2;
 
 const int HELION_PCF_FIRST = -1;
 const int HELION_PCF_LAST = 2;
@@ -22,6 +29,19 @@ float helionPcfWeight(int offset, float fraction) {
         return 1.0 - fraction;
     }
     return offset == HELION_PCF_LAST ? fraction : 1.0;
+}
+
+float helionShadowMapDepth(int cascade, ivec2 coordinate) {
+    if (cascade == HELION_NEAR_CASCADE) {
+        return texelFetch(ShadowMapSampler0, coordinate, 0).r;
+    }
+    if (cascade == HELION_MIDDLE_CASCADE) {
+        return texelFetch(ShadowMapSampler1, coordinate, 0).r;
+    }
+    if (cascade == HELION_FAR_CASCADE) {
+        return texelFetch(ShadowMapSampler2, coordinate, 0).r;
+    }
+    return texelFetch(ShadowMapSampler3, coordinate, 0).r;
 }
 
 float helionCascadeVisibility(int cascade, vec3 clip) {
@@ -36,8 +56,7 @@ float helionCascadeVisibility(int cascade, vec3 clip) {
         for (int x = HELION_PCF_FIRST; x <= HELION_PCF_LAST; x++) {
             float weight = helionPcfWeight(x, fraction.x) * weightY;
             ivec2 coordinate = clamp(ivec2(base) + ivec2(x, y), ivec2(0), ivec2(resolution - 1));
-            coordinate.x += cascade * resolution;
-            float occluder = texelFetch(ShadowMapSampler, coordinate, 0).r;
+            float occluder = helionShadowMapDepth(cascade, coordinate);
             visible += clip.z <= occluder ? weight : 0.0;
             total += weight;
         }
