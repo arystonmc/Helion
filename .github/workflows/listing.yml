@@ -63,7 +63,7 @@ jobs:
             client_side: 'required',
             server_side: 'unsupported'
           };
-          if (!current.length) patch.categories = categories.split(',');
+          patch.categories = categories.split(',');
           await call('PATCH', api, JSON.stringify(patch));
 
           if (!icon_url) await call('PATCH', `${api}/icon?ext=png`, readFileSync('branding/logo.png'), 'image/png');
