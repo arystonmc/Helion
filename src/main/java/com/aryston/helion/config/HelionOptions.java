@@ -12,6 +12,7 @@ import com.aryston.helion.render.lighting.AmbientOcclusionAlgorithm;
 import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
 import com.aryston.helion.render.post.ToneMapper;
 import com.aryston.helion.render.shadow.ShadowQuality;
+import java.util.List;
 import java.util.Locale;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -108,6 +109,18 @@ final class HelionOptions {
         this.geometryBufferView = choice("geometryBufferView", HelionConfig.GEOMETRY_BUFFER_VIEW, GeometryBufferView.class, Icons.LAYERS,
             "geometryBuffer.view").style(ChoiceStyle.DROPDOWN).requires(this.geometryBuffer);
         this.lightView = toggle("lightView", HelionConfig.LIGHT_ONLY_VIEW, Icons.BULB, "lighting.lightOnlyView").requires(this.lighting);
+    }
+
+    List<ConfigOption<?>> all() {
+        return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.ambientOcclusion, this.ambientOcclusionMethod,
+            this.ambientOcclusionQuality, this.ambientOcclusionStrength, this.ambientOcclusionRadius, this.lighting, this.blockLight, this.skyLight,
+            this.shadows, this.shadowQuality, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.dither,
+            this.sharpening, this.sharpeningStrength, this.debugMode, this.ambientOcclusionView, this.bloomView, this.geometryBufferView,
+            this.lightView);
+    }
+
+    String key(ConfigOption<?> option) {
+        return option.id().substring(KEY.length());
     }
 
     private static ConfigOption<Boolean> toggle(String id, ModConfigSpec.BooleanValue value, Icon icon, String tooltipKey) {

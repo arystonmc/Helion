@@ -30,6 +30,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 | Camera and frustum math | `HelionCamera`, `HelionFrustum` |
 | Settings | `HelionConfig`, `lang/*.json` |
 | Settings screen (Arkea) | `HelionConfigScreen`, `HelionOptions`, `HelionPresets`, `HelionImpact` |
+| Settings codes (copy and paste) | `HelionSharing`, `HelionShareCode` |
 | Key bindings | `HelionKeys`, `ParityControl` |
 | Debug mode: on-screen values and JSON log | `HelionDebugSnapshot` (every value), `HelionDebugEntry` (screen), `DebugOverlayLines` (line layout), `HelionDebugLog` (`logs/helion-debug.jsonl`) |
 | Pixel comparison with vanilla | `ParityCheck`, `FrameCapture`, `ParityResult`, `ParityDifferenceImage` |
@@ -64,7 +65,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 #### HelionConfigScreen
 - Path: `src/main/java/com/aryston/helion/config/HelionConfigScreen.java`
 - Role: Settings screen built with the Arkea config API, following the Helion design of the Arkea handoff: Helion logo, sidebar groups Configuration (General with presets and the render core switch, Rendering, Lighting, Effects) and System (Performance with the quality settings, Advanced with debug mode and collapsible debug views), GPU impact meter, Apply and Reset.
-- Depends on: `HelionOptions`, `HelionPresets`, `HelionImpact`.
+- Depends on: `HelionOptions`, `HelionPresets`, `HelionImpact`, `HelionSharing`.
 - Notes: Needs Arkea (required dependency in `neoforge.mods.toml`).
 
 #### HelionOptions
@@ -78,6 +79,17 @@ Every class and source file of Helion with its purpose. Find the right file here
 #### HelionImpact
 - Path: `src/main/java/com/aryston/helion/config/HelionImpact.java`
 - Role: Sidebar meter that estimates the GPU impact from the costs of the effects that are on and their quality, using the values shown on screen.
+
+#### HelionShareCode
+- Path: `src/main/java/com/aryston/helion/config/HelionShareCode.java`
+- Role: Settings code format: `HELION1:` followed by unpadded base64url of the UTF-8 JSON `{"v":1,"o":{...}}`, where `o` maps option keys to booleans, numbers or enum names. Decoding rejects other prefixes, versions and malformed data; reading a value clamps numbers to the option range and ignores values of the wrong type.
+- Members: `encode`, `decode`, `write`, `read`.
+
+#### HelionSharing
+- Path: `src/main/java/com/aryston/helion/config/HelionSharing.java`
+- Role: Copy and Paste buttons of the General page. Copy writes the applied value of every `HelionOptions` option to the clipboard as a settings code. Paste imports the known keys of a code from the clipboard, saves them at once, reopens the settings screen so it shows them and reports the result with an Arkea toast.
+- Depends on: `HelionShareCode`, `HelionOptions`, `HelionConfigScreen`.
+- Notes: The option key is the `ConfigOption` id without `helion.config.` (`HelionOptions.key`). The Arkea action API has no access to unapplied changes, so codes contain applied values and a paste replaces unapplied changes.
 
 ### `com.aryston.helion.render`
 
@@ -704,6 +716,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 
 | File | What it checks |
 |---|---|
+| `src/test/java/com/aryston/helion/config/HelionShareCodeTest.java` | Settings codes round trip with the documented JSON and no padding, bad prefixes, versions and data are rejected, numbers are clamped, enums are read by name and toggles need booleans. |
 | `src/test/java/com/aryston/helion/LanguageFilesTest.java` | Every language file has the same keys, every config entry has a `.tooltip` and every config section a `.button` translation (lesson L-011). |
 | `src/test/java/com/aryston/helion/render/graph/RenderSettingsTest.java` | `foundation()` turns every effect off including deferred lighting, never needs the composite and keeps the geometry buffer without its view; `OFF` renders nothing extra. |
 | `src/test/java/com/aryston/helion/render/post/ImageSettingsTest.java` | `needsComposite()` for every tone mapper and effect combination. |

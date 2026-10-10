@@ -133,6 +133,7 @@ A clear settings window in the Arkea style, with presets and a live estimate of 
 
 - Pages for General, Rendering, Lighting, Effects, Performance and Advanced, with search across every setting
 - Presets: Vanilla, Balanced, Quality and Experimental
+- Share your settings: Copy code puts a settings code on the clipboard, Paste code applies a code a friend sent you
 - Every setting has a short description, the full explanation on hover, and a reset button when it differs from its default
 - Before and after previews for ambient occlusion, bloom, shadows and the physical sky
 - Settings that need another one (shadows need HDR lighting and the physical sky) stay disabled until it is on and say why

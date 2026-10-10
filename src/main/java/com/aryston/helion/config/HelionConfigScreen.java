@@ -1,7 +1,9 @@
 package com.aryston.helion.config;
 
 import com.aryston.arkea.api.config.ArkeaConfigScreen;
+import com.aryston.arkea.api.config.ConfigOption;
 import com.aryston.arkea.api.config.ConfigPreset;
+import com.aryston.arkea.ui.render.Icon;
 import com.aryston.arkea.ui.render.Icons;
 import com.aryston.helion.Helion;
 import net.minecraft.client.gui.screens.Screen;
@@ -26,6 +28,9 @@ public final class HelionConfigScreen {
                     page.preset(preset);
                 }
                 page.fullSection(text("section.core"), section -> section.add(options.enabled));
+                page.fullSection(text("section.share"), section -> section
+                    .add(shareAction("copyCode", Icons.COPY, () -> HelionSharing.copy(options)))
+                    .add(shareAction("pasteCode", Icons.UPLOAD, () -> HelionSharing.paste(options, parent))));
             })
             .page("rendering", text("page.rendering"), Icons.MONITOR, page -> page
                 .section(text("section.geometry"), section -> section.add(options.geometryBuffer))
@@ -49,6 +54,12 @@ public final class HelionConfigScreen {
                 .fullSection(text("section.views"), section -> section.collapsible(false).add(options.ambientOcclusionView).add(options.bloomView)
                     .add(options.geometryBufferView).add(options.lightView)))
             .build(parent);
+    }
+
+    private static ConfigOption<Boolean> shareAction(String id, Icon icon, Runnable action) {
+        return ConfigOption.action(KEY + "share." + id, text("share." + id + ".button"), action)
+            .icon(icon)
+            .description(text("share." + id + ".description"));
     }
 
     private static Component text(String key) {

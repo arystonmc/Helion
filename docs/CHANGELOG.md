@@ -6,6 +6,9 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 
 ## Unreleased
 
+### Added
+- Settings codes: copy your Helion settings as a code and paste a code to apply someone else's
+
 ## [0.1] - 2026-10-09
 
 ### Added
