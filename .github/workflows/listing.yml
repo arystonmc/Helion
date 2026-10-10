@@ -1,0 +1,74 @@
+name: Listing
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - README.md
+      - branding/logo.png
+      - .github/workflows/listing.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  modrinth:
+    runs-on: ubuntu-latest
+    env:
+      MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+      MODRINTH_ID: ${{ vars.MODRINTH_ID || 'helion' }}
+      SITE_URL: https://lureid.com
+      SUMMARY: "Next-generation graphics for Minecraft on the Vulkan renderer: ambient occlusion, bloom, tone mapping, sharpening and experimental shadows, sky and HDR lighting."
+      CATEGORIES: "utility"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Sync the Modrinth project page
+        if: env.MODRINTH_TOKEN != ''
+        run: |
+          node --input-type=module - <<'SCRIPT'
+          import { readFileSync } from 'node:fs';
+          const { MODRINTH_TOKEN: token, MODRINTH_ID: id, GITHUB_REPOSITORY: repo, SITE_URL: site, SUMMARY: summary, CATEGORIES: categories } = process.env;
+          const api = `https://api.modrinth.com/v2/project/${id}`;
+          const headers = { Authorization: token, 'User-Agent': repo };
+          const blob = `https://github.com/${repo}/blob/main/`;
+          const raw = `https://raw.githubusercontent.com/${repo}/main/`;
+
+          async function call(method, url, body, type = 'application/json') {
+            const res = await fetch(url, { method, headers: { ...headers, ...(body ? { 'Content-Type': type } : {}) }, body });
+            const text = await res.text();
+            console.log(method, url.replace(api, 'project'), res.status, text.slice(0, 400));
+            if (!res.ok) process.exitCode = 1;
+            return res.ok && text ? JSON.parse(text) : null;
+          }
+
+          const before = await call('GET', api);
+          if (!before) process.exit(1);
+          const { status, requested_status, license, categories: current, client_side, server_side, icon_url, gallery, versions } = before;
+          console.log(JSON.stringify({ status, requested_status, license, categories: current, client_side, server_side, icon_url, gallery: gallery.length, versions: versions.length }));
+
+          const body = readFileSync('README.md', 'utf8')
+            .replace(/(\]\()(?!https?:|#|mailto:)([^)\s]+)/g, `$1${blob}$2`)
+            .replace(/(src=")(?!https?:)([^"]+)/g, `$1${raw}$2`);
+          const patch = {
+            description: summary,
+            body,
+            source_url: `https://github.com/${repo}`,
+            issues_url: `https://github.com/${repo}/issues`,
+            wiki_url: `${site}/wiki/${id}`,
+            license_id: 'LicenseRef-Aryston-Source-Available',
+            license_url: `${blob}LICENSE.md`,
+            client_side: 'required',
+            server_side: 'unsupported'
+          };
+          patch.categories = categories.split(',');
+          await call('PATCH', api, JSON.stringify(patch));
+
+          if (!icon_url) await call('PATCH', `${api}/icon?ext=png`, readFileSync('branding/logo.png'), 'image/png');
+          if (status === 'draft') await call('PATCH', api, JSON.stringify({ status: 'processing', requested_status: 'approved' }));
+
+          const after = await call('GET', api);
+          if (after) console.log(JSON.stringify({ status: after.status, requested_status: after.requested_status, license: after.license, categories: after.categories, icon_url: after.icon_url }));
+          SCRIPT
