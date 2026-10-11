@@ -251,12 +251,12 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### AmbientOcclusionStage
 - Path: `src/main/java/com/aryston/helion/render/lighting/AmbientOcclusionStage.java`
-- Role: Adds the ambient occlusion passes (`ao_depth`, `ao_main`, `ao_denoise_N`, `ao_apply`) with their internal targets to the frame graph. Inactive when disabled, when the scene color is not RGBA8 or when a shader failed to compile.
+- Role: Adds the ambient occlusion passes (`ao_depth`, `ao_main`, `ao_denoise_N`, `ao_apply`) with their internal targets to the frame graph. Inactive when disabled, when the scene color is not RGBA8 or when a shader failed to compile. With an indirect share published, `ao_apply` uses the `apply_indirect` pipeline so occlusion darkens only indirect light.
 - Depends on: `AmbientOcclusionResources`, `AmbientOcclusionPrograms`, `AmbientOcclusionPipelines`, `FullscreenPass`.
 
 #### AmbientOcclusionPipelines
 - Path: `src/main/java/com/aryston/helion/render/lighting/AmbientOcclusionPipelines.java`
-- Role: Pipeline definitions of every ambient occlusion pass, the uniform and sampler names they bind and the target formats.
+- Role: Pipeline definitions of every ambient occlusion pass, the uniform and sampler names they bind and the target formats, including `APPLY_INDIRECT` (`HELION_INDIRECT_SHARE`), compiled on its own so a missing variant falls back to the plain apply.
 - Depends on: `HelionPipelines`.
 
 #### AmbientOcclusionPrograms
@@ -282,12 +282,12 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### DeferredLightingStage
 - Path: `src/main/java/com/aryston/helion/render/lighting/DeferredLightingStage.java`
-- Role: Lights terrain from the geometry buffer. `deferred_lighting` writes the RGBA16_FLOAT light buffer `helion:light_buffer` (linear light in vanilla units without the vanilla cap, alpha the daylight reference, 0 where there is no terrain); `deferred_shading` multiplies it with the albedo and writes the scene with fog and chunk fade-in, or the light-only view. When the physical sky published a `SkyLight`, the light pass uses the physical sky variant and also reads the geometry buffer normals and the sky light target; when `ShadowStage` also published a shadow mask, the shading pass uses its shadowed variant, which also reads the mask, the normals and the sky light target and darkens the shaded color after the vanilla brightness curve. Inactive when lighting is off, the geometry buffer was not written, the scene color is not RGBA8 or a shader failed to compile.
+- Role: Lights terrain from the geometry buffer. `deferred_lighting` writes the RGBA16_FLOAT light buffer `helion:light_buffer` (linear light in vanilla units without the vanilla cap, alpha the daylight reference, 0 where there is no terrain); `deferred_shading` multiplies it with the albedo and writes the scene with fog and chunk fade-in, or the light-only view. When the physical sky published a `SkyLight`, the light pass uses the physical sky variant and also reads the geometry buffer normals and the sky light target; when `ShadowStage` also published a shadow mask, the shading pass uses its shadowed variant, which also reads the mask, the normals and the sky light target and darkens the shaded color after the vanilla brightness curve. Inactive when lighting is off, the geometry buffer was not written, the scene color is not RGBA8 or a shader failed to compile. With shadows, the shading pass also writes `helion:indirect_share` (R8, cleared to 1) as a second target and publishes it in `ShadowResults`.
 - Depends on: `DeferredLightingResources`, `DeferredLightingPrograms`, `DeferredLightingPipelines`, `GeometryBuffer`, `FullscreenPass`.
 
 #### DeferredLightingPipelines
 - Path: `src/main/java/com/aryston/helion/render/lighting/DeferredLightingPipelines.java`
-- Role: Pipeline definitions of the light pass, its physical sky variant (`HELION_PHYSICAL_SKY_LIGHT`, with the normal and sky light samplers), the shadowed shading and light-only variants (`HELION_PHYSICAL_SKY_LIGHT` and `HELION_SHADOWS`, with the normal, sky light and shadow mask samplers), the shading pass and the light-only view (`HELION_LIGHT_ONLY`), the uniform and sampler names they bind and the target formats.
+- Role: Pipeline definitions of the light pass, its physical sky variant (`HELION_PHYSICAL_SKY_LIGHT`, with the normal and sky light samplers), the shadowed shading and light-only variants (`HELION_PHYSICAL_SKY_LIGHT` and `HELION_SHADOWS`, with the normal, sky light and shadow mask samplers), the shading pass and the light-only view (`HELION_LIGHT_ONLY`), the uniform and sampler names they bind and the target formats. The shadowed shading variants have a second R8 color target for the indirect share.
 - Depends on: `HelionPipelines`.
 
 #### DeferredLightingPrograms
@@ -498,7 +498,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ShadowResults
 - Path: `src/main/java/com/aryston/helion/render/shadow/ShadowResults.java`
-- Role: What `ShadowStage` hands to deferred lighting in one frame: the shadow mask handle and the `ShadowLight`.
+- Role: What `ShadowStage` hands to deferred lighting in one frame: the shadow mask handle and the `ShadowLight`, and the indirect share target that the shadowed shading publishes for ambient occlusion.
 
 ### `com.aryston.helion.render.post`
 
@@ -545,7 +545,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### EyeAdaptation
 - Path: `src/main/java/com/aryston/helion/render/post/EyeAdaptation.java`
-- Role: Adapted exposure in stops: the target is the difference between the calibrated log2 luminance of a noon scene (-4.8) and the metered one, limited to -0.5 to +0.5 stops, approached exponentially (1 per second brightening, 3 per second darkening, steps longer than 0.25 s cut). The first measurement applies at once.
+- Role: Adapted exposure in stops: the target is the difference between the calibrated log2 luminance of a noon scene (-4.8) and the metered one, limited to 0 to +0.5 stops, approached exponentially (1 per second brightening, 3 per second darkening, steps longer than 0.25 s cut). The first measurement applies at once.
 
 #### ColorGrade
 - Path: `src/main/java/com/aryston/helion/render/post/ColorGrade.java`
@@ -823,7 +823,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 |---|---|
 | `src/main/resources/assets/helion/lang/` | `en_us.json` and `tr_tr.json`: config, settings screen (`helion.config.*`), key, toast and parity check texts. |
 | `src/main/resources/assets/helion/textures/gui/` | `logo.png` (48 x 48, linear filtered through `logo.png.mcmeta`) for the settings sidebar, and `preview/`: placeholder before and after images of ambient occlusion, bloom, shadows and the physical sky from the design handoff, to be replaced with real captures. |
-| `src/main/resources/assets/helion/shaders/ambient_occlusion/` | Ambient occlusion fragment shaders: `view_depth`, `gtao`, `denoise`, `denoise_resolve`, `apply`. |
+| `src/main/resources/assets/helion/shaders/ambient_occlusion/` | Ambient occlusion fragment shaders: `view_depth`, `gtao`, `denoise`, `denoise_resolve`, `apply` (with `HELION_INDIRECT_SHARE` also scaled by the indirect share). |
 | `src/main/resources/assets/helion/shaders/image/` | Bloom and image fragment shaders: `bloom_prefilter`, `bloom_downsample`, `bloom_upsample`, `composite` (with `HELION_COLOR_GRADING` also the grading table lookup), `bloom_debug`, `sharpen`, `exposure_meter`, `exposure_average`. |
 | `src/main/resources/assets/helion/shaders/terrain/` | Geometry buffer terrain shaders `geometry.vsh` and `geometry.fsh`: vanilla terrain color plus normal (crossed plant planes point up), light (with chunk fade-in) and albedo (with the fog amount in alpha) targets. |
 | `src/main/resources/assets/helion/shaders/geometry/` | `debug.fsh`: geometry buffer debug views. `terrain_depth.fsh`: copies the depth after the terrain pass into a float target. |

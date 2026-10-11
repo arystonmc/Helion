@@ -31,11 +31,11 @@ class EyeAdaptationTest {
 
     @Test
     void theEyeAdaptsGraduallyAndDarkensFasterThanItBrightens() {
-        EyeAdaptation brightening = adaptedAfterOneFrame(EyeAdaptation.TARGET_LOG2_LUMINANCE - 1.0F);
-        EyeAdaptation darkening = adaptedAfterOneFrame(EyeAdaptation.TARGET_LOG2_LUMINANCE + 1.0F);
+        EyeAdaptation brightening = adaptedAfterOneFrame(EyeAdaptation.TARGET_LOG2_LUMINANCE, EyeAdaptation.TARGET_LOG2_LUMINANCE - 1.0F);
+        EyeAdaptation darkening = adaptedAfterOneFrame(EyeAdaptation.TARGET_LOG2_LUMINANCE - 1.0F, EyeAdaptation.TARGET_LOG2_LUMINANCE);
 
         assertTrue(brightening.exposure() > 0.0F && brightening.exposure() < EyeAdaptation.MAX_EXPOSURE);
-        assertTrue(-darkening.exposure() > brightening.exposure());
+        assertTrue(EyeAdaptation.MAX_EXPOSURE - darkening.exposure() > brightening.exposure());
     }
 
     @Test
@@ -47,9 +47,9 @@ class EyeAdaptationTest {
         assertTrue(adaptation.exposure() < EyeAdaptation.MAX_EXPOSURE * 0.5F);
     }
 
-    private static EyeAdaptation adaptedAfterOneFrame(float metered) {
+    private static EyeAdaptation adaptedAfterOneFrame(float start, float metered) {
         EyeAdaptation adaptation = new EyeAdaptation();
-        adaptation.update(EyeAdaptation.TARGET_LOG2_LUMINANCE, 0L);
+        adaptation.update(start, 0L);
         adaptation.update(metered, FRAME_NANOS);
         return adaptation;
     }

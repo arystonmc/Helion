@@ -14,6 +14,9 @@ uniform sampler2D GeometryLightSampler;
 layout(location = 0) in vec2 texCoord;
 
 layout(location = 0) out vec4 fragColor;
+#ifdef HELION_SHADOWS
+layout(location = 1) out vec4 indirectShare;
+#endif
 
 const vec3 HELION_WHITE_ALBEDO = vec3(1.0);
 const float HELION_DISPLAY_LIGHT_LIMIT = 1.0;
@@ -43,7 +46,9 @@ void main() {
     vec3 vanillaColor = surface * helionVanillaBrightness(helionLinearToSrgb(light.rgb));
     vec3 surfaceLight = helionSrgbToLinear(vanillaColor);
     #ifdef HELION_SHADOWS
-    surfaceLight *= helionShadowTransmission(pixel, helionSkyShare(levels));
+    float skyShare = helionSkyShare(levels);
+    surfaceLight *= helionShadowTransmission(pixel, skyShare);
+    indirectShare = vec4(helionIndirectShare(pixel, skyShare));
     #endif
     vec3 radiance = helionInverseNeutral(surfaceLight) * max(light.rgb / light.a, vec3(HELION_DISPLAY_LIGHT_LIMIT));
     vec3 color = helionLinearToSrgb(helionNeutral(radiance));

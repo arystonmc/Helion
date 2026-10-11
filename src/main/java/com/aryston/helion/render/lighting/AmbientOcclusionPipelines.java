@@ -18,6 +18,8 @@ public final class AmbientOcclusionPipelines {
     public static final String DEPTH_SAMPLER = "DepthSampler";
     public static final String VIEW_DEPTH_SAMPLER = "ViewDepthSampler";
     public static final String OCCLUSION_SAMPLER = "OcclusionSampler";
+    public static final String INDIRECT_SHARE_SAMPLER = "IndirectShareSampler";
+    private static final String INDIRECT_SHARE_DEFINE = "HELION_INDIRECT_SHARE";
     public static final String EDGES_SAMPLER = "EdgesSampler";
     public static final String SCENE_COLOR_SAMPLER = "SceneColorSampler";
     public static final GpuFormat VIEW_DEPTH_FORMAT = GpuFormat.R32_FLOAT;
@@ -62,6 +64,19 @@ public final class AmbientOcclusionPipelines {
         ))
         .build();
 
+    public static final RenderPipeline APPLY_INDIRECT = HelionPipelines.fullscreen("ambient_occlusion/apply_indirect", "ambient_occlusion/apply")
+        .withBindGroupLayout(BindGroupLayout.builder()
+            .withUniform(OCCLUSION_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(INDIRECT_SHARE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .build())
+        .withShaderDefine(INDIRECT_SHARE_DEFINE)
+        .withColorTargetState(new ColorTargetState(
+            Optional.of(new BlendFunction(BlendFactor.DST_COLOR, BlendFactor.ZERO)),
+            SCENE_COLOR_FORMAT,
+            ColorTargetState.WRITE_COLOR
+        ))
+        .build();
+
     public static final RenderPipeline DEBUG_VIEW = HelionPipelines.fullscreen("ambient_occlusion/debug", "ambient_occlusion/apply")
         .withBindGroupLayout(occlusionOnly())
         .withColorTargetState(new ColorTargetState(Optional.empty(), SCENE_COLOR_FORMAT, ColorTargetState.WRITE_COLOR))
@@ -71,7 +86,7 @@ public final class AmbientOcclusionPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(VIEW_DEPTH, HORIZON_SEARCH, DENOISE, DENOISE_AND_RESOLVE, APPLY, DEBUG_VIEW);
+        return List.of(VIEW_DEPTH, HORIZON_SEARCH, DENOISE, DENOISE_AND_RESOLVE, APPLY, DEBUG_VIEW, APPLY_INDIRECT);
     }
 
     private static RenderPipeline.Builder denoise(String fragmentShader) {

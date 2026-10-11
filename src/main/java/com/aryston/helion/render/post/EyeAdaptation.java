@@ -2,7 +2,7 @@ package com.aryston.helion.render.post;
 
 public final class EyeAdaptation {
     static final float TARGET_LOG2_LUMINANCE = -4.8F;
-    static final float MIN_EXPOSURE = -0.5F;
+    static final float MIN_EXPOSURE = 0.0F;
     static final float MAX_EXPOSURE = 0.5F;
     static final float BRIGHTEN_RATE = 1.0F;
     static final float DARKEN_RATE = 3.0F;

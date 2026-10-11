@@ -29,7 +29,7 @@
   "helion.configuration.image.exposure": "Exposure",
   "helion.configuration.image.exposure.tooltip": "Brightens or darkens the picture in camera stops. 0 keeps the vanilla brightness.",
   "helion.configuration.image.autoExposure": "Automatic Exposure",
-  "helion.configuration.image.autoExposure.tooltip": "Adjusts the brightness like an eye: brighter in caves and dark places, darker when the ground is very bright. Up to half a camera stop brighter or darker.",
+  "helion.configuration.image.autoExposure.tooltip": "Adjusts the brightness like an eye: brighter in caves and dark places, darker when the ground is very bright. Only brightens, by up to half a camera stop; daylight keeps the vanilla brightness.",
   "helion.configuration.image.colorGrade": "Color Grading",
   "helion.configuration.image.colorGrade.tooltip": "A color look applied after tone mapping, like a film grade: Neutral keeps the colors, Warm and Cool shift the white balance, Vivid adds saturation, Cinematic adds contrast and a warm tint, Muted softens the colors.",
   "helion.configuration.image.dither": "Dithering",

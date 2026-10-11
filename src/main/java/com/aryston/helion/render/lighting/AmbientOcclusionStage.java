@@ -3,6 +3,7 @@ package com.aryston.helion.render.lighting;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.shader.FullscreenPass;
+import com.aryston.helion.render.shader.HelionPipelines;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
@@ -153,10 +154,18 @@ public final class AmbientOcclusionStage implements RenderStage {
         pass.reads(occlusion);
         ResourceHandle<RenderTarget> scene = pass.readsAndWrites(frame.targets().scene());
         frame.targets().updateScene(scene);
-        CompiledRenderPipeline pipeline = debugView ? compiled.debugView() : compiled.apply();
+        Optional<ResourceHandle<RenderTarget>> indirectShare = debugView ? Optional.empty() : frame.shadows().indirectShare();
+        Optional<CompiledRenderPipeline> indirect = indirectShare.flatMap(share -> HelionPipelines.compiled(AmbientOcclusionPipelines.APPLY_INDIRECT));
+        indirectShare.filter(share -> indirect.isPresent()).ifPresent(pass::reads);
+        CompiledRenderPipeline pipeline = debugView ? compiled.debugView() : indirect.orElse(compiled.apply());
         pass.executes(frame.graph().timed(APPLY_PASS, () -> {
-            FullscreenPass.draw("Helion AO Apply", scene.get(), pipeline, renderPass ->
-                renderPass.setUniform(AmbientOcclusionPipelines.OCCLUSION_SAMPLER, colorView(occlusion), nearest()));
+            FullscreenPass.draw("Helion AO Apply", scene.get(), pipeline, renderPass -> {
+                renderPass.setUniform(AmbientOcclusionPipelines.OCCLUSION_SAMPLER, colorView(occlusion), nearest());
+                if (indirect.isPresent()) {
+                    indirectShare.ifPresent(share ->
+                        renderPass.setUniform(AmbientOcclusionPipelines.INDIRECT_SHARE_SAMPLER, colorView(share), nearest()));
+                }
+            });
             resources.finishFrame();
         }));
     }

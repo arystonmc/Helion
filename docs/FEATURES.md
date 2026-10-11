@@ -54,7 +54,7 @@ Your eyes adjust to the light, and now the picture does too.
 - Caves, nights and terrain facing a low sun get gently brighter, like eyes getting used to the dark
 - Daylight keeps the familiar vanilla brightness, and a bright sky never darkens the ground
 - Changes happen smoothly over a second or two, faster when it gets bright than when it gets dark
-- At most half a stop brighter or darker, so nights stay night
+- Only brightens, by at most half a stop, so daylight keeps the vanilla look and nights stay night
 - Settings: on or off in the image settings; off by default while it is experimental
 - Since: Unreleased
 

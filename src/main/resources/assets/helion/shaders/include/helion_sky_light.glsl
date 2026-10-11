@@ -49,6 +49,20 @@ vec3 helionShadowTransmission(ivec2 pixel, float skyShare) {
     vec3 transmission = shaded / max(lit, vec3(HELION_MIN_SKY_LUMINANCE));
     return mix(vec3(1.0), transmission, clamp(skyShare, 0.0, 1.0));
 }
+
+float helionIndirectShare(ivec2 pixel, float skyShare) {
+    vec3 sun;
+    vec3 moon;
+    vec3 dome;
+    helionSkyLightParts(pixel, sun, moon, dome);
+    float shadow = 1.0 - texelFetch(ShadowMaskSampler, pixel, 0).r;
+    vec3 direct = sun * (1.0 - SunShadowStrength * shadow) + moon * (1.0 - MoonShadowStrength * shadow);
+    float total = helionLuminance(direct + dome);
+    if (total <= HELION_MIN_SKY_LUMINANCE) {
+        return 1.0;
+    }
+    return 1.0 - clamp(skyShare, 0.0, 1.0) * helionLuminance(direct) / total;
+}
 #endif
 
 #endif

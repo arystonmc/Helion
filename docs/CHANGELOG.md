@@ -25,6 +25,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Fix tree leaf shadows shimmering while the sun moves
 - Fix the trail fast mobs left behind with temporal anti-aliasing and keep moving mobs sharp
 - Fix sunsets losing their orange glow, nights looking grey and a washed out sky with the physical sky
+- Fix ambient occlusion and automatic exposure darkening sunlit ground below vanilla
 
 ## [0.1] - 2026-10-09
 

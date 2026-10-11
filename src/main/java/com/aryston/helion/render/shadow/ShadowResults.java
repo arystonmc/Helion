@@ -7,9 +7,18 @@ import org.jspecify.annotations.Nullable;
 
 public final class ShadowResults {
     private @Nullable Shadows shadows;
+    private @Nullable ResourceHandle<RenderTarget> indirectShare;
 
     public Optional<Shadows> shadows() {
         return Optional.ofNullable(shadows);
+    }
+
+    public Optional<ResourceHandle<RenderTarget>> indirectShare() {
+        return Optional.ofNullable(indirectShare);
+    }
+
+    public void publishIndirectShare(ResourceHandle<RenderTarget> share) {
+        indirectShare = share;
     }
 
     void publish(ResourceHandle<RenderTarget> mask, ShadowLight light) {

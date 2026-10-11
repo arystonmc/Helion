@@ -18,14 +18,19 @@ import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.joml.Vector4f;
+import org.joml.Vector4fc;
 import org.jspecify.annotations.Nullable;
 
 public final class DeferredLightingStage implements RenderStage {
     private static final String NAME = "deferred_lighting";
     private static final String SHADING_PASS = "deferred_shading";
     private static final String LIGHT_BUFFER = "helion:light_buffer";
+    private static final String INDIRECT_SHARE_TARGET = "helion:indirect_share";
+    private static final Vector4fc FULL_SHARE = new Vector4f(1.0F, 1.0F, 1.0F, 1.0F);
 
     private final DeferredLightingResources resources;
     private @Nullable DeferredLightingPrograms programs;
@@ -118,9 +123,17 @@ public final class DeferredLightingStage implements RenderStage {
         });
         ResourceHandle<RenderTarget> scene = pass.readsAndWrites(frame.targets().scene());
         frame.targets().updateScene(scene);
+        Optional<ResourceHandle<RenderTarget>> indirectShare = shadows.map(shadow -> pass.createsInternal(INDIRECT_SHARE_TARGET, new RenderTargetDescriptor(
+            frame.scene().width(),
+            frame.scene().height(),
+            new RenderTargetDescriptor.TextureProperties(FULL_SHARE, DeferredLightingPipelines.INDIRECT_SHARE_FORMAT),
+            null
+        )));
+        indirectShare.ifPresent(frame.shadows()::publishIndirectShare);
         CompiledRenderPipeline pipeline = shadingPipeline(compiled, frame.settings().lighting().lightOnlyView(), shadows.isPresent());
         pass.executes(frame.graph().timed(SHADING_PASS, () -> {
-            FullscreenPass.draw("Helion Deferred Shading", scene.get(), pipeline, renderPass -> {
+            List<RenderTarget> targets = indirectShare.map(share -> List.of(scene.get(), share.get())).orElseGet(() -> List.of(scene.get()));
+            FullscreenPass.draw("Helion Deferred Shading", targets, pipeline, renderPass -> {
                 RenderSystem.bindDefaultUniforms(renderPass);
                 renderPass.setUniform(DeferredLightingPipelines.SETTINGS, Objects.requireNonNull(frameUniforms));
                 renderPass.setUniform(DeferredLightingPipelines.LIGHT_BUFFER_SAMPLER, colorView(lightBuffer), nearest());
