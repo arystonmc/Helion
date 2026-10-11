@@ -44,6 +44,19 @@ With all effects turned off, Helion matches vanilla Minecraft pixel-for-pixel. W
 
 For full technical and player details, see the [Helion Feature Guide](docs/FEATURES.md).
 
+## Gallery
+
+<p align="center">
+  <img src="branding/gallery/01-hero.jpg" alt="A new light for Minecraft" width="100%">
+</p>
+
+| | |
+|---|---|
+| <img src="branding/gallery/02-shadows.jpg" alt="Sun shadows on every tree, vanilla and Helion"> | <img src="branding/gallery/03-ambient-occlusion.jpg" alt="Ambient occlusion, vanilla and Helion"> |
+| <img src="branding/gallery/04-before-after.jpg" alt="Same world, new light: vanilla and Helion"> | <img src="branding/gallery/05-bloom.jpg" alt="Bloom around the sun"> |
+| <img src="branding/gallery/06-atmosphere.jpg" alt="Physical atmosphere, vanilla and Helion"> | <img src="branding/gallery/07-settings.jpg" alt="Helion settings with presets"> |
+| <img src="branding/gallery/08-every-effect.jpg" alt="Every effect, explained"> |   |
+
 ## Requirements
 
 | Requirement | Supported Version |
