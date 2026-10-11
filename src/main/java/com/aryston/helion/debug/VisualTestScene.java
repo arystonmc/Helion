@@ -7,6 +7,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch) {
     private static final int MORNING = 3000;
     private static final int NOON = 6000;
     private static final int SUNSET = 12000;
+    private static final int DUSK = 12700;
     private static final int MIDNIGHT = 18000;
     private static final int DAWN = 23500;
     private static final float NORTH = 180.0F;
@@ -20,6 +21,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch) {
         new VisualTestScene("day_showcase", NOON, NORTH, 25.0F),
         new VisualTestScene("morning_showcase", MORNING, NORTH, 25.0F),
         new VisualTestScene("sunset", SUNSET, WEST, -8.0F),
+        new VisualTestScene("dusk", DUSK, WEST, -5.0F),
         new VisualTestScene("night_sky", MIDNIGHT, NORTH, -45.0F),
         new VisualTestScene("night_showcase", MIDNIGHT, NORTH, 25.0F),
         new VisualTestScene("dawn_sun", DAWN, EAST, -10.0F),

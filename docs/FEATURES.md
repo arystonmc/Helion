@@ -54,7 +54,7 @@ Your eyes adjust to the light, and now the picture does too.
 - Caves, nights and terrain facing a low sun get gently brighter, like eyes getting used to the dark
 - Daylight keeps the familiar vanilla brightness, and a bright sky never darkens the ground
 - Changes happen smoothly over a second or two, faster when it gets bright than when it gets dark
-- At most one stop brighter and half a stop darker, so nights stay night
+- At most half a stop brighter or darker, so nights stay night
 - Settings: on or off in the image settings; off by default while it is experimental
 - Since: Unreleased
 
@@ -107,7 +107,8 @@ A sky that behaves like real air: deep blue overhead, a bright glow around the s
 - The sky color comes from how sunlight and moonlight scatter in an Earth-like atmosphere instead of a single vanilla color, computed across the visible spectrum for natural blues, golden sunrises and red sunsets
 - Distant terrain fades into the real sky color in every direction, so the horizon no longer changes color when you turn your head; clouds fade into the horizon color
 - With HDR lighting on, sunlight, moonlight and skylight tint the terrain: warm on faces toward a low sun, slightly cool in shade, at vanilla brightness and with the vanilla colors of grass, leaves and plants
-- The blocky sun, the moon phases and the stars keep their vanilla look; only the moon is a little dimmer
+- The blocky sun, the moon phases, the stars and the orange sunset glow keep their vanilla look; only the moon is a little dimmer
+- Moonlit nights stay dark blue like vanilla instead of turning grey
 - Rain dims and greys the sky; the glow around the sun can bloom
 - Works in the Overworld; other dimensions and views under water keep the vanilla sky
 - Settings: on or off; off by default while it is experimental

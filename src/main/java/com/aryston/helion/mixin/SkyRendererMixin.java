@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(SkyRenderer.class)
 abstract class SkyRendererMixin {
-    @Inject(method = {"renderSkyDisc", "renderSunriseAndSunset"}, at = @At("HEAD"), cancellable = true)
+    @Inject(method = "renderSkyDisc", at = @At("HEAD"), cancellable = true)
     private void helion$skipUnderPhysicalSky(CallbackInfo callback) {
         if (HelionSky.isDrawingCelestialsOnly()) {
             callback.cancel();

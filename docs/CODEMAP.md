@@ -537,7 +537,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### EyeAdaptation
 - Path: `src/main/java/com/aryston/helion/render/post/EyeAdaptation.java`
-- Role: Adapted exposure in stops: the target is the difference between the calibrated log2 luminance of a noon scene (-4.8) and the metered one, limited to -0.5 to +1 stops, approached exponentially (1 per second brightening, 3 per second darkening, steps longer than 0.25 s cut). The first measurement applies at once.
+- Role: Adapted exposure in stops: the target is the difference between the calibrated log2 luminance of a noon scene (-4.8) and the metered one, limited to -0.5 to +0.5 stops, approached exponentially (1 per second brightening, 3 per second darkening, steps longer than 0.25 s cut). The first measurement applies at once.
 
 #### ImageSettings
 - Path: `src/main/java/com/aryston/helion/render/post/ImageSettings.java`
@@ -661,7 +661,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### HelionSky
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/HelionSky.java`
-- Role: Marks the vanilla sky rendering Helion runs, and whether it only draws the celestial bodies on top of the physical sky, so `SkyRendererMixin` skips the vanilla sky disc and sunrise glow then. `moonColor` dims the moon to 60 percent while Helion draws the sky, so it no longer blooms like the sun and the two stay easy to tell apart. Render thread only.
+- Role: Marks the vanilla sky rendering Helion runs, and whether it only draws the celestial bodies on top of the physical sky, so `SkyRendererMixin` skips the vanilla sky disc then (the sunrise and sunset glow stays). `moonColor` dims the moon to 60 percent while Helion draws the sky, so it no longer blooms like the sun and the two stay easy to tell apart. Render thread only.
 
 #### VanillaTransparencySource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaTransparencySource.java`
@@ -709,7 +709,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### VisualTestScene
 - Path: `src/main/java/com/aryston/helion/debug/VisualTestScene.java`
-- Role: The photographed scenes: name, time of day, camera yaw and pitch. `dawn_sun` and `dawn_away` look toward and away from the rising sun, so a sky color that depends on the view direction shows up as a difference between them. `day_showcase` and `morning_showcase` show the platform at noon and in the morning, so shadows fall under the roof and beside the pillar.
+- Role: The photographed scenes: name, time of day, camera yaw and pitch. `dawn_sun` and `dawn_away` look toward and away from the rising sun, so a sky color that depends on the view direction shows up as a difference between them. `day_showcase` and `morning_showcase` show the platform at noon and in the morning, so shadows fall under the roof and beside the pillar. `dusk` (12700 ticks, facing the sun just after it set) checks that the orange sunset glow stays.
 
 #### VisualTestVariant
 - Path: `src/main/java/com/aryston/helion/debug/VisualTestVariant.java`
@@ -749,7 +749,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### SkyRendererMixin
 - Path: `src/main/java/com/aryston/helion/mixin/SkyRendererMixin.java`
-- Role: Cancels `SkyRenderer.renderSkyDisc` and `renderSunriseAndSunset` while `HelionSky` draws only the celestial bodies, so only the sun, moon, stars and dark disc are drawn over the physical sky, and dims the color of `renderMoon` through `HelionSky.moonColor` whenever Helion draws the sky.
+- Role: Cancels `SkyRenderer.renderSkyDisc` while `HelionSky` draws only the celestial bodies, so the vanilla sunrise and sunset glow, sun, moon, stars and dark disc are drawn over the physical sky, and dims the color of `renderMoon` through `HelionSky.moonColor` whenever Helion draws the sky.
 - Notes: `SkyRenderer.render` draws the sky color and the celestial bodies in one call; no API draws the celestial bodies alone, and keeping the vanilla sun, moon phases and stars avoids copying their textures and geometry.
 
 #### ChunkSectionsToRenderAccessor

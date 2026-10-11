@@ -14,6 +14,7 @@ const float HELION_RAIN_DARKENING = 0.35;
 const float HELION_MIN_HORIZONTAL = 1.0e-5;
 const float HELION_RAY_NEAR_DEPTH = 1.0;
 const float HELION_RAY_FAR_DEPTH = 0.01;
+const float HELION_SKY_SATURATION = 1.35;
 
 vec3 helionSkyViewRadiance(sampler2D skyView, sampler2D mieView, vec3 direction, vec3 light) {
     float viewZenithAngle = acos(clamp(direction.y, -1.0, 1.0));
@@ -38,8 +39,13 @@ vec3 helionSkyRadiance(vec3 direction) {
     return mix(vec3(luminance * HELION_RAIN_DARKENING), radiance, RainBrightness);
 }
 
+vec3 helionSaturatedSky(vec3 radiance) {
+    float luminance = helionLuminance(radiance);
+    return max(mix(vec3(luminance), radiance, HELION_SKY_SATURATION), 0.0);
+}
+
 vec3 helionSkyColor(vec3 direction) {
-    return helionLinearToSrgb(helionNeutral(helionSkyRadiance(direction)));
+    return helionLinearToSrgb(helionNeutral(helionSaturatedSky(helionSkyRadiance(direction))));
 }
 
 vec3 helionViewPosition(vec2 screenUv, float deviceDepth) {

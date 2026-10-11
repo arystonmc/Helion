@@ -29,7 +29,7 @@
   "helion.configuration.image.exposure": "Pozlama",
   "helion.configuration.image.exposure.tooltip": "Görüntüyü kamera durağı cinsinden aydınlatır veya karartır. 0 vanilla parlaklığını korur.",
   "helion.configuration.image.autoExposure": "Otomatik Pozlama",
-  "helion.configuration.image.autoExposure.tooltip": "Parlaklığı göz gibi ayarlar: mağarada ve karanlık yerlerde daha aydınlık, zemin çok parlakken daha koyu. En fazla bir kamera durağı daha aydınlık, yarım durak daha koyu.",
+  "helion.configuration.image.autoExposure.tooltip": "Parlaklığı göz gibi ayarlar: mağarada ve karanlık yerlerde daha aydınlık, zemin çok parlakken daha koyu. En fazla yarım kamera durağı daha aydınlık veya daha koyu.",
   "helion.configuration.image.dither": "Titreklik Deseni",
   "helion.configuration.image.dither.tooltip": "Gökyüzündeki ve yumuşak geçişlerdeki renk bantlarını yok eden, gözle görülmeyen ince bir gürültü ekler.",
   "helion.configuration.image.bloom": "Işıma",

@@ -29,7 +29,7 @@
   "helion.configuration.image.exposure": "Exposure",
   "helion.configuration.image.exposure.tooltip": "Brightens or darkens the picture in camera stops. 0 keeps the vanilla brightness.",
   "helion.configuration.image.autoExposure": "Automatic Exposure",
-  "helion.configuration.image.autoExposure.tooltip": "Adjusts the brightness like an eye: brighter in caves and dark places, darker when the ground is very bright. Up to one camera stop brighter and half a stop darker.",
+  "helion.configuration.image.autoExposure.tooltip": "Adjusts the brightness like an eye: brighter in caves and dark places, darker when the ground is very bright. Up to half a camera stop brighter or darker.",
   "helion.configuration.image.dither": "Dithering",
   "helion.configuration.image.dither.tooltip": "Adds invisible fine noise that removes color banding in the sky and in smooth gradients.",
   "helion.configuration.image.bloom": "Bloom",

@@ -15,6 +15,8 @@ layout(location = 0) out vec4 fragColor;
 const float HELION_NO_LIGHT = 0.0;
 const float HELION_MIN_REFERENCE_LIGHT = 1.0;
 const float HELION_SKY_ADAPTATION = 8.0;
+const float HELION_NIGHT_SUN_LOW = -0.1;
+const float HELION_NIGHT_SUN_HIGH = 0.05;
 
 vec3 helionSkyLightColor(ivec2 pixel) {
     #ifdef HELION_PHYSICAL_SKY_LIGHT
@@ -24,7 +26,9 @@ vec3 helionSkyLightColor(ivec2 pixel) {
     helionSkyLightParts(pixel, sun, moon, dome);
     float luminance = helionLuminance(sun + moon + dome);
     if (luminance > HELION_MIN_SKY_LUMINANCE) {
-        return (sun + moon + dome) / luminance * helionLuminance(SkyLightColor);
+        vec3 physical = (sun + moon + dome) / luminance * helionLuminance(SkyLightColor);
+        float night = 1.0 - smoothstep(HELION_NIGHT_SUN_LOW, HELION_NIGHT_SUN_HIGH, SunDirection.y);
+        return mix(physical, SkyLightColor, night);
     }
     #endif
     return SkyLightColor;
