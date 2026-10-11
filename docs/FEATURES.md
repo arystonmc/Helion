@@ -48,6 +48,16 @@ Bright light sources glow softly into the darkness while the colors you know sta
 - Settings: bloom on or off, intensity, threshold, a view that shows only the glow, tone mapping (Neutral, Filmic, None), exposure and dithering
 - Since: 0.1
 
+### Automatic Exposure (Experimental)
+Your eyes adjust to the light, and now the picture does too.
+
+- Caves, nights and terrain facing a low sun get gently brighter, like eyes getting used to the dark
+- Daylight keeps the familiar vanilla brightness, and a bright sky never darkens the ground
+- Changes happen smoothly over a second or two, faster when it gets bright than when it gets dark
+- At most one stop brighter and half a stop darker, so nights stay night
+- Settings: on or off in the image settings; off by default while it is experimental
+- Since: Unreleased
+
 ### Sharpening
 Crisper block textures without the halos of ordinary sharpening filters.
 

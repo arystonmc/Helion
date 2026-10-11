@@ -43,12 +43,18 @@ class ImageSettingsTest {
     }
 
     @Test
+    void autoExposureNeedsTheComposite() {
+        assertTrue(new ImageSettings(ToneMapper.NEUTRAL, ImageSettings.DEFAULT_EXPOSURE, true, true, BloomSettings.DISABLED, SharpeningSettings.DISABLED)
+            .needsComposite());
+    }
+
+    @Test
     void filmicNeedsTheComposite() {
         assertTrue(settings(ToneMapper.FILMIC, ImageSettings.DEFAULT_EXPOSURE, BloomSettings.DISABLED, SharpeningSettings.DISABLED)
             .needsComposite());
     }
 
     private static ImageSettings settings(ToneMapper toneMapper, float exposure, BloomSettings bloom, SharpeningSettings sharpening) {
-        return new ImageSettings(toneMapper, exposure, true, bloom, sharpening);
+        return new ImageSettings(toneMapper, exposure, false, true, bloom, sharpening);
     }
 }

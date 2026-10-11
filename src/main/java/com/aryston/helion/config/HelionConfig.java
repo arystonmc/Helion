@@ -52,6 +52,7 @@ public final class HelionConfig {
     static final ModConfigSpec.BooleanValue AMBIENT_OCCLUSION_DEBUG_VIEW;
     static final ModConfigSpec.EnumValue<ToneMapper> TONE_MAPPER;
     static final ModConfigSpec.DoubleValue EXPOSURE;
+    static final ModConfigSpec.BooleanValue AUTO_EXPOSURE;
     static final ModConfigSpec.BooleanValue DITHER;
     static final ModConfigSpec.BooleanValue BLOOM_ENABLED;
     static final ModConfigSpec.DoubleValue BLOOM_INTENSITY;
@@ -99,6 +100,9 @@ public final class HelionConfig {
         EXPOSURE = BUILDER
             .translation("helion.configuration.image.exposure")
             .defineInRange("exposure", ImageSettings.DEFAULT_EXPOSURE, MIN_EXPOSURE, MAX_EXPOSURE);
+        AUTO_EXPOSURE = BUILDER
+            .translation("helion.configuration.image.autoExposure")
+            .define("autoExposure", false);
         DITHER = BUILDER
             .translation("helion.configuration.image.dither")
             .define("dither", true);
@@ -219,6 +223,7 @@ public final class HelionConfig {
         return new ImageSettings(
             TONE_MAPPER.get(),
             EXPOSURE.get().floatValue(),
+            AUTO_EXPOSURE.getAsBoolean(),
             DITHER.getAsBoolean(),
             new BloomSettings(
                 BLOOM_ENABLED.getAsBoolean(),

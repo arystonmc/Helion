@@ -50,6 +50,7 @@ final class HelionOptions {
     final ConfigOption<Double> bloomThreshold;
     final ConfigOption<ToneMapper> toneMapper;
     final ConfigOption<Double> exposure;
+    final ConfigOption<Boolean> autoExposure;
     final ConfigOption<Boolean> dither;
     final ConfigOption<Boolean> sharpening;
     final ConfigOption<Double> sharpeningStrength;
@@ -97,6 +98,8 @@ final class HelionOptions {
             .requires(this.bloom);
         this.toneMapper = choice("toneMapper", HelionConfig.TONE_MAPPER, ToneMapper.class, Icons.CONTRAST, "image.toneMapper").requires(this.enabled);
         this.exposure = slider("exposure", HelionConfig.EXPOSURE, HelionConfig.MIN_EXPOSURE, HelionConfig.MAX_EXPOSURE, EXPOSURE_STEP, Icons.SUN, "image.exposure").requires(this.enabled);
+        this.autoExposure = experimental(toggle("autoExposure", HelionConfig.AUTO_EXPOSURE, Icons.EYE, "image.autoExposure"))
+            .requires(this.enabled);
         this.dither = toggle("dither", HelionConfig.DITHER, Icons.PARTICLES, "image.dither").requires(this.enabled);
         this.sharpening = toggle("sharpening", HelionConfig.SHARPENING_ENABLED, Icons.EYE, "image.sharpening").cost(LOW_COST).requires(this.enabled);
         this.sharpeningStrength = slider("sharpeningStrength", HelionConfig.SHARPENING_STRENGTH, HelionConfig.MIN_SHARPENING_STRENGTH,
@@ -114,7 +117,7 @@ final class HelionOptions {
     List<ConfigOption<?>> all() {
         return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.ambientOcclusion, this.ambientOcclusionMethod,
             this.ambientOcclusionQuality, this.ambientOcclusionStrength, this.ambientOcclusionRadius, this.lighting, this.blockLight, this.skyLight,
-            this.shadows, this.shadowQuality, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.dither,
+            this.shadows, this.shadowQuality, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.dither,
             this.sharpening, this.sharpeningStrength, this.debugMode, this.ambientOcclusionView, this.bloomView, this.geometryBufferView,
             this.lightView);
     }

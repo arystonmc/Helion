@@ -2,6 +2,7 @@ package com.aryston.helion.render.atmosphere;
 
 import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.resource.GpuResources;
+import com.aryston.helion.render.resource.PixelReadback;
 import com.aryston.helion.render.resource.TrackedResource;
 import com.aryston.helion.render.resource.UniformRing;
 import com.mojang.blaze3d.buffers.Std140Builder;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.IntToDoubleFunction;
 import java.util.stream.IntStream;
+import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryStack;
@@ -38,6 +40,12 @@ public final class PhysicalSkyResources {
     private static final float METERS_PER_KILOMETER = 1000.0F;
     private static final float MIN_ALTITUDE_KILOMETERS = 0.001F;
     private static final float OPAQUE = 1.0F;
+    private static final String HORIZON_LABEL = "Helion Horizon Color Readback";
+    private static final int RGBA8_BYTES = 4;
+    private static final float MAX_CHANNEL = 255.0F;
+    private static final int RED = 0;
+    private static final int GREEN = 1;
+    private static final int BLUE = 2;
     private static final int SKY_UNIFORM_SIZE = new Std140SizeCalculator()
         .putMat4f()
         .putVec3()
@@ -64,7 +72,7 @@ public final class PhysicalSkyResources {
         .get();
 
     private final GpuResources resources;
-    private final HorizonColorReadback horizon;
+    private final PixelReadback<Vector3f> horizon;
     private @Nullable UniformRing uniforms;
     private @Nullable GpuBuffer spectrum;
     private @Nullable GpuBuffer fog;
@@ -77,7 +85,7 @@ public final class PhysicalSkyResources {
 
     public PhysicalSkyResources(GpuResources resources) {
         this.resources = resources;
-        this.horizon = new HorizonColorReadback(resources);
+        this.horizon = new PixelReadback<>(resources, HORIZON_LABEL, RGBA8_BYTES, PhysicalSkyResources::decodeHorizon);
     }
 
     public static float viewHeight(float altitudeMeters) {
@@ -258,5 +266,13 @@ public final class PhysicalSkyResources {
                 (float) valueAt.applyAsDouble(first + 3)
             );
         }
+    }
+
+    private static Vector3f decodeHorizon(ByteBuffer data) {
+        return new Vector3f(channel(data, RED), channel(data, GREEN), channel(data, BLUE));
+    }
+
+    private static float channel(ByteBuffer data, int index) {
+        return Byte.toUnsignedInt(data.get(index)) / MAX_CHANNEL;
     }
 }

@@ -13,6 +13,7 @@ import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.lighting.DeferredLightingSettings;
 import com.aryston.helion.render.post.BloomSettings;
 import com.aryston.helion.render.post.ImageResources;
+import com.aryston.helion.render.post.EyeAdaptation;
 import com.aryston.helion.render.post.ImageSettings;
 import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.resource.TrackedResource;
@@ -51,7 +52,7 @@ public final class HelionDebugSnapshot {
         snapshot.add("frame", frame(minecraft, core));
         core.lastCamera().ifPresent(camera -> snapshot.add("camera", camera(camera)));
         snapshot.add("ambientOcclusion", ambientOcclusion(settings.ambientOcclusion()));
-        snapshot.add("image", image(settings.image()));
+        snapshot.add("image", image(settings.image(), core.image().adaptation()));
         snapshot.add("bloom", bloom(settings.image().bloom(), ambientLight));
         snapshot.add("sharpening", sharpening(settings.image().sharpening()));
         snapshot.add("geometryBuffer", geometryBuffer(settings.geometry()));
@@ -129,10 +130,13 @@ public final class HelionDebugSnapshot {
         return section;
     }
 
-    private static JsonObject image(ImageSettings settings) {
+    private static JsonObject image(ImageSettings settings, EyeAdaptation adaptation) {
         JsonObject section = new JsonObject();
         section.addProperty("toneMapper", settings.toneMapper().name());
         section.addProperty("exposure", round(settings.exposure()));
+        section.addProperty("autoExposure", settings.autoExposure());
+        section.addProperty("adaptedExposure", round(adaptation.exposure()));
+        section.addProperty("meteredLog2Luminance", round(adaptation.meteredLog2Luminance()));
         section.addProperty("dither", settings.dither());
         section.addProperty("composite", settings.needsComposite());
         return section;

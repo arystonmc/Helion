@@ -132,6 +132,11 @@ Every class and source file of Helion with its purpose. Find the right file here
 - Path: `src/main/java/com/aryston/helion/render/resource/UniformRing.java`
 - Role: Three mappable uniform buffers used in turn, each guarded by a fence so the CPU never overwrites data the GPU still reads. Registered in `GpuResources`.
 
+#### PixelReadback
+- Path: `src/main/java/com/aryston/helion/render/resource/PixelReadback.java`
+- Role: Reads a small texture back to the CPU without stalling, through three mappable buffers used in turn, and decodes it with the given function (little endian); `latest` is the newest finished value, a few frames old. Used for the horizon color of the cloud fog and the metered luminance of automatic exposure.
+- Depends on: `GpuResources`, `TrackedResource`.
+
 #### TrackedResource
 - Path: `src/main/java/com/aryston/helion/render/resource/TrackedResource.java`
 - Role: Label, size in bytes and release action of one tracked resource.
@@ -372,7 +377,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 #### PhysicalSkyResources
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/PhysicalSkyResources.java`
 - Role: Persistent sky state owned by the core: the spectral transmittance and multiple scattering targets (written once, registered in `GpuResources`), the constant `HelionSpectrum` buffer (Rayleigh and ozone coefficients and the spectrum to RGB weights from `AtmosphereSpectrum`), the `HelionSky` uniform ring (inverse level view projection, sun and moon directions and brightness, view height, rain, vanilla fog distances), the `Fog` buffer the frame uses under the physical sky (`writeFog`: the read back horizon color, or the vanilla fog color until the first readback, no distance fog, vanilla cloud fog end), the `HorizonColorReadback`, the sun and moon brightness tuning and the one-time missing shader warning. `viewHeight` turns the altitude above sea level into the distance from the planet center.
-- Depends on: `UniformRing`, `GpuResources`, `AtmosphereSpectrum`, `HorizonColorReadback`, `SkyEnvironment`, `AtmosphereFog`, `HelionCamera`.
+- Depends on: `UniformRing`, `GpuResources`, `AtmosphereSpectrum`, `PixelReadback` (horizon color for the cloud fog), `SkyEnvironment`, `AtmosphereFog`, `HelionCamera`.
 - Notes: the `Fog` buffer has the layout of vanilla `FogRenderer` (`FOG_UBO_SIZE`); terrain, entities and clouds read it through `fog.glsl`.
 
 #### PhysicalSkyPipelines
@@ -412,11 +417,6 @@ Every class and source file of Helion with its purpose. Find the right file here
 #### SceneFogPass
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/SceneFogPass.java`
 - Role: Contract of the distance fog of the physical sky: `declareReads` adds its inputs to the frame graph pass that draws it, `draw` blends the fog into the scene.
-
-#### HorizonColorReadback
-- Path: `src/main/java/com/aryston/helion/render/atmosphere/HorizonColorReadback.java`
-- Role: Reads the 1 x 1 horizon color back to the CPU without stalling, through three mappable buffers used in turn; `latest` is the newest finished value, a few frames old. The color feeds the `Fog` buffer, so clouds fade into the horizon color.
-- Depends on: `GpuResources`.
 
 ### `com.aryston.helion.render.shadow`
 
@@ -492,7 +492,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ImagePipelines
 - Path: `src/main/java/com/aryston/helion/render/post/ImagePipelines.java`
-- Role: Pipeline definitions of the bloom, sharpen and composite passes, the uniform and sampler names they bind and the target formats (RGBA16_FLOAT bloom mips, RGBA8 output).
+- Role: Pipeline definitions of the bloom, sharpen, composite and exposure meter and average passes, the uniform and sampler names they bind and the target formats (RGBA16_FLOAT bloom mips, RGBA8 output, RG32_FLOAT exposure meter of 64 x 36 and its 1 x 1 average).
 - Depends on: `HelionPipelines`.
 
 #### ImagePrograms
@@ -501,12 +501,25 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ImageResources
 - Path: `src/main/java/com/aryston/helion/render/post/ImageResources.java`
-- Role: Persistent image state owned by the core: the `HelionImage` uniform ring, the fixed tuning values (bloom mip count, dark and daylight threshold scales, threshold knee) and the one-time missing shader warning. Writes the uniforms once per frame and checks whether the image stages can run. `bloomThreshold` computes the effective threshold for the current ambient light.
-- Depends on: `UniformRing`, `ImagePrograms`, `PostResults`.
+- Role: Persistent image state owned by the core: the `HelionImage` uniform ring, the `EyeAdaptation` and the readback of the metered luminance, the fixed tuning values (bloom mip count, dark and daylight threshold scales, threshold knee) and the one-time missing shader warning. Writes the uniforms once per frame and checks whether the image stages can run. `bloomThreshold` computes the effective threshold for the current ambient light. With automatic exposure on, each frame feeds the newest metered luminance into the adaptation and adds the adapted stops to the exposure setting.
+- Depends on: `UniformRing`, `PixelReadback`, `EyeAdaptation`, `ImagePrograms`, `PostResults`.
+
+#### ExposureStage
+- Path: `src/main/java/com/aryston/helion/render/post/ExposureStage.java`
+- Role: Automatic exposure metering, the first post effect. `exposure_meter` writes the center weighted sum of log2 luminance of the terrain (sky excluded) into a 64 x 36 target, `exposure_average` reduces it to one texel and requests its readback. The average pass never gets culled although nothing reads its output. Resets the adaptation while automatic exposure is off.
+- Depends on: `ImageResources`, `ExposurePrograms`, `ImagePipelines`, `FullscreenPass`.
+
+#### ExposurePrograms
+- Path: `src/main/java/com/aryston/helion/render/post/ExposurePrograms.java`
+- Role: The compiled exposure meter and average pipelines, separate from `ImagePrograms` so a missing exposure shader never switches bloom and tone mapping off.
+
+#### EyeAdaptation
+- Path: `src/main/java/com/aryston/helion/render/post/EyeAdaptation.java`
+- Role: Adapted exposure in stops: the target is the difference between the calibrated log2 luminance of a noon scene (-4.8) and the metered one, limited to -0.5 to +1 stops, approached exponentially (1 per second brightening, 3 per second darkening, steps longer than 0.25 s cut). The first measurement applies at once.
 
 #### ImageSettings
 - Path: `src/main/java/com/aryston/helion/render/post/ImageSettings.java`
-- Role: Player image settings: tone mapper, exposure in stops, dither, bloom and sharpening. `needsComposite()` tells whether the output must go through `ImageCompositeStage`. `FOUNDATION` keeps the plain copy.
+- Role: Player image settings: tone mapper, exposure in stops, automatic exposure, dither, bloom and sharpening. `needsComposite()` tells whether the output must go through `ImageCompositeStage`. `FOUNDATION` keeps the plain copy.
 - Depends on: `ToneMapper`, `BloomSettings`.
 
 #### BloomSettings
@@ -731,6 +744,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | `src/test/java/com/aryston/helion/LanguageFilesTest.java` | Every language file has the same keys, every config entry has a `.tooltip` and every config section a `.button` translation (lesson L-011). |
 | `src/test/java/com/aryston/helion/render/graph/RenderSettingsTest.java` | `foundation()` turns every effect off including deferred lighting, never needs the composite and keeps the geometry buffer without its view; `OFF` renders nothing extra. |
 | `src/test/java/com/aryston/helion/render/post/ImageSettingsTest.java` | `needsComposite()` for every tone mapper and effect combination. |
+| `src/test/java/com/aryston/helion/render/post/EyeAdaptationTest.java` | A noon scene keeps the vanilla brightness, the exposure stays within its limits, the first measurement applies at once, adaptation is gradual and darkens faster than it brightens, a long pause counts as a short step. |
 | `src/test/java/com/aryston/helion/render/post/ImageResourcesTest.java` | Adaptive bloom threshold: half in darkness, eight times in daylight, rising with ambient light. |
 | `src/test/java/com/aryston/helion/render/post/ToneMapperTest.java` | Tone mapper shader ids are unique and match the constants in `helion_image.glsl`. |
 | `src/test/java/com/aryston/helion/render/camera/HelionFrustumTest.java` | Frustum culling with OpenGL, zero to one and reversed-Z projections. |
@@ -760,14 +774,14 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | `src/main/resources/assets/helion/lang/` | `en_us.json` and `tr_tr.json`: config, settings screen (`helion.config.*`), key, toast and parity check texts. |
 | `src/main/resources/assets/helion/textures/gui/` | `logo.png` (48 x 48, linear filtered through `logo.png.mcmeta`) for the settings sidebar, and `preview/`: placeholder before and after images of ambient occlusion, bloom, shadows and the physical sky from the design handoff, to be replaced with real captures. |
 | `src/main/resources/assets/helion/shaders/ambient_occlusion/` | Ambient occlusion fragment shaders: `view_depth`, `gtao`, `denoise`, `denoise_resolve`, `apply`. |
-| `src/main/resources/assets/helion/shaders/image/` | Bloom and image fragment shaders: `bloom_prefilter`, `bloom_downsample`, `bloom_upsample`, `composite`, `bloom_debug`, `sharpen`. |
+| `src/main/resources/assets/helion/shaders/image/` | Bloom and image fragment shaders: `bloom_prefilter`, `bloom_downsample`, `bloom_upsample`, `composite`, `bloom_debug`, `sharpen`, `exposure_meter`, `exposure_average`. |
 | `src/main/resources/assets/helion/shaders/terrain/` | Geometry buffer terrain shaders `geometry.vsh` and `geometry.fsh`: vanilla terrain color plus normal (crossed plant planes point up), light (with chunk fade-in) and albedo (with the fog amount in alpha) targets. |
 | `src/main/resources/assets/helion/shaders/geometry/` | `debug.fsh`: geometry buffer debug views. `terrain_depth.fsh`: copies the depth after the terrain pass into a float target. |
 | `src/main/resources/assets/helion/shaders/lighting/` | Deferred lighting fragment shaders: `deferred_light` (light buffer from the geometry buffer light levels; with `HELION_PHYSICAL_SKY_LIGHT` the sky light color follows the physical sky light per pixel normal at the vanilla brightness,) and `deferred_shading` (albedo times light, HDR above the vanilla cap, fog and chunk fade-in; light-only view with `HELION_LIGHT_ONLY`; with `HELION_SHADOWS` the color is darkened by the shadow transmission after the vanilla brightness curve). |
 | `src/main/resources/assets/helion/shaders/temporal/` | Temporal anti-aliasing fragment shaders: `resolve` (closest-depth reprojection, Catmull-Rom history sample, YCoCg variance clipping, luminance weighted blend, moving object depth in the history alpha with disocclusion rejection and a reactive weight) and `apply` (history back into the scene). |
 | `src/main/resources/assets/helion/shaders/atmosphere/` | Physical sky fragment shaders: `transmittance` and `multiple_scattering` (constant spectral lookup tables, four targets each), `sky_view` (spectral single and multiple scattering per view direction, converted to RGB, for the sun or the moon with `HELION_MOON_VIEW`; Mie single scattering goes to a second target without its phase), `sky` (sky color per pixel), `fog` (distance fog in the physical horizon color over everything with depth, with the vanilla fog distances), `horizon` (average horizon color over 32 directions into a 1 x 1 target) and `sky_light` (sun light, moon light and sky dome irradiance into a 3 x 1 target). |
 | `src/main/resources/assets/helion/shaders/shadow/` | Shadow shaders: `caster.vsh` and `caster.fsh` (terrain positions only, alpha cutout for cutout layers, crossed plant planes skipped, depth only) and `mask.fsh` (cascade selection, normal and light offset, distance fade, R8 visibility mask). |
-| `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_shadow` (`HelionShadow` block, one shadow map sampler per cascade, 4 x 4 tent filtered shadow map lookup), `helion_geometry` (geometry buffer constants, normal encoding and crossed plant plane detection), `helion_view` (depth and view position), `helion_atmosphere` (Earth atmosphere constants, phase functions, ray-sphere intersection, ground shadow, lookup table sizes and coordinate mappings), `helion_spectrum` (`HelionSpectrum` block, densities, spectral scattering and extinction, spectrum to RGB), `helion_transmittance_lookup` and `helion_scattering_lookup` (samplers and per group lookup of the spectral tables), `helion_sky` (sky settings block), `helion_sky_color` (sun and moon sky view lookup with the Mie phase applied per pixel, rain, Neutral encoding, the camera relative position of a pixel from its depth and the view ray of a pixel from two points on it, so view bobbing never moves the sky against the world), `helion_lighting` (lighting settings block, the vanilla light map terms with bilinear level interpolation, ambient term, boss and darkness adjustment and the brightness option), `helion_sky_light` (physical sky light parts per pixel normal: sun, moon, a desaturated sky dome toward the sky and ground bounce light toward the ground, and the shadow transmission: lit sun, moon and dome light against the shadowed sum, weighted by the share of sky light in the pixel), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur), `helion_color` (sRGB conversion, saturation, the Neutral highlight curve and its inverse, film grade, dither noise), `helion_image` (image settings block including the sharpening strength, scene expansion, tone mapper switch, Filmic highlight bleach, bloom threshold, dither), `helion_bloom_downsample` (13-tap downsample with optional Karis average over a `helionBloomTap` function the including shader defines). |
+| `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_shadow` (`HelionShadow` block, one shadow map sampler per cascade, 4 x 4 tent filtered shadow map lookup), `helion_geometry` (geometry buffer constants, normal encoding and crossed plant plane detection), `helion_view` (depth and view position), `helion_atmosphere` (Earth atmosphere constants, phase functions, ray-sphere intersection, ground shadow, lookup table sizes and coordinate mappings), `helion_spectrum` (`HelionSpectrum` block, densities, spectral scattering and extinction, spectrum to RGB), `helion_transmittance_lookup` and `helion_scattering_lookup` (samplers and per group lookup of the spectral tables), `helion_sky` (sky settings block), `helion_sky_color` (sun and moon sky view lookup with the Mie phase applied per pixel, rain, Neutral encoding, the camera relative position of a pixel from its depth and the view ray of a pixel from two points on it, so view bobbing never moves the sky against the world), `helion_lighting` (lighting settings block, the vanilla light map terms with bilinear level interpolation, ambient term, boss and darkness adjustment and the brightness option), `helion_sky_light` (physical sky light parts per pixel normal: sun, moon, a desaturated sky dome toward the sky and ground bounce light toward the ground, and the shadow transmission: lit sun, moon and dome light against the shadowed sum, weighted by the share of sky light in the pixel), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur), `helion_color` (sRGB conversion, saturation, the Neutral highlight curve and its inverse, film grade, dither noise), `helion_exposure` (size of the exposure meter), `helion_image` (image settings block including the sharpening strength, scene expansion, tone mapper switch, Filmic highlight bleach, bloom threshold, dither), `helion_bloom_downsample` (13-tap downsample with optional Karis average over a `helionBloomTap` function the including shader defines). |
 
 ## Build Files
 

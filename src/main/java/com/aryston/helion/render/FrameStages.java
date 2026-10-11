@@ -11,6 +11,7 @@ import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.lighting.AmbientOcclusionStage;
 import com.aryston.helion.render.lighting.DeferredLightingStage;
 import com.aryston.helion.render.post.BloomStage;
+import com.aryston.helion.render.post.ExposureStage;
 import com.aryston.helion.render.post.ImageCompositeStage;
 import com.aryston.helion.render.post.PostProcessingStage;
 import com.aryston.helion.render.post.PresentStage;
@@ -53,6 +54,7 @@ public final class FrameStages {
 
     private static List<RenderStage> postEffects(FrameSources sources, HelionRenderCore core) {
         List<RenderStage> effects = new ArrayList<>(sources.postEffects());
+        effects.add(new ExposureStage(core.image()));
         effects.add(new BloomStage(core.image()));
         effects.add(new SharpeningStage(core.image()));
         return effects;

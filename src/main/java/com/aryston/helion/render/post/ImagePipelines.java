@@ -17,8 +17,12 @@ public final class ImagePipelines {
     public static final String SCENE_DEPTH_SAMPLER = "SceneDepthSampler";
     public static final String SOURCE_SAMPLER = "SourceSampler";
     public static final String BLOOM_SAMPLER = "BloomSampler";
+    public static final String METER_SAMPLER = "MeterSampler";
     public static final GpuFormat BLOOM_FORMAT = GpuFormat.RGBA16_FLOAT;
     public static final GpuFormat OUTPUT_FORMAT = GpuFormat.RGBA8_UNORM;
+    public static final GpuFormat EXPOSURE_FORMAT = GpuFormat.RG32_FLOAT;
+    public static final int EXPOSURE_METER_WIDTH = 64;
+    public static final int EXPOSURE_METER_HEIGHT = 36;
 
     public static final RenderPipeline BLOOM_PREFILTER = HelionPipelines.fullscreen("image/bloom_prefilter")
         .withBindGroupLayout(BindGroupLayout.builder()
@@ -68,11 +72,27 @@ public final class ImagePipelines {
         .withColorTargetState(writeAll(OUTPUT_FORMAT))
         .build();
 
+    public static final RenderPipeline EXPOSURE_METER = HelionPipelines.fullscreen("image/exposure_meter")
+        .withBindGroupLayout(BindGroupLayout.builder()
+            .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
+            .withUniform(SCENE_COLOR_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(SCENE_DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .build())
+        .withColorTargetState(writeAll(EXPOSURE_FORMAT))
+        .build();
+
+    public static final RenderPipeline EXPOSURE_AVERAGE = HelionPipelines.fullscreen("image/exposure_average")
+        .withBindGroupLayout(BindGroupLayout.builder()
+            .withUniform(METER_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .build())
+        .withColorTargetState(writeAll(EXPOSURE_FORMAT))
+        .build();
+
     private ImagePipelines() {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(BLOOM_PREFILTER, BLOOM_DOWNSAMPLE, BLOOM_UPSAMPLE, COMPOSITE, BLOOM_DEBUG, SHARPEN);
+        return List.of(BLOOM_PREFILTER, BLOOM_DOWNSAMPLE, BLOOM_UPSAMPLE, COMPOSITE, BLOOM_DEBUG, SHARPEN, EXPOSURE_METER, EXPOSURE_AVERAGE);
     }
 
     private static BindGroupLayout sourceOnly() {
