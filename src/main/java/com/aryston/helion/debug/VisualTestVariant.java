@@ -90,7 +90,8 @@ enum VisualTestVariant {
         return new RenderSettings(
             settings.ambientOcclusion(),
             new ImageSettings(
-                toneMapper, ImageSettings.DEFAULT_EXPOSURE, settings.image().autoExposure(), true, bloom, SharpeningSettings.DISABLED, MotionBlurSettings.DISABLED
+                toneMapper, ImageSettings.DEFAULT_EXPOSURE, settings.image().autoExposure(), true, bloom, SharpeningSettings.DISABLED, MotionBlurSettings.DISABLED,
+                settings.image().colorGrade()
             ),
             settings.geometry(),
             settings.lighting(),

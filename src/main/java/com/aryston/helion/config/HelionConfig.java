@@ -9,6 +9,7 @@ import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.lighting.DeferredLightingSettings;
 import com.aryston.helion.render.post.BloomSettings;
+import com.aryston.helion.render.post.ColorGrade;
 import com.aryston.helion.render.post.ImageSettings;
 import com.aryston.helion.render.post.MotionBlurSettings;
 import com.aryston.helion.render.post.SharpeningSettings;
@@ -57,6 +58,7 @@ public final class HelionConfig {
     static final ModConfigSpec.EnumValue<ToneMapper> TONE_MAPPER;
     static final ModConfigSpec.DoubleValue EXPOSURE;
     static final ModConfigSpec.BooleanValue AUTO_EXPOSURE;
+    static final ModConfigSpec.EnumValue<ColorGrade> COLOR_GRADE;
     static final ModConfigSpec.BooleanValue DITHER;
     static final ModConfigSpec.BooleanValue BLOOM_ENABLED;
     static final ModConfigSpec.DoubleValue BLOOM_INTENSITY;
@@ -110,6 +112,9 @@ public final class HelionConfig {
         AUTO_EXPOSURE = BUILDER
             .translation("helion.configuration.image.autoExposure")
             .define("autoExposure", false);
+        COLOR_GRADE = BUILDER
+            .translation("helion.configuration.image.colorGrade")
+            .defineEnum("colorGrade", ColorGrade.NEUTRAL);
         DITHER = BUILDER
             .translation("helion.configuration.image.dither")
             .define("dither", true);
@@ -250,7 +255,8 @@ public final class HelionConfig {
                 BLOOM_DEBUG_VIEW.getAsBoolean()
             ),
             new SharpeningSettings(SHARPENING_ENABLED.getAsBoolean(), SHARPENING_STRENGTH.get().floatValue()),
-            new MotionBlurSettings(MOTION_BLUR_ENABLED.getAsBoolean(), MOTION_BLUR_STRENGTH.get().floatValue())
+            new MotionBlurSettings(MOTION_BLUR_ENABLED.getAsBoolean(), MOTION_BLUR_STRENGTH.get().floatValue()),
+            COLOR_GRADE.get()
         );
     }
 }

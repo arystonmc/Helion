@@ -44,6 +44,7 @@ public final class ImageResources {
 
     private final GpuResources resources;
     private final EyeAdaptation adaptation = new EyeAdaptation();
+    private final ColorGradingResources colorGrading;
     private final PixelReadback<MeteredLuminance> exposureReadback;
     private @Nullable UniformRing uniforms;
     private boolean missingPipelinesReported;
@@ -52,6 +53,11 @@ public final class ImageResources {
     public ImageResources(GpuResources resources) {
         this.resources = resources;
         this.exposureReadback = new PixelReadback<>(resources, EXPOSURE_READBACK_LABEL, EXPOSURE_BYTES, MeteredLuminance::decode);
+        this.colorGrading = new ColorGradingResources(resources);
+    }
+
+    ColorGradingResources colorGrading() {
+        return colorGrading;
     }
 
     public EyeAdaptation adaptation() {
@@ -96,6 +102,7 @@ public final class ImageResources {
         uniforms = null;
         exposureReadback.close();
         adaptation.reset();
+        colorGrading.close();
     }
 
     public static float bloomThreshold(BloomSettings bloom, float ambientLight) {

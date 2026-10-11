@@ -10,6 +10,7 @@ import com.aryston.helion.Helion;
 import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.lighting.AmbientOcclusionAlgorithm;
 import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
+import com.aryston.helion.render.post.ColorGrade;
 import com.aryston.helion.render.post.ToneMapper;
 import com.aryston.helion.render.shadow.ShadowQuality;
 import com.aryston.helion.render.temporal.RenderScale;
@@ -53,6 +54,7 @@ final class HelionOptions {
     final ConfigOption<ToneMapper> toneMapper;
     final ConfigOption<Double> exposure;
     final ConfigOption<Boolean> autoExposure;
+    final ConfigOption<ColorGrade> colorGrade;
     final ConfigOption<Boolean> dither;
     final ConfigOption<Boolean> sharpening;
     final ConfigOption<Double> sharpeningStrength;
@@ -106,6 +108,8 @@ final class HelionOptions {
         this.exposure = slider("exposure", HelionConfig.EXPOSURE, HelionConfig.MIN_EXPOSURE, HelionConfig.MAX_EXPOSURE, EXPOSURE_STEP, Icons.SUN, "image.exposure").requires(this.enabled);
         this.autoExposure = experimental(toggle("autoExposure", HelionConfig.AUTO_EXPOSURE, Icons.EYE, "image.autoExposure"))
             .requires(this.enabled);
+        this.colorGrade = choice("colorGrade", HelionConfig.COLOR_GRADE, ColorGrade.class, Icons.CONTRAST, "image.colorGrade")
+            .style(ChoiceStyle.DROPDOWN).requires(this.enabled);
         this.dither = toggle("dither", HelionConfig.DITHER, Icons.PARTICLES, "image.dither").requires(this.enabled);
         this.sharpening = toggle("sharpening", HelionConfig.SHARPENING_ENABLED, Icons.EYE, "image.sharpening").cost(LOW_COST).requires(this.enabled);
         this.sharpeningStrength = slider("sharpeningStrength", HelionConfig.SHARPENING_STRENGTH, HelionConfig.MIN_SHARPENING_STRENGTH,
@@ -127,7 +131,7 @@ final class HelionOptions {
     List<ConfigOption<?>> all() {
         return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.ambientOcclusion, this.ambientOcclusionMethod,
             this.ambientOcclusionQuality, this.ambientOcclusionStrength, this.ambientOcclusionRadius, this.lighting, this.blockLight, this.skyLight,
-            this.shadows, this.shadowQuality, this.renderScale, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.dither,
+            this.shadows, this.shadowQuality, this.renderScale, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.colorGrade, this.dither,
             this.sharpening, this.sharpeningStrength, this.motionBlur, this.motionBlurStrength, this.debugMode, this.ambientOcclusionView,
             this.bloomView, this.geometryBufferView, this.lightView);
     }

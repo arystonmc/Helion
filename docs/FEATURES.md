@@ -67,6 +67,14 @@ A soft, film-like blur when you turn or move quickly.
 - Settings: on or off and its strength in the effects settings; off by default while it is experimental
 - Since: Unreleased
 
+### Color Grading
+Give the whole picture a mood with one click.
+
+- Presets: Neutral, Warm, Cool, Vivid, Cinematic and Muted, applied like a film grade after everything else
+- Neutral keeps the colors exactly as they are
+- Settings: the preset in the image settings; Neutral by default
+- Since: Unreleased
+
 ### Sharpening
 Crisper block textures without the halos of ordinary sharpening filters.
 

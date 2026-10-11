@@ -43,7 +43,7 @@ public final class HelionConfigScreen {
                 .section(text("section.shadows"), section -> section.add(options.shadows)))
             .page("effects", text("page.effects"), Icons.SPARKLE, page -> page
                 .section(text("section.bloom"), section -> section.add(options.bloom).add(options.bloomIntensity).add(options.bloomThreshold))
-                .section(text("section.image"), section -> section.add(options.toneMapper).add(options.exposure).add(options.autoExposure).add(options.dither))
+                .section(text("section.image"), section -> section.add(options.toneMapper).add(options.exposure).add(options.autoExposure).add(options.colorGrade).add(options.dither))
                 .fullSection(text("section.sharpening"), section -> section.add(options.sharpening).add(options.sharpeningStrength))
                 .fullSection(text("section.motionBlur"), section -> section.add(options.motionBlur).add(options.motionBlurStrength)))
             .group(text("group.system"))
