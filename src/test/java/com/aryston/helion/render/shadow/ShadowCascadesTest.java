@@ -80,28 +80,6 @@ class ShadowCascadesTest {
     }
 
     @Test
-    void cameraRelativeBoundsHoldEverySectionACascadeSelects() {
-        float sectionRadius = 14.0F;
-        for (ShadowCascade cascade : compute(new Vector3d(0.0, 64.0, 0.0))) {
-            Vector3f min = new Vector3f(Float.POSITIVE_INFINITY);
-            Vector3f max = new Vector3f(Float.NEGATIVE_INFINITY);
-            cascade.expandCameraRelativeBounds(sectionRadius, min, max);
-            for (float x = -480.0F; x <= 480.0F; x += 16.0F) {
-                for (float y = -128.0F; y <= 320.0F; y += 16.0F) {
-                    for (float z = -480.0F; z <= 480.0F; z += 16.0F) {
-                        Vector3f position = new Vector3f(x, y, z);
-                        if (cascade.containsLightSpace(cascade.lightView().transformPosition(new Vector3f(position)), sectionRadius)) {
-                            assertTrue(position.x >= min.x - TOLERANCE && position.x <= max.x + TOLERANCE, "x " + position);
-                            assertTrue(position.y >= min.y - TOLERANCE && position.y <= max.y + TOLERANCE, "y " + position);
-                            assertTrue(position.z >= min.z - TOLERANCE && position.z <= max.z + TOLERANCE, "z " + position);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @Test
     void shadowDistanceFollowsTheRenderDistance() {
         assertEquals(96.0F, ShadowCascades.distance(96), TOLERANCE);
         assertEquals(ShadowCascades.MAX_DISTANCE, ShadowCascades.distance(512), TOLERANCE);

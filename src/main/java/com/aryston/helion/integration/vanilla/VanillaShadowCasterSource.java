@@ -30,11 +30,13 @@ final class VanillaShadowCasterSource implements ShadowCasterSource {
 
     private final LevelFrameRequest request;
     private final LevelRendererAccessor level;
+    private final ShadowCasterSections candidates;
     private final List<ChunkSectionsToRender> prepared = new ArrayList<>();
 
-    VanillaShadowCasterSource(LevelFrameRequest request) {
+    VanillaShadowCasterSource(LevelFrameRequest request, ShadowCasterSections candidates) {
         this.request = request;
         this.level = request.level();
+        this.candidates = candidates;
     }
 
     @Override
@@ -97,46 +99,22 @@ final class VanillaShadowCasterSource implements ShadowCasterSource {
         }
         ViewArea area = Objects.requireNonNull(level.helion$viewArea());
         Vec3 camera = request.cameraState().pos;
-        SectionPos center = SectionPos.of(camera);
-        int radius = area.getViewDistance();
-        Vector3f min = new Vector3f(Float.POSITIVE_INFINITY);
-        Vector3f max = new Vector3f(Float.NEGATIVE_INFINITY);
-        cascades.forEach(cascade -> cascade.expandCameraRelativeBounds(SECTION_BOUNDING_RADIUS, min, max));
-        int minX = Math.max(center.x() - radius, sectionCoordinate(camera.x + min.x));
-        int maxX = Math.min(center.x() + radius, sectionCoordinate(camera.x + max.x));
-        int minY = Math.max(area.minSectionY(), sectionCoordinate(camera.y + min.y));
-        int maxY = Math.min(area.maxSectionY(), sectionCoordinate(camera.y + max.y));
-        int minZ = Math.max(center.z() - radius, sectionCoordinate(camera.z + min.z));
-        int maxZ = Math.min(center.z() + radius, sectionCoordinate(camera.z + max.z));
         Matrix4fc lightView = cascades.getFirst().lightView();
-        BlockPos.MutableBlockPos origin = new BlockPos.MutableBlockPos();
         Vector3f lightSpace = new Vector3f();
-        for (int x = minX; x <= maxX; x++) {
-            for (int z = minZ; z <= maxZ; z++) {
-                for (int y = minY; y <= maxY; y++) {
-                    origin.set(SectionPos.sectionToBlockCoord(x), SectionPos.sectionToBlockCoord(y), SectionPos.sectionToBlockCoord(z));
-                    SectionRenderDispatcher.RenderSection section = area.getRenderSectionAt(origin);
-                    if (section == null) {
-                        continue;
-                    }
-                    lightSpace.set(
-                        (float) (origin.getX() + SectionPos.SECTION_HALF_SIZE - camera.x),
-                        (float) (origin.getY() + SectionPos.SECTION_HALF_SIZE - camera.y),
-                        (float) (origin.getZ() + SectionPos.SECTION_HALF_SIZE - camera.z)
-                    );
-                    lightView.transformPosition(lightSpace);
-                    for (int index = 0; index < cascades.size(); index++) {
-                        if (cascades.get(index).containsLightSpace(lightSpace, SECTION_BOUNDING_RADIUS)) {
-                            sections.get(index).add(section);
-                        }
-                    }
+        for (SectionRenderDispatcher.RenderSection section : candidates.withGeometry(area, SectionPos.of(camera), CASTER_LAYERS)) {
+            BlockPos origin = section.getRenderOrigin();
+            lightSpace.set(
+                (float) (origin.getX() + SectionPos.SECTION_HALF_SIZE - camera.x),
+                (float) (origin.getY() + SectionPos.SECTION_HALF_SIZE - camera.y),
+                (float) (origin.getZ() + SectionPos.SECTION_HALF_SIZE - camera.z)
+            );
+            lightView.transformPosition(lightSpace);
+            for (int index = 0; index < cascades.size(); index++) {
+                if (cascades.get(index).containsLightSpace(lightSpace, SECTION_BOUNDING_RADIUS)) {
+                    sections.get(index).add(section);
                 }
             }
         }
         return sections;
-    }
-
-    private static int sectionCoordinate(double block) {
-        return SectionPos.blockToSectionCoord((int) Math.floor(block));
     }
 }

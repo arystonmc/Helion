@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 
 public final class VisualTest {
     private static final String PROPERTY = "helion.visualTest";
+    private static final String NATURAL_SCENE_PROPERTY = "helion.visualTest.natural";
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final int START_DELAY_TICKS = 200;
     private static final int SCENE_SETTLE_TICKS = 100;
@@ -97,7 +98,7 @@ public final class VisualTest {
         }
         pausedOnLostFocus = minecraft.options.pauseOnLostFocus;
         minecraft.options.pauseOnLostFocus = false;
-        VisualTestWorld.prepare(server, player.blockPosition());
+        VisualTestWorld.prepare(server, player.blockPosition(), !Boolean.getBoolean(NATURAL_SCENE_PROPERTY));
         LOGGER.info("Helion visual test started with {} shots", shots.size());
     }
 

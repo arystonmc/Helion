@@ -19,10 +19,12 @@ layout(location = 5) in float ChunkVisibility;
 
 layout(location = 0) out vec2 texCoord0;
 layout(location = 1) out float vertexAlpha;
+layout(location = 2) out vec3 cameraRelativePosition;
 
 void main() {
     vec3 pos = Position + (ChunkPosition - CameraBlockPos) + CameraOffset;
     gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
     texCoord0 = UV0;
     vertexAlpha = Color.a;
+    cameraRelativePosition = pos;
 }

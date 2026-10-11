@@ -26,8 +26,13 @@ layout(location = 1) out vec4 geometryNormal;
 layout(location = 2) out vec4 geometryLight;
 layout(location = 3) out vec4 geometryAlbedo;
 
+const vec3 HELION_FOLIAGE_NORMAL = vec3(0.0, 1.0, 0.0);
+
 vec3 faceNormal(vec3 position) {
     vec3 normal = normalize(cross(dFdx(position), dFdy(position)));
+    if (helionIsCrossPlane(normal)) {
+        return HELION_FOLIAGE_NORMAL;
+    }
     return dot(normal, position) > 0.0 ? -normal : normal;
 }
 
