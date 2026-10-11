@@ -1,6 +1,7 @@
 package com.aryston.helion.integration;
 
 import com.aryston.helion.config.HelionConfig;
+import com.aryston.helion.debug.GalleryCapture;
 import com.aryston.helion.debug.HelionDebugEntry;
 import com.aryston.helion.debug.HelionDebugLog;
 import com.aryston.helion.debug.ParityCheck;
@@ -30,6 +31,7 @@ public final class ClientEvents {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final HelionDebugLog DEBUG_LOG = new HelionDebugLog();
     private static final Optional<VisualTest> VISUAL_TEST = VisualTest.requested();
+    private static final Optional<GalleryCapture> GALLERY_CAPTURE = GalleryCapture.requested();
 
     private ClientEvents() {
     }
@@ -90,6 +92,7 @@ public final class ClientEvents {
         PassiveModeNotice.showPending(minecraft);
         DEBUG_LOG.tick(minecraft);
         VISUAL_TEST.ifPresent(test -> test.tick(minecraft));
+        GALLERY_CAPTURE.ifPresent(gallery -> gallery.tick(minecraft));
         while (HelionKeys.TOGGLE.consumeClick()) {
             toggle(minecraft);
         }

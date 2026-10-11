@@ -68,7 +68,7 @@ final class VisualTestWorld {
         return position.getX() + " " + position.getY() + " " + position.getZ();
     }
 
-    private static void run(IntegratedServer server, String command) {
+    static void run(IntegratedServer server, String command) {
         server.execute(() -> {
             CommandSourceStack source = server.createCommandSourceStack().withSuppressedOutput();
             server.getCommands().performPrefixedCommand(source, command);

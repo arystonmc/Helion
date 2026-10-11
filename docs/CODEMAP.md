@@ -538,8 +538,8 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ClientEvents
 - Path: `src/main/java/com/aryston/helion/integration/ClientEvents.java`
-- Role: Wires every listener: client setup (compatibility check, passive notices), pipeline registration (including the geometry and shadow caster terrain pipelines), config loading, toggle and parity keys, notices and the debug log on client tick, the parity tick counter, debug log events for toggles and passive mode, shutdown.
-- Depends on: `HelionRenderCore`, `HelionKeys`, `ParityControl`, `CompatibilityGuard`, `PassiveModeNotice`, `HelionDebugEntry`, `HelionDebugLog`, `VisualTest`, `LevelRenderHook`.
+- Role: Wires every listener: client setup (compatibility check, passive notices), pipeline registration (including the geometry and shadow caster terrain pipelines), config loading, toggle and parity keys, notices, the debug log, the visual test and the gallery capture on client tick, the parity tick counter, debug log events for toggles and passive mode, shutdown.
+- Depends on: `HelionRenderCore`, `HelionKeys`, `ParityControl`, `CompatibilityGuard`, `PassiveModeNotice`, `HelionDebugEntry`, `HelionDebugLog`, `VisualTest`, `GalleryCapture`, `LevelRenderHook`.
 
 #### ParityControl
 - Path: `src/main/java/com/aryston/helion/integration/ParityControl.java`
@@ -678,7 +678,26 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### VisualTestWorld
 - Path: `src/main/java/com/aryston/helion/debug/VisualTestWorld.java`
-- Role: Server commands of the visual test: freezes time and weather, stops mob spawning, switches to spectator, unless the JVM property `helion.visualTest.natural=true` asks for the untouched world around the player, clears the area around and in front of the player (so things built around the save spawn never block the view), builds a stone platform with light blocks in front of the player plus a stone pillar and a floating stone roof that cast shadows away from any light block, sets the time per scene and freezes ticks for the parity check.
+- Role: Server commands of the visual test: freezes time and weather, stops mob spawning, switches to spectator, unless the JVM property `helion.visualTest.natural=true` asks for the untouched world around the player, clears the area around and in front of the player (so things built around the save spawn never block the view), builds a stone platform with light blocks in front of the player plus a stone pillar and a floating stone roof that cast shadows away from any light block, sets the time per scene and freezes ticks for the parity check. `run` also carries the commands of `GalleryWorld`.
+
+#### GalleryCapture
+- Path: `src/main/java/com/aryston/helion/debug/GalleryCapture.java`
+- Role: Store gallery capture that runs when the JVM property `helion.gallery=true` is set in a development run. From the title screen it creates a fresh world with a fixed seed, then applies the game rules of `VisualTestWorld` without building the test area, hides the HUD and turns off pause on lost focus. For every spot it searches the place on the integrated server, teleports above the surface, sets the time, waits 300 ticks and until every chunk section is compiled, then for every yaw holds the camera, freezes ticks, renders warm-up frames on the vanilla path, saves the vanilla frame, renders warm-up frames with Helion and the configured settings, saves the Helion frame (only when the core is still active) and unfreezes ticks. Screenshots are full resolution: `screenshots/gallery_<spot>_<yaw>_<vanilla|helion>.png`. Restores the settings and the HUD and closes the game cleanly at the end.
+- Depends on: `GallerySpot`, `GalleryWorld`, `VisualTestWorld`, `HelionRenderCore`, `HelionConfig`.
+
+#### GallerySpot
+- Path: `src/main/java/com/aryston/helion/debug/GallerySpot.java`
+- Role: The photographed gallery spots: name, how to find the place, time of day, camera yaws, pitch and height above the surface (cherry grove, a plains village by day and by night, jagged peaks or meadow, beach, dark forest, savanna).
+- Depends on: `GalleryLocator`.
+
+#### GalleryLocator
+- Path: `src/main/java/com/aryston/helion/debug/GalleryLocator.java`
+- Role: Finds a gallery spot on the server level: the closest of a list of biomes, or the nearest structure, with the search limits of the vanilla `/locate` command.
+
+#### GalleryWorld
+- Path: `src/main/java/com/aryston/helion/debug/GalleryWorld.java`
+- Role: World side of the gallery capture: creates the fixed-seed spectator world with commands allowed, searches a spot on the server thread and returns the top of the motion blocking height map there, and teleports the player above it.
+- Depends on: `GalleryLocator`, `VisualTestWorld`.
 
 #### ParityCheck
 - Path: `src/main/java/com/aryston/helion/debug/ParityCheck.java`
