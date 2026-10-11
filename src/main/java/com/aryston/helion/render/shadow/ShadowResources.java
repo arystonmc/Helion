@@ -23,6 +23,8 @@ public final class ShadowResources {
     private static final String SETTINGS_LABEL = "Helion Shadow Settings";
     private static final String PROJECTION_LABEL = "Helion Shadow Projection #";
     private static final String SHADOW_MAP_LABEL = "Helion Shadow Map #";
+    private static final String ENTITY_MAP_LABEL = "Helion Entity Shadow Map #";
+    private static final String ENTITY_PROJECTION_LABEL = "Helion Entity Shadow Projection #";
     private static final int SETTINGS_SIZE = settingsSize();
     private static final int PROJECTION_SIZE = new Std140SizeCalculator().putMat4f().get();
 
@@ -30,6 +32,10 @@ public final class ShadowResources {
     private final List<UniformRing> projections = new ArrayList<>();
     private final List<TextureTarget> shadowMaps = new ArrayList<>();
     private final List<TrackedResource> trackedShadowMaps = new ArrayList<>();
+    private final List<UniformRing> entityProjections = new ArrayList<>();
+    private final List<TextureTarget> entityMaps = new ArrayList<>();
+    private final List<TrackedResource> trackedEntityMaps = new ArrayList<>();
+    private int entityMapResolution;
     private final ShadowCascadeCache cache = new ShadowCascadeCache();
     private @Nullable UniformRing settings;
     private int shadowMapResolution;
@@ -53,6 +59,32 @@ public final class ShadowResources {
             shadowMapResolution = resolution;
         }
         return List.copyOf(shadowMaps);
+    }
+
+    List<RenderTarget> entityMaps(int cascadeResolution) {
+        int resolution = cascadeResolution / ShadowPipelines.ENTITY_RESOLUTION_DIVISOR;
+        if (entityMaps.isEmpty() || entityMapResolution != resolution) {
+            releaseEntityMaps();
+            for (int cascade = 0; cascade < ShadowPipelines.ENTITY_CASCADES; cascade++) {
+                String label = ENTITY_MAP_LABEL + cascade;
+                TextureTarget created = new TextureTarget(
+                    label, resolution, resolution, ShadowPipelines.ENTITY_COLOR_FORMAT, ShadowPipelines.SHADOW_MAP_FORMAT
+                );
+                long bytes = (long) resolution * resolution
+                    * (ShadowPipelines.ENTITY_COLOR_FORMAT.blockSize() + ShadowPipelines.SHADOW_MAP_FORMAT.blockSize());
+                trackedEntityMaps.add(resources.track(label, bytes, created::destroyBuffers));
+                entityMaps.add(created);
+            }
+            entityMapResolution = resolution;
+        }
+        return List.copyOf(entityMaps);
+    }
+
+    GpuBuffer writeEntityProjection(int cascade, Matrix4fc projection) {
+        while (entityProjections.size() <= cascade) {
+            entityProjections.add(new UniformRing(ENTITY_PROJECTION_LABEL + entityProjections.size(), PROJECTION_SIZE, resources));
+        }
+        return entityProjections.get(cascade).write(builder -> builder.putMat4f(projection));
     }
 
     ShadowCascadeCache cache() {
@@ -85,6 +117,7 @@ public final class ShadowResources {
 
     void finishFrame() {
         projections.forEach(UniformRing::rotate);
+        entityProjections.forEach(UniformRing::rotate);
         if (settings != null) {
             settings.rotate();
         }
@@ -100,11 +133,21 @@ public final class ShadowResources {
     public void close() {
         projections.forEach(UniformRing::close);
         projections.clear();
+        entityProjections.forEach(UniformRing::close);
+        entityProjections.clear();
+        releaseEntityMaps();
         if (settings != null) {
             settings.close();
         }
         settings = null;
         releaseShadowMaps();
+    }
+
+    private void releaseEntityMaps() {
+        trackedEntityMaps.forEach(resources::release);
+        trackedEntityMaps.clear();
+        entityMaps.clear();
+        entityMapResolution = 0;
     }
 
     private void releaseShadowMaps() {

@@ -16,6 +16,8 @@ public final class ShadowCascades {
     private static final float[] SPLITS = {0.08F, 0.22F, 0.5F, 1.0F};
     private static final float RADIUS_STEP = 1.0F / 16.0F;
     private static final float PARALLEL_LIMIT = 0.99F;
+    private static final float DEPTH_RANGE = 1.0F;
+    private static final float MIRRORED_DEPTH = -1.0F;
     private static final Vector3fc PRIMARY_UP = new Vector3f(0.0F, 0.0F, 1.0F);
     private static final Vector3fc SECONDARY_UP = new Vector3f(1.0F, 0.0F, 0.0F);
 
@@ -48,6 +50,13 @@ public final class ShadowCascades {
 
     static float splitDistance(int index, float maxDistance) {
         return SPLITS[index] * maxDistance;
+    }
+
+    static Matrix4f entityProjection(ShadowCascade cascade, Matrix4fc viewRotation, boolean zeroToOneDepth) {
+        Matrix4f reversedDepth = zeroToOneDepth
+            ? new Matrix4f().translation(0.0F, 0.0F, DEPTH_RANGE).scale(1.0F, 1.0F, MIRRORED_DEPTH)
+            : new Matrix4f().scaling(1.0F, 1.0F, MIRRORED_DEPTH);
+        return reversedDepth.mul(cascade.lightViewProjection()).mul(new Matrix4f(viewRotation).invert());
     }
 
     public static float distance(int renderDistanceBlocks) {

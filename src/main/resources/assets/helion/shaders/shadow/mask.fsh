@@ -25,7 +25,8 @@ float helionShadowVisibility(vec3 position, vec3 normal) {
         vec3 offset = position + normal * texelSize * HELION_NORMAL_OFFSET_TEXELS + LightDirection * texelSize * HELION_LIGHT_OFFSET_TEXELS;
         vec3 clip = (CascadeMatrices[cascade] * vec4(offset, 1.0)).xyz;
         if (abs(clip.x) <= border && abs(clip.y) <= border && clip.z <= 1.0) {
-            return helionCascadeVisibility(cascade, clip);
+            float visibility = helionCascadeVisibility(cascade, clip);
+            return cascade < HELION_ENTITY_CASCADES ? min(visibility, helionEntityVisibility(cascade, clip)) : visibility;
         }
     }
     return HELION_FULLY_LIT;

@@ -179,7 +179,7 @@ final class VanillaFrameDriver {
             new VanillaEntitySource(request, featureFrame, events),
             new VanillaAtmosphereSource(request, sky, fog, events),
             new VanillaTransparencySource(request, sections, featureFrame),
-            new VanillaShadowCasterSource(request, shadowCasters),
+            new VanillaShadowCasterSource(request, shadowCasters, featureFrame),
             List.of(new VanillaEntityOutlineEffect(request.level()))
         );
     }

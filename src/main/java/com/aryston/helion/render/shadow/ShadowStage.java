@@ -7,6 +7,7 @@ import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.shader.FullscreenPass;
 import com.aryston.helion.render.shader.HelionPipelines;
+import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import org.joml.Matrix4f;
 import org.jspecify.annotations.Nullable;
 
 public final class ShadowStage implements RenderStage {
@@ -33,6 +35,9 @@ public final class ShadowStage implements RenderStage {
     private static final String MASK = "helion:shadow_mask";
     private static final String SHADOW_MAP_LABEL = "Helion Shadow Map #";
     private static final String MASK_LABEL = "Helion Shadow Mask";
+    private static final String ENTITY_PASS = "shadow_entities";
+    private static final String ENTITY_MAP = "helion:entity_shadow_map_";
+    private static final String ENTITY_MAP_LABEL = "Helion Entity Shadow Map #";
 
     private final ShadowCasterSource casters;
     private final ShadowResources resources;
@@ -89,7 +94,8 @@ public final class ShadowStage implements RenderStage {
             imported.add(frame.graph().builder().importExternal(SHADOW_MAP + index, shadowMaps.get(index)));
         }
         List<ResourceHandle<RenderTarget>> maps = addShadowMapPass(frame, imported, cascades, due);
-        ResourceHandle<RenderTarget> visibility = addMaskPass(frame, maps, shadowLight, distance, resolution);
+        List<ResourceHandle<RenderTarget>> entityMaps = addEntityPass(frame, cascades, resolution);
+        ResourceHandle<RenderTarget> visibility = addMaskPass(frame, maps, entityMaps, shadowLight, distance, resolution);
         frame.shadows().publish(visibility, shadowLight);
     }
 
@@ -118,9 +124,41 @@ public final class ShadowStage implements RenderStage {
         return List.copyOf(maps);
     }
 
+    private List<ResourceHandle<RenderTarget>> addEntityPass(FrameContext frame, List<ShadowCascade> cascades, int resolution) {
+        List<RenderTarget> targets = resources.entityMaps(resolution);
+        FramePass pass = frame.graph().addPass(ENTITY_PASS);
+        List<ResourceHandle<RenderTarget>> maps = new ArrayList<>(ShadowPipelines.ENTITY_CASCADES);
+        for (int index = 0; index < ShadowPipelines.ENTITY_CASCADES; index++) {
+            maps.add(pass.readsAndWrites(frame.graph().builder().importExternal(ENTITY_MAP + index, targets.get(index))));
+        }
+        HelionCamera camera = frame.camera();
+        pass.executes(frame.graph().timed(ENTITY_PASS, () -> {
+            for (int index = 0; index < ShadowPipelines.ENTITY_CASCADES; index++) {
+                Matrix4f projection = ShadowCascades.entityProjection(cascades.get(index), camera.viewRotation(), camera.zeroToOneDepth());
+                renderEntities(index, maps.get(index).get(), resources.writeEntityProjection(index, projection));
+            }
+        }));
+        return List.copyOf(maps);
+    }
+
+    private void renderEntities(int index, RenderTarget target, GpuBuffer projection) {
+        RenderPassDescriptor descriptor = RenderPassDescriptor.builder(() -> ENTITY_MAP_LABEL + index)
+            .withColorAttachment(Objects.requireNonNull(target.getColorTextureView()))
+            .withDepthAttachment(Objects.requireNonNull(target.getDepthTextureView()), OptionalDouble.of(ShadowPipelines.ENTITY_CLEAR_DEPTH))
+            .build();
+        RenderSystem.backupProjectionMatrix();
+        RenderSystem.setProjectionMatrix(projection.slice(), ProjectionType.ORTHOGRAPHIC);
+        try (RenderPass renderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor)) {
+            casters.renderEntities(renderPass);
+        } finally {
+            RenderSystem.restoreProjectionMatrix();
+        }
+    }
+
     private ResourceHandle<RenderTarget> addMaskPass(
         FrameContext frame,
         List<ResourceHandle<RenderTarget>> shadowMaps,
+        List<ResourceHandle<RenderTarget>> entityMaps,
         ShadowLight shadowLight,
         float distance,
         int resolution
@@ -129,6 +167,7 @@ public final class ShadowStage implements RenderStage {
         CompiledRenderPipeline pipeline = Objects.requireNonNull(mask);
         FramePass pass = frame.graph().addPass(MASK_PASS);
         shadowMaps.forEach(pass::reads);
+        entityMaps.forEach(pass::reads);
         pass.reads(geometry.normal());
         ResourceHandle<RenderTarget> scene = frame.targets().scene();
         pass.reads(scene);
@@ -147,6 +186,9 @@ public final class ShadowStage implements RenderStage {
                 renderPass.setUniform(ShadowPipelines.GEOMETRY_NORMAL_SAMPLER, colorView(geometry.normal()), nearest());
                 for (int index = 0; index < ShadowCascades.COUNT; index++) {
                     renderPass.setUniform(ShadowPipelines.SHADOW_MAP_SAMPLERS.get(index), depthView(shadowMaps.get(index)), nearest());
+                }
+                for (int index = 0; index < ShadowPipelines.ENTITY_CASCADES; index++) {
+                    renderPass.setUniform(ShadowPipelines.ENTITY_SHADOW_SAMPLERS.get(index), depthView(entityMaps.get(index)), nearest());
                 }
             });
             resources.finishFrame();

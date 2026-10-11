@@ -16,10 +16,14 @@ uniform sampler2D ShadowMapSampler0;
 uniform sampler2D ShadowMapSampler1;
 uniform sampler2D ShadowMapSampler2;
 uniform sampler2D ShadowMapSampler3;
+uniform sampler2D EntityShadowSampler0;
+uniform sampler2D EntityShadowSampler1;
 
 const int HELION_NEAR_CASCADE = 0;
 const int HELION_MIDDLE_CASCADE = 1;
 const int HELION_FAR_CASCADE = 2;
+const int HELION_ENTITY_CASCADES = 2;
+const float HELION_DEPTH_RANGE = 1.0;
 
 const int HELION_PCF_FIRST = -1;
 const int HELION_PCF_LAST = 2;
@@ -58,6 +62,32 @@ float helionCascadeVisibility(int cascade, vec3 clip) {
             ivec2 coordinate = clamp(ivec2(base) + ivec2(x, y), ivec2(0), ivec2(resolution - 1));
             float occluder = helionShadowMapDepth(cascade, coordinate);
             visible += clip.z <= occluder ? weight : 0.0;
+            total += weight;
+        }
+    }
+    return visible / total;
+}
+
+float helionEntityDepth(int cascade, ivec2 coordinate) {
+    float reversed = cascade == HELION_NEAR_CASCADE
+        ? texelFetch(EntityShadowSampler0, coordinate, 0).r
+        : texelFetch(EntityShadowSampler1, coordinate, 0).r;
+    return HELION_DEPTH_RANGE - reversed;
+}
+
+float helionEntityVisibility(int cascade, vec3 clip) {
+    int resolution = cascade == HELION_NEAR_CASCADE ? textureSize(EntityShadowSampler0, 0).x : textureSize(EntityShadowSampler1, 0).x;
+    vec2 texel = (clip.xy * 0.5 + 0.5) * float(resolution) - 0.5;
+    vec2 base = floor(texel);
+    vec2 fraction = texel - base;
+    float visible = 0.0;
+    float total = 0.0;
+    for (int y = HELION_PCF_FIRST; y <= HELION_PCF_LAST; y++) {
+        float weightY = helionPcfWeight(y, fraction.y);
+        for (int x = HELION_PCF_FIRST; x <= HELION_PCF_LAST; x++) {
+            float weight = helionPcfWeight(x, fraction.x) * weightY;
+            ivec2 coordinate = clamp(ivec2(base) + ivec2(x, y), ivec2(0), ivec2(resolution - 1));
+            visible += clip.z <= helionEntityDepth(cascade, coordinate) ? weight : 0.0;
             total += weight;
         }
     }

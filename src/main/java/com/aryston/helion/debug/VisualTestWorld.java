@@ -34,6 +34,13 @@ final class VisualTestWorld {
         new Volume(new BlockPos(-6, 2, -5), new BlockPos(-4, 2, -3))
     );
 
+    private static final List<Summon> ENTITIES = List.of(
+        new Summon(-1, 0, -3, "armor_stand"),
+        new Summon(1, 0, -3, "cow")
+    );
+    private static final String FROZEN_ENTITY = " {NoAI:1b,NoGravity:1b,Invulnerable:1b,Rotation:[90f,0f]}";
+    private static final double BLOCK_CENTER = 0.5;
+
     private VisualTestWorld() {
     }
 
@@ -50,6 +57,7 @@ final class VisualTestWorld {
         ));
         LIGHTS.forEach(light -> run(server, light.command(origin)));
         SHADOW_CASTERS.forEach(caster -> run(server, fill(origin.offset(caster.from()), origin.offset(caster.to()), CASTER_BLOCK)));
+        ENTITIES.forEach(entity -> run(server, entity.command(origin)));
     }
 
     static void setTime(IntegratedServer server, int dayTime) {
@@ -81,6 +89,13 @@ final class VisualTestWorld {
     private record Placement(int x, int y, int z, String block) {
         String command(BlockPos origin) {
             return "setblock " + coordinates(origin.offset(x, y, z)) + " " + block;
+        }
+    }
+
+    private record Summon(int x, int y, int z, String entity) {
+        String command(BlockPos origin) {
+            BlockPos position = origin.offset(x, y, z);
+            return "summon " + entity + " " + (position.getX() + BLOCK_CENTER) + " " + position.getY() + " " + (position.getZ() + BLOCK_CENTER) + FROZEN_ENTITY;
         }
     }
 }
