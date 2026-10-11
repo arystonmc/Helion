@@ -91,7 +91,7 @@ enum VisualTestVariant {
             settings.ambientOcclusion(),
             new ImageSettings(
                 toneMapper, ImageSettings.DEFAULT_EXPOSURE, settings.image().autoExposure(), true, bloom, SharpeningSettings.DISABLED, MotionBlurSettings.DISABLED,
-                settings.image().colorGrade()
+                settings.image().colorGrade(), settings.image().depthOfField(), settings.image().edgeSmoothing()
             ),
             settings.geometry(),
             settings.lighting(),

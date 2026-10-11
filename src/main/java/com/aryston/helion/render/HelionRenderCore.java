@@ -7,6 +7,7 @@ import com.aryston.helion.render.graph.RenderSettings;
 import com.aryston.helion.render.atmosphere.PhysicalSkyResources;
 import com.aryston.helion.render.lighting.AmbientOcclusionResources;
 import com.aryston.helion.render.lighting.DeferredLightingResources;
+import com.aryston.helion.render.dof.DepthOfFieldResources;
 import com.aryston.helion.render.motion.MotionBlurResources;
 import com.aryston.helion.render.post.ImageResources;
 import com.aryston.helion.render.shadow.ShadowResources;
@@ -38,6 +39,7 @@ public final class HelionRenderCore {
     private final PhysicalSkyResources sky = new PhysicalSkyResources(resources);
     private final ShadowResources shadows = new ShadowResources(resources);
     private final MotionBlurResources motionBlur = new MotionBlurResources(resources);
+    private final DepthOfFieldResources depthOfField = new DepthOfFieldResources(resources);
     private PassiveListener passiveListener = reason -> { };
     private @Nullable GpuDeviceSummary device;
     private @Nullable PassiveReason passiveReason;
@@ -148,6 +150,7 @@ public final class HelionRenderCore {
         sky.close();
         shadows.close();
         motionBlur.close();
+        depthOfField.close();
         sceneTargets.close();
         LOGGER.info("Helion released {} GPU resources on shutdown", released);
     }
@@ -190,6 +193,10 @@ public final class HelionRenderCore {
 
     public TemporalResources temporal() {
         return temporal;
+    }
+
+    public DepthOfFieldResources depthOfField() {
+        return depthOfField;
     }
 
     public MotionBlurResources motionBlur() {

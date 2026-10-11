@@ -378,6 +378,39 @@ Every class and source file of Helion with its purpose. Find the right file here
 - Path: `src/main/java/com/aryston/helion/render/motion/MotionBlurPrograms.java`
 - Role: The compiled motion blur pipelines; empty when any of them is missing.
 
+### `com.aryston.helion.render.dof`
+
+#### DepthOfFieldStage
+- Path: `src/main/java/com/aryston/helion/render/dof/DepthOfFieldStage.java`
+- Role: Depth of field after motion blur. `dof_focus` writes the smoothed focus distance (the nearest of nine view depths around the screen center, blended with the previous value) into a persistent 1 x 1 target, `dof_downsample` writes half resolution color with the signed circle of confusion (negative in front of the focus) in alpha, `dof_gather` blurs it with 32 golden-angle taps scaled by the circle, where a sample only counts when its own blur reaches the pixel and samples behind the pixel are limited by the pixel's own blur, and `dof_blend` blends the blurred image over the sharp scene by the blur size.
+- Depends on: `DepthOfFieldResources`, `DepthOfFieldPrograms`, `DepthOfFieldPipelines`, `FullscreenPass`.
+
+#### DepthOfFieldResources
+- Path: `src/main/java/com/aryston/helion/render/dof/DepthOfFieldResources.java`
+- Role: Persistent depth of field state owned by the core: the two 1 x 1 R32_FLOAT focus targets used in turn, the `HelionDepthOfField` uniform ring written once per frame (inverse screen size, largest blur of 1.5 % of the screen height times the strength, focus blend, aperture of 0.6 times the strength) and the one-time missing shader warning. `focusBlend` moves the focus 4 per second toward the new distance; the first frame after a reset takes it at once.
+- Depends on: `UniformRing`, `DepthOfFieldPrograms`.
+
+#### DepthOfFieldPipelines
+- Path: `src/main/java/com/aryston/helion/render/dof/DepthOfFieldPipelines.java`
+- Role: Pipeline definitions of the focus, downsample, gather and blend passes (blend with source alpha over the scene), their uniform and sampler names and formats.
+- Depends on: `HelionPipelines`.
+
+#### DepthOfFieldPrograms
+- Path: `src/main/java/com/aryston/helion/render/dof/DepthOfFieldPrograms.java`
+- Role: The compiled depth of field pipelines; empty when any of them is missing.
+
+### `com.aryston.helion.render.edge`
+
+#### EdgeSmoothingStage
+- Path: `src/main/java/com/aryston/helion/render/edge/EdgeSmoothingStage.java`
+- Role: Light single pass anti-aliasing, the first post effect, active only while temporal anti-aliasing is off. `edge_smoothing` writes the filtered image into `helion:edge_smoothed`, `edge_smoothing_apply` copies it back into the scene. Reports missing shaders once.
+- Depends on: `EdgeSmoothingPipelines`, `FullscreenPass`, `HelionPipelines`.
+
+#### EdgeSmoothingPipelines
+- Path: `src/main/java/com/aryston/helion/render/edge/EdgeSmoothingPipelines.java`
+- Role: Pipeline definitions of the smoothing and apply passes, their sampler names and the scene color format.
+- Depends on: `HelionPipelines`.
+
 ### `com.aryston.helion.render.shader`
 
 #### HelionPipelines
@@ -562,7 +595,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ImageSettings
 - Path: `src/main/java/com/aryston/helion/render/post/ImageSettings.java`
-- Role: Player image settings: tone mapper, exposure in stops, automatic exposure, dither, bloom and sharpening and motion blur and the color grade. `needsComposite()` tells whether the output must go through `ImageCompositeStage`. `FOUNDATION` keeps the plain copy.
+- Role: Player image settings: tone mapper, exposure in stops, automatic exposure, dither, bloom and sharpening and motion blur and the color grade and depth of field and edge smoothing. `needsComposite()` tells whether the output must go through `ImageCompositeStage`. `FOUNDATION` keeps the plain copy.
 - Depends on: `ToneMapper`, `BloomSettings`.
 
 #### BloomSettings
@@ -572,6 +605,10 @@ Every class and source file of Helion with its purpose. Find the right file here
 #### SharpeningSettings
 - Path: `src/main/java/com/aryston/helion/render/post/SharpeningSettings.java`
 - Role: Player sharpening settings: enabled, strength. Off by default.
+
+#### DepthOfFieldSettings
+- Path: `src/main/java/com/aryston/helion/render/post/DepthOfFieldSettings.java`
+- Role: Player depth of field settings: enabled, strength (0.5 by default). Off by default while it is experimental. Part of `ImageSettings`.
 
 #### MotionBlurSettings
 - Path: `src/main/java/com/aryston/helion/render/post/MotionBlurSettings.java`
@@ -794,6 +831,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | `src/test/java/com/aryston/helion/render/post/EyeAdaptationTest.java` | A noon scene keeps the vanilla brightness, the exposure stays within its limits, the first measurement applies at once, adaptation is gradual and darkens faster than it brightens, a long pause counts as a short step. |
 | `src/test/java/com/aryston/helion/render/post/ColorGradingLutTest.java` | The neutral grade keeps every color, warm and cool shift the white balance, vivid is more saturated than muted, the table holds every lattice point in order. |
 | `src/test/java/com/aryston/helion/render/motion/MotionBlurResourcesTest.java` | The blur at 30 frames per second equals the strength, faster frames blur longer so the look stays the same, the frame scale stays within its limits. |
+| `src/test/java/com/aryston/helion/render/dof/DepthOfFieldResourcesTest.java` | Focus does not move without time, follows smoothly and settles within a second. |
 | `src/test/java/com/aryston/helion/render/post/ImageResourcesTest.java` | Adaptive bloom threshold: half in darkness, eight times in daylight, rising with ambient light. |
 | `src/test/java/com/aryston/helion/render/post/ToneMapperTest.java` | Tone mapper shader ids are unique and match the constants in `helion_image.glsl`. |
 | `src/test/java/com/aryston/helion/render/camera/HelionFrustumTest.java` | Frustum culling with OpenGL, zero to one and reversed-Z projections. |
@@ -830,9 +868,11 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | `src/main/resources/assets/helion/shaders/lighting/` | Deferred lighting fragment shaders: `deferred_light` (light buffer from the geometry buffer light levels; with `HELION_PHYSICAL_SKY_LIGHT` the sky light color follows the physical sky light per pixel normal at the vanilla brightness,) and `deferred_shading` (albedo times light, HDR above the vanilla cap, fog and chunk fade-in; light-only view with `HELION_LIGHT_ONLY`; with `HELION_SHADOWS` the color is darkened by the shadow transmission after the vanilla brightness curve). |
 | `src/main/resources/assets/helion/shaders/temporal/` | Temporal anti-aliasing fragment shaders: `resolve` (closest-depth reprojection, Catmull-Rom history sample, YCoCg variance clipping, luminance weighted blend, moving object depth in the history alpha with disocclusion rejection and a reactive weight) and `apply` (history back into the scene), `upscale_apply` (history plus the nearest internal depth into the output sized target when upscaling). |
 | `src/main/resources/assets/helion/shaders/motion_blur/` | Motion blur fragment shaders: `tile_max` (longest camera velocity per tile), `neighbor_max` (longest of the 3 x 3 tiles), `gather` (depth and speed weighted blur along the tile velocity, after McGuire et al. 2012) and `apply` (blurred image back into the scene). |
+| `src/main/resources/assets/helion/shaders/depth_of_field/` | Depth of field fragment shaders: `focus` (smoothed center focus distance), `downsample` (half resolution color and signed circle of confusion), `gather` (golden-angle gather with foreground and background rules), `blend` (blurred image over the scene by blur size). |
+| `src/main/resources/assets/helion/shaders/edge_smoothing/` | Edge smoothing fragment shaders: `smooth` (luma edge detection, edge direction, search for the edge ends, sub-pixel blend) and `apply` (result back into the scene). |
 | `src/main/resources/assets/helion/shaders/atmosphere/` | Physical sky fragment shaders: `transmittance` and `multiple_scattering` (constant spectral lookup tables, four targets each), `sky_view` (spectral single and multiple scattering per view direction, converted to RGB, for the sun or the moon with `HELION_MOON_VIEW`; Mie single scattering goes to a second target without its phase), `sky` (sky color per pixel), `fog` (distance fog in the physical horizon color over everything with depth, with the vanilla fog distances), `horizon` (average horizon color over 32 directions into a 1 x 1 target) and `sky_light` (sun light, moon light and sky dome irradiance into a 3 x 1 target). |
 | `src/main/resources/assets/helion/shaders/shadow/` | Shadow shaders: `caster.vsh` and `caster.fsh` (terrain positions only, alpha cutout for cutout layers, crossed plant planes skipped, depth only) and `mask.fsh` (cascade selection, normal and light offset, distance fade, R8 visibility mask). |
-| `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_shadow` (`HelionShadow` block, one shadow map sampler per cascade and one entity shadow sampler per near cascade, 4 x 4 tent filtered lookups, the entity lookup turning reversed depth back into the cascade depth), `helion_geometry` (geometry buffer constants, normal encoding and crossed plant plane detection), `helion_view` (depth and view position), `helion_atmosphere` (Earth atmosphere constants, phase functions, ray-sphere intersection, ground shadow, lookup table sizes and coordinate mappings), `helion_spectrum` (`HelionSpectrum` block, densities, spectral scattering and extinction, spectrum to RGB), `helion_transmittance_lookup` and `helion_scattering_lookup` (samplers and per group lookup of the spectral tables), `helion_sky` (sky settings block), `helion_sky_color` (sun and moon sky view lookup with the Mie phase applied per pixel, rain, Neutral encoding, the camera relative position of a pixel from its depth and the view ray of a pixel from two points on it, so view bobbing never moves the sky against the world), `helion_lighting` (lighting settings block, the vanilla light map terms with bilinear level interpolation, ambient term, boss and darkness adjustment and the brightness option), `helion_sky_light` (physical sky light parts per pixel normal: sun, moon, a desaturated sky dome toward the sky and ground bounce light toward the ground, and the shadow transmission: lit sun, moon and dome light against the shadowed sum, weighted by the share of sky light in the pixel), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur), `helion_color` (sRGB conversion, saturation, the Neutral highlight curve and its inverse, film grade, dither noise), `helion_exposure` (size of the exposure meter), `helion_color_grading` (trilinear lookup in the 32 x 32 x 32 grading table), `helion_temporal` (`HelionTemporal` block shared by the resolve and upscale passes), `helion_motion_blur` (`HelionMotionBlur` block, camera velocity of a pixel from its depth, tile size), `helion_image` (image settings block including the sharpening strength, scene expansion, tone mapper switch, Filmic highlight bleach, bloom threshold, dither), `helion_bloom_downsample` (13-tap downsample with optional Karis average over a `helionBloomTap` function the including shader defines). |
+| `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_shadow` (`HelionShadow` block, one shadow map sampler per cascade and one entity shadow sampler per near cascade, 4 x 4 tent filtered lookups, the entity lookup turning reversed depth back into the cascade depth), `helion_geometry` (geometry buffer constants, normal encoding and crossed plant plane detection), `helion_view` (depth and view position), `helion_atmosphere` (Earth atmosphere constants, phase functions, ray-sphere intersection, ground shadow, lookup table sizes and coordinate mappings), `helion_spectrum` (`HelionSpectrum` block, densities, spectral scattering and extinction, spectrum to RGB), `helion_transmittance_lookup` and `helion_scattering_lookup` (samplers and per group lookup of the spectral tables), `helion_sky` (sky settings block), `helion_sky_color` (sun and moon sky view lookup with the Mie phase applied per pixel, rain, Neutral encoding, the camera relative position of a pixel from its depth and the view ray of a pixel from two points on it, so view bobbing never moves the sky against the world), `helion_lighting` (lighting settings block, the vanilla light map terms with bilinear level interpolation, ambient term, boss and darkness adjustment and the brightness option), `helion_sky_light` (physical sky light parts per pixel normal: sun, moon, a desaturated sky dome toward the sky and ground bounce light toward the ground, and the shadow transmission: lit sun, moon and dome light against the shadowed sum, weighted by the share of sky light in the pixel), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur), `helion_color` (sRGB conversion, saturation, the Neutral highlight curve and its inverse, film grade, dither noise), `helion_exposure` (size of the exposure meter), `helion_color_grading` (trilinear lookup in the 32 x 32 x 32 grading table), `helion_temporal` (`HelionTemporal` block shared by the resolve and upscale passes), `helion_depth_of_field` (`HelionDepthOfField` block, view depth and circle of confusion), `helion_motion_blur` (`HelionMotionBlur` block, camera velocity of a pixel from its depth, tile size), `helion_image` (image settings block including the sharpening strength, scene expansion, tone mapper switch, Filmic highlight bleach, bloom threshold, dither), `helion_bloom_downsample` (13-tap downsample with optional Karis average over a `helionBloomTap` function the including shader defines). |
 
 ## Build Files
 

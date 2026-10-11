@@ -10,6 +10,8 @@ import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.lighting.AmbientOcclusionStage;
 import com.aryston.helion.render.lighting.DeferredLightingStage;
+import com.aryston.helion.render.dof.DepthOfFieldStage;
+import com.aryston.helion.render.edge.EdgeSmoothingStage;
 import com.aryston.helion.render.motion.MotionBlurStage;
 import com.aryston.helion.render.post.BloomStage;
 import com.aryston.helion.render.post.ExposureStage;
@@ -55,7 +57,9 @@ public final class FrameStages {
 
     private static List<RenderStage> postEffects(FrameSources sources, HelionRenderCore core) {
         List<RenderStage> effects = new ArrayList<>(sources.postEffects());
+        effects.add(new EdgeSmoothingStage());
         effects.add(new MotionBlurStage(core.motionBlur()));
+        effects.add(new DepthOfFieldStage(core.depthOfField()));
         effects.add(new ExposureStage(core.image()));
         effects.add(new BloomStage(core.image()));
         effects.add(new SharpeningStage(core.image()));

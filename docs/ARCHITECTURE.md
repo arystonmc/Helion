@@ -54,7 +54,7 @@ renderpearl api + blaze3d    Mojang GPU abstraction (Vulkan backend)
 | 4 | ambient_occlusion | `render.lighting.AmbientOcclusionStage` | Screen space ambient occlusion on the opaque scene, see below. Skipped when disabled or when its shaders failed to compile |
 | 5 | transparent_geometry | `render.geometry.TransparentGeometryStage` | Sorted or order independent transparency, clouds, weather, world border, then outline, see-through and always-on-top features. With the physical sky, also its distance fog, see Physical Sky below |
 | 5a | terrain_depth (in stage 3), taa_resolve, taa_apply | `render.temporal.TemporalStage` | Only with temporal anti-aliasing on: blends the jittered frame with the reprojected history, see Temporal Anti-Aliasing below |
-| 6 | post | `render.post.PostProcessingStage` | Runs post effects in order: the vanilla entity outline effect, then `render.motion.MotionBlurStage` (see Motion Blur below), then `render.post.ExposureStage` (automatic exposure metering), then `render.post.BloomStage`, then `render.post.SharpeningStage`, see Image Pipeline below |
+| 6 | post | `render.post.PostProcessingStage` | Runs post effects in order: the vanilla entity outline effect, then `render.edge.EdgeSmoothingStage` (see Edge Smoothing below), then `render.motion.MotionBlurStage` (see Motion Blur below), then `render.dof.DepthOfFieldStage` (see Depth of Field below), then `render.post.ExposureStage` (automatic exposure metering), then `render.post.BloomStage`, then `render.post.SharpeningStage`, see Image Pipeline below |
 | 7 | present | `render.post.PresentStage` | Copies the scene target into the main target when no image effect is active |
 | 7 | composite | `render.post.ImageCompositeStage` | Replaces present when bloom, sharpening, exposure or Filmic tone mapping is active: tone maps the scene (or its sharpened copy) with bloom into the main target and copies depth |
 | 8 | geometry_view | `render.geometry.GeometryBufferDebugStage` | Only with a geometry buffer view selected: draws normals, block light, sky light or albedo over the main target |
@@ -190,6 +190,19 @@ Off by default (`image.motionBlur.enabled`, experimental). Camera motion blur af
 4. **`motion_blur_apply`** copies the result into the scene. The stage runs after temporal anti-aliasing, so the history stays sharp, and before exposure metering and bloom.
 
 Measured on the visual test platform turning at 60° per second: ground edge detail drops by 11 % with the default strength 0.5, a still camera gives the same image as without blur, and the four passes cost about 0.1 ms at 854 x 480 (about 0.5 ms at 1080p).
+
+## Edge Smoothing
+
+Off by default (`image.edgeSmoothing`). A light anti-aliasing filter for players who do not use temporal anti-aliasing, own implementation from the description of FXAA 3.11 (Lottes, NVIDIA 2011), no code taken: a pixel is skipped when the luma range of its four neighbors is below 1/8 of the brightest neighbor (at least 0.0312); otherwise the edge direction comes from the second derivatives across the 3 x 3 neighborhood, the stronger side picks the edge, a search of up to 10 steps each way along the edge finds its ends, and the pixel is resampled across the edge by how close it is to the nearer end, or by a sub-pixel term for single pixel features, whichever is larger. It runs on the display referred scene before motion blur, exposure and bloom, and it is skipped while temporal anti-aliasing runs, which already smooths edges. It costs about 0.1 ms at 854 x 480.
+
+## Depth of Field
+
+Off by default (`image.depthOfField.enabled`, experimental). A gather depth of field in the spirit of Jimenez, "Next Generation Post Processing in Call of Duty: Advanced Warfare" (SIGGRAPH 2014) and the UE5 cinematic depth of field, own implementation, running after motion blur at the output size.
+
+1. **Focus.** `dof_focus` takes the nearest view depth of nine samples around the screen center and moves the stored focus toward it at 4 per second (1 - e^(-4 t)), in a persistent 1 x 1 target used in turn with its predecessor, so focus follows the crosshair smoothly instead of jumping.
+2. **Circle of confusion.** `(1 - focus / depth) x aperture`, limited to -1 and 1: negative in front of the focus, positive behind it, the sky at the far end. The aperture is 0.6 times the strength and the largest blur 1.5 % of the screen height times the strength, so the default (0.5) gives a gentle lens; a first version with four times the aperture blurred everything off the focus, even the ground in front of the player. Measured cost on the test platform: about 0.07 ms at 854 x 480.
+3. **`dof_downsample`** halves the image and stores the circle of the 2 x 2 pixel with the largest blur in alpha. **`dof_gather`** samples 32 golden-angle taps over the circle of the pixel; a tap counts only when its own circle reaches the pixel, so a blurred foreground spreads over sharp things behind it, and a tap behind the pixel counts only within the pixel's own circle, so a blurred background never bleeds over a sharp foreground.
+4. **`dof_blend`** draws the blurred half resolution image over the sharp scene with an alpha of the blur size in pixels minus half a pixel, so the focused area stays untouched.
 
 ## Physical Sky
 

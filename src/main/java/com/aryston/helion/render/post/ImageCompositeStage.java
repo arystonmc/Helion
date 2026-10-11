@@ -10,6 +10,7 @@ import com.mojang.blaze3d.resource.ResourceHandle;
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -61,17 +62,14 @@ public final class ImageCompositeStage implements RenderStage {
             : HelionPipelines.compiled(ImagePipelines.COMPOSITE_GRADED);
         pass.executes(frame.graph().timed(NAME, () -> {
             GpuBuffer uniforms = resources.frameUniforms(frame);
+            Optional<GpuTextureView> lookupTable = graded.map(pipeline -> resources.colorGrading().lookupTable(grade));
             if (debugView) {
                 FullscreenPass.draw("Helion Bloom Debug", output.get(), compiled.bloomDebug(), bloomBindings(uniforms, bloomSource));
             } else {
                 FullscreenPass.draw("Helion Image Composite", output.get(), graded.orElse(compiled.composite()), bloomBindings(uniforms, bloomSource)
                     .andThen(renderPass -> {
                         renderPass.setUniform(ImagePipelines.SCENE_COLOR_SAMPLER, PostSampling.colorView(color), PostSampling.nearest());
-                        if (graded.isPresent()) {
-                            renderPass.setUniform(
-                                ImagePipelines.GRADING_LUT_SAMPLER, resources.colorGrading().lookupTable(grade), PostSampling.linear()
-                            );
-                        }
+                        lookupTable.ifPresent(table -> renderPass.setUniform(ImagePipelines.GRADING_LUT_SAMPLER, table, PostSampling.linear()));
                     }));
             }
             output.get().copyDepthFrom(scene.get());

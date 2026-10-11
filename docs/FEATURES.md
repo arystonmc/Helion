@@ -67,6 +67,22 @@ A soft, film-like blur when you turn or move quickly.
 - Settings: on or off and its strength in the effects settings; off by default while it is experimental
 - Since: Unreleased
 
+### Edge Smoothing
+Softer block edges for almost no cost when temporal anti-aliasing is off.
+
+- One quick filter pass that smooths jagged edges, like FXAA
+- Used only while temporal anti-aliasing is off; the two never stack
+- Settings: on or off in the image settings; off by default
+- Since: Unreleased
+
+### Depth of Field (Experimental)
+A camera lens look: what you look at stays sharp, the rest softly blurs.
+
+- Focus follows the center of the screen and moves smoothly when you look at something nearer or farther
+- Close objects blur over the background naturally, and the background never smears over sharp things in front
+- Settings: on or off and its strength in the effects settings; off by default while it is experimental
+- Since: Unreleased
+
 ### Color Grading
 Give the whole picture a mood with one click.
 

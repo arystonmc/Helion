@@ -8,12 +8,14 @@ public record ImageSettings(
     BloomSettings bloom,
     SharpeningSettings sharpening,
     MotionBlurSettings motionBlur,
-    ColorGrade colorGrade
+    ColorGrade colorGrade,
+    DepthOfFieldSettings depthOfField,
+    boolean edgeSmoothing
 ) {
     public static final float DEFAULT_EXPOSURE = 0.0F;
     public static final ImageSettings FOUNDATION = new ImageSettings(
         ToneMapper.NEUTRAL, DEFAULT_EXPOSURE, false, true, BloomSettings.DISABLED, SharpeningSettings.DISABLED, MotionBlurSettings.DISABLED,
-        ColorGrade.NEUTRAL
+        ColorGrade.NEUTRAL, DepthOfFieldSettings.DISABLED, false
     );
 
     public boolean needsComposite() {

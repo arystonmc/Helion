@@ -7,6 +7,8 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Edge smoothing: a light anti-aliasing filter for when temporal anti-aliasing is off
+- Experimental depth of field that keeps the center of the screen in focus
 - Color grading presets: Warm, Cool, Vivid, Cinematic and Muted
 - Render scale with temporal upscaling for more frames per second at a lower internal resolution
 - Shadows from mobs, players, chests, item frames and dropped items near you
