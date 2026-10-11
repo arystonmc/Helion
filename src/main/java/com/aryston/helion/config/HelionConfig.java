@@ -15,6 +15,7 @@ import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.post.ToneMapper;
 import com.aryston.helion.render.shadow.ShadowQuality;
 import com.aryston.helion.render.shadow.ShadowSettings;
+import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalSettings;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -72,6 +73,7 @@ public final class HelionConfig {
     static final ModConfigSpec.DoubleValue SKY_LIGHT_INTENSITY;
     static final ModConfigSpec.BooleanValue LIGHT_ONLY_VIEW;
     static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
+    static final ModConfigSpec.EnumValue<RenderScale> RENDER_SCALE;
     static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
     static final ModConfigSpec.BooleanValue SHADOWS_ENABLED;
     static final ModConfigSpec.EnumValue<ShadowQuality> SHADOW_QUALITY;
@@ -173,6 +175,9 @@ public final class HelionConfig {
         TEMPORAL_ENABLED = BUILDER
             .translation("helion.configuration.temporalAntiAliasing.enabled")
             .define("enabled", false);
+        RENDER_SCALE = BUILDER
+            .translation("helion.configuration.temporalAntiAliasing.renderScale")
+            .defineEnum("renderScale", RenderScale.NATIVE);
         BUILDER.pop();
 
         BUILDER.translation("helion.configuration.physicalSky").push("physicalSky");
@@ -202,7 +207,7 @@ public final class HelionConfig {
             imageSettings(),
             geometryBufferSettings(),
             lightingSettings(),
-            new TemporalSettings(TEMPORAL_ENABLED.getAsBoolean()),
+            new TemporalSettings(TEMPORAL_ENABLED.getAsBoolean(), RENDER_SCALE.get()),
             new PhysicalSkySettings(PHYSICAL_SKY_ENABLED.getAsBoolean()),
             new ShadowSettings(SHADOWS_ENABLED.getAsBoolean(), SHADOW_QUALITY.get())
         );

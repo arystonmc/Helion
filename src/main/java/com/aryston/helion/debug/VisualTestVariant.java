@@ -13,6 +13,7 @@ import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.post.ToneMapper;
 import com.aryston.helion.render.shadow.ShadowQuality;
 import com.aryston.helion.render.shadow.ShadowSettings;
+import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalSettings;
 import java.util.Locale;
 
@@ -67,7 +68,7 @@ enum VisualTestVariant {
                 ImageSettings.FOUNDATION,
                 settings.geometry().withoutView(),
                 DeferredLightingSettings.DISABLED,
-                new TemporalSettings(true),
+                new TemporalSettings(true, RenderScale.NATIVE),
                 PhysicalSkySettings.DISABLED,
                 ShadowSettings.DISABLED
             );

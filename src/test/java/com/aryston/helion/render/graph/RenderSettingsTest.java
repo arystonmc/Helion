@@ -12,6 +12,7 @@ import com.aryston.helion.render.lighting.DeferredLightingSettings;
 import com.aryston.helion.render.post.ImageSettings;
 import com.aryston.helion.render.shadow.ShadowQuality;
 import com.aryston.helion.render.shadow.ShadowSettings;
+import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalSettings;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +23,7 @@ class RenderSettingsTest {
         ImageSettings.FOUNDATION,
         new GeometryBufferSettings(true, GeometryBufferView.NORMALS),
         new DeferredLightingSettings(true, STRONG_BLOCK_LIGHT, DeferredLightingSettings.DEFAULT_SKY_LIGHT_INTENSITY, true),
-        new TemporalSettings(true),
+        new TemporalSettings(true, RenderScale.NATIVE),
         new PhysicalSkySettings(true),
         new ShadowSettings(true, ShadowQuality.HIGH)
     );

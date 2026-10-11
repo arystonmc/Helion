@@ -34,6 +34,16 @@ public final class FullscreenPass {
         }
     }
 
+    public static void drawWithDepth(String label, RenderTarget target, CompiledRenderPipeline pipeline, Consumer<RenderPass> bindings) {
+        RenderPassDescriptor descriptor = RenderPassDescriptor.builder(() -> label)
+            .withColorAttachment(Objects.requireNonNull(target.getColorTextureView()))
+            .withDepthAttachment(Objects.requireNonNull(target.getDepthTextureView()))
+            .build();
+        try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor)) {
+            drawTriangle(pass, pipeline, bindings);
+        }
+    }
+
     private static void drawTriangle(RenderPass pass, CompiledRenderPipeline pipeline, Consumer<RenderPass> bindings) {
         bindings.accept(pass);
         pass.setPipeline(pipeline);

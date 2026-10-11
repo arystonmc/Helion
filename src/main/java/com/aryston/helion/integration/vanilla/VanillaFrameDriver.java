@@ -14,6 +14,7 @@ import com.aryston.helion.render.lighting.LightEnvironment;
 import com.aryston.helion.render.post.PostResults;
 import com.aryston.helion.render.shadow.ShadowResults;
 import com.aryston.helion.render.scene.SceneSnapshot;
+import com.aryston.helion.render.temporal.FrameSize;
 import com.aryston.helion.render.temporal.TemporalFrame;
 import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
@@ -54,7 +55,7 @@ final class VanillaFrameDriver {
         LevelRendererAccessor level = request.level();
         HelionRenderCore core = HelionRenderCore.get();
         RenderTarget output = level.helion$gameRenderer().mainRenderTarget();
-        RenderTarget scene = core.beginLevelFrame(output);
+        RenderTarget scene = core.beginLevelFrame(output, core.temporal().upscaling(settings.temporal()));
         RenderSystem.isRenderingLevel = true;
         try {
             keepVanillaSkyExtracted(request, output);
@@ -117,7 +118,10 @@ final class VanillaFrameDriver {
             ChunkSectionsToRender sections = prepareSections(request, orderIndependent);
             HelionCamera unjitteredCamera = camera(camera);
             TemporalFrame temporal = HelionRenderCore.get().temporal()
-                .begin(settings.temporal(), settings.image().motionBlur().enabled(), unjitteredCamera, scene.width, scene.height);
+                .begin(
+                    settings.temporal(), settings.image().motionBlur().enabled(), unjitteredCamera,
+                    new FrameSize(scene.width, scene.height, output.width, output.height)
+                );
             HelionCamera helionCamera = unjitteredCamera;
             if (temporal.active()) {
                 RenderSystem.setProjectionMatrix(jitteredProjection(temporal), ProjectionType.PERSPECTIVE);
@@ -133,6 +137,8 @@ final class VanillaFrameDriver {
                     orderIndependent,
                     scene.width,
                     scene.height,
+                    output.width,
+                    output.height,
                     Objects.requireNonNull(scene.getColorTexture()).getFormat(),
                     ambientLight.update(camera.blockPos),
                     lightEnvironment(gameRenderer.gameRenderState().lightmapRenderState)

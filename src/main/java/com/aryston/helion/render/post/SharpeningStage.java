@@ -45,8 +45,8 @@ public final class SharpeningStage implements RenderStage {
         ResourceHandle<RenderTarget> scene = frame.targets().scene();
         pass.reads(scene);
         ResourceHandle<RenderTarget> sharpened = pass.createsInternal(TARGET, new RenderTargetDescriptor(
-            frame.scene().width(),
-            frame.scene().height(),
+            frame.scene().outputWidth(),
+            frame.scene().outputHeight(),
             new RenderTargetDescriptor.TextureProperties(null, ImagePipelines.OUTPUT_FORMAT),
             null
         ));

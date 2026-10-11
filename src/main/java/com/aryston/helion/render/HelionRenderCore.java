@@ -10,6 +10,7 @@ import com.aryston.helion.render.lighting.DeferredLightingResources;
 import com.aryston.helion.render.motion.MotionBlurResources;
 import com.aryston.helion.render.post.ImageResources;
 import com.aryston.helion.render.shadow.ShadowResources;
+import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalResources;
 import com.aryston.helion.render.resource.GpuResources;
 import com.aryston.helion.render.resource.SceneTargets;
@@ -95,8 +96,8 @@ public final class HelionRenderCore {
         passivate(PassiveReason.RENDER_FAILURE);
     }
 
-    public RenderTarget beginLevelFrame(RenderTarget mainTarget) {
-        RenderTarget scene = sceneTargets.matching(mainTarget);
+    public RenderTarget beginLevelFrame(RenderTarget mainTarget, RenderScale scale) {
+        RenderTarget scene = sceneTargets.matching(mainTarget, scale);
         GpuDeviceSummary summary = detectDevice();
         if (debugMode && summary.supportsTimestamps()) {
             timings.beginFrame(summary.timestampPeriod());

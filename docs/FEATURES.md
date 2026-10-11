@@ -94,6 +94,7 @@ Torches, lanterns and lava finally shine brighter than the vanilla light limit.
 ### Temporal Anti-Aliasing (Experimental)
 Smooth block edges and calm, shimmer-free distant textures.
 
+- Render scale: draw the world at 77, 67, 59 or 50 % of the screen resolution and let anti-aliasing rebuild the full picture over a few frames, like FSR or TSR, for a large frame rate boost; menus and the hand stay sharp at full resolution
 - Moves the camera by less than a pixel every frame and blends each frame with the previous ones, like modern games do
 - Works while you walk and turn; the picture gets a little softer, which the sharpening option makes up for
 - Also smooths ambient occlusion, which varies its samples every frame while anti-aliasing is on

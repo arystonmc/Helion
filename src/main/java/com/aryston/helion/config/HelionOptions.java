@@ -12,6 +12,7 @@ import com.aryston.helion.render.lighting.AmbientOcclusionAlgorithm;
 import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
 import com.aryston.helion.render.post.ToneMapper;
 import com.aryston.helion.render.shadow.ShadowQuality;
+import com.aryston.helion.render.temporal.RenderScale;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.network.chat.Component;
@@ -45,6 +46,7 @@ final class HelionOptions {
     final ConfigOption<Double> skyLight;
     final ConfigOption<Boolean> shadows;
     final ConfigOption<ShadowQuality> shadowQuality;
+    final ConfigOption<RenderScale> renderScale;
     final ConfigOption<Boolean> bloom;
     final ConfigOption<Double> bloomIntensity;
     final ConfigOption<Double> bloomThreshold;
@@ -92,6 +94,8 @@ final class HelionOptions {
             .cost(HIGH_COST).requires(this.lighting, this.physicalSky).preview(VANILLA_PREVIEW, preview("shadows"), PREVIEW_ASPECT);
         this.shadowQuality = choice("shadowQuality", HelionConfig.SHADOW_QUALITY, ShadowQuality.class, Icons.GAUGE, "shadows.quality")
             .style(ChoiceStyle.SEGMENTED).cost(HIGH_COST).requires(this.shadows);
+        this.renderScale = choice("renderScale", HelionConfig.RENDER_SCALE, RenderScale.class, Icons.GAUGE, "temporalAntiAliasing.renderScale")
+            .style(ChoiceStyle.DROPDOWN).requires(this.temporal);
         this.bloom = toggle("bloom", HelionConfig.BLOOM_ENABLED, Icons.SPARKLE, "image.bloom").cost(LOW_COST).requires(this.enabled)
             .preview(VANILLA_PREVIEW, preview("bloom"), PREVIEW_ASPECT);
         this.bloomIntensity = slider("bloomIntensity", HelionConfig.BLOOM_INTENSITY, HelionConfig.MIN_BLOOM_INTENSITY, HelionConfig.MAX_BLOOM_INTENSITY, STRENGTH_STEP, Icons.SPARKLE, "image.bloom.intensity")
@@ -123,7 +127,7 @@ final class HelionOptions {
     List<ConfigOption<?>> all() {
         return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.ambientOcclusion, this.ambientOcclusionMethod,
             this.ambientOcclusionQuality, this.ambientOcclusionStrength, this.ambientOcclusionRadius, this.lighting, this.blockLight, this.skyLight,
-            this.shadows, this.shadowQuality, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.dither,
+            this.shadows, this.shadowQuality, this.renderScale, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.dither,
             this.sharpening, this.sharpeningStrength, this.motionBlur, this.motionBlurStrength, this.debugMode, this.ambientOcclusionView,
             this.bloomView, this.geometryBufferView, this.lightView);
     }

@@ -4,6 +4,8 @@ import com.aryston.helion.render.shader.HelionPipelines;
 import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
 import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.CompareOp;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.pipeline.UniformType;
 import java.util.List;
@@ -17,6 +19,7 @@ public final class TemporalPipelines {
     public static final String TERRAIN_DEPTH_SAMPLER = "TerrainDepthSampler";
     public static final GpuFormat HISTORY_FORMAT = GpuFormat.RGBA16_FLOAT;
     public static final GpuFormat SCENE_COLOR_FORMAT = GpuFormat.RGBA8_UNORM;
+    public static final GpuFormat UPSCALED_DEPTH_FORMAT = GpuFormat.D32_FLOAT;
 
     private static final String RESOLVE_SHADER = "temporal/resolve";
     private static final String MOVING_OBJECTS_DEFINE = "HELION_MOVING_OBJECTS";
@@ -34,6 +37,16 @@ public final class TemporalPipelines {
         .withColorTargetState(new ColorTargetState(Optional.empty(), HISTORY_FORMAT, ColorTargetState.WRITE_ALL))
         .build();
 
+    public static final RenderPipeline UPSCALE_APPLY = HelionPipelines.fullscreen("temporal/upscale_apply")
+        .withBindGroupLayout(BindGroupLayout.builder()
+            .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
+            .withUniform(HISTORY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .build())
+        .withColorTargetState(new ColorTargetState(Optional.empty(), SCENE_COLOR_FORMAT, ColorTargetState.WRITE_ALL))
+        .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, true))
+        .build();
+
     public static final RenderPipeline APPLY = HelionPipelines.fullscreen("temporal/apply")
         .withBindGroupLayout(BindGroupLayout.builder()
             .withUniform(HISTORY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
@@ -45,7 +58,7 @@ public final class TemporalPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(RESOLVE, RESOLVE_MOVING_OBJECTS, APPLY);
+        return List.of(RESOLVE, RESOLVE_MOVING_OBJECTS, APPLY, UPSCALE_APPLY);
     }
 
     private static BindGroupLayout.Builder resolveBindings() {

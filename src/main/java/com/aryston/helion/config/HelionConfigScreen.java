@@ -49,7 +49,7 @@ public final class HelionConfigScreen {
             .group(text("group.system"))
             .page("performance", text("page.performance"), Icons.BOLT, page -> page
                 .notice(text("performance.notice"))
-                .fullSection(text("section.quality"), section -> section.add(options.ambientOcclusionQuality).add(options.shadowQuality)))
+                .fullSection(text("section.quality"), section -> section.add(options.ambientOcclusionQuality).add(options.shadowQuality).add(options.renderScale)))
             .page("advanced", text("page.advanced"), Icons.CMD, page -> page
                 .fullSection(text("section.debug"), section -> section.add(options.debugMode))
                 .fullSection(text("section.views"), section -> section.collapsible(false).add(options.ambientOcclusionView).add(options.bloomView)

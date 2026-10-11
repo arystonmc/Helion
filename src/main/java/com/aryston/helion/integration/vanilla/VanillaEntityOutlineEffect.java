@@ -30,7 +30,7 @@ final class VanillaEntityOutlineEffect implements RenderStage {
         PostChain chain = level.helion$shaderManager()
             .getPostChain(LevelRendererAccessor.helion$entityOutlinePostChainId(), LevelTargetBundle.OUTLINE_TARGETS);
         if (chain != null) {
-            chain.addToFrame(frame.graph().builder(), frame.scene().width(), frame.scene().height(), level.helion$targets());
+            chain.addToFrame(frame.graph().builder(), frame.scene().outputWidth(), frame.scene().outputHeight(), level.helion$targets());
         }
     }
 }

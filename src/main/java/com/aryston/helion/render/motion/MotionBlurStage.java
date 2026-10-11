@@ -97,7 +97,7 @@ public final class MotionBlurStage implements RenderStage {
         pass.reads(scene);
         pass.reads(neighborMax);
         ResourceHandle<RenderTarget> blurred = pass.createsInternal(
-            BLURRED_TARGET, target(frame.scene().width(), frame.scene().height(), MotionBlurPipelines.SCENE_COLOR_FORMAT)
+            BLURRED_TARGET, target(frame.scene().outputWidth(), frame.scene().outputHeight(), MotionBlurPipelines.SCENE_COLOR_FORMAT)
         );
         pass.executes(frame.graph().timed(GATHER_PASS, () -> FullscreenPass.draw(
             "Helion Motion Blur Gather", blurred.get(), compiled.gather(), renderPass -> {
@@ -124,12 +124,12 @@ public final class MotionBlurStage implements RenderStage {
 
     private GpuBuffer uniforms(FrameContext frame) {
         return resources.frameUniforms(
-            frame.temporal().reprojection(), frame.settings().image().motionBlur(), frame.scene().width(), frame.scene().height()
+            frame.temporal().reprojection(), frame.settings().image().motionBlur(), frame.scene().outputWidth(), frame.scene().outputHeight()
         );
     }
 
     private static RenderTargetDescriptor tileTarget(FrameContext frame) {
-        return target(tiles(frame.scene().width()), tiles(frame.scene().height()), MotionBlurPipelines.VELOCITY_FORMAT);
+        return target(tiles(frame.scene().outputWidth()), tiles(frame.scene().outputHeight()), MotionBlurPipelines.VELOCITY_FORMAT);
     }
 
     private static int tiles(int pixels) {
