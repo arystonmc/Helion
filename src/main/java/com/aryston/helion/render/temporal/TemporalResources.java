@@ -11,6 +11,7 @@ import java.util.Optional;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector2f;
+import org.joml.Vector2fc;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -21,6 +22,7 @@ public final class TemporalResources {
     private static final double TELEPORT_DISTANCE = 16.0;
     private static final float HISTORY_VALID = 1.0F;
     private static final float HISTORY_INVALID = 0.0F;
+    private static final Vector2fc NO_JITTER = new Vector2f(0.0F, 0.0F);
     private static final int UNIFORM_SIZE = new Std140SizeCalculator()
         .putMat4f()
         .putVec2()
@@ -42,11 +44,10 @@ public final class TemporalResources {
         this.history = new TemporalHistory(resources);
     }
 
-    public TemporalFrame begin(TemporalSettings settings, HelionCamera camera, int width, int height) {
+    public TemporalFrame begin(TemporalSettings settings, boolean tracksCameraMotion, HelionCamera camera, int width, int height) {
         Matrix4fc projection = camera.levelProjection();
         if (!settings.enabled() || !compilePrograms()) {
-            invalidate();
-            return TemporalFrame.INACTIVE;
+            return tracksCameraMotion ? cameraMotionOnly(camera) : inactive();
         }
         boolean resized = history.ensureSize(width, height);
         Vector2f jitter = JitterSequence.ndcOffset(frameIndex++, width, height);
@@ -60,7 +61,23 @@ public final class TemporalResources {
         Matrix4f reprojection = valid ? last.reprojection(camera.position(), jitter, jitteredViewProjection) : new Matrix4f();
         previous = new PreviousView(projection, camera.viewRotation(), camera.position());
         historyWritten = false;
-        return new TemporalFrame(true, jitteredProjection, reprojection, valid);
+        return new TemporalFrame(true, jitteredProjection, reprojection, valid, valid);
+    }
+
+    private TemporalFrame cameraMotionOnly(HelionCamera camera) {
+        historyWritten = false;
+        Matrix4fc projection = camera.levelProjection();
+        Matrix4f viewProjection = new Matrix4f(projection).mul(camera.viewRotation());
+        PreviousView last = previous;
+        boolean valid = last != null && last.position().distance(camera.position()) < TELEPORT_DISTANCE;
+        Matrix4f reprojection = valid ? last.reprojection(camera.position(), NO_JITTER, viewProjection) : new Matrix4f();
+        previous = new PreviousView(projection, camera.viewRotation(), camera.position());
+        return new TemporalFrame(false, projection, reprojection, false, valid);
+    }
+
+    private TemporalFrame inactive() {
+        invalidate();
+        return TemporalFrame.INACTIVE;
     }
 
     public void invalidate() {

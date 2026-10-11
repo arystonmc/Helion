@@ -54,6 +54,8 @@ final class HelionOptions {
     final ConfigOption<Boolean> dither;
     final ConfigOption<Boolean> sharpening;
     final ConfigOption<Double> sharpeningStrength;
+    final ConfigOption<Boolean> motionBlur;
+    final ConfigOption<Double> motionBlurStrength;
     final ConfigOption<Boolean> debugMode;
     final ConfigOption<Boolean> ambientOcclusionView;
     final ConfigOption<Boolean> bloomView;
@@ -105,6 +107,10 @@ final class HelionOptions {
         this.sharpeningStrength = slider("sharpeningStrength", HelionConfig.SHARPENING_STRENGTH, HelionConfig.MIN_SHARPENING_STRENGTH,
             HelionConfig.MAX_SHARPENING_STRENGTH, STRENGTH_STEP, Icons.EYE,
             "image.sharpening.strength").percent().requires(this.sharpening);
+        this.motionBlur = experimental(toggle("motionBlur", HelionConfig.MOTION_BLUR_ENABLED, Icons.BLUR, "image.motionBlur"))
+            .cost(LOW_COST).requires(this.enabled);
+        this.motionBlurStrength = slider("motionBlurStrength", HelionConfig.MOTION_BLUR_STRENGTH, HelionConfig.MIN_MOTION_BLUR_STRENGTH,
+            HelionConfig.MAX_MOTION_BLUR_STRENGTH, STRENGTH_STEP, Icons.BLUR, "image.motionBlur.strength").percent().requires(this.motionBlur);
         this.debugMode = toggle("debugMode", HelionConfig.DEBUG_MODE, Icons.CMD, "debugMode");
         this.ambientOcclusionView = toggle("ambientOcclusionView", HelionConfig.AMBIENT_OCCLUSION_DEBUG_VIEW, Icons.SHADOW, "ambientOcclusion.debugView")
             .requires(this.ambientOcclusion);
@@ -118,8 +124,8 @@ final class HelionOptions {
         return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.ambientOcclusion, this.ambientOcclusionMethod,
             this.ambientOcclusionQuality, this.ambientOcclusionStrength, this.ambientOcclusionRadius, this.lighting, this.blockLight, this.skyLight,
             this.shadows, this.shadowQuality, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.dither,
-            this.sharpening, this.sharpeningStrength, this.debugMode, this.ambientOcclusionView, this.bloomView, this.geometryBufferView,
-            this.lightView);
+            this.sharpening, this.sharpeningStrength, this.motionBlur, this.motionBlurStrength, this.debugMode, this.ambientOcclusionView,
+            this.bloomView, this.geometryBufferView, this.lightView);
     }
 
     String key(ConfigOption<?> option) {

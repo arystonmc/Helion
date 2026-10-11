@@ -54,7 +54,7 @@ renderpearl api + blaze3d    Mojang GPU abstraction (Vulkan backend)
 | 4 | ambient_occlusion | `render.lighting.AmbientOcclusionStage` | Screen space ambient occlusion on the opaque scene, see below. Skipped when disabled or when its shaders failed to compile |
 | 5 | transparent_geometry | `render.geometry.TransparentGeometryStage` | Sorted or order independent transparency, clouds, weather, world border, then outline, see-through and always-on-top features. With the physical sky, also its distance fog, see Physical Sky below |
 | 5a | terrain_depth (in stage 3), taa_resolve, taa_apply | `render.temporal.TemporalStage` | Only with temporal anti-aliasing on: blends the jittered frame with the reprojected history, see Temporal Anti-Aliasing below |
-| 6 | post | `render.post.PostProcessingStage` | Runs post effects in order: the vanilla entity outline effect, then `render.post.ExposureStage` (automatic exposure metering), then `render.post.BloomStage`, then `render.post.SharpeningStage`, see Image Pipeline below |
+| 6 | post | `render.post.PostProcessingStage` | Runs post effects in order: the vanilla entity outline effect, then `render.motion.MotionBlurStage` (see Motion Blur below), then `render.post.ExposureStage` (automatic exposure metering), then `render.post.BloomStage`, then `render.post.SharpeningStage`, see Image Pipeline below |
 | 7 | present | `render.post.PresentStage` | Copies the scene target into the main target when no image effect is active |
 | 7 | composite | `render.post.ImageCompositeStage` | Replaces present when bloom, sharpening, exposure or Filmic tone mapping is active: tone maps the scene (or its sharpened copy) with bloom into the main target and copies depth |
 | 8 | geometry_view | `render.geometry.GeometryBufferDebugStage` | Only with a geometry buffer view selected: draws normals, block light, sky light or albedo over the main target |
@@ -174,6 +174,17 @@ Off by default (`temporalAntiAliasing.enabled`). Every frame the level is drawn 
 5. **History** lives in two persistent RGBA16_FLOAT targets (`TemporalHistory`) used in turn and imported into the frame graph. It is dropped after a resize, a camera jump of 16 blocks or more, a frame without temporal anti-aliasing and every vanilla frame.
 
 The techniques follow Karis, "High Quality Temporal Supersampling" (SIGGRAPH 2014), Salvi's variance clipping (GDC 2016) and Jimenez's five-tap Catmull-Rom history filter (Filmic SMAA, SIGGRAPH 2016), implemented from the publications.
+
+## Motion Blur
+
+Off by default (`image.motionBlur.enabled`, experimental). Camera motion blur after the approach of McGuire, Hennessy, Bukowski and Osman, "A Reconstruction Filter for Plausible Motion Blur" (I3D 2012), the method behind the motion blur of UE5 and most current engines; own implementation from the publication.
+
+1. **Velocity.** Every pixel gets the screen distance it moved since the last frame from its depth and the camera reprojection of `TemporalResources` (the same matrix temporal anti-aliasing uses; with anti-aliasing off it is tracked without jitter). Entities have no velocity of their own yet, so the blur follows camera movement and turning only. The vector is scaled by the strength and by 1/30 s divided by the smoothed frame time (at most 8 frames), so the blur looks the same at 60 and at 240 frames per second, and limited to 48 pixels.
+2. **`motion_blur_tiles`** keeps the longest vector of 16 samples per 16 x 16 pixel tile, **`motion_blur_neighbors`** the longest of the 3 x 3 tiles around, so blur reaches across the edges of moving areas.
+3. **`motion_blur_gather`** skips pixels whose neighborhood moves less than half a pixel, so a still camera leaves the image untouched. Otherwise it takes 12 taps along the tile vector with interleaved gradient noise against banding and weights each tap by soft depth comparison, cone and cylinder terms of both speeds, so a sharp foreground edge never smears into the background behind it.
+4. **`motion_blur_apply`** copies the result into the scene. The stage runs after temporal anti-aliasing, so the history stays sharp, and before exposure metering and bloom.
+
+Measured on the visual test platform turning at 60° per second: ground edge detail drops by 11 % with the default strength 0.5, a still camera gives the same image as without blur, and the four passes cost about 0.1 ms at 854 x 480 (about 0.5 ms at 1080p).
 
 ## Physical Sky
 

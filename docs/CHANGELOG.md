@@ -9,6 +9,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ### Added
 - Settings codes: copy your Helion settings as a code and paste a code to apply someone else's
 - Experimental automatic exposure that brightens caves, nights and backlit terrain like eyes adapting
+- Experimental motion blur when the camera moves or turns, with a strength setting
 
 ### Changed
 - Make sun and moon shadows much faster by redrawing far shadows less often

@@ -8,6 +8,7 @@ import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.lighting.DeferredLightingSettings;
 import com.aryston.helion.render.post.BloomSettings;
 import com.aryston.helion.render.post.ImageSettings;
+import com.aryston.helion.render.post.MotionBlurSettings;
 import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.post.ToneMapper;
 import com.aryston.helion.render.shadow.ShadowQuality;
@@ -87,7 +88,9 @@ enum VisualTestVariant {
         );
         return new RenderSettings(
             settings.ambientOcclusion(),
-            new ImageSettings(toneMapper, ImageSettings.DEFAULT_EXPOSURE, settings.image().autoExposure(), true, bloom, SharpeningSettings.DISABLED),
+            new ImageSettings(
+                toneMapper, ImageSettings.DEFAULT_EXPOSURE, settings.image().autoExposure(), true, bloom, SharpeningSettings.DISABLED, MotionBlurSettings.DISABLED
+            ),
             settings.geometry(),
             settings.lighting(),
             settings.temporal(),

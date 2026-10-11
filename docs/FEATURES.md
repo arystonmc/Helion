@@ -58,6 +58,15 @@ Your eyes adjust to the light, and now the picture does too.
 - Settings: on or off in the image settings; off by default while it is experimental
 - Since: Unreleased
 
+### Motion Blur (Experimental)
+A soft, film-like blur when you turn or move quickly.
+
+- The picture blurs along the direction the camera moves or turns, like a film camera, and stays perfectly sharp when you stand still
+- Close objects keep crisp edges instead of smearing into what is behind them
+- Looks the same at every frame rate, from 60 to 240 frames per second
+- Settings: on or off and its strength in the effects settings; off by default while it is experimental
+- Since: Unreleased
+
 ### Sharpening
 Crisper block textures without the halos of ordinary sharpening filters.
 

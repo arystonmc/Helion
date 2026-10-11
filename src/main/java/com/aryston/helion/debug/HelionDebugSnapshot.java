@@ -137,6 +137,8 @@ public final class HelionDebugSnapshot {
         section.addProperty("autoExposure", settings.autoExposure());
         section.addProperty("adaptedExposure", round(adaptation.exposure()));
         section.addProperty("meteredLog2Luminance", round(adaptation.meteredLog2Luminance()));
+        section.addProperty("motionBlur", settings.motionBlur().enabled());
+        section.addProperty("motionBlurStrength", round(settings.motionBlur().strength()));
         section.addProperty("dither", settings.dither());
         section.addProperty("composite", settings.needsComposite());
         return section;

@@ -10,6 +10,7 @@ import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.lighting.DeferredLightingSettings;
 import com.aryston.helion.render.post.BloomSettings;
 import com.aryston.helion.render.post.ImageSettings;
+import com.aryston.helion.render.post.MotionBlurSettings;
 import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.post.ToneMapper;
 import com.aryston.helion.render.shadow.ShadowQuality;
@@ -30,6 +31,8 @@ public final class HelionConfig {
     static final double MAX_BLOOM_THRESHOLD = 3.0;
     static final double MIN_SHARPENING_STRENGTH = 0.0;
     static final double MAX_SHARPENING_STRENGTH = 1.0;
+    static final double MIN_MOTION_BLUR_STRENGTH = 0.0;
+    static final double MAX_MOTION_BLUR_STRENGTH = 1.0;
     static final double MIN_BLOCK_LIGHT_INTENSITY = 0.5;
     static final double MAX_BLOCK_LIGHT_INTENSITY = 4.0;
     static final double MIN_SKY_LIGHT_INTENSITY = 0.5;
@@ -60,6 +63,8 @@ public final class HelionConfig {
     static final ModConfigSpec.BooleanValue BLOOM_DEBUG_VIEW;
     static final ModConfigSpec.BooleanValue SHARPENING_ENABLED;
     static final ModConfigSpec.DoubleValue SHARPENING_STRENGTH;
+    static final ModConfigSpec.BooleanValue MOTION_BLUR_ENABLED;
+    static final ModConfigSpec.DoubleValue MOTION_BLUR_STRENGTH;
     static final ModConfigSpec.BooleanValue GEOMETRY_BUFFER_ENABLED;
     static final ModConfigSpec.EnumValue<GeometryBufferView> GEOMETRY_BUFFER_VIEW;
     static final ModConfigSpec.BooleanValue LIGHTING_ENABLED;
@@ -127,6 +132,14 @@ public final class HelionConfig {
         SHARPENING_STRENGTH = BUILDER
             .translation("helion.configuration.image.sharpening.strength")
             .defineInRange("strength", SharpeningSettings.DEFAULT_STRENGTH, MIN_SHARPENING_STRENGTH, MAX_SHARPENING_STRENGTH);
+        BUILDER.pop();
+        BUILDER.translation("helion.configuration.image.motionBlur").push("motionBlur");
+        MOTION_BLUR_ENABLED = BUILDER
+            .translation("helion.configuration.image.motionBlur.enabled")
+            .define("enabled", false);
+        MOTION_BLUR_STRENGTH = BUILDER
+            .translation("helion.configuration.image.motionBlur.strength")
+            .defineInRange("strength", MotionBlurSettings.DEFAULT_STRENGTH, MIN_MOTION_BLUR_STRENGTH, MAX_MOTION_BLUR_STRENGTH);
         BUILDER.pop();
         BUILDER.pop();
 
@@ -231,7 +244,8 @@ public final class HelionConfig {
                 BLOOM_THRESHOLD.get().floatValue(),
                 BLOOM_DEBUG_VIEW.getAsBoolean()
             ),
-            new SharpeningSettings(SHARPENING_ENABLED.getAsBoolean(), SHARPENING_STRENGTH.get().floatValue())
+            new SharpeningSettings(SHARPENING_ENABLED.getAsBoolean(), SHARPENING_STRENGTH.get().floatValue()),
+            new MotionBlurSettings(MOTION_BLUR_ENABLED.getAsBoolean(), MOTION_BLUR_STRENGTH.get().floatValue())
         );
     }
 }

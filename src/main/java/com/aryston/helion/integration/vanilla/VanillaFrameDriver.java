@@ -116,7 +116,8 @@ final class VanillaFrameDriver {
             targets.importEntityOutline(builder);
             ChunkSectionsToRender sections = prepareSections(request, orderIndependent);
             HelionCamera unjitteredCamera = camera(camera);
-            TemporalFrame temporal = HelionRenderCore.get().temporal().begin(settings.temporal(), unjitteredCamera, scene.width, scene.height);
+            TemporalFrame temporal = HelionRenderCore.get().temporal()
+                .begin(settings.temporal(), settings.image().motionBlur().enabled(), unjitteredCamera, scene.width, scene.height);
             HelionCamera helionCamera = unjitteredCamera;
             if (temporal.active()) {
                 RenderSystem.setProjectionMatrix(jitteredProjection(temporal), ProjectionType.PERSPECTIVE);

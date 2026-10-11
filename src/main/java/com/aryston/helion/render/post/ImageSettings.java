@@ -6,11 +6,12 @@ public record ImageSettings(
     boolean autoExposure,
     boolean dither,
     BloomSettings bloom,
-    SharpeningSettings sharpening
+    SharpeningSettings sharpening,
+    MotionBlurSettings motionBlur
 ) {
     public static final float DEFAULT_EXPOSURE = 0.0F;
     public static final ImageSettings FOUNDATION = new ImageSettings(
-        ToneMapper.NEUTRAL, DEFAULT_EXPOSURE, false, true, BloomSettings.DISABLED, SharpeningSettings.DISABLED
+        ToneMapper.NEUTRAL, DEFAULT_EXPOSURE, false, true, BloomSettings.DISABLED, SharpeningSettings.DISABLED, MotionBlurSettings.DISABLED
     );
 
     public boolean needsComposite() {
