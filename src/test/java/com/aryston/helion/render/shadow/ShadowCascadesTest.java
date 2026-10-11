@@ -109,6 +109,17 @@ class ShadowCascadesTest {
         assertEquals(1.0F, high, TOLERANCE);
     }
 
+    @Test
+    void theShadowDirectionTurnsInFixedSteps() {
+        Vector3f sun = new Vector3f(0.6F, 0.8F, 0.0F).normalize();
+        Vector3f slightlyLater = new Vector3f(sun).rotateZ(ShadowLight.DIRECTION_STEP * 0.1F);
+        Vector3f stepped = ShadowLight.stepped(sun);
+
+        assertEquals(stepped, ShadowLight.stepped(slightlyLater));
+        assertTrue(stepped.angle(sun) <= ShadowLight.DIRECTION_STEP);
+        assertTrue(ShadowLight.stepped(new Vector3f(sun).rotateZ(ShadowLight.DIRECTION_STEP * 2.0F)).angle(stepped) > ShadowLight.DIRECTION_STEP);
+    }
+
     private static List<ShadowCascade> compute(Vector3d camera) {
         return ShadowCascades.compute(camera, VIEW_ROTATION, PROJECTION, MORNING_SUN, ShadowCascades.MAX_DISTANCE, RESOLUTION, true);
     }

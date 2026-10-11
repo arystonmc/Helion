@@ -14,6 +14,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Fix shaded sides, plants and tree trunks turning blue or green under the physical sky light
 - Fix grass and flowers covering the ground in flickering shadow speckles
 - Fix stutter with shadows on by preparing only chunks that can cast shadows
+- Fix tree leaf shadows shimmering while the sun moves
 
 ## [0.1] - 2026-10-09
 

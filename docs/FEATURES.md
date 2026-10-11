@@ -99,7 +99,7 @@ Blocks cast real shadows that move with the sun through the day.
 
 - Hills, trees, buildings and every solid or cutout block cast shadows from the sun, and from the moon at night; grass and flowers do not, so the ground stays clean instead of speckled
 - Shadows stay sharp near you and reach up to 160 blocks away, then fade out softly
-- Shadow edges are smoothed and do not crawl or flicker when you move
+- Shadow edges are smoothed and do not crawl or flicker when you move or while the sun crosses the sky
 - Far shadows are redrawn only every few frames, so shadows cost far fewer frames per second
 - Shadows fade in and out gently at sunrise and sunset instead of popping
 - Shade keeps a soft cool light from the sky and some light bounced off the ground, so shadowed areas look natural instead of black or blue
