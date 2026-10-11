@@ -14,16 +14,23 @@ public final class TemporalPipelines {
     public static final String SCENE_COLOR_SAMPLER = "SceneColorSampler";
     public static final String DEPTH_SAMPLER = "DepthSampler";
     public static final String HISTORY_SAMPLER = "HistorySampler";
+    public static final String TERRAIN_DEPTH_SAMPLER = "TerrainDepthSampler";
     public static final GpuFormat HISTORY_FORMAT = GpuFormat.RGBA16_FLOAT;
     public static final GpuFormat SCENE_COLOR_FORMAT = GpuFormat.RGBA8_UNORM;
 
-    public static final RenderPipeline RESOLVE = HelionPipelines.fullscreen("temporal/resolve")
-        .withBindGroupLayout(BindGroupLayout.builder()
-            .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
-            .withUniform(SCENE_COLOR_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-            .withUniform(DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-            .withUniform(HISTORY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+    private static final String RESOLVE_SHADER = "temporal/resolve";
+    private static final String MOVING_OBJECTS_DEFINE = "HELION_MOVING_OBJECTS";
+
+    public static final RenderPipeline RESOLVE = HelionPipelines.fullscreen(RESOLVE_SHADER)
+        .withBindGroupLayout(resolveBindings().build())
+        .withColorTargetState(new ColorTargetState(Optional.empty(), HISTORY_FORMAT, ColorTargetState.WRITE_ALL))
+        .build();
+
+    public static final RenderPipeline RESOLVE_MOVING_OBJECTS = HelionPipelines.fullscreen("temporal/resolve_moving_objects", RESOLVE_SHADER)
+        .withBindGroupLayout(resolveBindings()
+            .withUniform(TERRAIN_DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .build())
+        .withShaderDefine(MOVING_OBJECTS_DEFINE)
         .withColorTargetState(new ColorTargetState(Optional.empty(), HISTORY_FORMAT, ColorTargetState.WRITE_ALL))
         .build();
 
@@ -38,6 +45,14 @@ public final class TemporalPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(RESOLVE, APPLY);
+        return List.of(RESOLVE, RESOLVE_MOVING_OBJECTS, APPLY);
+    }
+
+    private static BindGroupLayout.Builder resolveBindings() {
+        return BindGroupLayout.builder()
+            .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
+            .withUniform(SCENE_COLOR_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(HISTORY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER);
     }
 }

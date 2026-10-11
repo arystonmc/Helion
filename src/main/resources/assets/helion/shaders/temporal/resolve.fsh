@@ -26,6 +26,21 @@ const float HELION_NO_DEPTH = -1.0;
 const vec3 HELION_LUMA_ROW = vec3(0.25, 0.5, 0.25);
 const vec3 HELION_ORANGE_CHROMA_ROW = vec3(0.5, 0.0, -0.5);
 const vec3 HELION_GREEN_CHROMA_ROW = vec3(-0.25, 0.5, -0.25);
+const float HELION_DISOCCLUSION_TOLERANCE = 0.1;
+const float HELION_NO_OBJECT_DEPTH = 0.0;
+const float HELION_OBJECT_CURRENT_WEIGHT = 0.5;
+
+#ifdef HELION_MOVING_OBJECTS
+uniform sampler2D TerrainDepthSampler;
+
+float helionObjectDepth(ivec2 pixel, float depth) {
+    return depth > texelFetch(TerrainDepthSampler, pixel, 0).r ? depth : HELION_NO_OBJECT_DEPTH;
+}
+#else
+float helionObjectDepth(ivec2 pixel, float depth) {
+    return HELION_NO_OBJECT_DEPTH;
+}
+#endif
 
 vec3 helionToYCoCg(vec3 color) {
     return vec3(
@@ -82,11 +97,32 @@ float helionNdcDepth(float deviceDepth) {
     #endif
 }
 
+float helionDeviceDepth(float ndcDepth) {
+    #ifdef RENDERPEARL_DEPTH_IS_ZERO_TO_ONE
+    return ndcDepth;
+    #else
+    return ndcDepth * 0.5 + 0.5;
+    #endif
+}
+
+bool helionMovingObjectLeft(vec2 historyUv, float expectedDepth) {
+    ivec2 lastPixel = textureSize(HistorySampler, 0) - 1;
+    ivec2 center = ivec2(historyUv / InverseScreenSize);
+    float nearestObject = HELION_NO_OBJECT_DEPTH;
+    for (int y = -HELION_NEIGHBORHOOD_RADIUS; y <= HELION_NEIGHBORHOOD_RADIUS; y++) {
+        for (int x = -HELION_NEIGHBORHOOD_RADIUS; x <= HELION_NEIGHBORHOOD_RADIUS; x++) {
+            nearestObject = max(nearestObject, texelFetch(HistorySampler, clamp(center + ivec2(x, y), ivec2(0), lastPixel), 0).a);
+        }
+    }
+    return nearestObject > expectedDepth * (1.0 + HELION_DISOCCLUSION_TOLERANCE);
+}
+
 void main() {
     ivec2 pixel = ivec2(gl_FragCoord.xy);
     vec3 current = texelFetch(SceneColorSampler, pixel, 0).rgb;
+    float objectDepth = helionObjectDepth(pixel, texelFetch(DepthSampler, pixel, 0).r);
     if (HistoryValid < HELION_HISTORY_VALID_THRESHOLD) {
-        fragColor = vec4(current, 1.0);
+        fragColor = vec4(current, objectDepth);
         return;
     }
     ivec2 lastPixel = textureSize(SceneColorSampler, 0) - 1;
@@ -116,15 +152,17 @@ void main() {
     vec4 previousClip = Reprojection * vec4(nearestUv * 2.0 - 1.0, helionNdcDepth(nearestDepth), 1.0);
     vec2 previousUv = previousClip.xy / previousClip.w * 0.5 + 0.5;
     vec2 historyUv = gl_FragCoord.xy * InverseScreenSize - (nearestUv - previousUv);
-    if (any(lessThan(historyUv, vec2(0.0))) || any(greaterThan(historyUv, vec2(1.0)))) {
-        fragColor = vec4(current, 1.0);
+    float expectedDepth = helionDeviceDepth(previousClip.z / previousClip.w);
+    if (any(lessThan(historyUv, vec2(0.0))) || any(greaterThan(historyUv, vec2(1.0))) || (objectDepth == HELION_NO_OBJECT_DEPTH && helionMovingObjectLeft(historyUv, expectedDepth))) {
+        fragColor = vec4(current, objectDepth);
         return;
     }
 
     vec3 history = helionClipToBox(helionToYCoCg(helionSampleHistoryCatmullRom(historyUv)), boxMin, boxMax);
     vec3 currentYCoCg = helionToYCoCg(current);
-    float currentWeight = CurrentWeight / (1.0 + currentYCoCg.x);
-    float historyWeight = (1.0 - CurrentWeight) / (1.0 + history.x);
+    float blend = objectDepth == HELION_NO_OBJECT_DEPTH ? CurrentWeight : max(CurrentWeight, HELION_OBJECT_CURRENT_WEIGHT);
+    float currentWeight = blend / (1.0 + currentYCoCg.x);
+    float historyWeight = (1.0 - blend) / (1.0 + history.x);
     vec3 resolved = (currentYCoCg * currentWeight + history * historyWeight) / max(currentWeight + historyWeight, HELION_WEIGHT_EPSILON);
-    fragColor = vec4(max(helionFromYCoCg(resolved), 0.0), 1.0);
+    fragColor = vec4(max(helionFromYCoCg(resolved), 0.0), objectDepth);
 }

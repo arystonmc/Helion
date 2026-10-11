@@ -3,6 +3,8 @@ package com.aryston.helion.render.geometry;
 import com.aryston.helion.render.atmosphere.AtmosphereSource;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
+import com.aryston.helion.render.shader.FullscreenPass;
+import com.aryston.helion.render.shader.HelionPipelines;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
@@ -11,6 +13,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
+import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,6 +29,9 @@ public final class OpaqueGeometryStage implements RenderStage {
     private static final String NORMAL_TARGET = "helion:geometry_normal";
     private static final String LIGHT_TARGET = "helion:geometry_light";
     private static final String ALBEDO_TARGET = "helion:geometry_albedo";
+    private static final String TERRAIN_DEPTH_TARGET = "helion:terrain_depth";
+    private static final String TERRAIN_DEPTH_PASS = "terrain_depth";
+    private static final String TERRAIN_DEPTH_LABEL = "Helion Terrain Depth";
     private static final Optional<Vector4fc> CLEAR = Optional.of(new Vector4f(0.0F, 0.0F, 0.0F, 0.0F));
 
     private final TerrainSource terrain;
@@ -57,6 +64,22 @@ public final class OpaqueGeometryStage implements RenderStage {
             : Optional.empty();
         geometry.ifPresent(frame.geometry()::publish);
         pass.executes(frame.graph().timed(NAME, () -> render(scene.get(), geometry)));
+        if (geometry.isPresent() && frame.temporal().active()) {
+            HelionPipelines.compiled(GeometryBufferPipelines.TERRAIN_DEPTH).ifPresent(pipeline -> addTerrainDepthPass(frame, scene, pipeline));
+        }
+    }
+
+    private static void addTerrainDepthPass(FrameContext frame, ResourceHandle<RenderTarget> scene, CompiledRenderPipeline pipeline) {
+        FramePass pass = frame.graph().addPass(TERRAIN_DEPTH_PASS);
+        pass.reads(scene);
+        ResourceHandle<RenderTarget> terrainDepth = pass.createsInternal(TERRAIN_DEPTH_TARGET, target(frame, GeometryBufferPipelines.TERRAIN_DEPTH_FORMAT));
+        frame.geometry().publishTerrainDepth(terrainDepth);
+        pass.executes(frame.graph().timed(TERRAIN_DEPTH_PASS, () -> FullscreenPass.draw(
+            TERRAIN_DEPTH_LABEL, terrainDepth.get(), pipeline, renderPass -> renderPass.setUniform(
+                GeometryBufferPipelines.DEPTH_SAMPLER,
+                Objects.requireNonNull(scene.get().getDepthTextureView()),
+                RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
+            ))));
     }
 
     private boolean writesGeometry(FrameContext frame) {

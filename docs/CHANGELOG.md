@@ -15,6 +15,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Fix grass and flowers covering the ground in flickering shadow speckles
 - Fix stutter with shadows on by preparing only chunks that can cast shadows
 - Fix tree leaf shadows shimmering while the sun moves
+- Fix the trail fast mobs left behind with temporal anti-aliasing and keep moving mobs sharp
 
 ## [0.1] - 2026-10-09
 

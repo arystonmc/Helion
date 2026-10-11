@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public final class GeometryBufferPipelines {
     public static final int SCENE_COLOR_TARGET = 0;
@@ -22,20 +23,29 @@ public final class GeometryBufferPipelines {
     public static final GpuFormat LIGHT_FORMAT = GpuFormat.RGBA8_UNORM;
     public static final GpuFormat ALBEDO_FORMAT = GpuFormat.RGBA8_UNORM;
     public static final GpuFormat OUTPUT_FORMAT = GpuFormat.RGBA8_UNORM;
+    public static final GpuFormat TERRAIN_DEPTH_FORMAT = GpuFormat.R32_FLOAT;
     public static final String NORMAL_SAMPLER = "NormalSampler";
     public static final String LIGHT_SAMPLER = "LightSampler";
     public static final String ALBEDO_SAMPLER = "AlbedoSampler";
+    public static final String DEPTH_SAMPLER = "DepthSampler";
     private static final String VIEW_DEFINE = "HELION_GEOMETRY_VIEW";
     private static final String DEBUG_SHADER = "geometry/debug";
     private static final String DEBUG_PIPELINE = "geometry/debug_";
 
     private static final Map<GeometryBufferView, RenderPipeline> DEBUG_VIEWS = debugViews();
 
+    public static final RenderPipeline TERRAIN_DEPTH = HelionPipelines.fullscreen("geometry/terrain_depth")
+        .withBindGroupLayout(BindGroupLayout.builder()
+            .withUniform(DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .build())
+        .withColorTargetState(target(TERRAIN_DEPTH_FORMAT))
+        .build();
+
     private GeometryBufferPipelines() {
     }
 
     public static List<RenderPipeline> all() {
-        return List.copyOf(DEBUG_VIEWS.values());
+        return Stream.concat(DEBUG_VIEWS.values().stream(), Stream.of(TERRAIN_DEPTH)).toList();
     }
 
     public static ColorTargetState target(GpuFormat format) {

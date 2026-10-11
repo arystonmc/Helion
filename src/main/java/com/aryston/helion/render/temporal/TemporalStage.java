@@ -7,10 +7,12 @@ import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.ResourceHandle;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.util.Objects;
+import java.util.Optional;
 
 public final class TemporalStage implements RenderStage {
     private static final String NAME = "temporal_anti_aliasing";
@@ -54,12 +56,15 @@ public final class TemporalStage implements RenderStage {
         ResourceHandle<RenderTarget> scene = frame.targets().scene();
         pass.reads(scene);
         pass.reads(previous);
+        Optional<ResourceHandle<RenderTarget>> terrainDepth = frame.geometry().terrainDepth();
+        terrainDepth.ifPresent(pass::reads);
+        CompiledRenderPipeline program = terrainDepth.isPresent() ? programs.resolveMovingObjects() : programs.resolve();
         ResourceHandle<RenderTarget> resolved = pass.readsAndWrites(next);
         TemporalFrame temporal = frame.temporal();
         int width = frame.scene().width();
         int height = frame.scene().height();
         pass.executes(frame.graph().timed(RESOLVE_PASS, () -> FullscreenPass.draw(
-            "Helion Temporal Resolve", resolved.get(), programs.resolve(), renderPass -> {
+            "Helion Temporal Resolve", resolved.get(), program, renderPass -> {
                 renderPass.setUniform(TemporalPipelines.SETTINGS, resources.writeUniforms(temporal, width, height));
                 renderPass.setUniform(TemporalPipelines.SCENE_COLOR_SAMPLER, colorView(scene), sampler(FilterMode.NEAREST));
                 renderPass.setUniform(
@@ -68,6 +73,8 @@ public final class TemporalStage implements RenderStage {
                     sampler(FilterMode.NEAREST)
                 );
                 renderPass.setUniform(TemporalPipelines.HISTORY_SAMPLER, colorView(previous), sampler(FilterMode.LINEAR));
+                terrainDepth.ifPresent(depth ->
+                    renderPass.setUniform(TemporalPipelines.TERRAIN_DEPTH_SAMPLER, colorView(depth), sampler(FilterMode.NEAREST)));
             })));
         return resolved;
     }
