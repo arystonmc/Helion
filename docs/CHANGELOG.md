@@ -9,6 +9,17 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ### Added
 - Settings codes: copy your Helion settings as a code and paste a code to apply someone else's
 
+### Changed
+- Make sun and moon shadows much faster by redrawing far shadows less often
+- Make ambient occlusion smoother while temporal anti-aliasing is on
+
+### Fixed
+- Fix shaded sides, plants and tree trunks turning blue or green under the physical sky light
+- Fix grass and flowers covering the ground in flickering shadow speckles
+- Fix stutter with shadows on by preparing only chunks that can cast shadows
+- Fix tree leaf shadows shimmering while the sun moves
+- Fix the trail fast mobs left behind with temporal anti-aliasing and keep moving mobs sharp
+
 ## [0.1] - 2026-10-09
 
 ### Added

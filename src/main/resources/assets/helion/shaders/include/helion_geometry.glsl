@@ -9,4 +9,11 @@ vec3 helionEncodeNormal(vec3 normal) {
     return normal * 0.5 + 0.5;
 }
 
+const float HELION_CROSS_PLANE_TOLERANCE = 0.2;
+
+bool helionIsCrossPlane(vec3 normal) {
+    vec3 size = abs(normal);
+    return size.y < HELION_CROSS_PLANE_TOLERANCE && abs(size.x - size.z) < HELION_CROSS_PLANE_TOLERANCE;
+}
+
 #endif

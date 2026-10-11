@@ -10,13 +10,16 @@ import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.pipeline.UniformType;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 public final class ShadowPipelines {
     public static final String SETTINGS = "HelionShadow";
     public static final String PROJECTION = "Projection";
     public static final String DEPTH_SAMPLER = "DepthSampler";
     public static final String GEOMETRY_NORMAL_SAMPLER = "GeometryNormalSampler";
-    public static final String SHADOW_MAP_SAMPLER = "ShadowMapSampler";
+    public static final List<String> SHADOW_MAP_SAMPLERS = IntStream.range(0, ShadowCascades.COUNT)
+        .mapToObj(cascade -> "ShadowMapSampler" + cascade)
+        .toList();
     public static final GpuFormat SHADOW_MAP_FORMAT = GpuFormat.D32_FLOAT;
     public static final GpuFormat MASK_FORMAT = GpuFormat.R8_UNORM;
     public static final GpuFormat SCENE_COLOR_FORMAT = GpuFormat.RGBA8_UNORM;
@@ -29,12 +32,7 @@ public final class ShadowPipelines {
     );
 
     public static final RenderPipeline MASK = HelionPipelines.fullscreen("shadow/mask")
-        .withBindGroupLayout(BindGroupLayout.builder()
-            .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
-            .withUniform(DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-            .withUniform(GEOMETRY_NORMAL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-            .withUniform(SHADOW_MAP_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-            .build())
+        .withBindGroupLayout(maskBindings())
         .withColorTargetState(new ColorTargetState(Optional.empty(), MASK_FORMAT, ColorTargetState.WRITE_ALL))
         .build();
 
@@ -43,5 +41,16 @@ public final class ShadowPipelines {
 
     public static List<RenderPipeline> all() {
         return List.of(MASK);
+    }
+
+    private static BindGroupLayout maskBindings() {
+        BindGroupLayout.Builder bindings = BindGroupLayout.builder()
+            .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
+            .withUniform(DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(GEOMETRY_NORMAL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER);
+        for (String sampler : SHADOW_MAP_SAMPLERS) {
+            bindings = bindings.withUniform(sampler, UniformType.COMBINED_IMAGE_SAMPLER);
+        }
+        return bindings.build();
     }
 }

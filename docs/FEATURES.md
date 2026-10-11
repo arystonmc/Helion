@@ -77,7 +77,8 @@ Smooth block edges and calm, shimmer-free distant textures.
 
 - Moves the camera by less than a pixel every frame and blends each frame with the previous ones, like modern games do
 - Works while you walk and turn; the picture gets a little softer, which the sharpening option makes up for
-- Fast moving mobs can leave a faint trail for now
+- Also smooths ambient occlusion, which varies its samples every frame while anti-aliasing is on
+- Moving mobs, items and particles stay sharp and leave no trail behind them
 - Settings: on or off; off by default while it is experimental
 - Since: 0.1
 
@@ -86,7 +87,7 @@ A sky that behaves like real air: deep blue overhead, a bright glow around the s
 
 - The sky color comes from how sunlight and moonlight scatter in an Earth-like atmosphere instead of a single vanilla color, computed across the visible spectrum for natural blues, golden sunrises and red sunsets
 - Distant terrain fades into the real sky color in every direction, so the horizon no longer changes color when you turn your head; clouds fade into the horizon color
-- With HDR lighting on, sunlight, moonlight and skylight tint the terrain: warm on faces toward a low sun, cool blue in shade, at vanilla brightness
+- With HDR lighting on, sunlight, moonlight and skylight tint the terrain: warm on faces toward a low sun, slightly cool in shade, at vanilla brightness and with the vanilla colors of grass, leaves and plants
 - The blocky sun, the moon phases and the stars keep their vanilla look; only the moon is a little dimmer
 - Rain dims and greys the sky; the glow around the sun can bloom
 - Works in the Overworld; other dimensions and views under water keep the vanilla sky
@@ -96,11 +97,12 @@ A sky that behaves like real air: deep blue overhead, a bright glow around the s
 ### Sun and Moon Shadows (Experimental)
 Blocks cast real shadows that move with the sun through the day.
 
-- Hills, trees, buildings and every solid or cutout block cast shadows from the sun, and from the moon at night
+- Hills, trees, buildings and every solid or cutout block cast shadows from the sun, and from the moon at night; grass and flowers do not, so the ground stays clean instead of speckled
 - Shadows stay sharp near you and reach up to 160 blocks away, then fade out softly
-- Shadow edges are smoothed and do not crawl or flicker when you move
+- Shadow edges are smoothed and do not crawl or flicker when you move or while the sun crosses the sky
+- Far shadows are redrawn only every few frames, so shadows cost far fewer frames per second
 - Shadows fade in and out gently at sunrise and sunset instead of popping
-- Shade keeps the blue light of the sky, so shadowed areas look cool and natural instead of black
+- Shade keeps a soft cool light from the sky and some light bounced off the ground, so shadowed areas look natural instead of black or blue
 - Needs the geometry buffer, HDR lighting and the physical sky to be on
 - Settings: on or off, and Low, Medium or High quality for sharper edges; off by default while it is experimental
 - Since: 0.1

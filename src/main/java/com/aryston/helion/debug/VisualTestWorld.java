@@ -37,8 +37,11 @@ final class VisualTestWorld {
     private VisualTestWorld() {
     }
 
-    static void prepare(IntegratedServer server, BlockPos origin) {
+    static void prepare(IntegratedServer server, BlockPos origin, boolean buildTestArea) {
         RULES.forEach(command -> run(server, command));
+        if (!buildTestArea) {
+            return;
+        }
         run(server, fill(origin.offset(AREA_START), origin.offset(AREA_END), "air"));
         run(server, fill(
             origin.offset(AREA_START.getX(), FLOOR, AREA_START.getZ()),

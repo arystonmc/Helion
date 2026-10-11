@@ -99,8 +99,9 @@ public final class AmbientOcclusionStage implements RenderStage {
         );
         int width = frame.scene().width();
         int height = frame.scene().height();
+        boolean temporal = frame.temporal().active();
         pass.executes(frame.graph().timed(HORIZON_PASS, () -> {
-            frameUniforms = resources.writeUniforms(settings, width, height);
+            frameUniforms = resources.writeUniforms(settings, width, height, temporal);
             FullscreenPass.draw("Helion AO Horizon Search", occlusionAndEdges.get(), compiled.horizonSearch(), renderPass -> {
                 RenderSystem.bindDefaultUniforms(renderPass);
                 renderPass.setUniform(AmbientOcclusionPipelines.SETTINGS, Objects.requireNonNull(frameUniforms));

@@ -47,6 +47,7 @@ final class VanillaFrameDriver {
 
     private final SceneSkyRenderer sky = new SceneSkyRenderer();
     private final AmbientLightTracker ambientLight = new AmbientLightTracker();
+    private final ShadowCasterSections shadowCasters = new ShadowCasterSections();
     private @Nullable ProjectionMatrixBuffer jitteredProjection;
 
     void render(LevelFrameRequest request, RenderSettings settings) {
@@ -177,7 +178,7 @@ final class VanillaFrameDriver {
             new VanillaEntitySource(request, featureFrame, events),
             new VanillaAtmosphereSource(request, sky, fog, events),
             new VanillaTransparencySource(request, sections, featureFrame),
-            new VanillaShadowCasterSource(request),
+            new VanillaShadowCasterSource(request, shadowCasters),
             List.of(new VanillaEntityOutlineEffect(request.level()))
         );
     }
