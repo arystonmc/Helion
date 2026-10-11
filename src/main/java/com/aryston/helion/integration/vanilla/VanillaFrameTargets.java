@@ -26,6 +26,7 @@ final class VanillaFrameTargets implements FrameTargets {
     private final FeatureRenderDispatcher.PreparedFrame featureFrame;
     private final boolean orderIndependentTransparency;
     private final boolean writesAlwaysOnTopDepth;
+    private @Nullable ResourceHandle<RenderTarget> replacedScene;
     private ResourceHandle<RenderTarget> output;
 
     private VanillaFrameTargets(
@@ -78,12 +79,36 @@ final class VanillaFrameTargets implements FrameTargets {
 
     @Override
     public ResourceHandle<RenderTarget> scene() {
-        return bundle.main;
+        return replacedScene != null ? replacedScene : bundle.main;
     }
 
     @Override
     public void updateScene(ResourceHandle<RenderTarget> handle) {
-        bundle.main = handle;
+        if (replacedScene != null) {
+            replacedScene = handle;
+        } else {
+            bundle.main = handle;
+        }
+    }
+
+    @Override
+    public void replaceScene(ResourceHandle<RenderTarget> handle) {
+        replacedScene = handle;
+    }
+
+    void buildOnScene(Runnable vanillaPasses) {
+        if (replacedScene == null) {
+            vanillaPasses.run();
+            return;
+        }
+        ResourceHandle<RenderTarget> levelScene = bundle.main;
+        bundle.main = replacedScene;
+        try {
+            vanillaPasses.run();
+            replacedScene = bundle.main;
+        } finally {
+            bundle.main = levelScene;
+        }
     }
 
     @Override

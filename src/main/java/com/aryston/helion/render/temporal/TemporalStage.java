@@ -109,7 +109,7 @@ public final class TemporalStage implements RenderStage {
             new RenderTargetDescriptor.TextureProperties(null, TemporalPipelines.SCENE_COLOR_FORMAT),
             new RenderTargetDescriptor.TextureProperties(null, TemporalPipelines.UPSCALED_DEPTH_FORMAT)
         ));
-        frame.targets().updateScene(upscaled);
+        frame.targets().replaceScene(upscaled);
         TemporalFrame temporal = frame.temporal();
         pass.executes(frame.graph().timed(APPLY_PASS, () -> {
             FullscreenPass.drawWithDepth(UPSCALED_LABEL, upscaled.get(), programs.upscaleApply(), renderPass -> {

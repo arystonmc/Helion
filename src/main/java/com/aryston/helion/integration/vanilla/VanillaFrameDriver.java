@@ -151,7 +151,7 @@ final class VanillaFrameDriver {
                 new PostResults()
             );
             HelionRenderCore.get().recordFrame(frame.camera(), frame.scene());
-            FrameStages.build(frame, sources(request, sections, featureFrame));
+            FrameStages.build(frame, sources(request, sections, featureFrame, targets));
             profiler.popPush("executeFrameGraph");
             builder.execute(request.resourceAllocator(), new ProfilerInspector(profiler));
             profiler.pop();
@@ -177,7 +177,12 @@ final class VanillaFrameDriver {
         return buffer.getBuffer(new Matrix4f(temporal.jitteredProjection()));
     }
 
-    private FrameSources sources(LevelFrameRequest request, ChunkSectionsToRender sections, FeatureRenderDispatcher.PreparedFrame featureFrame) {
+    private FrameSources sources(
+        LevelFrameRequest request,
+        ChunkSectionsToRender sections,
+        FeatureRenderDispatcher.PreparedFrame featureFrame,
+        VanillaFrameTargets targets
+    ) {
         StageEvents events = new StageEvents(request);
         SceneFog fog = new SceneFog(request.terrainFog());
         return new FrameSources(
@@ -186,7 +191,7 @@ final class VanillaFrameDriver {
             new VanillaAtmosphereSource(request, sky, fog, events),
             new VanillaTransparencySource(request, sections, featureFrame),
             new VanillaShadowCasterSource(request, shadowCasters, featureFrame),
-            List.of(new VanillaEntityOutlineEffect(request.level()))
+            List.of(new VanillaEntityOutlineEffect(request.level(), targets))
         );
     }
 
