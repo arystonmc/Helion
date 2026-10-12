@@ -68,6 +68,19 @@ For full technical and player details, see the [Helion Feature Guide](docs/FEATU
 | **Side** | Client only (safe to join any multiplayer server) |
 | **Required Library** | [Arkea](https://modrinth.com/mod/arkea) 0.1 or newer ([CurseForge](https://www.curseforge.com/minecraft/mc-mods/arkea)) |
 
+## Building
+
+- **Java:** JDK 25. If it is not installed, Gradle downloads it automatically.
+- **Build:** Run the Gradle wrapper from the project folder (use `gradlew.bat build` on Windows):
+
+```bash
+./gradlew build
+```
+
+- **Output:** The jar is written to `build/libs/helion-neoforge-<minecraft_version>-<mod_version>.jar`, currently `build/libs/helion-neoforge-26.3-0.1.jar`.
+
+For development runs and the Arkea source checkout, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Compatibility & Troubleshooting
 
 - **Server Safe:** 100% client-side. Safe to join any vanilla or modded server.
