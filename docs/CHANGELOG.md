@@ -17,6 +17,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental motion blur when the camera moves or turns, with a strength setting
 
 ### Changed
+- Draw terrain from Aervium's compact chunk vertices when its compactVertices module is on
 - Make sun and moon shadows much faster by redrawing far shadows less often
 - Make ambient occlusion smoother while temporal anti-aliasing is on
 

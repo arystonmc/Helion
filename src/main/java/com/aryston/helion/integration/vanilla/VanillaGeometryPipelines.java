@@ -40,7 +40,7 @@ public final class VanillaGeometryPipelines {
     }
 
     static boolean compiled() {
-        boolean compiled = all().stream().allMatch(pipeline -> HelionPipelines.compiled(pipeline).isPresent());
+        boolean compiled = CompactTerrainVertices.supported() && all().stream().allMatch(pipeline -> HelionPipelines.compiled(pipeline).isPresent());
         if (!compiled && !missingPipelinesReported) {
             missingPipelinesReported = true;
             LOGGER.warn("Helion geometry buffer is skipped because its terrain shaders could not be compiled");

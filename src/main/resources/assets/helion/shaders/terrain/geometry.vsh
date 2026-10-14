@@ -10,11 +10,8 @@
     #include <minecraft:chunksection.glsl>
 #endif
 #include <helion:helion_geometry.glsl>
+#include <helion:helion_terrain_vertex.glsl>
 
-layout(location = 0) in vec3 Position;
-layout(location = 1) in vec4 Color;
-layout(location = 2) in vec2 UV0;
-layout(location = 3) in ivec2 UV2;
 #ifdef MULTIDRAW_TERRAIN
 layout(location = 4) in ivec3 ChunkPosition;
 layout(location = 5) in float ChunkVisibility;
@@ -34,18 +31,19 @@ layout(location = 7) out vec2 lightLevels;
 const float HELION_CHUNK_FULLY_VISIBLE_RANGE = 16.0;
 
 void main() {
-    vec3 pos = Position + (ChunkPosition - CameraBlockPos) + CameraOffset;
+    ivec2 light = helion_vertex_light();
+    vec3 pos = helion_vertex_position() + (ChunkPosition - CameraBlockPos) + CameraOffset;
     gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
 
     sphericalVertexDistance = fog_spherical_distance(pos);
     cylindricalVertexDistance = fog_cylindrical_distance(pos);
-    vertexColor = Color * sample_lightmap(Sampler2, UV2);
-    texCoord0 = UV0;
+    vertexColor = Color * sample_lightmap(Sampler2, light);
+    texCoord0 = helion_vertex_uv();
 
     float dist = length(pos);
     chunkVisibility = mix(1.0, ChunkVisibility, clamp((dist - HELION_CHUNK_FULLY_VISIBLE_RANGE) / HELION_CHUNK_FULLY_VISIBLE_RANGE, 0.0, 1.0));
 
     cameraRelativePosition = pos;
     surfaceColor = Color;
-    lightLevels = clamp(vec2(UV2) / HELION_MAX_LIGHT_COORDINATE, 0.0, 1.0);
+    lightLevels = clamp(vec2(light) / HELION_MAX_LIGHT_COORDINATE, 0.0, 1.0);
 }
