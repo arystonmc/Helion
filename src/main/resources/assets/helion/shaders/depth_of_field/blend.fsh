@@ -17,6 +17,7 @@ void main() {
     float focus = texelFetch(FocusSampler, ivec2(0), 0).r;
     float circle = helionCircleOfConfusion(helionDofViewDepth(texelFetch(DepthSampler, ivec2(gl_FragCoord.xy), 0).r), focus);
     vec4 blurred = texture(BlurredSampler, texCoord);
-    float blurPixels = max(abs(circle), abs(blurred.a)) * MaxBlurPixels;
+    float nearSpread = blurred.a < 0.0 ? -blurred.a : 0.0;
+    float blurPixels = max(abs(circle), nearSpread) * MaxBlurPixels;
     fragColor = vec4(blurred.rgb, clamp(blurPixels - HELION_SHARP_PIXELS, 0.0, 1.0));
 }

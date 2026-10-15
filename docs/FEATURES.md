@@ -78,8 +78,9 @@ Softer block edges for almost no cost when temporal anti-aliasing is off.
 ### Depth of Field (Experimental)
 A camera lens look: what you look at stays sharp, the rest softly blurs.
 
-- Focus follows the center of the screen and moves smoothly when you look at something nearer or farther
-- Close objects blur over the background naturally, and the background never smears over sharp things in front
+- Focus follows what is at the center of the screen, ignores the sky and tiny changes, and moves smoothly, faster toward something nearer
+- The sharp area grows with the focus distance, so looking into the distance keeps the world around you sharp; blur in front and behind is limited and soft
+- Close objects blur over the background naturally, and the background never leaves a halo around sharp things in front
 - Settings: on or off and its strength in the effects settings; off by default while it is experimental
 - Since: Unreleased
 

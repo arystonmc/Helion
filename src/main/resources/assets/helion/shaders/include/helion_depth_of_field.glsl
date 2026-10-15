@@ -10,12 +10,21 @@ layout(std140) uniform HelionDepthOfField {
     float Aperture;
 };
 
+const float HELION_DOF_SHARP_BAND = 0.25;
+const float HELION_DOF_BAND_PER_LOG_DISTANCE = 0.08;
+const float HELION_DOF_NEAR_LIMIT = 0.35;
+const float HELION_DOF_FAR_LIMIT = 0.4;
+const float HELION_DOF_MIN_DEPTH = 0.05;
+
 float helionDofViewDepth(float deviceDepth) {
     return deviceDepth <= HELION_SKY_DEVICE_DEPTH ? HELION_SKY_VIEW_DEPTH : helionLinearDepth(deviceDepth);
 }
 
 float helionCircleOfConfusion(float viewDepth, float focusDepth) {
-    return clamp((1.0 - focusDepth / viewDepth) * Aperture, -1.0, 1.0);
+    float ratio = log(max(viewDepth, HELION_DOF_MIN_DEPTH) / max(focusDepth, HELION_DOF_MIN_DEPTH));
+    float band = HELION_DOF_SHARP_BAND + HELION_DOF_BAND_PER_LOG_DISTANCE * log(1.0 + focusDepth);
+    float blur = max(abs(ratio) - band, 0.0) * Aperture;
+    return ratio > 0.0 ? min(blur, HELION_DOF_FAR_LIMIT) : -min(blur, HELION_DOF_NEAR_LIMIT);
 }
 
 #endif
