@@ -11,7 +11,6 @@ import com.mojang.blaze3d.resource.ResourceHandle;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.commands.RenderPass;
-import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
@@ -91,14 +90,10 @@ public final class DepthOfFieldStage implements RenderStage {
         FramePass pass = frame.graph().addPass(DOWNSAMPLE_PASS);
         pass.reads(scene);
         pass.reads(focus);
-        Optional<ResourceHandle<RenderTarget>> terrainDepth = frame.geometry().terrainDepth();
-        terrainDepth.ifPresent(pass::reads);
-        CompiledRenderPipeline program = terrainDepth.isPresent() ? compiled.downsampleTerrainDepth() : compiled.downsample();
         ResourceHandle<RenderTarget> half = pass.createsInternal(HALF_TARGET, halfTarget(frame));
         pass.executes(frame.graph().timed(DOWNSAMPLE_PASS, () ->
-            FullscreenPass.draw("Helion Depth Of Field Downsample", half.get(), program, renderPass -> {
+            FullscreenPass.draw("Helion Depth Of Field Downsample", half.get(), compiled.downsample(), renderPass -> {
                 bindCommon(renderPass, frame);
-                bindTerrainDepth(renderPass, terrainDepth);
                 renderPass.setUniform(DepthOfFieldPipelines.SCENE_COLOR_SAMPLER, colorView(scene), nearest());
                 renderPass.setUniform(DepthOfFieldPipelines.DEPTH_SAMPLER, depthView(scene), nearest());
                 renderPass.setUniform(DepthOfFieldPipelines.FOCUS_SAMPLER, colorView(focus), nearest());
@@ -128,26 +123,17 @@ public final class DepthOfFieldStage implements RenderStage {
         FramePass pass = frame.graph().addPass(BLEND_PASS);
         pass.reads(blurred);
         pass.reads(focus);
-        Optional<ResourceHandle<RenderTarget>> terrainDepth = frame.geometry().terrainDepth();
-        terrainDepth.ifPresent(pass::reads);
-        CompiledRenderPipeline program = terrainDepth.isPresent() ? compiled.blendTerrainDepth() : compiled.blend();
         ResourceHandle<RenderTarget> scene = pass.readsAndWrites(source);
         frame.targets().updateScene(scene);
         pass.executes(frame.graph().timed(BLEND_PASS, () -> {
-            FullscreenPass.draw("Helion Depth Of Field Blend", scene.get(), program, renderPass -> {
+            FullscreenPass.draw("Helion Depth Of Field Blend", scene.get(), compiled.blend(), renderPass -> {
                 bindCommon(renderPass, frame);
-                bindTerrainDepth(renderPass, terrainDepth);
                 renderPass.setUniform(DepthOfFieldPipelines.BLURRED_SAMPLER, colorView(blurred), linear());
                 renderPass.setUniform(DepthOfFieldPipelines.DEPTH_SAMPLER, depthView(scene), nearest());
                 renderPass.setUniform(DepthOfFieldPipelines.FOCUS_SAMPLER, colorView(focus), nearest());
             });
             resources.finishFrame();
         }));
-    }
-
-    private static void bindTerrainDepth(RenderPass renderPass, Optional<ResourceHandle<RenderTarget>> terrainDepth) {
-        terrainDepth.ifPresent(depth ->
-            renderPass.setUniform(DepthOfFieldPipelines.TERRAIN_DEPTH_SAMPLER, colorView(depth), nearest()));
     }
 
     private void bindCommon(RenderPass renderPass, FrameContext frame) {

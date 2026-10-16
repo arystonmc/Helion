@@ -16,7 +16,6 @@ const float HELION_QUAD_AVERAGE = 0.25;
 void main() {
     ivec2 source = ivec2(gl_FragCoord.xy) * 2;
     ivec2 lastPixel = textureSize(SceneColorSampler, 0) - 1;
-    vec2 inverseSize = 1.0 / vec2(textureSize(DepthSampler, 0));
     float focus = texelFetch(FocusSampler, ivec2(0), 0).r;
     vec3 color = vec3(0.0);
     float circle = 0.0;
@@ -24,7 +23,7 @@ void main() {
         for (int x = 0; x <= 1; x++) {
             ivec2 pixel = min(source + ivec2(x, y), lastPixel);
             color += texelFetch(SceneColorSampler, pixel, 0).rgb;
-            float sampleCircle = helionDofCircle(texelFetch(DepthSampler, pixel, 0).r, (vec2(pixel) + 0.5) * inverseSize, focus);
+            float sampleCircle = helionCircleOfConfusion(helionDofViewDepth(texelFetch(DepthSampler, pixel, 0).r), focus);
             circle = abs(sampleCircle) > abs(circle) ? sampleCircle : circle;
         }
     }
