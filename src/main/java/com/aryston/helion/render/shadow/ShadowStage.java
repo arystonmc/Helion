@@ -56,6 +56,10 @@ public final class ShadowStage implements RenderStage {
 
     @Override
     public boolean isActive(FrameContext frame) {
+        return resources.markDrawn(decideActive(frame));
+    }
+
+    private boolean decideActive(FrameContext frame) {
         Optional<SkyLight> skyLight = frame.atmosphere().skyLight();
         if (!frame.settings().shadows().enabled()
             || !frame.settings().lighting().enabled()

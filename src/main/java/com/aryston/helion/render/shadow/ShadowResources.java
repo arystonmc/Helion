@@ -40,6 +40,7 @@ public final class ShadowResources {
     private @Nullable UniformRing settings;
     private int shadowMapResolution;
     private boolean missingPipelinesReported;
+    private volatile boolean drawnLastFrame;
 
     public ShadowResources(GpuResources resources) {
         this.resources = resources;
@@ -138,6 +139,15 @@ public final class ShadowResources {
             missingPipelinesReported = true;
             LOGGER.warn("Helion shadows are skipped because the shadow mask shader could not be compiled");
         }
+    }
+
+    public boolean drawnLastFrame() {
+        return drawnLastFrame;
+    }
+
+    boolean markDrawn(boolean drawn) {
+        drawnLastFrame = drawn;
+        return drawn;
     }
 
     public void close() {

@@ -517,7 +517,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ShadowResources
 - Path: `src/main/java/com/aryston/helion/render/shadow/ShadowResources.java`
-- Role: Persistent shadow state owned by the core: two sets of one D32_FLOAT shadow map per cascade (target `set x 4 + cascade`, recreated when the quality changes, which also clears the cache, registered in `GpuResources`), the `ShadowCascadeCache`, one projection uniform ring per cascade, two entity shadow targets (RGBA8 color plus D32_FLOAT depth at half the cascade resolution, because the vanilla entity pipelines need a color target) with their own projection rings, the `HelionShadow` uniform ring (inverse level view projection, the cached cascade matrices and texel sizes, light direction, shadow distance, cascade resolution) and the one-time missing shader warning.
+- Role: Persistent shadow state owned by the core: two sets of one D32_FLOAT shadow map per cascade (target `set x 4 + cascade`, recreated when the quality changes, which also clears the cache, registered in `GpuResources`), the `ShadowCascadeCache`, one projection uniform ring per cascade, two entity shadow targets (RGBA8 color plus D32_FLOAT depth at half the cascade resolution, because the vanilla entity pipelines need a color target) with their own projection rings, the `HelionShadow` uniform ring (inverse level view projection, the cached cascade matrices and texel sizes, light direction, shadow distance, cascade resolution) and the one-time missing shader warning. `drawnLastFrame` tells whether `ShadowStage` drew sun shadows in the last frame; `EntityRendererMixin` reads it.
 - Depends on: `GpuResources`, `UniformRing`, `ShadowCascades`, `ShadowCascadeCache`, `HelionCamera`.
 
 #### ShadowPipelines
@@ -814,6 +814,11 @@ Every class and source file of Helion with its purpose. Find the right file here
 - Role: Hands the level projection matrix that `GameRenderer.renderLevel` uploads (camera projection with view bobbing and nausea distortion) to `HelionRenderCore`, unchanged; frames read it as `HelionCamera.levelProjection`.
 - Notes: no event exposes the final level projection, and temporal anti-aliasing must jitter and reproject exactly the matrix the level is drawn with.
 
+#### EntityRendererMixin
+- Path: `src/main/java/com/aryston/helion/mixin/EntityRendererMixin.java`
+- Role: Skips vanilla's round entity shadow (`EntityRenderer.extractShadow`) while the core is active and drew sun shadows in the last frame, so mobs and items show only their real sun shadow; with Helion off or its shadows off vanilla draws the round shadow as before. Also saves the block scan vanilla runs under every entity for it.
+- Notes: No event lets a mod drop the entity shadow pieces before they are submitted.
+
 #### SkyRendererMixin
 - Path: `src/main/java/com/aryston/helion/mixin/SkyRendererMixin.java`
 - Role: Cancels `SkyRenderer.renderSkyDisc` while `HelionSky` draws only the celestial bodies, so the vanilla sunrise and sunset glow, sun, moon, stars and dark disc are drawn over the physical sky, and dims the color of `renderMoon` through `HelionSky.moonColor` whenever Helion draws the sky.
@@ -863,7 +868,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | File | Purpose |
 |---|---|
 | `src/main/templates/META-INF/neoforge.mods.toml` | Mod metadata template filled from `gradle.properties`: dependencies (Arkea required, so the game refuses to start without it), discouraged Sodium and Iris, mixin config. |
-| `src/main/resources/helion.mixins.json` | Mixin configuration listing `ChunkSectionsToRenderAccessor`, `GameRendererMixin`, `LevelRendererAccessor`, `LevelRendererMixin` and `SkyRendererMixin`. |
+| `src/main/resources/helion.mixins.json` | Mixin configuration listing `ChunkSectionsToRenderAccessor`, `EntityRendererMixin`, `GameRendererMixin`, `LevelRendererAccessor`, `LevelRendererMixin` and `SkyRendererMixin`. |
 
 ## Asset Folders
 

@@ -146,6 +146,7 @@ Blocks cast real shadows that move with the sun through the day.
 
 - Hills, trees, buildings and every solid or cutout block cast shadows from the sun, and from the moon at night; grass and flowers do not, so the ground stays clean instead of speckled
 - Mobs, players, armor stands, chests, item frames and dropped items cast real shadows near you too, and their shadows move with them
+- While these shadows are on, vanilla's round dark spot under mobs and dropped items is gone, so nothing has two shadows
 - Shadows stay sharp near you and reach up to 160 blocks away, then fade out softly
 - Shadows move smoothly with the sun instead of jumping once a second
 - Shadow edges are smoothed and do not crawl or flicker when you move
