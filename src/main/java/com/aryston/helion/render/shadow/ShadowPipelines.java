@@ -21,6 +21,9 @@ public final class ShadowPipelines {
     public static final List<String> SHADOW_MAP_SAMPLERS = IntStream.range(0, ShadowCascades.COUNT)
         .mapToObj(cascade -> "ShadowMapSampler" + cascade)
         .toList();
+    public static final List<String> PREVIOUS_SHADOW_MAP_SAMPLERS = IntStream.range(0, ShadowCascades.COUNT)
+        .mapToObj(cascade -> "PreviousShadowMapSampler" + cascade)
+        .toList();
     public static final int ENTITY_CASCADES = 2;
     public static final List<String> ENTITY_SHADOW_SAMPLERS = IntStream.range(0, ENTITY_CASCADES)
         .mapToObj(cascade -> "EntityShadowSampler" + cascade)
@@ -56,7 +59,10 @@ public final class ShadowPipelines {
             .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
             .withUniform(DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(GEOMETRY_NORMAL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER);
-        for (String sampler : Stream.concat(SHADOW_MAP_SAMPLERS.stream(), ENTITY_SHADOW_SAMPLERS.stream()).toList()) {
+        List<String> samplers = Stream.of(SHADOW_MAP_SAMPLERS, PREVIOUS_SHADOW_MAP_SAMPLERS, ENTITY_SHADOW_SAMPLERS)
+            .flatMap(List::stream)
+            .toList();
+        for (String sampler : samplers) {
             bindings = bindings.withUniform(sampler, UniformType.COMBINED_IMAGE_SAMPLER);
         }
         return bindings.build();

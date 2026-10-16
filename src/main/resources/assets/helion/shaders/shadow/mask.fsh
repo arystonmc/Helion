@@ -18,18 +18,29 @@ const float HELION_CASCADE_BORDER_TEXELS = 2.0;
 const float HELION_FADE_START = 0.85;
 const float HELION_FULLY_LIT = 1.0;
 
-float helionShadowVisibility(vec3 position, vec3 normal) {
+vec2 helionShadowVisibility(bool previous, vec3 position, vec3 normal) {
     float border = 1.0 - 2.0 * HELION_CASCADE_BORDER_TEXELS / CascadeResolution;
+    vec3 lightDirection = previous ? PreviousLightDirection : LightDirection;
     for (int cascade = 0; cascade < HELION_SHADOW_CASCADES; cascade++) {
-        float texelSize = CascadeTexelSizes[cascade];
-        vec3 offset = position + normal * texelSize * HELION_NORMAL_OFFSET_TEXELS + LightDirection * texelSize * HELION_LIGHT_OFFSET_TEXELS;
-        vec3 clip = (CascadeMatrices[cascade] * vec4(offset, 1.0)).xyz;
+        float texelSize = previous ? PreviousTexelSizes[cascade] : CascadeTexelSizes[cascade];
+        mat4 cascadeMatrix = previous ? PreviousCascadeMatrices[cascade] : CascadeMatrices[cascade];
+        vec3 offset = position + normal * texelSize * HELION_NORMAL_OFFSET_TEXELS + lightDirection * texelSize * HELION_LIGHT_OFFSET_TEXELS;
+        vec3 clip = (cascadeMatrix * vec4(offset, 1.0)).xyz;
         if (abs(clip.x) <= border && abs(clip.y) <= border && clip.z <= 1.0) {
-            float visibility = helionCascadeVisibility(cascade, clip);
-            return cascade < HELION_ENTITY_CASCADES ? min(visibility, helionEntityVisibility(cascade, clip)) : visibility;
+            float entities = !previous && cascade < HELION_ENTITY_CASCADES ? helionEntityVisibility(cascade, clip) : HELION_FULLY_LIT;
+            return vec2(helionCascadeVisibility(previous, cascade, clip), entities);
         }
     }
-    return HELION_FULLY_LIT;
+    return vec2(HELION_FULLY_LIT);
+}
+
+float helionBlendedVisibility(vec3 position, vec3 normal) {
+    vec2 current = helionShadowVisibility(false, position, normal);
+    float terrain = current.x;
+    if (PreviousWeight > 0.0) {
+        terrain = mix(terrain, helionShadowVisibility(true, position, normal).x, PreviousWeight);
+    }
+    return min(terrain, current.y);
 }
 
 void main() {
@@ -48,5 +59,5 @@ void main() {
     vec4 world = InverseViewProjection * vec4(texCoord * 2.0 - 1.0, depth, 1.0);
     vec3 position = world.xyz / world.w;
     float fade = smoothstep(ShadowDistance * HELION_FADE_START, ShadowDistance, length(position));
-    fragColor = vec4(mix(helionShadowVisibility(position, normal), HELION_FULLY_LIT, fade));
+    fragColor = vec4(mix(helionBlendedVisibility(position, normal), HELION_FULLY_LIT, fade));
 }

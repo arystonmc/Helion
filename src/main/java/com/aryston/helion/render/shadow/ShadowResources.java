@@ -48,8 +48,8 @@ public final class ShadowResources {
     List<RenderTarget> shadowMaps(int resolution) {
         if (shadowMaps.isEmpty() || shadowMapResolution != resolution) {
             releaseShadowMaps();
-            for (int cascade = 0; cascade < ShadowCascades.COUNT; cascade++) {
-                String label = SHADOW_MAP_LABEL + cascade;
+            for (int target = 0; target < ShadowCascadeCache.SETS * ShadowCascades.COUNT; target++) {
+                String label = SHADOW_MAP_LABEL + target;
                 TextureTarget created = new TextureTarget(label, resolution, resolution, null, ShadowPipelines.SHADOW_MAP_FORMAT);
                 trackedShadowMaps.add(resources.track(
                     label, (long) resolution * resolution * ShadowPipelines.SHADOW_MAP_FORMAT.blockSize(), created::destroyBuffers
@@ -98,21 +98,31 @@ public final class ShadowResources {
         return projections.get(cascade).write(builder -> builder.putMat4f(projection));
     }
 
-    GpuBuffer writeSettings(HelionCamera camera, ShadowLight light, float distance, int resolution) {
+    GpuBuffer writeSettings(HelionCamera camera, float distance, int resolution, float previousWeight) {
         if (settings == null) {
             settings = new UniformRing(SETTINGS_LABEL, SETTINGS_SIZE, resources);
         }
-        Vector4f texelSizes = new Vector4f(cache.texelSize(0), cache.texelSize(1), cache.texelSize(2), cache.texelSize(3));
+        int current = cache.currentSet();
+        int previous = previousWeight > 0.0F ? cache.previousSet() : current;
         return Objects.requireNonNull(settings).write(builder -> {
             builder.putMat4f(camera.levelViewProjection().invert());
-            for (int cascade = 0; cascade < ShadowCascades.COUNT; cascade++) {
-                builder.putMat4f(cache.maskMatrix(cascade, camera.position()));
+            for (int set : new int[] {current, previous}) {
+                for (int cascade = 0; cascade < ShadowCascades.COUNT; cascade++) {
+                    builder.putMat4f(cache.maskMatrix(set, cascade, camera.position()));
+                }
             }
-            builder.putVec4(texelSizes)
-                .putVec3(light.direction())
+            builder.putVec4(texelSizes(current))
+                .putVec4(texelSizes(previous))
+                .putVec3(cache.lightDirection(current))
                 .putFloat(distance)
-                .putFloat(resolution);
+                .putVec3(cache.lightDirection(previous))
+                .putFloat(resolution)
+                .putFloat(previousWeight);
         });
+    }
+
+    private Vector4f texelSizes(int set) {
+        return new Vector4f(cache.texelSize(set, 0), cache.texelSize(set, 1), cache.texelSize(set, 2), cache.texelSize(set, 3));
     }
 
     void finishFrame() {
@@ -160,9 +170,9 @@ public final class ShadowResources {
 
     private static int settingsSize() {
         Std140SizeCalculator calculator = new Std140SizeCalculator().putMat4f();
-        for (int cascade = 0; cascade < ShadowCascades.COUNT; cascade++) {
+        for (int cascade = 0; cascade < ShadowCascadeCache.SETS * ShadowCascades.COUNT; cascade++) {
             calculator.putMat4f();
         }
-        return calculator.putVec4().putVec3().putFloat().putFloat().get();
+        return calculator.putVec4().putVec4().putVec3().putFloat().putVec3().putFloat().putFloat().get();
     }
 }

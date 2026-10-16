@@ -82,6 +82,7 @@ A camera lens look: what you look at stays sharp, the rest softly blurs.
 - The sharp area grows with the focus distance, so looking into the distance keeps the world around you sharp; blur in front and behind is limited and soft
 - Close objects blur over the background naturally, and the background never leaves a halo around sharp things in front
 - The blur fades in softly with distance, without a visible line between the sharp and the blurred area
+- The sky, the sun, the moon and the clouds always stay sharp
 - Settings: on or off and its strength in the effects settings; off by default while it is experimental
 - Since: Unreleased
 

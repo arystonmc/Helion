@@ -6,16 +6,24 @@ const int HELION_SHADOW_CASCADES = 4;
 layout(std140) uniform HelionShadow {
     mat4 InverseViewProjection;
     mat4 CascadeMatrices[HELION_SHADOW_CASCADES];
+    mat4 PreviousCascadeMatrices[HELION_SHADOW_CASCADES];
     vec4 CascadeTexelSizes;
+    vec4 PreviousTexelSizes;
     vec3 LightDirection;
     float ShadowDistance;
+    vec3 PreviousLightDirection;
     float CascadeResolution;
+    float PreviousWeight;
 };
 
 uniform sampler2D ShadowMapSampler0;
 uniform sampler2D ShadowMapSampler1;
 uniform sampler2D ShadowMapSampler2;
 uniform sampler2D ShadowMapSampler3;
+uniform sampler2D PreviousShadowMapSampler0;
+uniform sampler2D PreviousShadowMapSampler1;
+uniform sampler2D PreviousShadowMapSampler2;
+uniform sampler2D PreviousShadowMapSampler3;
 uniform sampler2D EntityShadowSampler0;
 uniform sampler2D EntityShadowSampler1;
 
@@ -35,7 +43,19 @@ float helionPcfWeight(int offset, float fraction) {
     return offset == HELION_PCF_LAST ? fraction : 1.0;
 }
 
-float helionShadowMapDepth(int cascade, ivec2 coordinate) {
+float helionShadowMapDepth(bool previous, int cascade, ivec2 coordinate) {
+    if (previous) {
+        if (cascade == HELION_NEAR_CASCADE) {
+            return texelFetch(PreviousShadowMapSampler0, coordinate, 0).r;
+        }
+        if (cascade == HELION_MIDDLE_CASCADE) {
+            return texelFetch(PreviousShadowMapSampler1, coordinate, 0).r;
+        }
+        if (cascade == HELION_FAR_CASCADE) {
+            return texelFetch(PreviousShadowMapSampler2, coordinate, 0).r;
+        }
+        return texelFetch(PreviousShadowMapSampler3, coordinate, 0).r;
+    }
     if (cascade == HELION_NEAR_CASCADE) {
         return texelFetch(ShadowMapSampler0, coordinate, 0).r;
     }
@@ -48,7 +68,7 @@ float helionShadowMapDepth(int cascade, ivec2 coordinate) {
     return texelFetch(ShadowMapSampler3, coordinate, 0).r;
 }
 
-float helionCascadeVisibility(int cascade, vec3 clip) {
+float helionCascadeVisibility(bool previous, int cascade, vec3 clip) {
     vec2 texel = (clip.xy * 0.5 + 0.5) * CascadeResolution - 0.5;
     vec2 base = floor(texel);
     vec2 fraction = texel - base;
@@ -60,7 +80,7 @@ float helionCascadeVisibility(int cascade, vec3 clip) {
         for (int x = HELION_PCF_FIRST; x <= HELION_PCF_LAST; x++) {
             float weight = helionPcfWeight(x, fraction.x) * weightY;
             ivec2 coordinate = clamp(ivec2(base) + ivec2(x, y), ivec2(0), ivec2(resolution - 1));
-            float occluder = helionShadowMapDepth(cascade, coordinate);
+            float occluder = helionShadowMapDepth(previous, cascade, coordinate);
             visible += clip.z <= occluder ? weight : 0.0;
             total += weight;
         }
