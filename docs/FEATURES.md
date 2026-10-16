@@ -81,6 +81,7 @@ A camera lens look: what you look at stays sharp, the rest softly blurs.
 - Focus follows what is at the center of the screen, ignores the sky and tiny changes, and moves smoothly, faster toward something nearer
 - The sharp area grows with the focus distance, so looking into the distance keeps the world around you sharp; blur in front and behind is limited and soft
 - Close objects blur over the background naturally, and the background never leaves a halo around sharp things in front
+- The blur fades in softly with distance, without a visible line between the sharp and the blurred area
 - Settings: on or off and its strength in the effects settings; off by default while it is experimental
 - Since: Unreleased
 
@@ -146,8 +147,9 @@ Blocks cast real shadows that move with the sun through the day.
 - Hills, trees, buildings and every solid or cutout block cast shadows from the sun, and from the moon at night; grass and flowers do not, so the ground stays clean instead of speckled
 - Mobs, players, armor stands, chests, item frames and dropped items cast real shadows near you too, and their shadows move with them
 - Shadows stay sharp near you and reach up to 160 blocks away, then fade out softly
-- Shadow edges are smoothed and do not crawl or flicker when you move or while the sun crosses the sky
-- Far shadows are redrawn only every few frames, so shadows cost far fewer frames per second
+- Shadows move smoothly with the sun instead of jumping once a second
+- Shadow edges are smoothed and do not crawl or flicker when you move
+- Shadows are redrawn only when the sun moved, a few times per second, or when you move far enough, so they cost far fewer frames per second
 - Shadows fade in and out gently at sunrise and sunset instead of popping
 - Shade keeps a soft cool light from the sky and some light bounced off the ground, so shadowed areas look natural instead of black or blue
 - Needs the geometry buffer, HDR lighting and the physical sky to be on

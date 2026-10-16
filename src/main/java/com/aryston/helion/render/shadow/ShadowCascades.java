@@ -52,11 +52,11 @@ public final class ShadowCascades {
         return SPLITS[index] * maxDistance;
     }
 
-    static Matrix4f entityProjection(ShadowCascade cascade, Matrix4fc viewRotation, boolean zeroToOneDepth) {
+    static Matrix4f entityProjection(Matrix4fc lightViewProjection, Matrix4fc viewRotation, boolean zeroToOneDepth) {
         Matrix4f reversedDepth = zeroToOneDepth
             ? new Matrix4f().translation(0.0F, 0.0F, DEPTH_RANGE).scale(1.0F, 1.0F, MIRRORED_DEPTH)
             : new Matrix4f().scaling(1.0F, 1.0F, MIRRORED_DEPTH);
-        return reversedDepth.mul(cascade.lightViewProjection()).mul(new Matrix4f(viewRotation).invert());
+        return reversedDepth.mul(lightViewProjection).mul(new Matrix4f(viewRotation).invert());
     }
 
     public static float distance(int renderDistanceBlocks) {

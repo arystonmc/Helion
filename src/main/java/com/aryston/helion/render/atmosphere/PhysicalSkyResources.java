@@ -37,6 +37,11 @@ public final class PhysicalSkyResources {
     private static final String TRANSMITTANCE_LABEL = "Helion Sky Transmittance #";
     private static final String MULTIPLE_SCATTERING_LABEL = "Helion Sky Multiple Scattering #";
     private static final String LOOKUPS_LABEL = "Helion Sky Lookup Tables";
+    private static final String SUN_SKY_VIEW_LABEL = "Helion Sun Sky View #";
+    private static final String MOON_SKY_VIEW_LABEL = "Helion Moon Sky View #";
+    private static final String SKY_VIEWS_LABEL = "Helion Sky View Tables";
+    private static final int SKY_VIEW_TARGETS = 2;
+    private static final int SKY_VIEW_LIGHTS = 2;
     private static final float METERS_PER_KILOMETER = 1000.0F;
     private static final float MIN_ALTITUDE_KILOMETERS = 0.001F;
     private static final float OPAQUE = 1.0F;
@@ -80,6 +85,11 @@ public final class PhysicalSkyResources {
     private List<TextureTarget> transmittance = List.of();
     private List<TextureTarget> multipleScattering = List.of();
     private @Nullable TrackedResource trackedLookups;
+    private final SkyViewCache sunSkyViewCache = new SkyViewCache();
+    private final SkyViewCache moonSkyViewCache = new SkyViewCache();
+    private List<TextureTarget> sunSkyView = List.of();
+    private List<TextureTarget> moonSkyView = List.of();
+    private @Nullable TrackedResource trackedSkyViews;
     private boolean lookupsWritten;
     private boolean missingPipelinesReported;
 
@@ -100,6 +110,24 @@ public final class PhysicalSkyResources {
     List<RenderTarget> multipleScattering() {
         createLookups();
         return List.copyOf(multipleScattering);
+    }
+
+    List<RenderTarget> sunSkyView() {
+        createSkyViews();
+        return List.copyOf(sunSkyView);
+    }
+
+    List<RenderTarget> moonSkyView() {
+        createSkyViews();
+        return List.copyOf(moonSkyView);
+    }
+
+    SkyViewCache sunSkyViewCache() {
+        return sunSkyViewCache;
+    }
+
+    SkyViewCache moonSkyViewCache() {
+        return moonSkyViewCache;
     }
 
     boolean lookupsWritten() {
@@ -184,6 +212,12 @@ public final class PhysicalSkyResources {
         transmittance = List.of();
         multipleScattering = List.of();
         lookupsWritten = false;
+        release(trackedSkyViews);
+        trackedSkyViews = null;
+        sunSkyView = List.of();
+        moonSkyView = List.of();
+        sunSkyViewCache.invalidate();
+        moonSkyViewCache.invalidate();
         release(trackedBuffers);
         trackedBuffers = null;
         spectrum = null;
@@ -240,8 +274,32 @@ public final class PhysicalSkyResources {
         lookupsWritten = false;
     }
 
+    private void createSkyViews() {
+        if (!sunSkyView.isEmpty()) {
+            return;
+        }
+        int width = PhysicalSkyPipelines.SKY_VIEW_WIDTH;
+        int height = PhysicalSkyPipelines.SKY_VIEW_HEIGHT;
+        List<TextureTarget> createdSun = lookupTargets(SUN_SKY_VIEW_LABEL, SKY_VIEW_TARGETS, width, height);
+        List<TextureTarget> createdMoon = lookupTargets(MOON_SKY_VIEW_LABEL, SKY_VIEW_TARGETS, width, height);
+        List<TextureTarget> all = new ArrayList<>(createdSun);
+        all.addAll(createdMoon);
+        long texels = (long) width * height * SKY_VIEW_TARGETS * SKY_VIEW_LIGHTS;
+        trackedSkyViews = resources.track(
+            SKY_VIEWS_LABEL, texels * PhysicalSkyPipelines.LOOKUP_FORMAT.blockSize(), () -> all.forEach(TextureTarget::destroyBuffers)
+        );
+        sunSkyView = createdSun;
+        moonSkyView = createdMoon;
+        sunSkyViewCache.invalidate();
+        moonSkyViewCache.invalidate();
+    }
+
     private static List<TextureTarget> lookupTargets(String label, int width, int height) {
-        return IntStream.range(0, AtmosphereSpectrum.GROUP_COUNT)
+        return lookupTargets(label, AtmosphereSpectrum.GROUP_COUNT, width, height);
+    }
+
+    private static List<TextureTarget> lookupTargets(String label, int count, int width, int height) {
+        return IntStream.range(0, count)
             .mapToObj(group -> new TextureTarget(label + group, width, height, PhysicalSkyPipelines.LOOKUP_FORMAT, null))
             .toList();
     }

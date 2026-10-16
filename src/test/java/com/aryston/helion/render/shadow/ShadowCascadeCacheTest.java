@@ -18,17 +18,31 @@ class ShadowCascadeCacheTest {
     private static final Vector3d CAMERA = new Vector3d(100.3, 64.0, 50.7);
     private static final float TOLERANCE = 1.0e-3F;
     private static final List<Integer> EVERY_CASCADE = List.of(0, 1, 2, 3);
+    private static final long MILLIS = 1_000_000L;
 
     @Test
-    void nearCascadesUpdateEveryFrameAndFarCascadesTakeTurns() {
+    void cascadesWaitWhileNothingChangesAndRefreshAfterTheirTime() {
         ShadowCascadeCache cache = new ShadowCascadeCache();
         ShadowLight sun = light(MORNING_SUN);
 
-        assertEquals(EVERY_CASCADE, update(cache, CAMERA, sun));
-        assertEquals(List.of(0, 1, 2), update(cache, CAMERA, sun));
-        assertEquals(List.of(0, 1), update(cache, CAMERA, sun));
-        assertEquals(List.of(0, 1, 2), update(cache, CAMERA, sun));
-        assertEquals(List.of(0, 1, 3), update(cache, CAMERA, sun));
+        assertEquals(EVERY_CASCADE, update(cache, CAMERA, sun, 0));
+        assertEquals(List.of(), update(cache, CAMERA, sun, 10 * MILLIS));
+        assertEquals(List.of(0, 1), update(cache, CAMERA, sun, 60 * MILLIS));
+        assertEquals(List.of(0, 1), update(cache, CAMERA, sun, 120 * MILLIS));
+        assertEquals(List.of(2), update(cache, CAMERA, sun, 130 * MILLIS));
+        assertEquals(List.of(0, 1, 3), update(cache, CAMERA, sun, 210 * MILLIS));
+    }
+
+    @Test
+    void aLightStepRedrawsTheNearCascadesAtOnceAndTheFarOnesOnTheirTurn() {
+        ShadowCascadeCache cache = new ShadowCascadeCache();
+        Vector3f sun = new Vector3f(MORNING_SUN).normalize();
+        update(cache, CAMERA, light(sun), 0);
+        ShadowLight later = light(new Vector3f(sun).rotateZ(ShadowLight.DIRECTION_STEP * 2.0F));
+
+        assertEquals(List.of(0, 1, 3), update(cache, CAMERA, later, MILLIS));
+        assertEquals(List.of(2), update(cache, CAMERA, later, 2 * MILLIS));
+        assertEquals(List.of(), update(cache, CAMERA, later, 3 * MILLIS));
     }
 
     @Test
@@ -36,13 +50,13 @@ class ShadowCascadeCacheTest {
         ShadowCascadeCache cache = new ShadowCascadeCache();
         ShadowLight sun = light(MORNING_SUN);
         List<ShadowCascade> rendered = compute(CAMERA);
-        cache.update(rendered, CAMERA, sun, RESOLUTION);
+        cache.update(rendered, CAMERA, sun, RESOLUTION, 0);
         Vector3d moved = new Vector3d(CAMERA).add(0.6, 0.1, -0.4);
-        List<Integer> due = update(cache, moved, sun);
+        List<Integer> due = update(cache, moved, sun, 60 * MILLIS);
         Vector3d world = new Vector3d(130.0, 62.0, 80.0);
         int farCascade = ShadowCascades.COUNT - 1;
 
-        assertEquals(List.of(0, 1, 2), due);
+        assertEquals(List.of(0, 1), due);
         Vector4f expected = rendered.get(farCascade).lightViewProjection().transform(relative(world, CAMERA));
         Vector4f actual = cache.maskMatrix(farCascade, moved).transform(relative(world, moved));
         assertEquals(expected.x, actual.x, TOLERANCE);
@@ -54,30 +68,30 @@ class ShadowCascadeCacheTest {
     void aCameraJumpUpdatesEveryCascade() {
         ShadowCascadeCache cache = new ShadowCascadeCache();
         ShadowLight sun = light(MORNING_SUN);
-        update(cache, CAMERA, sun);
+        update(cache, CAMERA, sun, 0);
 
-        assertEquals(EVERY_CASCADE, update(cache, new Vector3d(CAMERA).add(600.0, 0.0, 600.0), sun));
+        assertEquals(EVERY_CASCADE, update(cache, new Vector3d(CAMERA).add(600.0, 0.0, 600.0), sun, MILLIS));
     }
 
     @Test
     void aMovedLightUpdatesEveryCascade() {
         ShadowCascadeCache cache = new ShadowCascadeCache();
-        update(cache, CAMERA, light(MORNING_SUN));
+        update(cache, CAMERA, light(MORNING_SUN), 0);
 
-        assertEquals(EVERY_CASCADE, update(cache, CAMERA, light(new Vector3f(0.5F, 0.85F, 0.1F))));
+        assertEquals(EVERY_CASCADE, update(cache, CAMERA, light(new Vector3f(0.5F, 0.85F, 0.1F)), MILLIS));
     }
 
     @Test
     void switchingFromTheSunToTheMoonUpdatesEveryCascade() {
         ShadowCascadeCache cache = new ShadowCascadeCache();
-        update(cache, CAMERA, light(MORNING_SUN));
+        update(cache, CAMERA, light(MORNING_SUN), 0);
         ShadowLight moon = ShadowLight.choose(BELOW, MORNING_SUN).orElseThrow();
 
-        assertEquals(EVERY_CASCADE, update(cache, CAMERA, moon));
+        assertEquals(EVERY_CASCADE, update(cache, CAMERA, moon, MILLIS));
     }
 
-    private static List<Integer> update(ShadowCascadeCache cache, Vector3d camera, ShadowLight light) {
-        return cache.update(compute(camera, light), camera, light, RESOLUTION);
+    private static List<Integer> update(ShadowCascadeCache cache, Vector3d camera, ShadowLight light, long now) {
+        return cache.update(compute(camera, light), camera, light, RESOLUTION, now);
     }
 
     private static ShadowLight light(Vector3f direction) {

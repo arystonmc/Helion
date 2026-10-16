@@ -87,14 +87,14 @@ public final class ShadowStage implements RenderStage {
             camera.position(), camera.viewRotation(), camera.projection(), shadowLight.direction(), distance, resolution, camera.zeroToOneDepth()
         );
         List<RenderTarget> shadowMaps = resources.shadowMaps(resolution);
-        List<Integer> due = resources.cache().update(cascades, camera.position(), shadowLight, resolution);
+        List<Integer> due = resources.cache().update(cascades, camera.position(), shadowLight, resolution, System.nanoTime());
         casters.prepare(due.stream().map(cascades::get).toList());
         List<ResourceHandle<RenderTarget>> imported = new ArrayList<>(ShadowCascades.COUNT);
         for (int index = 0; index < ShadowCascades.COUNT; index++) {
             imported.add(frame.graph().builder().importExternal(SHADOW_MAP + index, shadowMaps.get(index)));
         }
         List<ResourceHandle<RenderTarget>> maps = addShadowMapPass(frame, imported, cascades, due);
-        List<ResourceHandle<RenderTarget>> entityMaps = addEntityPass(frame, cascades, resolution);
+        List<ResourceHandle<RenderTarget>> entityMaps = addEntityPass(frame, resolution);
         ResourceHandle<RenderTarget> visibility = addMaskPass(frame, maps, entityMaps, shadowLight, distance, resolution);
         frame.shadows().publish(visibility, shadowLight);
     }
@@ -124,7 +124,7 @@ public final class ShadowStage implements RenderStage {
         return List.copyOf(maps);
     }
 
-    private List<ResourceHandle<RenderTarget>> addEntityPass(FrameContext frame, List<ShadowCascade> cascades, int resolution) {
+    private List<ResourceHandle<RenderTarget>> addEntityPass(FrameContext frame, int resolution) {
         List<RenderTarget> targets = resources.entityMaps(resolution);
         FramePass pass = frame.graph().addPass(ENTITY_PASS);
         List<ResourceHandle<RenderTarget>> maps = new ArrayList<>(ShadowPipelines.ENTITY_CASCADES);
@@ -134,7 +134,9 @@ public final class ShadowStage implements RenderStage {
         HelionCamera camera = frame.camera();
         pass.executes(frame.graph().timed(ENTITY_PASS, () -> {
             for (int index = 0; index < ShadowPipelines.ENTITY_CASCADES; index++) {
-                Matrix4f projection = ShadowCascades.entityProjection(cascades.get(index), camera.viewRotation(), camera.zeroToOneDepth());
+                Matrix4f projection = ShadowCascades.entityProjection(
+                    resources.cache().maskMatrix(index, camera.position()), camera.viewRotation(), camera.zeroToOneDepth()
+                );
                 renderEntities(index, maps.get(index).get(), resources.writeEntityProjection(index, projection));
             }
         }));

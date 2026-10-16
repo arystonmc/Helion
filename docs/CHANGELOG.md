@@ -17,6 +17,10 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental motion blur when the camera moves or turns, with a strength setting
 
 ### Changed
+- Shadows move smoothly with the sun instead of jumping about once a second
+- Make shadows faster by redrawing them only when the sun moved or you moved far enough: about 13 % more frames per second with every effect on
+- Make the physical sky faster by redrawing its sky tables only when the sun, the moon or your height changed
+- Depth of field blur fades in softly instead of starting at a sharp line
 - Depth of field focuses more steadily, keeps a wider area sharp when you look far away and no longer leaves a halo around sharp objects
 - Draw terrain from Aervium's compact chunk vertices when its compactVertices module is on
 - Make sun and moon shadows much faster by redrawing far shadows less often
@@ -57,5 +61,9 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - English and Turkish translations
 
 ### Changed
+- Shadows move smoothly with the sun instead of jumping about once a second
+- Make shadows faster by redrawing them only when the sun moved or you moved far enough: about 13 % more frames per second with every effect on
+- Make the physical sky faster by redrawing its sky tables only when the sun, the moon or your height changed
+- Depth of field blur fades in softly instead of starting at a sharp line
 - Adopt the Aryston Source-Available License
 - Draw the moon dimmer than the sun so it no longer glows like a second sun
