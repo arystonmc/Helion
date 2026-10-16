@@ -39,14 +39,6 @@ config="${mod_id}.mixins.json"
     side="CLIENT"
 
 [[dependencies.${mod_id}]]
-    modId="sodium"
-    type="discouraged"
-    reason="Sodium replaces the terrain renderer that Helion controls. Helion stays inactive while Sodium is installed."
-    versionRange="*"
-    ordering="NONE"
-    side="CLIENT"
-
-[[dependencies.${mod_id}]]
     modId="iris"
     type="discouraged"
     reason="Iris replaces the render pipeline that Helion controls. Helion stays inactive while Iris is installed."

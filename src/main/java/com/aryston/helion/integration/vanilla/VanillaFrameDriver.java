@@ -14,6 +14,7 @@ import com.aryston.helion.render.lighting.LightEnvironment;
 import com.aryston.helion.render.post.PostResults;
 import com.aryston.helion.render.shadow.ShadowResults;
 import com.aryston.helion.render.scene.SceneSnapshot;
+import com.aryston.helion.render.temporal.FrameSize;
 import com.aryston.helion.render.temporal.TemporalFrame;
 import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
@@ -54,7 +55,7 @@ final class VanillaFrameDriver {
         LevelRendererAccessor level = request.level();
         HelionRenderCore core = HelionRenderCore.get();
         RenderTarget output = level.helion$gameRenderer().mainRenderTarget();
-        RenderTarget scene = core.beginLevelFrame(output);
+        RenderTarget scene = core.beginLevelFrame(output, core.temporal().upscaling(settings.temporal()));
         RenderSystem.isRenderingLevel = true;
         try {
             keepVanillaSkyExtracted(request, output);
@@ -117,7 +118,10 @@ final class VanillaFrameDriver {
             ChunkSectionsToRender sections = prepareSections(request, orderIndependent);
             HelionCamera unjitteredCamera = camera(camera);
             TemporalFrame temporal = HelionRenderCore.get().temporal()
-                .begin(settings.temporal(), settings.image().motionBlur().enabled(), unjitteredCamera, scene.width, scene.height);
+                .begin(
+                    settings.temporal(), settings.image().motionBlur().enabled(), unjitteredCamera,
+                    new FrameSize(scene.width, scene.height, output.width, output.height)
+                );
             HelionCamera helionCamera = unjitteredCamera;
             if (temporal.active()) {
                 RenderSystem.setProjectionMatrix(jitteredProjection(temporal), ProjectionType.PERSPECTIVE);
@@ -133,6 +137,8 @@ final class VanillaFrameDriver {
                     orderIndependent,
                     scene.width,
                     scene.height,
+                    output.width,
+                    output.height,
                     Objects.requireNonNull(scene.getColorTexture()).getFormat(),
                     ambientLight.update(camera.blockPos),
                     lightEnvironment(gameRenderer.gameRenderState().lightmapRenderState)
@@ -145,7 +151,7 @@ final class VanillaFrameDriver {
                 new PostResults()
             );
             HelionRenderCore.get().recordFrame(frame.camera(), frame.scene());
-            FrameStages.build(frame, sources(request, sections, featureFrame));
+            FrameStages.build(frame, sources(request, sections, featureFrame, targets));
             profiler.popPush("executeFrameGraph");
             builder.execute(request.resourceAllocator(), new ProfilerInspector(profiler));
             profiler.pop();
@@ -171,7 +177,12 @@ final class VanillaFrameDriver {
         return buffer.getBuffer(new Matrix4f(temporal.jitteredProjection()));
     }
 
-    private FrameSources sources(LevelFrameRequest request, ChunkSectionsToRender sections, FeatureRenderDispatcher.PreparedFrame featureFrame) {
+    private FrameSources sources(
+        LevelFrameRequest request,
+        ChunkSectionsToRender sections,
+        FeatureRenderDispatcher.PreparedFrame featureFrame,
+        VanillaFrameTargets targets
+    ) {
         StageEvents events = new StageEvents(request);
         SceneFog fog = new SceneFog(request.terrainFog());
         return new FrameSources(
@@ -179,8 +190,8 @@ final class VanillaFrameDriver {
             new VanillaEntitySource(request, featureFrame, events),
             new VanillaAtmosphereSource(request, sky, fog, events),
             new VanillaTransparencySource(request, sections, featureFrame),
-            new VanillaShadowCasterSource(request, shadowCasters),
-            List.of(new VanillaEntityOutlineEffect(request.level()))
+            new VanillaShadowCasterSource(request, shadowCasters, featureFrame),
+            List.of(new VanillaEntityOutlineEffect(request.level(), targets))
         );
     }
 
@@ -196,14 +207,14 @@ final class VanillaFrameDriver {
             : levelRenderer.prepareChunkRenders(terrainMatrix, !orderIndependent);
     }
 
-    private static HelionCamera camera(CameraRenderState camera) {
+    static HelionCamera camera(CameraRenderState camera) {
         boolean zeroToOneDepth = RenderSystem.getDevice().getDeviceInfo().isZZeroToOne();
         Vector3d position = new Vector3d(camera.pos.x, camera.pos.y, camera.pos.z);
         Matrix4fc levelProjection = HelionRenderCore.get().levelProjection().orElse(camera.projectionMatrix);
         return new HelionCamera(position, camera.viewRotationMatrix, camera.projectionMatrix, levelProjection, zeroToOneDepth);
     }
 
-    private static LightEnvironment lightEnvironment(LightmapRenderState lightmap) {
+    static LightEnvironment lightEnvironment(LightmapRenderState lightmap) {
         return new LightEnvironment(
             lightmap.skyFactor,
             lightmap.blockFactor,

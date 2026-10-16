@@ -7,11 +7,8 @@
 #ifndef MULTIDRAW_TERRAIN
     #include <minecraft:chunksection.glsl>
 #endif
+#include <helion:helion_terrain_vertex.glsl>
 
-layout(location = 0) in vec3 Position;
-layout(location = 1) in vec4 Color;
-layout(location = 2) in vec2 UV0;
-layout(location = 3) in ivec2 UV2;
 #ifdef MULTIDRAW_TERRAIN
 layout(location = 4) in ivec3 ChunkPosition;
 layout(location = 5) in float ChunkVisibility;
@@ -22,9 +19,9 @@ layout(location = 1) out float vertexAlpha;
 layout(location = 2) out vec3 cameraRelativePosition;
 
 void main() {
-    vec3 pos = Position + (ChunkPosition - CameraBlockPos) + CameraOffset;
+    vec3 pos = helion_vertex_position() + (ChunkPosition - CameraBlockPos) + CameraOffset;
     gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
-    texCoord0 = UV0;
+    texCoord0 = helion_vertex_uv();
     vertexAlpha = Color.a;
     cameraRelativePosition = pos;
 }

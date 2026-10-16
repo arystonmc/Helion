@@ -3,11 +3,14 @@ package com.aryston.helion.render.post;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.shader.FullscreenPass;
+import com.aryston.helion.render.shader.HelionPipelines;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.ResourceHandle;
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -53,15 +56,21 @@ public final class ImageCompositeStage implements RenderStage {
         frame.targets().updateOutput(output);
         boolean debugView = bloom.isPresent() && frame.settings().image().bloom().debugView();
         ResourceHandle<RenderTarget> bloomSource = bloom.orElse(scene);
+        ColorGrade grade = frame.settings().image().colorGrade();
+        Optional<CompiledRenderPipeline> graded = grade == ColorGrade.NEUTRAL
+            ? Optional.empty()
+            : HelionPipelines.compiled(ImagePipelines.COMPOSITE_GRADED);
         pass.executes(frame.graph().timed(NAME, () -> {
             GpuBuffer uniforms = resources.frameUniforms(frame);
+            Optional<GpuTextureView> lookupTable = graded.map(pipeline -> resources.colorGrading().lookupTable(grade));
             if (debugView) {
                 FullscreenPass.draw("Helion Bloom Debug", output.get(), compiled.bloomDebug(), bloomBindings(uniforms, bloomSource));
             } else {
-                FullscreenPass.draw("Helion Image Composite", output.get(), compiled.composite(), bloomBindings(uniforms, bloomSource)
-                    .andThen(renderPass -> renderPass.setUniform(
-                        ImagePipelines.SCENE_COLOR_SAMPLER, PostSampling.colorView(color), PostSampling.nearest()
-                    )));
+                FullscreenPass.draw("Helion Image Composite", output.get(), graded.orElse(compiled.composite()), bloomBindings(uniforms, bloomSource)
+                    .andThen(renderPass -> {
+                        renderPass.setUniform(ImagePipelines.SCENE_COLOR_SAMPLER, PostSampling.colorView(color), PostSampling.nearest());
+                        lookupTable.ifPresent(table -> renderPass.setUniform(ImagePipelines.GRADING_LUT_SAMPLER, table, PostSampling.linear()));
+                    }));
             }
             output.get().copyDepthFrom(scene.get());
             resources.finishFrame();

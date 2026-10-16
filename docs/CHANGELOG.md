@@ -7,11 +7,23 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Edge smoothing: a light anti-aliasing filter for when temporal anti-aliasing is off
+- Experimental depth of field that keeps the center of the screen in focus
+- Color grading presets: Warm, Cool, Vivid, Cinematic and Muted
+- Render scale with temporal upscaling for more frames per second at a lower internal resolution
+- Shadows from mobs, players, chests, item frames and dropped items near you
 - Settings codes: copy your Helion settings as a code and paste a code to apply someone else's
 - Experimental automatic exposure that brightens caves, nights and backlit terrain like eyes adapting
 - Experimental motion blur when the camera moves or turns, with a strength setting
 
 ### Changed
+- With Sodium installed Helion now keeps its screen effects (Sodium mode) instead of switching itself off
+- Mobs and dropped items no longer show vanilla's round shadow spot under them while Helion's sun shadows are on
+- Shadows move smoothly with the sun instead of jumping or sliding back and forth
+- Make shadows faster by redrawing them only when the sun moved or you moved far enough, and the physical sky faster by redrawing its sky tables only when the sun, the moon or your height changed: about a quarter more frames per second with every effect on
+- Depth of field blur fades in softly over a wide range of distances instead of starting at a sharp line
+- Depth of field focuses more steadily, keeps a wider area sharp when you look far away and no longer leaves a halo around sharp objects
+- Draw terrain from Aervium's compact chunk vertices when its compactVertices module is on
 - Make sun and moon shadows much faster by redrawing far shadows less often
 - Make ambient occlusion smoother while temporal anti-aliasing is on
 
@@ -22,6 +34,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Fix tree leaf shadows shimmering while the sun moves
 - Fix the trail fast mobs left behind with temporal anti-aliasing and keep moving mobs sharp
 - Fix sunsets losing their orange glow, nights looking grey and a washed out sky with the physical sky
+- Fix ambient occlusion and automatic exposure darkening sunlit ground below vanilla
 
 ## [0.1] - 2026-10-09
 

@@ -5,6 +5,8 @@ import com.aryston.helion.render.atmosphere.PhysicalSkyPipelines;
 import com.aryston.helion.render.geometry.GeometryBufferPipelines;
 import com.aryston.helion.render.lighting.AmbientOcclusionPipelines;
 import com.aryston.helion.render.lighting.DeferredLightingPipelines;
+import com.aryston.helion.render.dof.DepthOfFieldPipelines;
+import com.aryston.helion.render.edge.EdgeSmoothingPipelines;
 import com.aryston.helion.render.motion.MotionBlurPipelines;
 import com.aryston.helion.render.post.ImagePipelines;
 import com.aryston.helion.render.shadow.ShadowPipelines;
@@ -34,6 +36,8 @@ public final class HelionPipelines {
             ShadowPipelines.all(),
             ImagePipelines.all(),
             MotionBlurPipelines.all(),
+            DepthOfFieldPipelines.all(),
+            EdgeSmoothingPipelines.all(),
             GeometryBufferPipelines.all()
         ).flatMap(List::stream).toList();
     }

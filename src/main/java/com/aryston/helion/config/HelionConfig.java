@@ -9,12 +9,15 @@ import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.lighting.DeferredLightingSettings;
 import com.aryston.helion.render.post.BloomSettings;
+import com.aryston.helion.render.post.ColorGrade;
+import com.aryston.helion.render.post.DepthOfFieldSettings;
 import com.aryston.helion.render.post.ImageSettings;
 import com.aryston.helion.render.post.MotionBlurSettings;
 import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.post.ToneMapper;
 import com.aryston.helion.render.shadow.ShadowQuality;
 import com.aryston.helion.render.shadow.ShadowSettings;
+import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalSettings;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -33,6 +36,8 @@ public final class HelionConfig {
     static final double MAX_SHARPENING_STRENGTH = 1.0;
     static final double MIN_MOTION_BLUR_STRENGTH = 0.0;
     static final double MAX_MOTION_BLUR_STRENGTH = 1.0;
+    static final double MIN_DEPTH_OF_FIELD_STRENGTH = 0.0;
+    static final double MAX_DEPTH_OF_FIELD_STRENGTH = 1.0;
     static final double MIN_BLOCK_LIGHT_INTENSITY = 0.5;
     static final double MAX_BLOCK_LIGHT_INTENSITY = 4.0;
     static final double MIN_SKY_LIGHT_INTENSITY = 0.5;
@@ -56,6 +61,8 @@ public final class HelionConfig {
     static final ModConfigSpec.EnumValue<ToneMapper> TONE_MAPPER;
     static final ModConfigSpec.DoubleValue EXPOSURE;
     static final ModConfigSpec.BooleanValue AUTO_EXPOSURE;
+    static final ModConfigSpec.EnumValue<ColorGrade> COLOR_GRADE;
+    static final ModConfigSpec.BooleanValue EDGE_SMOOTHING;
     static final ModConfigSpec.BooleanValue DITHER;
     static final ModConfigSpec.BooleanValue BLOOM_ENABLED;
     static final ModConfigSpec.DoubleValue BLOOM_INTENSITY;
@@ -65,6 +72,8 @@ public final class HelionConfig {
     static final ModConfigSpec.DoubleValue SHARPENING_STRENGTH;
     static final ModConfigSpec.BooleanValue MOTION_BLUR_ENABLED;
     static final ModConfigSpec.DoubleValue MOTION_BLUR_STRENGTH;
+    static final ModConfigSpec.BooleanValue DEPTH_OF_FIELD_ENABLED;
+    static final ModConfigSpec.DoubleValue DEPTH_OF_FIELD_STRENGTH;
     static final ModConfigSpec.BooleanValue GEOMETRY_BUFFER_ENABLED;
     static final ModConfigSpec.EnumValue<GeometryBufferView> GEOMETRY_BUFFER_VIEW;
     static final ModConfigSpec.BooleanValue LIGHTING_ENABLED;
@@ -72,6 +81,7 @@ public final class HelionConfig {
     static final ModConfigSpec.DoubleValue SKY_LIGHT_INTENSITY;
     static final ModConfigSpec.BooleanValue LIGHT_ONLY_VIEW;
     static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
+    static final ModConfigSpec.EnumValue<RenderScale> RENDER_SCALE;
     static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
     static final ModConfigSpec.BooleanValue SHADOWS_ENABLED;
     static final ModConfigSpec.EnumValue<ShadowQuality> SHADOW_QUALITY;
@@ -108,6 +118,12 @@ public final class HelionConfig {
         AUTO_EXPOSURE = BUILDER
             .translation("helion.configuration.image.autoExposure")
             .define("autoExposure", false);
+        COLOR_GRADE = BUILDER
+            .translation("helion.configuration.image.colorGrade")
+            .defineEnum("colorGrade", ColorGrade.NEUTRAL);
+        EDGE_SMOOTHING = BUILDER
+            .translation("helion.configuration.image.edgeSmoothing")
+            .define("edgeSmoothing", false);
         DITHER = BUILDER
             .translation("helion.configuration.image.dither")
             .define("dither", true);
@@ -141,6 +157,14 @@ public final class HelionConfig {
             .translation("helion.configuration.image.motionBlur.strength")
             .defineInRange("strength", MotionBlurSettings.DEFAULT_STRENGTH, MIN_MOTION_BLUR_STRENGTH, MAX_MOTION_BLUR_STRENGTH);
         BUILDER.pop();
+        BUILDER.translation("helion.configuration.image.depthOfField").push("depthOfField");
+        DEPTH_OF_FIELD_ENABLED = BUILDER
+            .translation("helion.configuration.image.depthOfField.enabled")
+            .define("enabled", false);
+        DEPTH_OF_FIELD_STRENGTH = BUILDER
+            .translation("helion.configuration.image.depthOfField.strength")
+            .defineInRange("strength", DepthOfFieldSettings.DEFAULT_STRENGTH, MIN_DEPTH_OF_FIELD_STRENGTH, MAX_DEPTH_OF_FIELD_STRENGTH);
+        BUILDER.pop();
         BUILDER.pop();
 
         BUILDER.translation("helion.configuration.geometryBuffer").push("geometryBuffer");
@@ -173,6 +197,9 @@ public final class HelionConfig {
         TEMPORAL_ENABLED = BUILDER
             .translation("helion.configuration.temporalAntiAliasing.enabled")
             .define("enabled", false);
+        RENDER_SCALE = BUILDER
+            .translation("helion.configuration.temporalAntiAliasing.renderScale")
+            .defineEnum("renderScale", RenderScale.NATIVE);
         BUILDER.pop();
 
         BUILDER.translation("helion.configuration.physicalSky").push("physicalSky");
@@ -202,7 +229,7 @@ public final class HelionConfig {
             imageSettings(),
             geometryBufferSettings(),
             lightingSettings(),
-            new TemporalSettings(TEMPORAL_ENABLED.getAsBoolean()),
+            new TemporalSettings(TEMPORAL_ENABLED.getAsBoolean(), RENDER_SCALE.get()),
             new PhysicalSkySettings(PHYSICAL_SKY_ENABLED.getAsBoolean()),
             new ShadowSettings(SHADOWS_ENABLED.getAsBoolean(), SHADOW_QUALITY.get())
         );
@@ -245,7 +272,10 @@ public final class HelionConfig {
                 BLOOM_DEBUG_VIEW.getAsBoolean()
             ),
             new SharpeningSettings(SHARPENING_ENABLED.getAsBoolean(), SHARPENING_STRENGTH.get().floatValue()),
-            new MotionBlurSettings(MOTION_BLUR_ENABLED.getAsBoolean(), MOTION_BLUR_STRENGTH.get().floatValue())
+            new MotionBlurSettings(MOTION_BLUR_ENABLED.getAsBoolean(), MOTION_BLUR_STRENGTH.get().floatValue()),
+            COLOR_GRADE.get(),
+            new DepthOfFieldSettings(DEPTH_OF_FIELD_ENABLED.getAsBoolean(), DEPTH_OF_FIELD_STRENGTH.get().floatValue()),
+            EDGE_SMOOTHING.getAsBoolean()
         );
     }
 }

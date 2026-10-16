@@ -18,6 +18,8 @@ public final class ImagePipelines {
     public static final String SOURCE_SAMPLER = "SourceSampler";
     public static final String BLOOM_SAMPLER = "BloomSampler";
     public static final String METER_SAMPLER = "MeterSampler";
+    public static final String GRADING_LUT_SAMPLER = "GradingLutSampler";
+    private static final String COLOR_GRADING_DEFINE = "HELION_COLOR_GRADING";
     public static final GpuFormat BLOOM_FORMAT = GpuFormat.RGBA16_FLOAT;
     public static final GpuFormat OUTPUT_FORMAT = GpuFormat.RGBA8_UNORM;
     public static final GpuFormat EXPOSURE_FORMAT = GpuFormat.RG32_FLOAT;
@@ -53,6 +55,17 @@ public final class ImagePipelines {
             .withUniform(SCENE_COLOR_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(BLOOM_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .build())
+        .withColorTargetState(writeAll(OUTPUT_FORMAT))
+        .build();
+
+    public static final RenderPipeline COMPOSITE_GRADED = HelionPipelines.fullscreen("image/composite_graded", "image/composite")
+        .withBindGroupLayout(BindGroupLayout.builder()
+            .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
+            .withUniform(SCENE_COLOR_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(BLOOM_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(GRADING_LUT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .build())
+        .withShaderDefine(COLOR_GRADING_DEFINE)
         .withColorTargetState(writeAll(OUTPUT_FORMAT))
         .build();
 
@@ -92,7 +105,7 @@ public final class ImagePipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(BLOOM_PREFILTER, BLOOM_DOWNSAMPLE, BLOOM_UPSAMPLE, COMPOSITE, BLOOM_DEBUG, SHARPEN, EXPOSURE_METER, EXPOSURE_AVERAGE);
+        return List.of(BLOOM_PREFILTER, BLOOM_DOWNSAMPLE, BLOOM_UPSAMPLE, COMPOSITE, BLOOM_DEBUG, SHARPEN, EXPOSURE_METER, EXPOSURE_AVERAGE, COMPOSITE_GRADED);
     }
 
     private static BindGroupLayout sourceOnly() {

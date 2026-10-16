@@ -111,8 +111,8 @@ public final class BloomStage implements RenderStage {
     private static RenderTargetDescriptor mipTarget(FrameContext frame, int level) {
         int shift = level + 1;
         return new RenderTargetDescriptor(
-            Math.max(MIN_SIZE, frame.scene().width() >> shift),
-            Math.max(MIN_SIZE, frame.scene().height() >> shift),
+            Math.max(MIN_SIZE, frame.scene().outputWidth() >> shift),
+            Math.max(MIN_SIZE, frame.scene().outputHeight() >> shift),
             new RenderTargetDescriptor.TextureProperties(null, ImagePipelines.BLOOM_FORMAT),
             null
         );

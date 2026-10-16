@@ -39,7 +39,7 @@ With all effects turned off, Helion matches vanilla Minecraft pixel-for-pixel. W
 - ☀️ **Physical Atmosphere & Dynamic Shadows (Experimental):** Atmospheric scattering model for natural golden sunsets, paired with real sun and moon block shadows.
 - 🔮 **HDR Lighting & Geometry Buffer (Experimental):** Unconstrained emissive lights with per-pixel normals and separate block and sky lighting.
 - ⚙️ **Arkea-Powered Configuration:** Press **H** to toggle Helion instantly. Configure all settings in-game with Vanilla, Balanced, Quality and Experimental presets, before/after previews and a real-time GPU impact meter.
-- 🛡️ **Safe by Design:** On OpenGL, with Sodium or Iris, or after a rendering error, Helion steps aside and the game keeps running with vanilla graphics.
+- 🛡️ **Safe by Design:** On OpenGL, with Iris, or after a rendering error, Helion steps aside and the game keeps running with vanilla graphics; with Sodium it keeps its screen effects.
 - 🔍 **Debug Mode:** Every Helion value on screen and in `logs/helion-debug.jsonl`, GPU time per render stage, and a pixel-by-pixel parity check against vanilla.
 
 For full technical and player details, see the [Helion Feature Guide](docs/FEATURES.md).
@@ -68,10 +68,24 @@ For full technical and player details, see the [Helion Feature Guide](docs/FEATU
 | **Side** | Client only (safe to join any multiplayer server) |
 | **Required Library** | [Arkea](https://modrinth.com/mod/arkea) 0.1 or newer ([CurseForge](https://www.curseforge.com/minecraft/mc-mods/arkea)) |
 
+## Building
+
+- **Java:** JDK 25. If it is not installed, Gradle downloads it automatically.
+- **Build:** Run the Gradle wrapper from the project folder (use `gradlew.bat build` on Windows):
+
+```bash
+./gradlew build
+```
+
+- **Output:** The jar is written to `build/libs/helion-neoforge-<minecraft_version>-<mod_version>.jar`, currently `build/libs/helion-neoforge-26.3-0.1.jar`.
+
+For development runs and the Arkea source checkout, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Compatibility & Troubleshooting
 
 - **Server Safe:** 100% client-side. Safe to join any vanilla or modded server.
-- **Sodium / Iris:** Helion automatically deactivates itself when Sodium or Iris is detected to prevent rendering conflicts.
+- **Sodium:** Helion runs in Sodium mode: Sodium draws the world and Helion adds its screen effects (tone mapping, bloom, exposure, sharpening, color grading, depth of field, edge smoothing); shadows, lighting, the physical sky, ambient occlusion, temporal anti-aliasing and motion blur are off.
+- **Iris:** Helion deactivates itself when Iris is detected to prevent rendering conflicts.
 - **OpenGL Fallback:** If launched under OpenGL, Helion remains inactive and provides instructions on enabling Vulkan.
 - **Startup Crash Workaround:** If the game closes immediately on launch, set `earlyWindowControl = false` in `config/fml.toml`.
 - **Compatibility List:** See which mods, shaders and resource packs work with Helion on the [compatibility page](https://lureid.com/mods/helion/compatibility).

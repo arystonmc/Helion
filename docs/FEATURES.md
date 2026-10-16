@@ -54,7 +54,7 @@ Your eyes adjust to the light, and now the picture does too.
 - Caves, nights and terrain facing a low sun get gently brighter, like eyes getting used to the dark
 - Daylight keeps the familiar vanilla brightness, and a bright sky never darkens the ground
 - Changes happen smoothly over a second or two, faster when it gets bright than when it gets dark
-- At most half a stop brighter or darker, so nights stay night
+- Only brightens, by at most half a stop, so daylight keeps the vanilla look and nights stay night
 - Settings: on or off in the image settings; off by default while it is experimental
 - Since: Unreleased
 
@@ -65,6 +65,32 @@ A soft, film-like blur when you turn or move quickly.
 - Close objects keep crisp edges instead of smearing into what is behind them
 - Looks the same at every frame rate, from 60 to 240 frames per second
 - Settings: on or off and its strength in the effects settings; off by default while it is experimental
+- Since: Unreleased
+
+### Edge Smoothing
+Softer block edges for almost no cost when temporal anti-aliasing is off.
+
+- One quick filter pass that smooths jagged edges, like FXAA
+- Used only while temporal anti-aliasing is off; the two never stack
+- Settings: on or off in the image settings; off by default
+- Since: Unreleased
+
+### Depth of Field (Experimental)
+A camera lens look: what you look at stays sharp, the rest softly blurs.
+
+- Focus follows what is at the center of the screen, ignores the sky and tiny changes, and moves smoothly, faster toward something nearer
+- The sharp area grows with the focus distance, so looking into the distance keeps the world around you sharp; blur in front and behind is limited and soft
+- Close objects blur over the background naturally, and the background never leaves a halo around sharp things in front
+- The blur fades in softly with distance, without a visible line between the sharp and the blurred area
+- Settings: on or off and its strength in the effects settings; off by default while it is experimental
+- Since: Unreleased
+
+### Color Grading
+Give the whole picture a mood with one click.
+
+- Presets: Neutral, Warm, Cool, Vivid, Cinematic and Muted, applied like a film grade after everything else
+- Neutral keeps the colors exactly as they are
+- Settings: the preset in the image settings; Neutral by default
 - Since: Unreleased
 
 ### Sharpening
@@ -94,6 +120,7 @@ Torches, lanterns and lava finally shine brighter than the vanilla light limit.
 ### Temporal Anti-Aliasing (Experimental)
 Smooth block edges and calm, shimmer-free distant textures.
 
+- Render scale: draw the world at 77, 67, 59 or 50 % of the screen resolution and let anti-aliasing rebuild the full picture over a few frames, like FSR or TSR, for a large frame rate boost; menus and the hand stay sharp at full resolution
 - Moves the camera by less than a pixel every frame and blends each frame with the previous ones, like modern games do
 - Works while you walk and turn; the picture gets a little softer, which the sharpening option makes up for
 - Also smooths ambient occlusion, which varies its samples every frame while anti-aliasing is on
@@ -118,9 +145,12 @@ A sky that behaves like real air: deep blue overhead, a bright glow around the s
 Blocks cast real shadows that move with the sun through the day.
 
 - Hills, trees, buildings and every solid or cutout block cast shadows from the sun, and from the moon at night; grass and flowers do not, so the ground stays clean instead of speckled
+- Mobs, players, armor stands, chests, item frames and dropped items cast real shadows near you too, and their shadows move with them
+- While these shadows are on, vanilla's round dark spot under mobs and dropped items is gone, so nothing has two shadows
 - Shadows stay sharp near you and reach up to 160 blocks away, then fade out softly
-- Shadow edges are smoothed and do not crawl or flicker when you move or while the sun crosses the sky
-- Far shadows are redrawn only every few frames, so shadows cost far fewer frames per second
+- Shadows move smoothly with the sun instead of jumping once a second
+- Shadow edges are smoothed and do not crawl or flicker when you move
+- Shadows are redrawn only when the sun moved, a few times per second, or when you move far enough, so they cost far fewer frames per second
 - Shadows fade in and out gently at sunrise and sunset instead of popping
 - Shade keeps a soft cool light from the sky and some light bounced off the ground, so shadowed areas look natural instead of black or blue
 - Needs the geometry buffer, HDR lighting and the physical sky to be on
@@ -131,7 +161,8 @@ Blocks cast real shadows that move with the sun through the day.
 Helion never stands between you and the game.
 
 - On OpenGL, Helion stays inactive and tells you how to switch to Vulkan
-- With Sodium or Iris installed, Helion stays inactive to avoid conflicts and tells you why
+- With Sodium installed, Helion runs in Sodium mode: Sodium draws the world and Helion adds its screen effects (tone mapping, bloom, exposure, sharpening, color grading, depth of field, edge smoothing); shadows, lighting, the sky, ambient occlusion, anti-aliasing and motion blur are off, and a short notice says so
+- With Iris installed, Helion stays inactive to avoid conflicts and tells you why
 - If something goes wrong while rendering, Helion steps aside and the game keeps running with vanilla graphics
 - Since: 0.1
 

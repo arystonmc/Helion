@@ -1,5 +1,6 @@
 package com.aryston.helion.render.resource;
 
+import com.aryston.helion.render.temporal.RenderScale;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.renderpearl.api.GpuFormat;
@@ -17,13 +18,15 @@ public final class SceneTargets {
         this.resources = resources;
     }
 
-    public RenderTarget matching(RenderTarget main) {
+    public RenderTarget matching(RenderTarget main, RenderScale scale) {
         GpuFormat colorFormat = Objects.requireNonNull(main.getColorTexture()).getFormat();
         GpuFormat depthFormat = Objects.requireNonNull(main.getDepthTexture()).getFormat();
+        int width = scale.internalSize(main.width);
+        int height = scale.internalSize(main.height);
         if (scene == null || !hasFormats(scene, colorFormat, depthFormat)) {
-            replace(new TextureTarget(LABEL, main.width, main.height, colorFormat, depthFormat), colorFormat, depthFormat);
-        } else if (scene.width != main.width || scene.height != main.height) {
-            scene.resize(main.width, main.height);
+            replace(new TextureTarget(LABEL, width, height, colorFormat, depthFormat), colorFormat, depthFormat);
+        } else if (scene.width != width || scene.height != height) {
+            scene.resize(width, height);
             retrack(colorFormat, depthFormat);
         }
         return scene;

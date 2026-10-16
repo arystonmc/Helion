@@ -11,6 +11,7 @@ import com.mojang.renderpearl.api.pipeline.UniformType;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public final class ShadowPipelines {
     public static final String SETTINGS = "HelionShadow";
@@ -20,7 +21,17 @@ public final class ShadowPipelines {
     public static final List<String> SHADOW_MAP_SAMPLERS = IntStream.range(0, ShadowCascades.COUNT)
         .mapToObj(cascade -> "ShadowMapSampler" + cascade)
         .toList();
+    public static final List<String> PREVIOUS_SHADOW_MAP_SAMPLERS = IntStream.range(0, ShadowCascades.COUNT)
+        .mapToObj(cascade -> "PreviousShadowMapSampler" + cascade)
+        .toList();
+    public static final int ENTITY_CASCADES = 2;
+    public static final List<String> ENTITY_SHADOW_SAMPLERS = IntStream.range(0, ENTITY_CASCADES)
+        .mapToObj(cascade -> "EntityShadowSampler" + cascade)
+        .toList();
     public static final GpuFormat SHADOW_MAP_FORMAT = GpuFormat.D32_FLOAT;
+    public static final GpuFormat ENTITY_COLOR_FORMAT = GpuFormat.RGBA8_UNORM;
+    public static final int ENTITY_RESOLUTION_DIVISOR = 2;
+    public static final double ENTITY_CLEAR_DEPTH = 0.0;
     public static final GpuFormat MASK_FORMAT = GpuFormat.R8_UNORM;
     public static final GpuFormat SCENE_COLOR_FORMAT = GpuFormat.RGBA8_UNORM;
     public static final double CLEAR_DEPTH = 1.0;
@@ -48,7 +59,10 @@ public final class ShadowPipelines {
             .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
             .withUniform(DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(GEOMETRY_NORMAL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER);
-        for (String sampler : SHADOW_MAP_SAMPLERS) {
+        List<String> samplers = Stream.of(SHADOW_MAP_SAMPLERS, PREVIOUS_SHADOW_MAP_SAMPLERS, ENTITY_SHADOW_SAMPLERS)
+            .flatMap(List::stream)
+            .toList();
+        for (String sampler : samplers) {
             bindings = bindings.withUniform(sampler, UniformType.COMBINED_IMAGE_SAMPLER);
         }
         return bindings.build();

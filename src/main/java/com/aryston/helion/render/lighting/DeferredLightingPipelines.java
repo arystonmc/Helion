@@ -20,6 +20,8 @@ public final class DeferredLightingPipelines {
     public static final String SHADOW_MASK_SAMPLER = "ShadowMaskSampler";
     public static final GpuFormat LIGHT_BUFFER_FORMAT = GpuFormat.RGBA16_FLOAT;
     public static final GpuFormat SCENE_COLOR_FORMAT = GpuFormat.RGBA8_UNORM;
+    public static final GpuFormat INDIRECT_SHARE_FORMAT = GpuFormat.R8_UNORM;
+    private static final int INDIRECT_SHARE_TARGET = 1;
     private static final String LIGHT_ONLY_DEFINE = "HELION_LIGHT_ONLY";
     private static final String SHADING_SHADER = "lighting/deferred_shading";
     private static final String LIGHT_SHADER = "lighting/deferred_light";
@@ -92,6 +94,7 @@ public final class DeferredLightingPipelines {
     private static RenderPipeline.Builder shadowed(RenderPipeline.Builder builder) {
         return builder
             .withShaderDefine(PHYSICAL_SKY_LIGHT_DEFINE)
-            .withShaderDefine(SHADOWS_DEFINE);
+            .withShaderDefine(SHADOWS_DEFINE)
+            .withColorTargetState(INDIRECT_SHARE_TARGET, new ColorTargetState(Optional.empty(), INDIRECT_SHARE_FORMAT, ColorTargetState.WRITE_ALL));
     }
 }

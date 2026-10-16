@@ -10,9 +10,11 @@ final class VanillaEntityOutlineEffect implements RenderStage {
     private static final String NAME = "entity_outline";
 
     private final LevelRendererAccessor level;
+    private final VanillaFrameTargets targets;
 
-    VanillaEntityOutlineEffect(LevelRendererAccessor level) {
+    VanillaEntityOutlineEffect(LevelRendererAccessor level, VanillaFrameTargets targets) {
         this.level = level;
+        this.targets = targets;
     }
 
     @Override
@@ -30,7 +32,9 @@ final class VanillaEntityOutlineEffect implements RenderStage {
         PostChain chain = level.helion$shaderManager()
             .getPostChain(LevelRendererAccessor.helion$entityOutlinePostChainId(), LevelTargetBundle.OUTLINE_TARGETS);
         if (chain != null) {
-            chain.addToFrame(frame.graph().builder(), frame.scene().width(), frame.scene().height(), level.helion$targets());
+            targets.buildOnScene(() -> chain.addToFrame(
+                frame.graph().builder(), frame.scene().outputWidth(), frame.scene().outputHeight(), level.helion$targets()
+            ));
         }
     }
 }

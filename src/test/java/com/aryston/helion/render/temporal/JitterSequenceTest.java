@@ -24,8 +24,8 @@ class JitterSequenceTest {
 
     @Test
     void offsetsStayInsideThePixel() {
-        for (int frame = 0; frame < JitterSequence.LENGTH; frame++) {
-            Vector2f offset = JitterSequence.pixelOffset(frame);
+        for (int frame = 0; frame < JitterSequence.BASE_LENGTH; frame++) {
+            Vector2f offset = JitterSequence.pixelOffset(frame, JitterSequence.BASE_LENGTH);
             assertTrue(Math.abs(offset.x) < HALF_PIXEL);
             assertTrue(Math.abs(offset.y) < HALF_PIXEL);
         }
@@ -33,24 +33,32 @@ class JitterSequenceTest {
 
     @Test
     void sequenceRepeatsAndVaries() {
-        assertEquals(JitterSequence.pixelOffset(0), JitterSequence.pixelOffset(JitterSequence.LENGTH));
-        assertNotEquals(JitterSequence.pixelOffset(0), JitterSequence.pixelOffset(1));
+        assertEquals(JitterSequence.pixelOffset(0, JitterSequence.BASE_LENGTH), JitterSequence.pixelOffset(JitterSequence.BASE_LENGTH, JitterSequence.BASE_LENGTH));
+        assertNotEquals(JitterSequence.pixelOffset(0, JitterSequence.BASE_LENGTH), JitterSequence.pixelOffset(1, JitterSequence.BASE_LENGTH));
     }
 
     @Test
     void offsetsAverageNearThePixelCenter() {
         Vector2f sum = new Vector2f();
-        for (int frame = 0; frame < JitterSequence.LENGTH; frame++) {
-            sum.add(JitterSequence.pixelOffset(frame));
+        for (int frame = 0; frame < JitterSequence.BASE_LENGTH; frame++) {
+            sum.add(JitterSequence.pixelOffset(frame, JitterSequence.BASE_LENGTH));
         }
-        assertTrue(Math.abs(sum.x / JitterSequence.LENGTH) < MAX_MEAN_OFFSET);
-        assertTrue(Math.abs(sum.y / JitterSequence.LENGTH) < MAX_MEAN_OFFSET);
+        assertTrue(Math.abs(sum.x / JitterSequence.BASE_LENGTH) < MAX_MEAN_OFFSET);
+        assertTrue(Math.abs(sum.y / JitterSequence.BASE_LENGTH) < MAX_MEAN_OFFSET);
+    }
+
+    @Test
+    void upscalingUsesLongerSequencesSoEveryOutputPixelIsCovered() {
+        assertEquals(JitterSequence.BASE_LENGTH, JitterSequence.length(1.0F));
+        assertEquals(32, JitterSequence.length(2.0F));
+        assertEquals(18, JitterSequence.length(1.5F));
+        assertEquals(JitterSequence.MAX_LENGTH, JitterSequence.length(10.0F));
     }
 
     @Test
     void ndcOffsetIsTwoUnitsPerScreen() {
-        Vector2f pixels = JitterSequence.pixelOffset(1);
-        Vector2f ndc = JitterSequence.ndcOffset(1, WIDTH, HEIGHT);
+        Vector2f pixels = JitterSequence.pixelOffset(1, JitterSequence.BASE_LENGTH);
+        Vector2f ndc = JitterSequence.ndcOffset(pixels, WIDTH, HEIGHT);
         assertEquals(pixels.x * 2.0F / WIDTH, ndc.x, TOLERANCE);
         assertEquals(pixels.y * 2.0F / HEIGHT, ndc.y, TOLERANCE);
     }

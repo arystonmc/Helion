@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import net.minecraft.client.renderer.ViewArea;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
+import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.core.BlockPos;
@@ -31,9 +32,11 @@ final class VanillaShadowCasterSource implements ShadowCasterSource {
     private final LevelFrameRequest request;
     private final LevelRendererAccessor level;
     private final ShadowCasterSections candidates;
+    private final FeatureRenderDispatcher.PreparedFrame featureFrame;
     private final List<ChunkSectionsToRender> prepared = new ArrayList<>();
 
-    VanillaShadowCasterSource(LevelFrameRequest request, ShadowCasterSections candidates) {
+    VanillaShadowCasterSource(LevelFrameRequest request, ShadowCasterSections candidates, FeatureRenderDispatcher.PreparedFrame featureFrame) {
+        this.featureFrame = featureFrame;
         this.request = request;
         this.level = request.level();
         this.candidates = candidates;
@@ -83,6 +86,13 @@ final class VanillaShadowCasterSource implements ShadowCasterSource {
                 new ChunkSectionLayer[] {layer}, sampler, pass, atlas, lightmap, pipelines.direct(), pipelines.multiDraw()
             );
         }
+    }
+
+    @Override
+    public void renderEntities(RenderPass pass) {
+        Profiler.get().push("shadowEntities");
+        featureFrame.executeSolid(pass);
+        Profiler.get().pop();
     }
 
     private ChunkSectionsToRender prepareCascade(Matrix4fc lightView) {

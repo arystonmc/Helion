@@ -41,7 +41,7 @@ public final class VanillaShadowPipelines {
     }
 
     static boolean compiled() {
-        boolean compiled = all().stream().allMatch(pipeline -> HelionPipelines.compiled(pipeline).isPresent());
+        boolean compiled = CompactTerrainVertices.supported() && all().stream().allMatch(pipeline -> HelionPipelines.compiled(pipeline).isPresent());
         if (!compiled && !missingPipelinesReported) {
             missingPipelinesReported = true;
             LOGGER.warn("Helion shadows are skipped because their caster shaders could not be compiled");
@@ -63,6 +63,6 @@ public final class VanillaShadowPipelines {
         if (alphaCutout != null) {
             builder.withShaderDefine(ALPHA_CUTOUT, Float.parseFloat(alphaCutout));
         }
-        return builder.build();
+        return CompactTerrainVertices.inherit(vanilla, builder).build();
     }
 }

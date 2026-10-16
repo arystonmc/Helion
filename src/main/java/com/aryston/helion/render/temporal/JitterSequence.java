@@ -3,7 +3,8 @@ package com.aryston.helion.render.temporal;
 import org.joml.Vector2f;
 
 public final class JitterSequence {
-    public static final int LENGTH = 8;
+    public static final int BASE_LENGTH = 8;
+    public static final int MAX_LENGTH = 64;
     private static final int HORIZONTAL_BASE = 2;
     private static final int VERTICAL_BASE = 3;
     private static final float CENTER = 0.5F;
@@ -12,13 +13,16 @@ public final class JitterSequence {
     private JitterSequence() {
     }
 
-    public static Vector2f pixelOffset(int frame) {
-        int index = Math.floorMod(frame, LENGTH) + 1;
+    public static int length(float upscaleRatio) {
+        return Math.clamp(Math.round(BASE_LENGTH * upscaleRatio * upscaleRatio), BASE_LENGTH, MAX_LENGTH);
+    }
+
+    public static Vector2f pixelOffset(int frame, int length) {
+        int index = Math.floorMod(frame, length) + 1;
         return new Vector2f(halton(index, HORIZONTAL_BASE) - CENTER, halton(index, VERTICAL_BASE) - CENTER);
     }
 
-    public static Vector2f ndcOffset(int frame, int width, int height) {
-        Vector2f pixels = pixelOffset(frame);
+    public static Vector2f ndcOffset(Vector2f pixels, int width, int height) {
         return new Vector2f(pixels.x * NDC_PER_PIXEL / width, pixels.y * NDC_PER_PIXEL / height);
     }
 

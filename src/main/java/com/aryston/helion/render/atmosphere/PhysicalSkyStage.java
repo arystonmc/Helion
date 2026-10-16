@@ -33,7 +33,6 @@ public final class PhysicalSkyStage implements RenderStage {
     private static final String HORIZON_PASS = "sky_horizon";
     private static final String SKY_LIGHT_PASS = "sky_light";
     private static final String FOG_LABEL = "Helion Sky Fog";
-    private static final String MIE_SUFFIX = "_mie";
 
     private final AtmosphereSource atmosphere;
     private final PhysicalSkyResources resources;
@@ -78,7 +77,8 @@ public final class PhysicalSkyStage implements RenderStage {
         SkyEnvironment sky = Objects.requireNonNull(environment);
         List<ResourceHandle<RenderTarget>> transmittance = imported(frame, TRANSMITTANCE_PASS, resources.transmittance());
         List<ResourceHandle<RenderTarget>> multipleScattering = imported(frame, MULTIPLE_SCATTERING_PASS, resources.multipleScattering());
-        if (!resources.lookupsWritten()) {
+        boolean lookupsWritten = resources.lookupsWritten();
+        if (!lookupsWritten) {
             transmittance = addConstantLookupPass(frame, TRANSMITTANCE_PASS, transmittance, compiled.transmittance(), List.of(), () -> { });
             multipleScattering = addConstantLookupPass(
                 frame, MULTIPLE_SCATTERING_PASS, multipleScattering, compiled.multipleScattering(),
@@ -87,8 +87,15 @@ public final class PhysicalSkyStage implements RenderStage {
         }
         List<LookupInput> skyViewInputs = new ArrayList<>(inputs(PhysicalSkyPipelines.TRANSMITTANCE_SAMPLERS, transmittance));
         skyViewInputs.addAll(inputs(PhysicalSkyPipelines.MULTIPLE_SCATTERING_SAMPLERS, multipleScattering));
-        List<ResourceHandle<RenderTarget>> sunSkyView = addSkyViewPass(frame, SUN_SKY_VIEW_PASS, compiled.sunSkyView(), sky, skyViewInputs);
-        List<ResourceHandle<RenderTarget>> moonSkyView = addSkyViewPass(frame, MOON_SKY_VIEW_PASS, compiled.moonSkyView(), sky, skyViewInputs);
+        float viewHeight = PhysicalSkyResources.viewHeight(sky.altitude());
+        List<ResourceHandle<RenderTarget>> sunSkyView = addSkyViewPass(
+            frame, SUN_SKY_VIEW_PASS, compiled.sunSkyView(), sky, skyViewInputs,
+            new SkyView(resources.sunSkyView(), resources.sunSkyViewCache(), sky.sunDirection().y(), viewHeight, lookupsWritten)
+        );
+        List<ResourceHandle<RenderTarget>> moonSkyView = addSkyViewPass(
+            frame, MOON_SKY_VIEW_PASS, compiled.moonSkyView(), sky, skyViewInputs,
+            new SkyView(resources.moonSkyView(), resources.moonSkyViewCache(), sky.moonDirection().y(), viewHeight, lookupsWritten)
+        );
         List<LookupInput> skyColorInputs = List.of(
             new LookupInput(PhysicalSkyPipelines.SUN_SKY_VIEW_SAMPLER, sunSkyView.get(PhysicalSkyPipelines.SKY_VIEW_SCATTERING_TARGET)),
             new LookupInput(PhysicalSkyPipelines.SUN_MIE_VIEW_SAMPLER, sunSkyView.get(PhysicalSkyPipelines.SKY_VIEW_MIE_TARGET)),
@@ -111,14 +118,16 @@ public final class PhysicalSkyStage implements RenderStage {
         String name,
         CompiledRenderPipeline pipeline,
         SkyEnvironment sky,
-        List<LookupInput> inputs
+        List<LookupInput> inputs,
+        SkyView view
     ) {
+        List<ResourceHandle<RenderTarget>> persistent = imported(frame, name, view.targets());
+        if (view.lookupsWritten() && view.cache().isCurrent(view.lightHeight(), view.viewHeight())) {
+            return persistent;
+        }
         FramePass pass = frame.graph().addPass(name);
         inputs.forEach(input -> pass.reads(input.target()));
-        List<ResourceHandle<RenderTarget>> targets = List.of(
-            createInternal(pass, name, PhysicalSkyPipelines.SKY_VIEW_WIDTH, PhysicalSkyPipelines.SKY_VIEW_HEIGHT),
-            createInternal(pass, name + MIE_SUFFIX, PhysicalSkyPipelines.SKY_VIEW_WIDTH, PhysicalSkyPipelines.SKY_VIEW_HEIGHT)
-        );
+        List<ResourceHandle<RenderTarget>> targets = persistent.stream().map(pass::readsAndWrites).toList();
         pass.executes(frame.graph().timed(name, () -> {
             List<RenderTarget> written = targets.stream().map(ResourceHandle::get).toList();
             FullscreenPass.draw(LABEL_PREFIX + name, written, pipeline, renderPass -> {
@@ -126,6 +135,7 @@ public final class PhysicalSkyStage implements RenderStage {
                 renderPass.setUniform(PhysicalSkyPipelines.SPECTRUM, resources.spectrum());
                 bind(renderPass, inputs);
             });
+            view.cache().markWritten(view.lightHeight(), view.viewHeight());
         }));
         return targets;
     }
@@ -251,6 +261,9 @@ public final class PhysicalSkyStage implements RenderStage {
     }
 
     private record LookupInput(String sampler, ResourceHandle<RenderTarget> target) {
+    }
+
+    private record SkyView(List<RenderTarget> targets, SkyViewCache cache, float lightHeight, float viewHeight, boolean lookupsWritten) {
     }
 
     private final class AerialFog implements SceneFogPass {

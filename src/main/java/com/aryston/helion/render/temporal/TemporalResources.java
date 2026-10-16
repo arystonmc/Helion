@@ -26,6 +26,8 @@ public final class TemporalResources {
     private static final int UNIFORM_SIZE = new Std140SizeCalculator()
         .putMat4f()
         .putVec2()
+        .putVec2()
+        .putVec2()
         .putFloat()
         .putFloat()
         .get();
@@ -44,13 +46,18 @@ public final class TemporalResources {
         this.history = new TemporalHistory(resources);
     }
 
-    public TemporalFrame begin(TemporalSettings settings, boolean tracksCameraMotion, HelionCamera camera, int width, int height) {
+    public RenderScale upscaling(TemporalSettings settings) {
+        return settings.enabled() && compilePrograms() ? settings.renderScale() : RenderScale.NATIVE;
+    }
+
+    public TemporalFrame begin(TemporalSettings settings, boolean tracksCameraMotion, HelionCamera camera, FrameSize size) {
         Matrix4fc projection = camera.levelProjection();
         if (!settings.enabled() || !compilePrograms()) {
             return tracksCameraMotion ? cameraMotionOnly(camera) : inactive();
         }
-        boolean resized = history.ensureSize(width, height);
-        Vector2f jitter = JitterSequence.ndcOffset(frameIndex++, width, height);
+        boolean resized = history.ensureSize(size.outputWidth(), size.outputHeight());
+        Vector2f jitterPixels = JitterSequence.pixelOffset(frameIndex++, JitterSequence.length(size.upscaleRatio()));
+        Vector2f jitter = JitterSequence.ndcOffset(jitterPixels, size.internalWidth(), size.internalHeight());
         Matrix4f jitteredProjection = new Matrix4f(projection).translateLocal(jitter.x, jitter.y, 0.0F);
         Matrix4f jitteredViewProjection = new Matrix4f(jitteredProjection).mul(camera.viewRotation());
         PreviousView last = previous;
@@ -61,7 +68,7 @@ public final class TemporalResources {
         Matrix4f reprojection = valid ? last.reprojection(camera.position(), jitter, jitteredViewProjection) : new Matrix4f();
         previous = new PreviousView(projection, camera.viewRotation(), camera.position());
         historyWritten = false;
-        return new TemporalFrame(true, jitteredProjection, reprojection, valid, valid);
+        return new TemporalFrame(true, jitteredProjection, reprojection, jitterPixels, valid, valid);
     }
 
     private TemporalFrame cameraMotionOnly(HelionCamera camera) {
@@ -72,7 +79,7 @@ public final class TemporalResources {
         boolean valid = last != null && last.position().distance(camera.position()) < TELEPORT_DISTANCE;
         Matrix4f reprojection = valid ? last.reprojection(camera.position(), NO_JITTER, viewProjection) : new Matrix4f();
         previous = new PreviousView(projection, camera.viewRotation(), camera.position());
-        return new TemporalFrame(false, projection, reprojection, false, valid);
+        return new TemporalFrame(false, projection, reprojection, NO_JITTER, false, valid);
     }
 
     private TemporalFrame inactive() {
@@ -100,13 +107,15 @@ public final class TemporalResources {
         return history.next();
     }
 
-    GpuBuffer writeUniforms(TemporalFrame frame, int width, int height) {
+    GpuBuffer writeUniforms(TemporalFrame frame, FrameSize size) {
         if (uniforms == null) {
             uniforms = new UniformRing(LABEL, UNIFORM_SIZE, resources);
         }
         return uniforms.write(builder -> builder
             .putMat4f(frame.reprojection())
-            .putVec2(1.0F / width, 1.0F / height)
+            .putVec2(1.0F / size.outputWidth(), 1.0F / size.outputHeight())
+            .putVec2(size.internalWidth(), size.internalHeight())
+            .putVec2(frame.jitterPixels().x(), frame.jitterPixels().y())
             .putFloat(CURRENT_FRAME_WEIGHT)
             .putFloat(frame.historyValid() ? HISTORY_VALID : HISTORY_INVALID));
     }

@@ -10,6 +10,8 @@ import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.lighting.AmbientOcclusionStage;
 import com.aryston.helion.render.lighting.DeferredLightingStage;
+import com.aryston.helion.render.dof.DepthOfFieldStage;
+import com.aryston.helion.render.edge.EdgeSmoothingStage;
 import com.aryston.helion.render.motion.MotionBlurStage;
 import com.aryston.helion.render.post.BloomStage;
 import com.aryston.helion.render.post.ExposureStage;
@@ -28,7 +30,16 @@ public final class FrameStages {
     }
 
     public static void build(FrameContext frame, FrameSources sources) {
-        for (RenderStage stage : create(frame, sources)) {
+        addActive(frame, create(frame, sources));
+    }
+
+    public static void buildScreenEffects(FrameContext frame) {
+        HelionRenderCore core = HelionRenderCore.get();
+        addActive(frame, List.of(new PostProcessingStage(postEffects(List.of(), core)), output(frame, core)));
+    }
+
+    private static void addActive(FrameContext frame, List<RenderStage> stages) {
+        for (RenderStage stage : stages) {
             if (stage.isActive(frame)) {
                 stage.addTo(frame);
             }
@@ -47,15 +58,17 @@ public final class FrameStages {
             new AmbientOcclusionStage(core.ambientOcclusion()),
             new TransparentGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere(), sources.transparency()),
             new TemporalStage(core.temporal()),
-            new PostProcessingStage(postEffects(sources, core)),
+            new PostProcessingStage(postEffects(sources.postEffects(), core)),
             output(frame, core),
             new GeometryBufferDebugStage()
         );
     }
 
-    private static List<RenderStage> postEffects(FrameSources sources, HelionRenderCore core) {
-        List<RenderStage> effects = new ArrayList<>(sources.postEffects());
+    private static List<RenderStage> postEffects(List<RenderStage> sourceEffects, HelionRenderCore core) {
+        List<RenderStage> effects = new ArrayList<>(sourceEffects);
+        effects.add(new EdgeSmoothingStage());
         effects.add(new MotionBlurStage(core.motionBlur()));
+        effects.add(new DepthOfFieldStage(core.depthOfField()));
         effects.add(new ExposureStage(core.image()));
         effects.add(new BloomStage(core.image()));
         effects.add(new SharpeningStage(core.image()));

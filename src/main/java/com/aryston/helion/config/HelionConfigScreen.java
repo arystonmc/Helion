@@ -43,13 +43,14 @@ public final class HelionConfigScreen {
                 .section(text("section.shadows"), section -> section.add(options.shadows)))
             .page("effects", text("page.effects"), Icons.SPARKLE, page -> page
                 .section(text("section.bloom"), section -> section.add(options.bloom).add(options.bloomIntensity).add(options.bloomThreshold))
-                .section(text("section.image"), section -> section.add(options.toneMapper).add(options.exposure).add(options.autoExposure).add(options.dither))
+                .section(text("section.image"), section -> section.add(options.toneMapper).add(options.exposure).add(options.autoExposure).add(options.colorGrade).add(options.edgeSmoothing).add(options.dither))
                 .fullSection(text("section.sharpening"), section -> section.add(options.sharpening).add(options.sharpeningStrength))
-                .fullSection(text("section.motionBlur"), section -> section.add(options.motionBlur).add(options.motionBlurStrength)))
+                .fullSection(text("section.motionBlur"), section -> section.add(options.motionBlur).add(options.motionBlurStrength))
+                .fullSection(text("section.depthOfField"), section -> section.add(options.depthOfField).add(options.depthOfFieldStrength)))
             .group(text("group.system"))
             .page("performance", text("page.performance"), Icons.BOLT, page -> page
                 .notice(text("performance.notice"))
-                .fullSection(text("section.quality"), section -> section.add(options.ambientOcclusionQuality).add(options.shadowQuality)))
+                .fullSection(text("section.quality"), section -> section.add(options.ambientOcclusionQuality).add(options.shadowQuality).add(options.renderScale)))
             .page("advanced", text("page.advanced"), Icons.CMD, page -> page
                 .fullSection(text("section.debug"), section -> section.add(options.debugMode))
                 .fullSection(text("section.views"), section -> section.collapsible(false).add(options.ambientOcclusionView).add(options.bloomView)

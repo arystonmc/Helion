@@ -1,12 +1,7 @@
 #version 330
 #extension GL_ARB_separate_shader_objects : require
 
-layout(std140) uniform HelionTemporal {
-    mat4 Reprojection;
-    vec2 InverseScreenSize;
-    float CurrentWeight;
-    float HistoryValid;
-};
+#include <helion:helion_temporal.glsl>
 
 uniform sampler2D SceneColorSampler;
 uniform sampler2D DepthSampler;
@@ -29,6 +24,9 @@ const vec3 HELION_GREEN_CHROMA_ROW = vec3(-0.25, 0.5, -0.25);
 const float HELION_DISOCCLUSION_TOLERANCE = 0.1;
 const float HELION_NO_OBJECT_DEPTH = 0.0;
 const float HELION_OBJECT_CURRENT_WEIGHT = 0.5;
+const float HELION_SAMPLE_SHARPNESS = 2.29;
+const float HELION_MIN_SAMPLE_TRUST = 0.25;
+const float HELION_SIZE_TOLERANCE = 1.0e-4;
 
 #ifdef HELION_MOVING_OBJECTS
 uniform sampler2D TerrainDepthSampler;
@@ -117,25 +115,36 @@ bool helionMovingObjectLeft(vec2 historyUv, float expectedDepth) {
     return nearestObject > expectedDepth * (1.0 + HELION_DISOCCLUSION_TOLERANCE);
 }
 
+bool helionUpscales() {
+    return any(greaterThan(abs(InputSize * InverseScreenSize - 1.0), vec2(HELION_SIZE_TOLERANCE)));
+}
+
 void main() {
-    ivec2 pixel = ivec2(gl_FragCoord.xy);
-    vec3 current = texelFetch(SceneColorSampler, pixel, 0).rgb;
-    float objectDepth = helionObjectDepth(pixel, texelFetch(DepthSampler, pixel, 0).r);
-    if (HistoryValid < HELION_HISTORY_VALID_THRESHOLD) {
-        fragColor = vec4(current, objectDepth);
-        return;
-    }
+    vec2 outputUv = gl_FragCoord.xy * InverseScreenSize;
+    bool upscaling = helionUpscales();
+    vec2 samplePosition = upscaling ? outputUv * InputSize + JitterPixels : gl_FragCoord.xy;
     ivec2 lastPixel = textureSize(SceneColorSampler, 0) - 1;
+    ivec2 pixel = clamp(ivec2(floor(samplePosition)), ivec2(0), lastPixel);
+    float objectDepth = helionObjectDepth(pixel, texelFetch(DepthSampler, pixel, 0).r);
     vec3 sum = vec3(0.0);
     vec3 sumOfSquares = vec3(0.0);
+    vec3 reconstructed = vec3(0.0);
+    float reconstructedWeight = 0.0;
+    float peakWeight = 0.0;
     float nearestDepth = HELION_NO_DEPTH;
     ivec2 nearestPixel = pixel;
     for (int y = -HELION_NEIGHBORHOOD_RADIUS; y <= HELION_NEIGHBORHOOD_RADIUS; y++) {
         for (int x = -HELION_NEIGHBORHOOD_RADIUS; x <= HELION_NEIGHBORHOOD_RADIUS; x++) {
             ivec2 neighbor = clamp(pixel + ivec2(x, y), ivec2(0), lastPixel);
-            vec3 color = helionToYCoCg(texelFetch(SceneColorSampler, neighbor, 0).rgb);
+            vec3 rgb = texelFetch(SceneColorSampler, neighbor, 0).rgb;
+            vec3 color = helionToYCoCg(rgb);
             sum += color;
             sumOfSquares += color * color;
+            vec2 offset = vec2(neighbor) + 0.5 - samplePosition;
+            float weight = exp(-HELION_SAMPLE_SHARPNESS * dot(offset, offset));
+            reconstructed += rgb * weight;
+            reconstructedWeight += weight;
+            peakWeight = max(peakWeight, weight);
             float depth = texelFetch(DepthSampler, neighbor, 0).r;
             if (depth > nearestDepth) {
                 nearestDepth = depth;
@@ -143,15 +152,22 @@ void main() {
             }
         }
     }
+    vec3 current = upscaling
+        ? reconstructed / max(reconstructedWeight, HELION_WEIGHT_EPSILON)
+        : texelFetch(SceneColorSampler, pixel, 0).rgb;
+    if (HistoryValid < HELION_HISTORY_VALID_THRESHOLD) {
+        fragColor = vec4(current, objectDepth);
+        return;
+    }
     vec3 mean = sum / HELION_NEIGHBORHOOD_SIZE;
     vec3 deviation = sqrt(max(sumOfSquares / HELION_NEIGHBORHOOD_SIZE - mean * mean, 0.0));
     vec3 boxMin = mean - HELION_VARIANCE_CLIP_GAMMA * deviation;
     vec3 boxMax = mean + HELION_VARIANCE_CLIP_GAMMA * deviation;
 
-    vec2 nearestUv = (vec2(nearestPixel) + 0.5) * InverseScreenSize;
+    vec2 nearestUv = (vec2(nearestPixel) + 0.5) / InputSize;
     vec4 previousClip = Reprojection * vec4(nearestUv * 2.0 - 1.0, helionNdcDepth(nearestDepth), 1.0);
     vec2 previousUv = previousClip.xy / previousClip.w * 0.5 + 0.5;
-    vec2 historyUv = gl_FragCoord.xy * InverseScreenSize - (nearestUv - previousUv);
+    vec2 historyUv = outputUv - (nearestUv - previousUv);
     float expectedDepth = helionDeviceDepth(previousClip.z / previousClip.w);
     if (any(lessThan(historyUv, vec2(0.0))) || any(greaterThan(historyUv, vec2(1.0))) || (objectDepth == HELION_NO_OBJECT_DEPTH && helionMovingObjectLeft(historyUv, expectedDepth))) {
         fragColor = vec4(current, objectDepth);
@@ -160,7 +176,8 @@ void main() {
 
     vec3 history = helionClipToBox(helionToYCoCg(helionSampleHistoryCatmullRom(historyUv)), boxMin, boxMax);
     vec3 currentYCoCg = helionToYCoCg(current);
-    float blend = objectDepth == HELION_NO_OBJECT_DEPTH ? CurrentWeight : max(CurrentWeight, HELION_OBJECT_CURRENT_WEIGHT);
+    float sampleTrust = upscaling ? mix(HELION_MIN_SAMPLE_TRUST, 1.0, peakWeight) : 1.0;
+    float blend = (objectDepth == HELION_NO_OBJECT_DEPTH ? CurrentWeight : max(CurrentWeight, HELION_OBJECT_CURRENT_WEIGHT)) * sampleTrust;
     float currentWeight = blend / (1.0 + currentYCoCg.x);
     float historyWeight = (1.0 - blend) / (1.0 + history.x);
     vec3 resolved = (currentYCoCg * currentWeight + history * historyWeight) / max(currentWeight + historyWeight, HELION_WEIGHT_EPSILON);

@@ -120,6 +120,20 @@ class ShadowCascadesTest {
         assertTrue(ShadowLight.stepped(new Vector3f(sun).rotateZ(ShadowLight.DIRECTION_STEP * 2.0F)).angle(stepped) > ShadowLight.DIRECTION_STEP);
     }
 
+    @Test
+    void entitiesDrawnWithTheCameraRotationLandWhereTerrainDoesWithReversedDepth() {
+        ShadowCascade cascade = compute(new Vector3d(0.0, 64.0, 0.0)).getFirst();
+        Vector3f position = new Vector3f(2.0F, -1.0F, 3.0F);
+        Vector4f terrain = cascade.lightViewProjection().transform(new Vector4f(position, 1.0F));
+        Vector4f entity = ShadowCascades.entityProjection(cascade.lightViewProjection(), VIEW_ROTATION, true)
+            .mul(VIEW_ROTATION)
+            .transform(new Vector4f(position, 1.0F));
+
+        assertEquals(terrain.x, entity.x, TOLERANCE);
+        assertEquals(terrain.y, entity.y, TOLERANCE);
+        assertEquals(1.0F - terrain.z, entity.z, TOLERANCE);
+    }
+
     private static List<ShadowCascade> compute(Vector3d camera) {
         return ShadowCascades.compute(camera, VIEW_ROTATION, PROJECTION, MORNING_SUN, ShadowCascades.MAX_DISTANCE, RESOLUTION, true);
     }

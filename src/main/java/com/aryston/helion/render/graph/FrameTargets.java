@@ -9,6 +9,8 @@ public interface FrameTargets {
 
     void updateScene(ResourceHandle<RenderTarget> handle);
 
+    void replaceScene(ResourceHandle<RenderTarget> handle);
+
     ResourceHandle<RenderTarget> output();
 
     void updateOutput(ResourceHandle<RenderTarget> handle);

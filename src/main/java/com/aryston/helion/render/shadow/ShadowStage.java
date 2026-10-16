@@ -7,6 +7,7 @@ import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.shader.FullscreenPass;
 import com.aryston.helion.render.shader.HelionPipelines;
+import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import org.joml.Matrix4f;
 import org.jspecify.annotations.Nullable;
 
 public final class ShadowStage implements RenderStage {
@@ -33,6 +35,9 @@ public final class ShadowStage implements RenderStage {
     private static final String MASK = "helion:shadow_mask";
     private static final String SHADOW_MAP_LABEL = "Helion Shadow Map #";
     private static final String MASK_LABEL = "Helion Shadow Mask";
+    private static final String ENTITY_PASS = "shadow_entities";
+    private static final String ENTITY_MAP = "helion:entity_shadow_map_";
+    private static final String ENTITY_MAP_LABEL = "Helion Entity Shadow Map #";
 
     private final ShadowCasterSource casters;
     private final ShadowResources resources;
@@ -51,6 +56,10 @@ public final class ShadowStage implements RenderStage {
 
     @Override
     public boolean isActive(FrameContext frame) {
+        return resources.markDrawn(decideActive(frame));
+    }
+
+    private boolean decideActive(FrameContext frame) {
         Optional<SkyLight> skyLight = frame.atmosphere().skyLight();
         if (!frame.settings().shadows().enabled()
             || !frame.settings().lighting().enabled()
@@ -82,14 +91,17 @@ public final class ShadowStage implements RenderStage {
             camera.position(), camera.viewRotation(), camera.projection(), shadowLight.direction(), distance, resolution, camera.zeroToOneDepth()
         );
         List<RenderTarget> shadowMaps = resources.shadowMaps(resolution);
-        List<Integer> due = resources.cache().update(cascades, camera.position(), shadowLight, resolution);
-        casters.prepare(due.stream().map(cascades::get).toList());
-        List<ResourceHandle<RenderTarget>> imported = new ArrayList<>(ShadowCascades.COUNT);
-        for (int index = 0; index < ShadowCascades.COUNT; index++) {
-            imported.add(frame.graph().builder().importExternal(SHADOW_MAP + index, shadowMaps.get(index)));
+        long now = System.nanoTime();
+        List<ShadowCascadeCache.Slot> due = resources.cache().update(cascades, camera.position(), shadowLight, resolution, now);
+        casters.prepare(due.stream().map(slot -> cascades.get(slot.cascade())).toList());
+        List<ResourceHandle<RenderTarget>> imported = new ArrayList<>(shadowMaps.size());
+        for (int target = 0; target < shadowMaps.size(); target++) {
+            imported.add(frame.graph().builder().importExternal(SHADOW_MAP + target, shadowMaps.get(target)));
         }
         List<ResourceHandle<RenderTarget>> maps = addShadowMapPass(frame, imported, cascades, due);
-        ResourceHandle<RenderTarget> visibility = addMaskPass(frame, maps, shadowLight, distance, resolution);
+        List<ResourceHandle<RenderTarget>> entityMaps = addEntityPass(frame, resolution);
+        float previousWeight = resources.cache().previousWeight(now);
+        ResourceHandle<RenderTarget> visibility = addMaskPass(frame, maps, entityMaps, distance, resolution, previousWeight);
         frame.shadows().publish(visibility, shadowLight);
     }
 
@@ -97,38 +109,77 @@ public final class ShadowStage implements RenderStage {
         FrameContext frame,
         List<ResourceHandle<RenderTarget>> imported,
         List<ShadowCascade> cascades,
-        List<Integer> due
+        List<ShadowCascadeCache.Slot> due
     ) {
         FramePass pass = frame.graph().addPass(NAME);
         List<ResourceHandle<RenderTarget>> maps = new ArrayList<>(imported);
-        due.forEach(index -> maps.set(index, pass.readsAndWrites(imported.get(index))));
+        due.forEach(slot -> maps.set(slot.target(), pass.readsAndWrites(imported.get(slot.target()))));
         pass.executes(frame.graph().timed(NAME, () -> {
-            for (int slot = 0; slot < due.size(); slot++) {
-                int index = due.get(slot);
-                RenderPassDescriptor descriptor = RenderPassDescriptor.builder(() -> SHADOW_MAP_LABEL + index)
-                    .withDepthAttachment(depthView(maps.get(index)), OptionalDouble.of(ShadowPipelines.CLEAR_DEPTH))
+            for (int order = 0; order < due.size(); order++) {
+                ShadowCascadeCache.Slot slot = due.get(order);
+                RenderPassDescriptor descriptor = RenderPassDescriptor.builder(() -> SHADOW_MAP_LABEL + slot.target())
+                    .withDepthAttachment(depthView(maps.get(slot.target())), OptionalDouble.of(ShadowPipelines.CLEAR_DEPTH))
                     .build();
                 try (RenderPass renderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor)) {
                     RenderSystem.bindDefaultUniforms(renderPass);
-                    renderPass.setUniform(ShadowPipelines.PROJECTION, resources.writeProjection(index, cascades.get(index).projection()));
-                    casters.renderCascade(slot, renderPass);
+                    renderPass.setUniform(
+                        ShadowPipelines.PROJECTION, resources.writeProjection(slot.cascade(), cascades.get(slot.cascade()).projection())
+                    );
+                    casters.renderCascade(order, renderPass);
                 }
             }
         }));
         return List.copyOf(maps);
     }
 
+    private List<ResourceHandle<RenderTarget>> addEntityPass(FrameContext frame, int resolution) {
+        List<RenderTarget> targets = resources.entityMaps(resolution);
+        FramePass pass = frame.graph().addPass(ENTITY_PASS);
+        List<ResourceHandle<RenderTarget>> maps = new ArrayList<>(ShadowPipelines.ENTITY_CASCADES);
+        for (int index = 0; index < ShadowPipelines.ENTITY_CASCADES; index++) {
+            maps.add(pass.readsAndWrites(frame.graph().builder().importExternal(ENTITY_MAP + index, targets.get(index))));
+        }
+        HelionCamera camera = frame.camera();
+        pass.executes(frame.graph().timed(ENTITY_PASS, () -> {
+            for (int index = 0; index < ShadowPipelines.ENTITY_CASCADES; index++) {
+                Matrix4f projection = ShadowCascades.entityProjection(
+                    resources.cache().maskMatrix(resources.cache().currentSet(), index, camera.position()),
+                    camera.viewRotation(),
+                    camera.zeroToOneDepth()
+                );
+                renderEntities(index, maps.get(index).get(), resources.writeEntityProjection(index, projection));
+            }
+        }));
+        return List.copyOf(maps);
+    }
+
+    private void renderEntities(int index, RenderTarget target, GpuBuffer projection) {
+        RenderPassDescriptor descriptor = RenderPassDescriptor.builder(() -> ENTITY_MAP_LABEL + index)
+            .withColorAttachment(Objects.requireNonNull(target.getColorTextureView()))
+            .withDepthAttachment(Objects.requireNonNull(target.getDepthTextureView()), OptionalDouble.of(ShadowPipelines.ENTITY_CLEAR_DEPTH))
+            .build();
+        RenderSystem.backupProjectionMatrix();
+        RenderSystem.setProjectionMatrix(projection.slice(), ProjectionType.ORTHOGRAPHIC);
+        try (RenderPass renderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor)) {
+            casters.renderEntities(renderPass);
+        } finally {
+            RenderSystem.restoreProjectionMatrix();
+        }
+    }
+
     private ResourceHandle<RenderTarget> addMaskPass(
         FrameContext frame,
         List<ResourceHandle<RenderTarget>> shadowMaps,
-        ShadowLight shadowLight,
+        List<ResourceHandle<RenderTarget>> entityMaps,
         float distance,
-        int resolution
+        int resolution,
+        float previousWeight
     ) {
         GeometryBuffer.Targets geometry = frame.geometry().targets().orElseThrow();
         CompiledRenderPipeline pipeline = Objects.requireNonNull(mask);
         FramePass pass = frame.graph().addPass(MASK_PASS);
         shadowMaps.forEach(pass::reads);
+        entityMaps.forEach(pass::reads);
         pass.reads(geometry.normal());
         ResourceHandle<RenderTarget> scene = frame.targets().scene();
         pass.reads(scene);
@@ -140,13 +191,25 @@ public final class ShadowStage implements RenderStage {
         ));
         HelionCamera camera = frame.camera();
         pass.executes(frame.graph().timed(MASK_PASS, () -> {
-            GpuBuffer settings = resources.writeSettings(camera, shadowLight, distance, resolution);
+            GpuBuffer settings = resources.writeSettings(camera, distance, resolution, previousWeight);
+            int current = resources.cache().currentSet();
+            int previous = previousWeight > 0.0F ? resources.cache().previousSet() : current;
             FullscreenPass.draw(MASK_LABEL, visibility.get(), pipeline, renderPass -> {
                 renderPass.setUniform(ShadowPipelines.SETTINGS, settings);
                 renderPass.setUniform(ShadowPipelines.DEPTH_SAMPLER, depthView(scene), nearest());
                 renderPass.setUniform(ShadowPipelines.GEOMETRY_NORMAL_SAMPLER, colorView(geometry.normal()), nearest());
                 for (int index = 0; index < ShadowCascades.COUNT; index++) {
-                    renderPass.setUniform(ShadowPipelines.SHADOW_MAP_SAMPLERS.get(index), depthView(shadowMaps.get(index)), nearest());
+                    renderPass.setUniform(
+                        ShadowPipelines.SHADOW_MAP_SAMPLERS.get(index), depthView(shadowMaps.get(current * ShadowCascades.COUNT + index)), nearest()
+                    );
+                    renderPass.setUniform(
+                        ShadowPipelines.PREVIOUS_SHADOW_MAP_SAMPLERS.get(index),
+                        depthView(shadowMaps.get(previous * ShadowCascades.COUNT + index)),
+                        nearest()
+                    );
+                }
+                for (int index = 0; index < ShadowPipelines.ENTITY_CASCADES; index++) {
+                    renderPass.setUniform(ShadowPipelines.ENTITY_SHADOW_SAMPLERS.get(index), depthView(entityMaps.get(index)), nearest());
                 }
             });
             resources.finishFrame();

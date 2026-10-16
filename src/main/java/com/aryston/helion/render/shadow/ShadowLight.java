@@ -7,7 +7,7 @@ import org.joml.Vector3fc;
 public record ShadowLight(Vector3fc direction, boolean moon, float strength) {
     static final float FADE_START_ELEVATION = 0.02F;
     static final float FADE_END_ELEVATION = 0.12F;
-    static final float DIRECTION_STEP = (float) Math.toRadians(0.25);
+    static final float DIRECTION_STEP = (float) Math.toRadians(0.1);
 
     public ShadowLight {
         direction = new Vector3f(direction).normalize();

@@ -11,4 +11,6 @@ public interface ShadowCasterSource {
     void prepare(List<ShadowCascade> cascades);
 
     void renderCascade(int cascade, RenderPass pass);
+
+    void renderEntities(RenderPass pass);
 }

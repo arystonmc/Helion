@@ -10,8 +10,10 @@ import com.aryston.helion.Helion;
 import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.lighting.AmbientOcclusionAlgorithm;
 import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
+import com.aryston.helion.render.post.ColorGrade;
 import com.aryston.helion.render.post.ToneMapper;
 import com.aryston.helion.render.shadow.ShadowQuality;
+import com.aryston.helion.render.temporal.RenderScale;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.network.chat.Component;
@@ -45,17 +47,22 @@ final class HelionOptions {
     final ConfigOption<Double> skyLight;
     final ConfigOption<Boolean> shadows;
     final ConfigOption<ShadowQuality> shadowQuality;
+    final ConfigOption<RenderScale> renderScale;
     final ConfigOption<Boolean> bloom;
     final ConfigOption<Double> bloomIntensity;
     final ConfigOption<Double> bloomThreshold;
     final ConfigOption<ToneMapper> toneMapper;
     final ConfigOption<Double> exposure;
     final ConfigOption<Boolean> autoExposure;
+    final ConfigOption<ColorGrade> colorGrade;
+    final ConfigOption<Boolean> edgeSmoothing;
     final ConfigOption<Boolean> dither;
     final ConfigOption<Boolean> sharpening;
     final ConfigOption<Double> sharpeningStrength;
     final ConfigOption<Boolean> motionBlur;
     final ConfigOption<Double> motionBlurStrength;
+    final ConfigOption<Boolean> depthOfField;
+    final ConfigOption<Double> depthOfFieldStrength;
     final ConfigOption<Boolean> debugMode;
     final ConfigOption<Boolean> ambientOcclusionView;
     final ConfigOption<Boolean> bloomView;
@@ -92,6 +99,8 @@ final class HelionOptions {
             .cost(HIGH_COST).requires(this.lighting, this.physicalSky).preview(VANILLA_PREVIEW, preview("shadows"), PREVIEW_ASPECT);
         this.shadowQuality = choice("shadowQuality", HelionConfig.SHADOW_QUALITY, ShadowQuality.class, Icons.GAUGE, "shadows.quality")
             .style(ChoiceStyle.SEGMENTED).cost(HIGH_COST).requires(this.shadows);
+        this.renderScale = choice("renderScale", HelionConfig.RENDER_SCALE, RenderScale.class, Icons.GAUGE, "temporalAntiAliasing.renderScale")
+            .style(ChoiceStyle.DROPDOWN).requires(this.temporal);
         this.bloom = toggle("bloom", HelionConfig.BLOOM_ENABLED, Icons.SPARKLE, "image.bloom").cost(LOW_COST).requires(this.enabled)
             .preview(VANILLA_PREVIEW, preview("bloom"), PREVIEW_ASPECT);
         this.bloomIntensity = slider("bloomIntensity", HelionConfig.BLOOM_INTENSITY, HelionConfig.MIN_BLOOM_INTENSITY, HelionConfig.MAX_BLOOM_INTENSITY, STRENGTH_STEP, Icons.SPARKLE, "image.bloom.intensity")
@@ -102,6 +111,9 @@ final class HelionOptions {
         this.exposure = slider("exposure", HelionConfig.EXPOSURE, HelionConfig.MIN_EXPOSURE, HelionConfig.MAX_EXPOSURE, EXPOSURE_STEP, Icons.SUN, "image.exposure").requires(this.enabled);
         this.autoExposure = experimental(toggle("autoExposure", HelionConfig.AUTO_EXPOSURE, Icons.EYE, "image.autoExposure"))
             .requires(this.enabled);
+        this.colorGrade = choice("colorGrade", HelionConfig.COLOR_GRADE, ColorGrade.class, Icons.CONTRAST, "image.colorGrade")
+            .style(ChoiceStyle.DROPDOWN).requires(this.enabled);
+        this.edgeSmoothing = toggle("edgeSmoothing", HelionConfig.EDGE_SMOOTHING, Icons.EYE, "image.edgeSmoothing").cost(LOW_COST).requires(this.enabled);
         this.dither = toggle("dither", HelionConfig.DITHER, Icons.PARTICLES, "image.dither").requires(this.enabled);
         this.sharpening = toggle("sharpening", HelionConfig.SHARPENING_ENABLED, Icons.EYE, "image.sharpening").cost(LOW_COST).requires(this.enabled);
         this.sharpeningStrength = slider("sharpeningStrength", HelionConfig.SHARPENING_STRENGTH, HelionConfig.MIN_SHARPENING_STRENGTH,
@@ -111,6 +123,10 @@ final class HelionOptions {
             .cost(LOW_COST).requires(this.enabled);
         this.motionBlurStrength = slider("motionBlurStrength", HelionConfig.MOTION_BLUR_STRENGTH, HelionConfig.MIN_MOTION_BLUR_STRENGTH,
             HelionConfig.MAX_MOTION_BLUR_STRENGTH, STRENGTH_STEP, Icons.BLUR, "image.motionBlur.strength").percent().requires(this.motionBlur);
+        this.depthOfField = experimental(toggle("depthOfField", HelionConfig.DEPTH_OF_FIELD_ENABLED, Icons.EYE, "image.depthOfField"))
+            .cost(LOW_COST).requires(this.enabled);
+        this.depthOfFieldStrength = slider("depthOfFieldStrength", HelionConfig.DEPTH_OF_FIELD_STRENGTH, HelionConfig.MIN_DEPTH_OF_FIELD_STRENGTH,
+            HelionConfig.MAX_DEPTH_OF_FIELD_STRENGTH, STRENGTH_STEP, Icons.EYE, "image.depthOfField.strength").percent().requires(this.depthOfField);
         this.debugMode = toggle("debugMode", HelionConfig.DEBUG_MODE, Icons.CMD, "debugMode");
         this.ambientOcclusionView = toggle("ambientOcclusionView", HelionConfig.AMBIENT_OCCLUSION_DEBUG_VIEW, Icons.SHADOW, "ambientOcclusion.debugView")
             .requires(this.ambientOcclusion);
@@ -123,8 +139,8 @@ final class HelionOptions {
     List<ConfigOption<?>> all() {
         return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.ambientOcclusion, this.ambientOcclusionMethod,
             this.ambientOcclusionQuality, this.ambientOcclusionStrength, this.ambientOcclusionRadius, this.lighting, this.blockLight, this.skyLight,
-            this.shadows, this.shadowQuality, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.dither,
-            this.sharpening, this.sharpeningStrength, this.motionBlur, this.motionBlurStrength, this.debugMode, this.ambientOcclusionView,
+            this.shadows, this.shadowQuality, this.renderScale, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.colorGrade, this.edgeSmoothing, this.dither,
+            this.sharpening, this.sharpeningStrength, this.motionBlur, this.motionBlurStrength, this.depthOfField, this.depthOfFieldStrength, this.debugMode, this.ambientOcclusionView,
             this.bloomView, this.geometryBufferView, this.lightView);
     }
 
