@@ -11,7 +11,7 @@ layout(location = 0) in vec2 texCoord;
 
 layout(location = 0) out vec4 fragColor;
 
-const float HELION_SHARP_PIXELS = 0.5;
+const float HELION_MIN_BLEND_PIXELS = 1.0;
 
 void main() {
     float focus = texelFetch(FocusSampler, ivec2(0), 0).r;
@@ -19,5 +19,7 @@ void main() {
     vec4 blurred = texture(BlurredSampler, texCoord);
     float nearSpread = blurred.a < 0.0 ? -blurred.a : 0.0;
     float blurPixels = max(abs(circle), nearSpread) * MaxBlurPixels;
-    fragColor = vec4(blurred.rgb, clamp(blurPixels - HELION_SHARP_PIXELS, 0.0, 1.0));
+    bool behind = circle > 0.0 && circle >= nearSpread;
+    float fullBlur = max(MaxBlurPixels * (behind ? HELION_DOF_FAR_LIMIT : HELION_DOF_NEAR_LIMIT), HELION_MIN_BLEND_PIXELS);
+    fragColor = vec4(blurred.rgb, smoothstep(0.0, fullBlur, blurPixels));
 }

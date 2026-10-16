@@ -15,6 +15,7 @@ const float HELION_DOF_BAND_PER_LOG_DISTANCE = 0.08;
 const float HELION_DOF_NEAR_LIMIT = 0.35;
 const float HELION_DOF_FAR_LIMIT = 0.4;
 const float HELION_DOF_MIN_DEPTH = 0.05;
+const float HELION_DOF_KNEE = 0.4;
 
 float helionDofViewDepth(float deviceDepth) {
     return deviceDepth <= HELION_SKY_DEVICE_DEPTH ? HELION_SKY_VIEW_DEPTH : helionLinearDepth(deviceDepth);
@@ -23,7 +24,9 @@ float helionDofViewDepth(float deviceDepth) {
 float helionCircleOfConfusion(float viewDepth, float focusDepth) {
     float ratio = log(max(viewDepth, HELION_DOF_MIN_DEPTH) / max(focusDepth, HELION_DOF_MIN_DEPTH));
     float band = HELION_DOF_SHARP_BAND + HELION_DOF_BAND_PER_LOG_DISTANCE * log(1.0 + focusDepth);
-    float blur = max(abs(ratio) - band, 0.0) * Aperture;
+    float excess = max(abs(ratio) - band, 0.0);
+    float eased = excess < HELION_DOF_KNEE ? excess * excess / (2.0 * HELION_DOF_KNEE) : excess - 0.5 * HELION_DOF_KNEE;
+    float blur = eased * Aperture;
     return ratio > 0.0 ? min(blur, HELION_DOF_FAR_LIMIT) : -min(blur, HELION_DOF_NEAR_LIMIT);
 }
 
