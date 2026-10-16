@@ -15,7 +15,7 @@ const float HELION_DOF_BAND_PER_LOG_DISTANCE = 0.08;
 const float HELION_DOF_NEAR_LIMIT = 0.35;
 const float HELION_DOF_FAR_LIMIT = 0.4;
 const float HELION_DOF_MIN_DEPTH = 0.05;
-const float HELION_DOF_KNEE = 0.4;
+const float HELION_DOF_KNEE = 1.0;
 
 float helionDofViewDepth(float deviceDepth) {
     return deviceDepth <= HELION_SKY_DEVICE_DEPTH ? HELION_SKY_VIEW_DEPTH : helionLinearDepth(deviceDepth);

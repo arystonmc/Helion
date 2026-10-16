@@ -12,7 +12,7 @@ layout(location = 0) out vec4 fragColor;
 const int HELION_DOF_TAPS = 32;
 const float HELION_GOLDEN_ANGLE = 2.39996323;
 const float HELION_HALF_RESOLUTION = 0.5;
-const float HELION_EDGE_SOFTNESS = 1.0;
+const float HELION_EDGE_SOFTNESS = 2.0;
 
 void main() {
     vec2 halfTexel = InverseScreenSize / HELION_HALF_RESOLUTION;
