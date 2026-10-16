@@ -16,6 +16,11 @@ const float HELION_DOF_NEAR_LIMIT = 0.35;
 const float HELION_DOF_FAR_LIMIT = 0.4;
 const float HELION_DOF_MIN_DEPTH = 0.05;
 const float HELION_DOF_KNEE = 0.4;
+const float HELION_DOF_CLOUD_DISTANCE = 48.0;
+
+#ifdef HELION_DOF_TERRAIN_DEPTH
+uniform sampler2D TerrainDepthSampler;
+#endif
 
 float helionDofViewDepth(float deviceDepth) {
     return deviceDepth <= HELION_SKY_DEVICE_DEPTH ? HELION_SKY_VIEW_DEPTH : helionLinearDepth(deviceDepth);
@@ -28,6 +33,19 @@ float helionCircleOfConfusion(float viewDepth, float focusDepth) {
     float eased = excess < HELION_DOF_KNEE ? excess * excess / (2.0 * HELION_DOF_KNEE) : excess - 0.5 * HELION_DOF_KNEE;
     float blur = eased * Aperture;
     return ratio > 0.0 ? min(blur, HELION_DOF_FAR_LIMIT) : -min(blur, HELION_DOF_NEAR_LIMIT);
+}
+
+float helionDofCircle(float deviceDepth, vec2 uv, float focusDepth) {
+    float viewDepth = helionDofViewDepth(deviceDepth);
+    if (viewDepth >= HELION_SKY_VIEW_DEPTH) {
+        return 0.0;
+    }
+    #ifdef HELION_DOF_TERRAIN_DEPTH
+    if (viewDepth > HELION_DOF_CLOUD_DISTANCE && texture(TerrainDepthSampler, uv).r <= HELION_SKY_DEVICE_DEPTH) {
+        return 0.0;
+    }
+    #endif
+    return helionCircleOfConfusion(viewDepth, focusDepth);
 }
 
 #endif

@@ -15,7 +15,7 @@ const float HELION_MIN_BLEND_PIXELS = 1.0;
 
 void main() {
     float focus = texelFetch(FocusSampler, ivec2(0), 0).r;
-    float circle = helionCircleOfConfusion(helionDofViewDepth(texelFetch(DepthSampler, ivec2(gl_FragCoord.xy), 0).r), focus);
+    float circle = helionDofCircle(texelFetch(DepthSampler, ivec2(gl_FragCoord.xy), 0).r, texCoord, focus);
     vec4 blurred = texture(BlurredSampler, texCoord);
     float nearSpread = blurred.a < 0.0 ? -blurred.a : 0.0;
     float blurPixels = max(abs(circle), nearSpread) * MaxBlurPixels;
