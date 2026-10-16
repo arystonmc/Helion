@@ -27,6 +27,18 @@ public record RenderSettings(
         ShadowSettings.DISABLED
     );
 
+    public RenderSettings screenOnly() {
+        return new RenderSettings(
+            AmbientOcclusionSettings.DISABLED,
+            image.withoutMotionBlur(),
+            GeometryBufferSettings.DISABLED,
+            DeferredLightingSettings.DISABLED,
+            TemporalSettings.DISABLED,
+            PhysicalSkySettings.DISABLED,
+            ShadowSettings.DISABLED
+        );
+    }
+
     public RenderSettings foundation() {
         return new RenderSettings(
             AmbientOcclusionSettings.DISABLED,

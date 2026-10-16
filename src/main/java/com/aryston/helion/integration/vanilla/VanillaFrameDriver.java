@@ -207,14 +207,14 @@ final class VanillaFrameDriver {
             : levelRenderer.prepareChunkRenders(terrainMatrix, !orderIndependent);
     }
 
-    private static HelionCamera camera(CameraRenderState camera) {
+    static HelionCamera camera(CameraRenderState camera) {
         boolean zeroToOneDepth = RenderSystem.getDevice().getDeviceInfo().isZZeroToOne();
         Vector3d position = new Vector3d(camera.pos.x, camera.pos.y, camera.pos.z);
         Matrix4fc levelProjection = HelionRenderCore.get().levelProjection().orElse(camera.projectionMatrix);
         return new HelionCamera(position, camera.viewRotationMatrix, camera.projectionMatrix, levelProjection, zeroToOneDepth);
     }
 
-    private static LightEnvironment lightEnvironment(LightmapRenderState lightmap) {
+    static LightEnvironment lightEnvironment(LightmapRenderState lightmap) {
         return new LightEnvironment(
             lightmap.skyFactor,
             lightmap.blockFactor,

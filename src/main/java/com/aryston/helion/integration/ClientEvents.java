@@ -53,6 +53,11 @@ public final class ClientEvents {
             LOGGER.warn("Helion stays passive because these renderer mods are installed: {}", rendererMods);
             core.passivate(PassiveReason.INCOMPATIBLE_MOD);
         }
+        if (CompatibilityGuard.sodiumLoaded()) {
+            LOGGER.info("Helion runs in Sodium mode: Sodium draws the world and Helion adds only its screen effects; shadows, lighting, sky, ambient occlusion, temporal anti-aliasing and motion blur are off");
+            core.useScreenEffectsOnly();
+            PassiveModeNotice.queueSodiumMode();
+        }
     }
 
     private static void onPassive(PassiveReason reason) {

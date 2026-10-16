@@ -50,6 +50,7 @@ public final class HelionRenderCore {
     private @Nullable SceneSnapshot lastScene;
     private volatile boolean enabled = true;
     private volatile boolean debugMode;
+    private volatile boolean screenEffectsOnly;
     private volatile RenderSettings settings = RenderSettings.OFF;
 
     private HelionRenderCore() {
@@ -76,6 +77,14 @@ public final class HelionRenderCore {
     public boolean isActive() {
         detectDevice();
         return !shutDown && passiveReason == null && enabled;
+    }
+
+    public void useScreenEffectsOnly() {
+        screenEffectsOnly = true;
+    }
+
+    public boolean screenEffectsOnly() {
+        return screenEffectsOnly;
     }
 
     public boolean toggle() {

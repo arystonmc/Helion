@@ -161,7 +161,8 @@ Blocks cast real shadows that move with the sun through the day.
 Helion never stands between you and the game.
 
 - On OpenGL, Helion stays inactive and tells you how to switch to Vulkan
-- With Sodium or Iris installed, Helion stays inactive to avoid conflicts and tells you why
+- With Sodium installed, Helion runs in Sodium mode: Sodium draws the world and Helion adds its screen effects (tone mapping, bloom, exposure, sharpening, color grading, depth of field, edge smoothing); shadows, lighting, the sky, ambient occlusion, anti-aliasing and motion blur are off, and a short notice says so
+- With Iris installed, Helion stays inactive to avoid conflicts and tells you why
 - If something goes wrong while rendering, Helion steps aside and the game keeps running with vanilla graphics
 - Since: 0.1
 

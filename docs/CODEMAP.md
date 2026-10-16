@@ -43,7 +43,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 ## Overview
 
 - Side: client only (`dist = Dist.CLIENT`). `displayTest="IGNORE_ALL_VERSION"` lets players join servers without Helion.
-- Requires the Vulkan backend. On OpenGL, or with Sodium or Iris installed, the core stays passive and vanilla renders.
+- Requires the Vulkan backend. On OpenGL or with Iris installed the core stays passive and vanilla renders; with Sodium installed it runs in Sodium mode (screen effects only).
 - Root package: `com.aryston.helion`.
 
 ## Classes
@@ -96,7 +96,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### HelionRenderCore
 - Path: `src/main/java/com/aryston/helion/render/HelionRenderCore.java`
-- Role: Singleton that owns the core state and shared GPU objects. Decides whether Helion renders, detects the backend on first use, starts and ends level frames, redirects the main target during a level frame, releases everything on shutdown and renders nothing after it, because Minecraft can still draw a frame after the shutdown event. Setting fields are volatile because config reloads may arrive from another thread.
+- Role: Singleton that owns the core state and shared GPU objects. Decides whether Helion renders, detects the backend on first use, starts and ends level frames, redirects the main target during a level frame, releases everything on shutdown and renders nothing after it, because Minecraft can still draw a frame after the shutdown event. Setting fields are volatile because config reloads may arrive from another thread. With Sodium installed `useScreenEffectsOnly()` switches it to Sodium mode (`screenEffectsOnly()`).
 - Members: `get()`, `isActive()`, `toggle()`, `passivate(reason)`, `reportFailure(throwable)`, `beginLevelFrame(main)`, `endLevelFrame()`, `resolveMainTarget(original)`, `recordFrame(camera, scene)`, `lastCamera()`, `lastScene()`, `applySettings(enabled, debugMode, renderSettings)`, `isDebugMode()`, `settings()`, `ambientOcclusion()`, `image()`, `lighting()`, `temporal()`, `motionBlur()`, `sky()`, `shadows()`, `recordLevelProjection(projection)`, `levelProjection()`, `setPassiveListener(listener)`, `shutdown()`.
 - Depends on: `GpuDeviceSummary`, `GpuResources`, `SceneTargets`, `GpuTimings`, `HelionCamera`, `AmbientOcclusionResources`, `ImageResources`, `DeferredLightingResources`, `TemporalResources`, `MotionBlurResources`, `PhysicalSkyResources`, `ShadowResources`.
 
@@ -114,7 +114,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### FrameStages
 - Path: `src/main/java/com/aryston/helion/render/FrameStages.java`
-- Role: Single place that defines the stage order (clear, sky, opaque geometry, shadows, deferred lighting, solid features, ambient occlusion, transparent geometry, temporal anti-aliasing, post with motion blur, exposure metering, bloom and sharpening, output, geometry buffer view) and adds active stages to the frame one by one, so a stage can see what earlier stages published (the geometry buffer). The output stage is `ImageCompositeStage` when an image effect is active, otherwise `PresentStage`.
+- Role: Single place that defines the stage order (clear, sky, opaque geometry, shadows, deferred lighting, solid features, ambient occlusion, transparent geometry, temporal anti-aliasing, post with motion blur, exposure metering, bloom and sharpening, output, geometry buffer view) and adds active stages to the frame one by one, so a stage can see what earlier stages published (the geometry buffer). The output stage is `ImageCompositeStage` when an image effect is active, otherwise `PresentStage`. `buildScreenEffects` adds only the post effects and the output for Sodium mode, from the same list.
 - Depends on: every stage class.
 
 ### `com.aryston.helion.render.backend`
@@ -163,7 +163,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### RenderSettings
 - Path: `src/main/java/com/aryston/helion/render/graph/RenderSettings.java`
-- Role: Immutable per-frame effect settings. `OFF` is the startup value; `foundation()` turns every effect off for the parity check, deferred lighting, temporal anti-aliasing, the physical sky and shadows included, but keeps the geometry buffer (without its view) because it belongs to the core.
+- Role: Immutable per-frame effect settings. `OFF` is the startup value; `foundation()` turns every effect off for the parity check, deferred lighting, temporal anti-aliasing, the physical sky and shadows included, but keeps the geometry buffer (without its view) because it belongs to the core. `screenOnly()` keeps only what works on a finished image (image settings without motion blur) and turns ambient occlusion, the geometry buffer, lighting, temporal anti-aliasing, the physical sky and shadows off, for Sodium mode.
 - Depends on: `AmbientOcclusionSettings`, `ImageSettings`, `GeometryBufferSettings`, `DeferredLightingSettings`, `TemporalSettings`, `PhysicalSkySettings`, `ShadowSettings`.
 
 #### RenderGraph
@@ -599,7 +599,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ImageSettings
 - Path: `src/main/java/com/aryston/helion/render/post/ImageSettings.java`
-- Role: Player image settings: tone mapper, exposure in stops, automatic exposure, dither, bloom and sharpening and motion blur and the color grade and depth of field and edge smoothing. `needsComposite()` tells whether the output must go through `ImageCompositeStage`. `FOUNDATION` keeps the plain copy.
+- Role: Player image settings: tone mapper, exposure in stops, automatic exposure, dither, bloom and sharpening and motion blur and the color grade and depth of field and edge smoothing. `needsComposite()` tells whether the output must go through `ImageCompositeStage`. `FOUNDATION` keeps the plain copy. `withoutMotionBlur()` copies them with motion blur off.
 - Depends on: `ToneMapper`, `BloomSettings`.
 
 #### BloomSettings
@@ -653,22 +653,27 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### CompatibilityGuard
 - Path: `src/main/java/com/aryston/helion/integration/CompatibilityGuard.java`
-- Role: Lists installed renderer mods (Sodium, Iris) that make Helion passive.
+- Role: Lists installed renderer mods that make Helion passive (Iris) and tells whether Sodium is installed, which starts Sodium mode instead.
 
 #### PassiveModeNotice
 - Path: `src/main/java/com/aryston/helion/integration/PassiveModeNotice.java`
-- Role: Queues passive reasons and shows them as toasts once the GUI exists; also shows the toggle toast and builds its enabled or disabled text. The queue is thread safe because the incompatible mod check runs on a parallel setup thread.
+- Role: Queues passive reasons and shows them as toasts once the GUI exists; also shows the toggle toast and builds its enabled or disabled text. The queue is thread safe because the incompatible mod check runs on a parallel setup thread. Also shows the Sodium mode notice once the GUI exists (`queueSodiumMode`).
 
 ### `com.aryston.helion.integration.vanilla`
 
 #### LevelRenderHook
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/LevelRenderHook.java`
-- Role: Entry from the mixin. Chooses the Helion or vanilla frame and the render settings (`settings().foundation()` while the parity check captures), catches Helion failures, feeds the parity check after every level frame together with whether Helion really rendered it, and pauses GPU timing and drops the temporal history on vanilla frames.
-- Depends on: `VanillaFrameDriver`, `HelionRenderCore`, `ParityCheck`.
+- Role: Entry from the mixin. Chooses the Helion or vanilla frame and the render settings (`settings().foundation()` while the parity check captures), catches Helion failures, feeds the parity check after every level frame together with whether Helion really rendered it, and pauses GPU timing and drops the temporal history on vanilla frames. In Sodium mode it lets vanilla, and so Sodium, render the whole level and then runs `ScreenEffectsDriver` with `settings().screenOnly()`.
+- Depends on: `VanillaFrameDriver`, `ScreenEffectsDriver`, `HelionRenderCore`, `ParityCheck`.
 
 #### LevelFrameRequest
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/LevelFrameRequest.java`
 - Role: Arguments of one `LevelRenderer.render` call plus typed access to the accessor mixin.
+
+#### ScreenEffectsDriver, ScreenTargets
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/ScreenEffectsDriver.java`, `src/main/java/com/aryston/helion/integration/vanilla/ScreenTargets.java`
+- Role: Sodium mode. After vanilla and Sodium drew the level into the main target, copies its color and depth into Helion's scene target, builds a frame graph with `ScreenTargets` (scene and output only, no geometry attachments) and runs `FrameStages.buildScreenEffects`: edge smoothing, depth of field, exposure, bloom, sharpening and the image composite (tone mapping, color grade, dither) on the finished image. Sodium replaces the terrain draws `VanillaFrameDriver` uses, so Helion's own terrain passes (shadows, geometry buffer lighting, ambient occlusion, physical sky, temporal anti-aliasing, motion blur) stay off.
+- Depends on: `FrameStages`, `HelionRenderCore`, `VanillaFrameDriver` (camera and light environment helpers), `AmbientLightTracker`.
 
 #### VanillaFrameDriver
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaFrameDriver.java`
@@ -867,7 +872,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 
 | File | Purpose |
 |---|---|
-| `src/main/templates/META-INF/neoforge.mods.toml` | Mod metadata template filled from `gradle.properties`: dependencies (Arkea required, so the game refuses to start without it), discouraged Sodium and Iris, mixin config. |
+| `src/main/templates/META-INF/neoforge.mods.toml` | Mod metadata template filled from `gradle.properties`: dependencies (Arkea required, so the game refuses to start without it), discouraged Iris, mixin config. |
 | `src/main/resources/helion.mixins.json` | Mixin configuration listing `ChunkSectionsToRenderAccessor`, `EntityRendererMixin`, `GameRendererMixin`, `LevelRendererAccessor`, `LevelRendererMixin` and `SkyRendererMixin`. |
 
 ## Asset Folders

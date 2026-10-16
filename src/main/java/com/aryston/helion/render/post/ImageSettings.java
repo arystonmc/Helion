@@ -18,6 +18,12 @@ public record ImageSettings(
         ColorGrade.NEUTRAL, DepthOfFieldSettings.DISABLED, false
     );
 
+    public ImageSettings withoutMotionBlur() {
+        return new ImageSettings(
+            toneMapper, exposure, autoExposure, dither, bloom, sharpening, MotionBlurSettings.DISABLED, colorGrade, depthOfField, edgeSmoothing
+        );
+    }
+
     public boolean needsComposite() {
         return bloom.enabled() || sharpening.enabled() || autoExposure || exposure != DEFAULT_EXPOSURE || toneMapper == ToneMapper.FILMIC
             || colorGrade != ColorGrade.NEUTRAL;

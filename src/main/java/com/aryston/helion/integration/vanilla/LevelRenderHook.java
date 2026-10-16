@@ -6,6 +6,7 @@ import com.aryston.helion.render.graph.RenderSettings;
 
 public final class LevelRenderHook {
     private static final VanillaFrameDriver DRIVER = new VanillaFrameDriver();
+    private static final ScreenEffectsDriver SCREEN_EFFECTS = new ScreenEffectsDriver();
 
     private LevelRenderHook() {
     }
@@ -16,7 +17,7 @@ public final class LevelRenderHook {
         boolean renderedByHelion = false;
         if (core.isActive() && !parity.forcesVanillaFrame()) {
             RenderSettings settings = parity.forcesFoundationFrame() ? core.settings().foundation() : core.settings();
-            renderedByHelion = renderWithHelion(request, settings, core);
+            renderedByHelion = core.screenEffectsOnly() ? renderScreenEffects(request, settings, vanillaRenderer, core) : renderWithHelion(request, settings, core);
         } else {
             core.timings().pause();
             core.temporal().invalidate();
@@ -27,6 +28,17 @@ public final class LevelRenderHook {
 
     public static void shutdown() {
         DRIVER.close();
+    }
+
+    private static boolean renderScreenEffects(LevelFrameRequest request, RenderSettings settings, Runnable vanillaRenderer, HelionRenderCore core) {
+        vanillaRenderer.run();
+        try {
+            SCREEN_EFFECTS.render(request, settings.screenOnly());
+            return true;
+        } catch (RuntimeException failure) {
+            core.reportFailure(failure);
+            return false;
+        }
     }
 
     private static boolean renderWithHelion(LevelFrameRequest request, RenderSettings settings, HelionRenderCore core) {

@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Component;
 final class PassiveModeNotice {
     private static final SystemToast.SystemToastId TOAST_ID = new SystemToast.SystemToastId();
     private static final Queue<PassiveReason> PENDING = new ConcurrentLinkedQueue<>();
+    private static volatile boolean sodiumModePending;
 
     private PassiveModeNotice() {
     }
@@ -22,9 +23,17 @@ final class PassiveModeNotice {
         if (minecraft.gui == null) {
             return;
         }
+        if (sodiumModePending) {
+            sodiumModePending = false;
+            show(minecraft, Component.translatable("helion.sodium.title"), Component.translatable("helion.sodium.message"));
+        }
         for (PassiveReason reason = PENDING.poll(); reason != null; reason = PENDING.poll()) {
             show(minecraft, Component.translatable("helion.passive.title"), Component.translatable(reason.translationKey()));
         }
+    }
+
+    static void queueSodiumMode() {
+        sodiumModePending = true;
     }
 
     static Component enabledState(boolean enabled) {
