@@ -19,7 +19,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 | Motion blur: tile velocities and gather | `MotionBlurStage`, `MotionBlurResources` (frame rate normalization), `TemporalResources` (camera reprojection), `shaders/motion_blur/` |
 | Physical sky: atmosphere, spectral colors, sun and moon light, fog | `PhysicalSkyStage`, `PhysicalSkyResources` (brightness, fog buffer), `AtmosphereSpectrum` (wavelength data), `SkyEnvironment`, `SkyRendererMixin`, `shaders/atmosphere/`, `shaders/include/helion_atmosphere.glsl`, `helion_spectrum.glsl`, `helion_sky_color.glsl` |
 | Physical sky light on terrain | `SkyLight`, `DeferredLightingStage`, `sky_light.fsh`, `deferred_light.fsh` (`HELION_PHYSICAL_SKY_LIGHT`) |
-| Sun and moon shadows: cascades, shadow map, mask | `ShadowStage`, `ShadowCascades` (splits, fitting, texel snapping), `ShadowCascadeCache` (which cascades are drawn this frame), `ShadowLight` (sun or moon, horizon fade), `ShadowResources`, `VanillaShadowCasterSource`, `ShadowCasterSections` (cached caster sections), `VanillaShadowPipelines`, `shaders/shadow/`, `shaders/include/helion_shadow.glsl`, `deferred_light.fsh` (`HELION_SHADOWS`) |
+| Sun and moon shadows: cascades, shadow map, mask | `ShadowStage`, `ShadowCascades` (splits, fitting, texel snapping), `ShadowCascadeCache` (which cascades are drawn this frame), `ShadowLight` (sun or moon, horizon fade), `ShadowResources`, `VanillaShadowCasterSource`, `ShadowCasterSections` (incremental cached caster sections), `ShadowCasterChanges`, `ShadowCasterMember`, `RenderSectionMixin`, `VanillaShadowPipelines`, `shaders/shadow/`, `shaders/include/helion_shadow.glsl`, `deferred_light.fsh` (`HELION_SHADOWS`) |
 | Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines`, `DeferredLightingPipelines`, `TemporalPipelines`, `PhysicalSkyPipelines`, `ImagePipelines` |
 | How vanilla terrain, entities, sky or OIT are called | `VanillaTerrainSource`, `VanillaEntitySource`, `VanillaAtmosphereSource`, `VanillaTransparencySource` |
 | The rebuilt vanilla `LevelRenderer.render` | `VanillaFrameDriver` |
@@ -35,7 +35,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 | Key bindings | `HelionKeys`, `ParityControl` |
 | Debug mode: on-screen values and JSON log | `HelionDebugSnapshot` (every value), `HelionDebugEntry` (screen), `DebugOverlayLines` (line layout), `HelionDebugLog` (`logs/helion-debug.jsonl`) |
 | Pixel comparison with vanilla | `ParityCheck`, `FrameCapture`, `ParityResult`, `ParityDifferenceImage` |
-| Vanilla hooks | `LevelRendererMixin`, `LevelRendererAccessor`, `ChunkSectionsToRenderAccessor`, `GameRendererMixin`, `SkyRendererMixin` |
+| Vanilla hooks | `LevelRendererMixin`, `LevelRendererAccessor`, `ChunkSectionsToRenderAccessor`, `GameRendererMixin`, `RenderSectionMixin`, `SkyRendererMixin` |
 | Mod name, version, loader versions | `gradle.properties` |
 | Unit tests | `src/test/java/`, see Tests below |
 | Mod list metadata, dependencies, mixin config | `neoforge.mods.toml` |
@@ -705,7 +705,17 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### ShadowCasterSections
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/ShadowCasterSections.java`
-- Role: Cached list of the render sections within the render distance that hold solid or cutout geometry, the only sections that can cast shadows. The full scan of the view area runs again when the camera enters another section, the view area changes or 20 frames passed, so new or emptied sections reach the shadows within a third of a second and the per frame caster search only tests these sections against the cascades. Owned by `VanillaFrameDriver`, because the caster source is created per frame.
+- Role: Cached list of the render sections within the render distance that hold solid or cutout geometry, the only sections that can cast shadows. Applies changed meshes incrementally and fully scans only a new view area or an overflowed change queue. Owned by `VanillaFrameDriver`, because the caster source is created per frame.
+- Depends on: `ShadowCasterChanges`, `ShadowCasterMember`.
+
+#### ShadowCasterChanges
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/ShadowCasterChanges.java`
+- Role: Bounded cross-thread queue of sections whose meshes changed. Overflow clears the queue and requests one full caster rebuild.
+- Depends on: nothing of this mod.
+
+#### ShadowCasterMember
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/ShadowCasterMember.java`
+- Role: Mixin contract storing a render section's index in the shadow caster list.
 - Depends on: nothing of this mod.
 
 #### VanillaShadowPipelines
@@ -833,6 +843,11 @@ Every class and source file of Helion with its purpose. Find the right file here
 - Path: `src/main/java/com/aryston/helion/mixin/ChunkSectionsToRenderAccessor.java`
 - Role: Invoker for the private `ChunkSectionsToRender.renderLayers`, the only vanilla entry that takes per layer pipeline overrides.
 
+#### RenderSectionMixin
+- Path: `src/main/java/com/aryston/helion/mixin/RenderSectionMixin.java`
+- Role: Stores the shadow-caster list index on each render section and queues it after its mesh is replaced or reset.
+- Notes: No API reports render-section mesh changes.
+
 #### LevelRendererAccessor
 - Path: `src/main/java/com/aryston/helion/mixin/LevelRendererAccessor.java`
 - Role: Accessors and invokers for private `LevelRenderer` fields, constants and methods needed to rebuild `render`, including the setter of the vanilla `skyRenderer` that `VanillaFrameDriver` creates like vanilla does, and the visible sections, view area and multi-draw state the shadow casters need.
@@ -873,7 +888,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | File | Purpose |
 |---|---|
 | `src/main/templates/META-INF/neoforge.mods.toml` | Mod metadata template filled from `gradle.properties`: dependencies (Arkea required, so the game refuses to start without it), discouraged Iris, mixin config. |
-| `src/main/resources/helion.mixins.json` | Mixin configuration listing `ChunkSectionsToRenderAccessor`, `EntityRendererMixin`, `GameRendererMixin`, `LevelRendererAccessor`, `LevelRendererMixin` and `SkyRendererMixin`. |
+| `src/main/resources/helion.mixins.json` | Mixin configuration listing `ChunkSectionsToRenderAccessor`, `EntityRendererMixin`, `GameRendererMixin`, `LevelRendererAccessor`, `LevelRendererMixin`, `RenderSectionMixin` and `SkyRendererMixin`. |
 
 ## Asset Folders
 

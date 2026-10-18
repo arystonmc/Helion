@@ -17,6 +17,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental motion blur when the camera moves or turns, with a strength setting
 
 ### Changed
+- Reduce short stutters with shadows on, especially while flying or at high render distance
 - With Sodium installed Helion now keeps its screen effects (Sodium mode) instead of switching itself off
 - Mobs and dropped items no longer show vanilla's round shadow spot under them while Helion's sun shadows are on
 - Shadows move smoothly with the sun instead of jumping or sliding back and forth

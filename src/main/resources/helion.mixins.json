@@ -8,6 +8,7 @@
     "GameRendererMixin",
     "LevelRendererAccessor",
     "LevelRendererMixin",
+    "RenderSectionMixin",
     "SkyRendererMixin"
   ],
   "injectors": {

@@ -111,7 +111,7 @@ final class VanillaShadowCasterSource implements ShadowCasterSource {
         Vec3 camera = request.cameraState().pos;
         Matrix4fc lightView = cascades.getFirst().lightView();
         Vector3f lightSpace = new Vector3f();
-        for (SectionRenderDispatcher.RenderSection section : candidates.withGeometry(area, SectionPos.of(camera), CASTER_LAYERS)) {
+        for (SectionRenderDispatcher.RenderSection section : candidates.withGeometry(area, CASTER_LAYERS)) {
             BlockPos origin = section.getRenderOrigin();
             lightSpace.set(
                 (float) (origin.getX() + SectionPos.SECTION_HALF_SIZE - camera.x),
