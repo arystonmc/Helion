@@ -40,7 +40,8 @@ public final class HelionConfigScreen {
                 .fullSection(text("section.ambientOcclusion"), section -> section.add(options.ambientOcclusion).add(options.ambientOcclusionMethod)
                     .add(options.ambientOcclusionStrength).add(options.ambientOcclusionRadius))
                 .section(text("section.hdr"), section -> section.add(options.lighting).add(options.blockLight).add(options.skyLight))
-                .section(text("section.shadows"), section -> section.add(options.shadows)))
+                .section(text("section.shadows"), section -> section.add(options.shadows))
+                .fullSection(text("section.dynamicLights"), section -> section.add(options.dynamicLights)))
             .page("effects", text("page.effects"), Icons.SPARKLE, page -> page
                 .section(text("section.bloom"), section -> section.add(options.bloom).add(options.bloomIntensity).add(options.bloomThreshold))
                 .section(text("section.image"), section -> section.add(options.toneMapper).add(options.exposure).add(options.autoExposure).add(options.colorGrade).add(options.edgeSmoothing).add(options.dither))

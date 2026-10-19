@@ -45,6 +45,7 @@ final class HelionOptions {
     final ConfigOption<Boolean> lighting;
     final ConfigOption<Double> blockLight;
     final ConfigOption<Double> skyLight;
+    final ConfigOption<Boolean> dynamicLights;
     final ConfigOption<Boolean> shadows;
     final ConfigOption<ShadowQuality> shadowQuality;
     final ConfigOption<RenderScale> renderScale;
@@ -95,6 +96,8 @@ final class HelionOptions {
         this.skyLight = slider("skyLight", HelionConfig.SKY_LIGHT_INTENSITY, HelionConfig.MIN_SKY_LIGHT_INTENSITY,
             HelionConfig.MAX_SKY_LIGHT_INTENSITY, LIGHT_STEP, Icons.SUN, "lighting.skyLightIntensity")
             .requires(this.lighting);
+        this.dynamicLights = toggle("dynamicLights", HelionConfig.DYNAMIC_LIGHTS_ENABLED, Icons.HAND, "dynamicLights")
+            .cost(LOW_COST).requires(this.enabled);
         this.shadows = experimental(toggle("shadows", HelionConfig.SHADOWS_ENABLED, Icons.SUN, "shadows"))
             .cost(HIGH_COST).requires(this.lighting, this.physicalSky).preview(VANILLA_PREVIEW, preview("shadows"), PREVIEW_ASPECT);
         this.shadowQuality = choice("shadowQuality", HelionConfig.SHADOW_QUALITY, ShadowQuality.class, Icons.GAUGE, "shadows.quality")
@@ -139,7 +142,7 @@ final class HelionOptions {
     List<ConfigOption<?>> all() {
         return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.ambientOcclusion, this.ambientOcclusionMethod,
             this.ambientOcclusionQuality, this.ambientOcclusionStrength, this.ambientOcclusionRadius, this.lighting, this.blockLight, this.skyLight,
-            this.shadows, this.shadowQuality, this.renderScale, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.colorGrade, this.edgeSmoothing, this.dither,
+            this.dynamicLights, this.shadows, this.shadowQuality, this.renderScale, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.colorGrade, this.edgeSmoothing, this.dither,
             this.sharpening, this.sharpeningStrength, this.motionBlur, this.motionBlurStrength, this.depthOfField, this.depthOfFieldStrength, this.debugMode, this.ambientOcclusionView,
             this.bloomView, this.geometryBufferView, this.lightView);
     }

@@ -28,13 +28,11 @@ import org.jspecify.annotations.Nullable;
 public final class DeferredLightingStage implements RenderStage {
     private static final String NAME = "deferred_lighting";
     private static final String SHADING_PASS = "deferred_shading";
-    private static final String LIGHT_BUFFER = "helion:light_buffer";
     private static final String INDIRECT_SHARE_TARGET = "helion:indirect_share";
     private static final Vector4fc FULL_SHARE = new Vector4f(1.0F, 1.0F, 1.0F, 1.0F);
 
     private final DeferredLightingResources resources;
     private @Nullable DeferredLightingPrograms programs;
-    private @Nullable GpuBuffer frameUniforms;
 
     public DeferredLightingStage(DeferredLightingResources resources) {
         this.resources = resources;
@@ -67,60 +65,14 @@ public final class DeferredLightingStage implements RenderStage {
         GeometryBuffer.Targets geometry = frame.geometry().targets().orElseThrow();
         Optional<SkyLight> skyLight = frame.atmosphere().skyLight();
         Optional<ShadowResults.Shadows> shadows = skyLight.isPresent() ? frame.shadows().shadows() : Optional.empty();
-        ResourceHandle<RenderTarget> lightBuffer = addLightPass(frame, compiled, geometry, skyLight, shadows);
-        addShadingPass(frame, compiled, geometry, lightBuffer, skyLight.flatMap(light -> shadows.map(shadow -> new ShadowInputs(light, shadow))));
-    }
-
-    private ResourceHandle<RenderTarget> addLightPass(
-        FrameContext frame,
-        DeferredLightingPrograms compiled,
-        GeometryBuffer.Targets geometry,
-        Optional<SkyLight> skyLight,
-        Optional<ShadowResults.Shadows> shadows
-    ) {
-        FramePass pass = frame.graph().addPass(NAME);
+        FramePass pass = frame.graph().addPass(SHADING_PASS);
+        pass.reads(geometry.albedo());
         pass.reads(geometry.light());
         skyLight.ifPresent(light -> {
             pass.reads(geometry.normal());
             pass.reads(light.irradiance());
         });
-        CompiledRenderPipeline pipeline = skyLight.isPresent() ? compiled.physicalSkyLight() : compiled.light();
-        Optional<ShadowLight> shadowLight = shadows.map(ShadowResults.Shadows::light);
-        ResourceHandle<RenderTarget> lightBuffer = pass.createsInternal(LIGHT_BUFFER, new RenderTargetDescriptor(
-            frame.scene().width(),
-            frame.scene().height(),
-            new RenderTargetDescriptor.TextureProperties(null, DeferredLightingPipelines.LIGHT_BUFFER_FORMAT),
-            null
-        ));
-        LightEnvironment environment = frame.scene().light();
-        DeferredLightingSettings settings = frame.settings().lighting();
-        pass.executes(frame.graph().timed(NAME, () -> {
-            frameUniforms = resources.writeUniforms(environment, settings, skyLight, shadowLight);
-            FullscreenPass.draw("Helion Deferred Light", lightBuffer.get(), pipeline, renderPass -> {
-                renderPass.setUniform(DeferredLightingPipelines.SETTINGS, Objects.requireNonNull(frameUniforms));
-                renderPass.setUniform(DeferredLightingPipelines.GEOMETRY_LIGHT_SAMPLER, colorView(geometry.light()), nearest());
-                skyLight.ifPresent(light -> bindSkyLight(renderPass, geometry, light));
-            });
-        }));
-        return lightBuffer;
-    }
-
-    private void addShadingPass(
-        FrameContext frame,
-        DeferredLightingPrograms compiled,
-        GeometryBuffer.Targets geometry,
-        ResourceHandle<RenderTarget> lightBuffer,
-        Optional<ShadowInputs> shadows
-    ) {
-        FramePass pass = frame.graph().addPass(SHADING_PASS);
-        pass.reads(lightBuffer);
-        pass.reads(geometry.albedo());
-        pass.reads(geometry.light());
-        shadows.ifPresent(shadow -> {
-            pass.reads(geometry.normal());
-            pass.reads(shadow.skyLight().irradiance());
-            pass.reads(shadow.results().mask());
-        });
+        shadows.ifPresent(shadow -> pass.reads(shadow.mask()));
         ResourceHandle<RenderTarget> scene = pass.readsAndWrites(frame.targets().scene());
         frame.targets().updateScene(scene);
         Optional<ResourceHandle<RenderTarget>> indirectShare = shadows.map(shadow -> pass.createsInternal(INDIRECT_SHARE_TARGET, new RenderTargetDescriptor(
@@ -130,27 +82,32 @@ public final class DeferredLightingStage implements RenderStage {
             null
         )));
         indirectShare.ifPresent(frame.shadows()::publishIndirectShare);
-        CompiledRenderPipeline pipeline = shadingPipeline(compiled, frame.settings().lighting().lightOnlyView(), shadows.isPresent());
+        boolean lightOnly = frame.settings().lighting().lightOnlyView();
+        CompiledRenderPipeline pipeline = shadingPipeline(compiled, lightOnly, skyLight.isPresent(), shadows.isPresent());
+        LightEnvironment environment = frame.scene().light();
+        DeferredLightingSettings settings = frame.settings().lighting();
+        Optional<ShadowLight> shadowLight = shadows.map(ShadowResults.Shadows::light);
         pass.executes(frame.graph().timed(SHADING_PASS, () -> {
+            GpuBuffer uniforms = resources.writeUniforms(environment, settings, skyLight, shadowLight);
             List<RenderTarget> targets = indirectShare.map(share -> List.of(scene.get(), share.get())).orElseGet(() -> List.of(scene.get()));
             FullscreenPass.draw("Helion Deferred Shading", targets, pipeline, renderPass -> {
                 RenderSystem.bindDefaultUniforms(renderPass);
-                renderPass.setUniform(DeferredLightingPipelines.SETTINGS, Objects.requireNonNull(frameUniforms));
-                renderPass.setUniform(DeferredLightingPipelines.LIGHT_BUFFER_SAMPLER, colorView(lightBuffer), nearest());
+                renderPass.setUniform(DeferredLightingPipelines.SETTINGS, uniforms);
                 renderPass.setUniform(DeferredLightingPipelines.ALBEDO_SAMPLER, colorView(geometry.albedo()), nearest());
                 renderPass.setUniform(DeferredLightingPipelines.GEOMETRY_LIGHT_SAMPLER, colorView(geometry.light()), nearest());
-                shadows.ifPresent(shadow -> {
-                    bindSkyLight(renderPass, geometry, shadow.skyLight());
-                    renderPass.setUniform(DeferredLightingPipelines.SHADOW_MASK_SAMPLER, colorView(shadow.results().mask()), nearest());
-                });
+                skyLight.ifPresent(light -> bindSkyLight(renderPass, geometry, light));
+                shadows.ifPresent(shadow -> renderPass.setUniform(DeferredLightingPipelines.SHADOW_MASK_SAMPLER, colorView(shadow.mask()), nearest()));
             });
             resources.finishFrame();
         }));
     }
 
-    private static CompiledRenderPipeline shadingPipeline(DeferredLightingPrograms compiled, boolean lightOnly, boolean shadows) {
+    private static CompiledRenderPipeline shadingPipeline(DeferredLightingPrograms compiled, boolean lightOnly, boolean physicalSky, boolean shadows) {
         if (shadows) {
             return lightOnly ? compiled.shadowedLightOnlyView() : compiled.shadowedShading();
+        }
+        if (physicalSky) {
+            return lightOnly ? compiled.physicalSkyLightOnlyView() : compiled.physicalSkyShading();
         }
         return lightOnly ? compiled.lightOnlyView() : compiled.shading();
     }
@@ -166,8 +123,5 @@ public final class DeferredLightingStage implements RenderStage {
 
     private static GpuSampler nearest() {
         return RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
-    }
-
-    private record ShadowInputs(SkyLight skyLight, ShadowResults.Shadows results) {
     }
 }

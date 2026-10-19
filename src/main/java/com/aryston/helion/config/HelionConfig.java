@@ -8,6 +8,7 @@ import com.aryston.helion.render.lighting.AmbientOcclusionAlgorithm;
 import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.lighting.DeferredLightingSettings;
+import com.aryston.helion.render.lighting.DynamicLightSettings;
 import com.aryston.helion.render.post.BloomSettings;
 import com.aryston.helion.render.post.ColorGrade;
 import com.aryston.helion.render.post.DepthOfFieldSettings;
@@ -80,6 +81,7 @@ public final class HelionConfig {
     static final ModConfigSpec.DoubleValue BLOCK_LIGHT_INTENSITY;
     static final ModConfigSpec.DoubleValue SKY_LIGHT_INTENSITY;
     static final ModConfigSpec.BooleanValue LIGHT_ONLY_VIEW;
+    static final ModConfigSpec.BooleanValue DYNAMIC_LIGHTS_ENABLED;
     static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
     static final ModConfigSpec.EnumValue<RenderScale> RENDER_SCALE;
     static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
@@ -193,6 +195,12 @@ public final class HelionConfig {
             .define("lightOnlyView", false);
         BUILDER.pop();
 
+        BUILDER.translation("helion.configuration.dynamicLights").push("dynamicLights");
+        DYNAMIC_LIGHTS_ENABLED = BUILDER
+            .translation("helion.configuration.dynamicLights.enabled")
+            .define("enabled", true);
+        BUILDER.pop();
+
         BUILDER.translation("helion.configuration.temporalAntiAliasing").push("temporalAntiAliasing");
         TEMPORAL_ENABLED = BUILDER
             .translation("helion.configuration.temporalAntiAliasing.enabled")
@@ -231,7 +239,8 @@ public final class HelionConfig {
             lightingSettings(),
             new TemporalSettings(TEMPORAL_ENABLED.getAsBoolean(), RENDER_SCALE.get()),
             new PhysicalSkySettings(PHYSICAL_SKY_ENABLED.getAsBoolean()),
-            new ShadowSettings(SHADOWS_ENABLED.getAsBoolean(), SHADOW_QUALITY.get())
+            new ShadowSettings(SHADOWS_ENABLED.getAsBoolean(), SHADOW_QUALITY.get()),
+            new DynamicLightSettings(DYNAMIC_LIGHTS_ENABLED.getAsBoolean())
         );
     }
 

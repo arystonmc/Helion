@@ -45,7 +45,7 @@ public final class AmbientOcclusionStage implements RenderStage {
             || frame.scene().colorFormat() != AmbientOcclusionPipelines.SCENE_COLOR_FORMAT) {
             return false;
         }
-        Optional<AmbientOcclusionPrograms> compiled = AmbientOcclusionPrograms.compile();
+        Optional<AmbientOcclusionPrograms> compiled = AmbientOcclusionPrograms.compile(frame.settings().ambientOcclusion());
         if (compiled.isEmpty()) {
             resources.reportMissingPipelines();
             return false;

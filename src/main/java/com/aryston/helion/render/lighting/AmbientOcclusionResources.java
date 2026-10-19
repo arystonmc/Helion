@@ -30,9 +30,6 @@ public final class AmbientOcclusionResources {
         .putFloat()
         .putFloat()
         .putInt()
-        .putInt()
-        .putInt()
-        .putInt()
         .get();
 
     private final GpuResources resources;
@@ -60,9 +57,6 @@ public final class AmbientOcclusionResources {
             .putFloat(DENOISE_BLUR_BETA)
             .putFloat(settings.strength())
             .putFloat(height * MAX_SCREEN_RADIUS_FRACTION)
-            .putInt(settings.quality().slices())
-            .putInt(settings.quality().stepsPerSlice())
-            .putInt(settings.algorithm().shaderId())
             .putInt(noiseIndex));
     }
 

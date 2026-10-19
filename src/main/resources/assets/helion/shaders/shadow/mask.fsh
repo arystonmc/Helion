@@ -58,6 +58,11 @@ void main() {
     }
     vec4 world = InverseViewProjection * vec4(texCoord * 2.0 - 1.0, depth, 1.0);
     vec3 position = world.xyz / world.w;
-    float fade = smoothstep(ShadowDistance * HELION_FADE_START, ShadowDistance, length(position));
+    float distanceToCamera = length(position);
+    if (distanceToCamera >= ShadowDistance) {
+        fragColor = vec4(HELION_FULLY_LIT);
+        return;
+    }
+    float fade = smoothstep(ShadowDistance * HELION_FADE_START, ShadowDistance, distanceToCamera);
     fragColor = vec4(mix(helionBlendedVisibility(position, normal), HELION_FULLY_LIT, fade));
 }

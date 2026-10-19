@@ -6,6 +6,7 @@ import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.graph.RenderSettings;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.lighting.DeferredLightingSettings;
+import com.aryston.helion.render.lighting.DynamicLightSettings;
 import com.aryston.helion.render.post.BloomSettings;
 import com.aryston.helion.render.post.ImageSettings;
 import com.aryston.helion.render.post.MotionBlurSettings;
@@ -59,7 +60,8 @@ enum VisualTestVariant {
                 ),
                 TemporalSettings.DISABLED,
                 new PhysicalSkySettings(showsShadows()),
-                showsShadows() ? new ShadowSettings(true, ShadowQuality.MEDIUM) : ShadowSettings.DISABLED
+                showsShadows() ? new ShadowSettings(true, ShadowQuality.MEDIUM) : ShadowSettings.DISABLED,
+                DynamicLightSettings.DISABLED
             );
         }
         if (this == TEMPORAL) {
@@ -70,7 +72,8 @@ enum VisualTestVariant {
                 DeferredLightingSettings.DISABLED,
                 new TemporalSettings(true, RenderScale.NATIVE),
                 PhysicalSkySettings.DISABLED,
-                ShadowSettings.DISABLED
+                ShadowSettings.DISABLED,
+                DynamicLightSettings.DISABLED
             );
         }
         if (this == PHYSICAL_SKY) {
@@ -81,7 +84,8 @@ enum VisualTestVariant {
                 DeferredLightingSettings.DISABLED,
                 TemporalSettings.DISABLED,
                 new PhysicalSkySettings(true),
-                ShadowSettings.DISABLED
+                ShadowSettings.DISABLED,
+                DynamicLightSettings.DISABLED
             );
         }
         BloomSettings bloom = new BloomSettings(
@@ -97,7 +101,8 @@ enum VisualTestVariant {
             settings.lighting(),
             settings.temporal(),
             settings.sky(),
-            settings.shadows()
+            settings.shadows(),
+            settings.dynamicLights()
         );
     }
 

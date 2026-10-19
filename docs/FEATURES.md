@@ -141,6 +141,18 @@ A sky that behaves like real air: deep blue overhead, a bright glow around the s
 - Settings: on or off; off by default while it is experimental
 - Since: 0.1
 
+### Dynamic Lights
+Carry a torch into a cave and the cave lights up around you.
+
+- Torches, lanterns, glowstone, sea lanterns, lava buckets and every other glowing block item light the blocks and mobs around them while you or a mob hold them, in either hand
+- Glowing items you drop on the ground keep shining where they lie
+- Burning mobs and players light the area around them
+- The light follows smoothly as you move, reaches as far as the same block placed in the world, and never changes the world itself
+- Works with HDR lighting, bloom and shadows like any other light
+- Costs nothing when no glowing item is near
+- Settings: on or off on the Lighting page; on in every preset except Vanilla
+- Since: Unreleased
+
 ### Sun and Moon Shadows (Experimental)
 Blocks cast real shadows that move with the sun through the day.
 
@@ -185,7 +197,7 @@ Everything Helion knows, on screen and in a log file, only when you ask for it.
 A clear settings window in the Arkea style, with presets and a live estimate of the GPU cost.
 
 - Pages for General, Rendering, Lighting, Effects, Performance and Advanced, with search across every setting
-- Presets: Vanilla, Balanced, Quality and Experimental
+- Presets: Vanilla, Balanced, Quality and Experimental. Vanilla turns every effect off, including motion blur and depth of field; Quality adds edge smoothing, Experimental adds automatic exposure; motion blur and depth of field otherwise stay as you set them
 - Share your settings: Copy code puts a settings code on the clipboard, Paste code applies a code a friend sent you
 - Every setting has a short description, the full explanation on hover, and a reset button when it differs from its default
 - Before and after previews for ambient occlusion, bloom, shadows and the physical sky

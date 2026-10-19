@@ -36,8 +36,10 @@ class ShaderCompilationTest {
         new Variant("zero_to_one_depth", "#define RENDERPEARL_DEPTH_IS_ZERO_TO_ONE"),
         new Variant("multidraw_cutout", "#define MULTIDRAW_TERRAIN\n#define ALPHA_CUTOUT 0.5"),
         new Variant("compact_vertices", "#define AERVIUM_COMPACT_VERTICES 1"),
-        new Variant("compact_vertices_multidraw_cutout", "#define AERVIUM_COMPACT_VERTICES 1\n#define MULTIDRAW_TERRAIN\n#define ALPHA_CUTOUT 0.5")
+        new Variant("compact_vertices_multidraw_cutout", "#define AERVIUM_COMPACT_VERTICES 1\n#define MULTIDRAW_TERRAIN\n#define ALPHA_CUTOUT 0.5"),
+        new Variant("dynamic_lights_visibility_bitmask", "#define HELION_DYNAMIC_LIGHTS\n#define HELION_MAX_DYNAMIC_LIGHTS 16\n#define HELION_AO_VISIBILITY_BITMASK")
     );
+    private static final String AMBIENT_OCCLUSION_LOOP_DEFINES = "#define HELION_AO_SLICE_COUNT 3\n#define HELION_AO_STEPS_PER_SLICE 2";
     private static final String VALIDATOR = "glslangValidator";
     private static final long VALIDATOR_TIMEOUT_SECONDS = 60;
     private static final int SUCCESS = 0;
@@ -57,9 +59,8 @@ class ShaderCompilationTest {
 
     private static void compile(Path shader, Variant variant) throws IOException, InterruptedException {
         String source = expand(Files.readString(shader, StandardCharsets.UTF_8), new HashSet<>());
-        if (!variant.defines().isEmpty()) {
-            source = VERSION.matcher(source).replaceFirst(match -> Matcher.quoteReplacement(match.group() + "\n" + variant.defines()));
-        }
+        String defines = AMBIENT_OCCLUSION_LOOP_DEFINES + "\n" + variant.defines();
+        source = VERSION.matcher(source).replaceFirst(match -> Matcher.quoteReplacement(match.group() + "\n" + defines));
         String extension = extension(shader);
         String fileName = name(shader).replace(extension, "").replace('/', '_') + "_" + variant.name();
         Path input = workDirectory.resolve(fileName + STAGE_BY_EXTENSION.get(extension));

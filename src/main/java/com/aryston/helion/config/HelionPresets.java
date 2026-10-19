@@ -32,6 +32,13 @@ final class HelionPresets {
                 .set(options.shadows, false)
                 .set(options.temporal, false);
         }
+        vanilla.set(options.motionBlur, false)
+            .set(options.depthOfField, false);
+        for (ConfigPreset preset : List.of(vanilla, balanced, quality, experimental)) {
+            preset.set(options.edgeSmoothing, preset == quality)
+                .set(options.autoExposure, preset == experimental)
+                .set(options.dynamicLights, preset != vanilla);
+        }
         return List.of(vanilla, balanced, quality, experimental);
     }
 

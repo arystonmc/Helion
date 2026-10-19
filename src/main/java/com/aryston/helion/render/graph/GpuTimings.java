@@ -16,7 +16,7 @@ import org.jspecify.annotations.Nullable;
 public final class GpuTimings {
     private static final String LABEL = "Helion GPU Timings";
     private static final int FRAMES_IN_FLIGHT = 4;
-    private static final int MAX_STAGES_PER_FRAME = 32;
+    private static final int MAX_STAGES_PER_FRAME = 64;
     private static final int QUERIES_PER_STAGE = 2;
     private static final int QUERIES_PER_FRAME = MAX_STAGES_PER_FRAME * QUERIES_PER_STAGE;
     private static final int QUERY_BYTES = Long.BYTES;

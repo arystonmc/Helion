@@ -11,13 +11,9 @@ layout(std140) uniform HelionAmbientOcclusion {
     float DenoiseBlurBeta;
     float Strength;
     float MaxScreenRadius;
-    int SliceCount;
-    int StepsPerSlice;
-    int AlgorithmId;
     int NoiseIndex;
 };
 
-const int HELION_AO_ALGORITHM_VISIBILITY_BITMASK = 1;
 const float HELION_OCCLUSION_TERM_SCALE = 1.5;
 const float HELION_EDGE_LEVELS = 2.9;
 const float HELION_EDGE_STEPS = 3.0;

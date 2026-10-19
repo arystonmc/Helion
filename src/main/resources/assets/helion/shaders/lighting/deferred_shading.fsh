@@ -6,8 +6,8 @@
 #include <helion:helion_geometry.glsl>
 #include <helion:helion_lighting.glsl>
 #include <helion:helion_sky_light.glsl>
+#include <helion:helion_deferred_light.glsl>
 
-uniform sampler2D LightBufferSampler;
 uniform sampler2D AlbedoSampler;
 uniform sampler2D GeometryLightSampler;
 
@@ -31,12 +31,12 @@ float helionSkyShare(vec4 levels) {
 
 void main() {
     ivec2 pixel = ivec2(gl_FragCoord.xy);
-    vec4 light = texelFetch(LightBufferSampler, pixel, 0);
-    if (light.a < HELION_GEOMETRY_PRESENT_THRESHOLD) {
+    vec4 levels = texelFetch(GeometryLightSampler, pixel, 0);
+    if (levels.a < HELION_GEOMETRY_PRESENT_THRESHOLD) {
         discard;
     }
+    vec4 light = helionDeferredLight(pixel, levels);
     vec4 albedo = texelFetch(AlbedoSampler, pixel, 0);
-    vec4 levels = texelFetch(GeometryLightSampler, pixel, 0);
     float chunkVisibility = levels.b;
     #ifdef HELION_LIGHT_ONLY
     vec3 surface = HELION_WHITE_ALBEDO;

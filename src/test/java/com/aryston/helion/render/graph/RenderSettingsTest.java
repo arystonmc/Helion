@@ -9,6 +9,7 @@ import com.aryston.helion.render.geometry.GeometryBufferSettings;
 import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.lighting.DeferredLightingSettings;
+import com.aryston.helion.render.lighting.DynamicLightSettings;
 import com.aryston.helion.render.post.ImageSettings;
 import com.aryston.helion.render.shadow.ShadowQuality;
 import com.aryston.helion.render.shadow.ShadowSettings;
@@ -25,7 +26,8 @@ class RenderSettingsTest {
         new DeferredLightingSettings(true, STRONG_BLOCK_LIGHT, DeferredLightingSettings.DEFAULT_SKY_LIGHT_INTENSITY, true),
         new TemporalSettings(true, RenderScale.NATIVE),
         new PhysicalSkySettings(true),
-        new ShadowSettings(true, ShadowQuality.HIGH)
+        new ShadowSettings(true, ShadowQuality.HIGH),
+        new DynamicLightSettings(true)
     );
 
     @Test
@@ -39,6 +41,7 @@ class RenderSettingsTest {
         assertFalse(foundation.temporal().enabled());
         assertFalse(foundation.sky().enabled());
         assertFalse(foundation.shadows().enabled());
+        assertFalse(foundation.dynamicLights().enabled());
     }
 
     @Test
@@ -64,5 +67,6 @@ class RenderSettingsTest {
         assertFalse(RenderSettings.OFF.temporal().enabled());
         assertFalse(RenderSettings.OFF.sky().enabled());
         assertFalse(RenderSettings.OFF.shadows().enabled());
+        assertFalse(RenderSettings.OFF.dynamicLights().enabled());
     }
 }

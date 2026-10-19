@@ -7,6 +7,7 @@ import com.aryston.helion.render.graph.RenderSettings;
 import com.aryston.helion.render.atmosphere.PhysicalSkyResources;
 import com.aryston.helion.render.lighting.AmbientOcclusionResources;
 import com.aryston.helion.render.lighting.DeferredLightingResources;
+import com.aryston.helion.render.lighting.DynamicLightResources;
 import com.aryston.helion.render.dof.DepthOfFieldResources;
 import com.aryston.helion.render.motion.MotionBlurResources;
 import com.aryston.helion.render.post.ImageResources;
@@ -35,6 +36,7 @@ public final class HelionRenderCore {
     private final AmbientOcclusionResources ambientOcclusion = new AmbientOcclusionResources(resources);
     private final ImageResources image = new ImageResources(resources);
     private final DeferredLightingResources lighting = new DeferredLightingResources(resources);
+    private final DynamicLightResources dynamicLights = new DynamicLightResources(resources);
     private final TemporalResources temporal = new TemporalResources(resources);
     private final PhysicalSkyResources sky = new PhysicalSkyResources(resources);
     private final ShadowResources shadows = new ShadowResources(resources);
@@ -155,6 +157,7 @@ public final class HelionRenderCore {
         ambientOcclusion.close();
         image.close();
         lighting.close();
+        dynamicLights.close();
         temporal.close();
         sky.close();
         shadows.close();
@@ -198,6 +201,10 @@ public final class HelionRenderCore {
 
     public DeferredLightingResources lighting() {
         return lighting;
+    }
+
+    public DynamicLightResources dynamicLights() {
+        return dynamicLights;
     }
 
     public TemporalResources temporal() {

@@ -121,9 +121,9 @@ float sliceVisibility(ivec2 pixel, vec3 center, vec3 viewVector, vec3 normal, fl
     float horizonCos1 = lowHorizonCos1;
     vec2 pixelCenter = vec2(pixel) + 0.5;
 
-    for (int step = 0; step < StepsPerSlice; step++) {
-        float stepNoise = fract(noiseSample + float(slice + step * StepsPerSlice) * GOLDEN_RATIO_FRACTION);
-        float s = (float(step) + stepNoise) / float(StepsPerSlice);
+    for (int step = 0; step < HELION_AO_STEPS_PER_SLICE; step++) {
+        float stepNoise = fract(noiseSample + float(slice + step * HELION_AO_STEPS_PER_SLICE) * GOLDEN_RATIO_FRACTION);
+        float s = (float(step) + stepNoise) / float(HELION_AO_STEPS_PER_SLICE);
         s = pow(s, SampleDistributionPower) + minS;
         vec2 sampleOffset = round(s * omega);
 
@@ -204,9 +204,9 @@ float sliceVisibilityBitmask(ivec2 pixel, vec3 center, vec3 viewVector, vec3 nor
     vec2 pixelCenter = vec2(pixel) + 0.5;
     uint occluded = 0u;
 
-    for (int step = 0; step < StepsPerSlice; step++) {
-        float stepNoise = fract(noiseSample + float(slice + step * StepsPerSlice) * GOLDEN_RATIO_FRACTION);
-        float s = (float(step) + stepNoise) / float(StepsPerSlice);
+    for (int step = 0; step < HELION_AO_STEPS_PER_SLICE; step++) {
+        float stepNoise = fract(noiseSample + float(slice + step * HELION_AO_STEPS_PER_SLICE) * GOLDEN_RATIO_FRACTION);
+        float s = (float(step) + stepNoise) / float(HELION_AO_STEPS_PER_SLICE);
         s = pow(s, SampleDistributionPower) + minS;
         vec2 sampleOffset = round(s * omega);
         occluded |= occludedSectors(pixelCenter + sampleOffset, center, viewVector, n, 1.0, effectRadius);
@@ -228,13 +228,15 @@ float visibilityAt(ivec2 pixel, vec3 center, vec3 viewVector, vec3 normal) {
     screenRadius = min(screenRadius, MaxScreenRadius);
     float minS = PIXEL_TOO_CLOSE_THRESHOLD / screenRadius;
     vec2 noise = spatialNoise(pixel);
-    for (int slice = 0; slice < SliceCount; slice++) {
-        float sliceK = (float(slice) + noise.x) / float(SliceCount);
-        visibility += AlgorithmId == HELION_AO_ALGORITHM_VISIBILITY_BITMASK
-            ? sliceVisibilityBitmask(pixel, center, viewVector, normal, sliceK, noise.y, slice, screenRadius, minS)
-            : sliceVisibility(pixel, center, viewVector, normal, sliceK, noise.y, slice, screenRadius, minS);
+    for (int slice = 0; slice < HELION_AO_SLICE_COUNT; slice++) {
+        float sliceK = (float(slice) + noise.x) / float(HELION_AO_SLICE_COUNT);
+        #ifdef HELION_AO_VISIBILITY_BITMASK
+        visibility += sliceVisibilityBitmask(pixel, center, viewVector, normal, sliceK, noise.y, slice, screenRadius, minS);
+        #else
+        visibility += sliceVisibility(pixel, center, viewVector, normal, sliceK, noise.y, slice, screenRadius, minS);
+        #endif
     }
-    visibility /= float(SliceCount);
+    visibility /= float(HELION_AO_SLICE_COUNT);
     visibility = pow(clamp(visibility, 0.0, 1.0), FinalValuePower);
     return max(MIN_VISIBILITY, visibility);
 }

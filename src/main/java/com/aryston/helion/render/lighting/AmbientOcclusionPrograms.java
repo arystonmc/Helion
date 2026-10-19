@@ -12,9 +12,11 @@ record AmbientOcclusionPrograms(
     CompiledRenderPipeline apply,
     CompiledRenderPipeline debugView
 ) {
-    static Optional<AmbientOcclusionPrograms> compile() {
+    static Optional<AmbientOcclusionPrograms> compile(AmbientOcclusionSettings settings) {
         Optional<CompiledRenderPipeline> viewDepth = HelionPipelines.compiled(AmbientOcclusionPipelines.VIEW_DEPTH);
-        Optional<CompiledRenderPipeline> horizonSearch = HelionPipelines.compiled(AmbientOcclusionPipelines.HORIZON_SEARCH);
+        Optional<CompiledRenderPipeline> horizonSearch = HelionPipelines.compiled(
+            AmbientOcclusionPipelines.horizonSearch(settings.algorithm(), settings.quality())
+        );
         Optional<CompiledRenderPipeline> denoise = HelionPipelines.compiled(AmbientOcclusionPipelines.DENOISE);
         Optional<CompiledRenderPipeline> denoiseAndResolve = HelionPipelines.compiled(AmbientOcclusionPipelines.DENOISE_AND_RESOLVE);
         Optional<CompiledRenderPipeline> apply = HelionPipelines.compiled(AmbientOcclusionPipelines.APPLY);

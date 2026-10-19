@@ -18,8 +18,10 @@ Every class and source file of Helion with its purpose. Find the right file here
 | Temporal anti-aliasing: jitter, history, reprojection | `TemporalStage`, `TemporalResources`, `JitterSequence`, `PreviousView`, `GameRendererMixin`, `shaders/temporal/` |
 | Motion blur: tile velocities and gather | `MotionBlurStage`, `MotionBlurResources` (frame rate normalization), `TemporalResources` (camera reprojection), `shaders/motion_blur/` |
 | Physical sky: atmosphere, spectral colors, sun and moon light, fog | `PhysicalSkyStage`, `PhysicalSkyResources` (brightness, fog buffer), `AtmosphereSpectrum` (wavelength data), `SkyEnvironment`, `SkyRendererMixin`, `shaders/atmosphere/`, `shaders/include/helion_atmosphere.glsl`, `helion_spectrum.glsl`, `helion_sky_color.glsl` |
-| Physical sky light on terrain | `SkyLight`, `DeferredLightingStage`, `sky_light.fsh`, `deferred_light.fsh` (`HELION_PHYSICAL_SKY_LIGHT`) |
-| Sun and moon shadows: cascades, shadow map, mask | `ShadowStage`, `ShadowCascades` (splits, fitting, texel snapping), `ShadowCascadeCache` (which cascades are drawn this frame), `ShadowLight` (sun or moon, horizon fade), `ShadowResources`, `VanillaShadowCasterSource`, `ShadowCasterSections` (incremental cached caster sections), `ShadowCasterChanges`, `ShadowCasterMember`, `RenderSectionMixin`, `VanillaShadowPipelines`, `shaders/shadow/`, `shaders/include/helion_shadow.glsl`, `deferred_light.fsh` (`HELION_SHADOWS`) |
+| Physical sky light on terrain | `SkyLight`, `DeferredLightingStage`, `sky_light.fsh`, `helion_deferred_light.glsl` (`HELION_PHYSICAL_SKY_LIGHT`) |
+| Dynamic lights from held and dropped items | `DynamicLightTracker` (sources, entity light), `DynamicLightEmitters` (item and fire luminance), `DynamicLightResources` (uniform), `VanillaDynamicLightPipelines`, `VanillaTerrainSource`, `EntityRendererMixin`, `shaders/terrain/dynamic_light.vsh`, `shaders/include/helion_dynamic_light.glsl` |
+| GPU time of every preset in one run | `GpuProfile`, `HelionPresetSettings` |
+| Sun and moon shadows: cascades, shadow map, mask | `ShadowStage`, `ShadowCascades` (splits, fitting, texel snapping), `ShadowCascadeCache` (which cascades are drawn this frame), `ShadowLight` (sun or moon, horizon fade), `ShadowResources`, `VanillaShadowCasterSource`, `ShadowCasterSections` (incremental cached caster sections), `ShadowCasterChanges`, `ShadowCasterMember`, `RenderSectionMixin`, `VanillaShadowPipelines`, `shaders/shadow/`, `shaders/include/helion_shadow.glsl`, `deferred_shading.fsh` (`HELION_SHADOWS`) |
 | Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines`, `DeferredLightingPipelines`, `TemporalPipelines`, `PhysicalSkyPipelines`, `ImagePipelines` |
 | How vanilla terrain, entities, sky or OIT are called | `VanillaTerrainSource`, `VanillaEntitySource`, `VanillaAtmosphereSource`, `VanillaTransparencySource` |
 | The rebuilt vanilla `LevelRenderer.render` | `VanillaFrameDriver` |
@@ -60,7 +62,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### HelionConfig
 - Path: `src/main/java/com/aryston/helion/config/HelionConfig.java`
-- Role: Client config spec: `ENABLED` (render core on at startup), `DEBUG_MODE` (off by default), the `ambientOcclusion` section (enabled, algorithm, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, the `bloom` subsection with enabled, intensity, threshold, debugView, and the `sharpening` subsection with enabled, strength), the `geometryBuffer` section (enabled, view) the `lighting` section (enabled, blockLightIntensity, skyLightIntensity, lightOnlyView), the `temporalAntiAliasing` section (enabled), the `physicalSky` section (enabled) and the `shadows` section (enabled, quality). `renderSettings()` turns the config into a `RenderSettings` snapshot. The values and range limits are package visible for `HelionOptions`.
+- Role: Client config spec: `ENABLED` (render core on at startup), `DEBUG_MODE` (off by default), the `ambientOcclusion` section (enabled, algorithm, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, the `bloom` subsection with enabled, intensity, threshold, debugView, and the `sharpening` subsection with enabled, strength), the `geometryBuffer` section (enabled, view) the `lighting` section (enabled, blockLightIntensity, skyLightIntensity, lightOnlyView), the `temporalAntiAliasing` section (enabled), the `physicalSky` section (enabled), the `shadows` section (enabled, quality) and the `dynamicLights` section (enabled, on by default). `renderSettings()` turns the config into a `RenderSettings` snapshot. The values and range limits are package visible for `HelionOptions`.
 - Depends on: nothing inside the mod.
 
 #### HelionConfigScreen
@@ -75,7 +77,12 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### HelionPresets
 - Path: `src/main/java/com/aryston/helion/config/HelionPresets.java`
-- Role: Vanilla, Balanced, Quality and Experimental presets that set the effect switches and quality levels together.
+- Role: Vanilla, Balanced, Quality and Experimental presets that set the effect switches and quality levels together. Every preset also sets edge smoothing (Quality only), automatic exposure (Experimental only) and dynamic lights (all but Vanilla); Vanilla also turns motion blur and depth of field off, the other presets leave those two as the player set them.
+
+#### HelionPresetSettings
+- Path: `src/main/java/com/aryston/helion/config/HelionPresetSettings.java`
+- Role: Turns every preset into the `RenderSettings` it would produce, by setting its values in memory, reading `HelionConfig.renderSettings()` and restoring every value afterwards without saving the config file. Used by `GpuProfile`.
+- Depends on: `HelionOptions`, `HelionPresets`, `HelionConfig`.
 
 #### HelionImpact
 - Path: `src/main/java/com/aryston/helion/config/HelionImpact.java`
@@ -256,7 +263,7 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### AmbientOcclusionPipelines
 - Path: `src/main/java/com/aryston/helion/render/lighting/AmbientOcclusionPipelines.java`
-- Role: Pipeline definitions of every ambient occlusion pass, the uniform and sampler names they bind and the target formats, including `APPLY_INDIRECT` (`HELION_INDIRECT_SHARE`), compiled on its own so a missing variant falls back to the plain apply.
+- Role: Pipeline definitions of every ambient occlusion pass, the uniform and sampler names they bind and the target formats, including one horizon search pipeline per method and quality (`horizonSearch`, with the slice and step counts and the visibility bitmask switch as shader defines) and `APPLY_INDIRECT` (`HELION_INDIRECT_SHARE`), compiled on its own so a missing variant falls back to the plain apply.
 - Depends on: `HelionPipelines`.
 
 #### AmbientOcclusionPrograms
@@ -278,16 +285,16 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### AmbientOcclusionAlgorithm
 - Path: `src/main/java/com/aryston/helion/render/lighting/AmbientOcclusionAlgorithm.java`
-- Role: Horizon method of the main pass: `GTAO` (two horizon angles per slice, occluders of infinite thickness) or `VISIBILITY_BITMASK` (32 sectors per slice, occluders of fixed thickness). Each carries the id the shader switches on.
+- Role: Horizon method of the main pass: `GTAO` (two horizon angles per slice, occluders of infinite thickness) or `VISIBILITY_BITMASK` (32 sectors per slice, occluders of fixed thickness). Each has its own compiled horizon search pipeline.
 
 #### DeferredLightingStage
 - Path: `src/main/java/com/aryston/helion/render/lighting/DeferredLightingStage.java`
-- Role: Lights terrain from the geometry buffer. `deferred_lighting` writes the RGBA16_FLOAT light buffer `helion:light_buffer` (linear light in vanilla units without the vanilla cap, alpha the daylight reference, 0 where there is no terrain); `deferred_shading` multiplies it with the albedo and writes the scene with fog and chunk fade-in, or the light-only view. When the physical sky published a `SkyLight`, the light pass uses the physical sky variant and also reads the geometry buffer normals and the sky light target; when `ShadowStage` also published a shadow mask, the shading pass uses its shadowed variant, which also reads the mask, the normals and the sky light target and darkens the shaded color after the vanilla brightness curve. Inactive when lighting is off, the geometry buffer was not written, the scene color is not RGBA8 or a shader failed to compile. With shadows, the shading pass also writes `helion:indirect_share` (R8, cleared to 1) as a second target and publishes it in `ShadowResults`.
+- Role: Lights terrain from the geometry buffer in one pass, `deferred_shading`: per pixel it computes the light (linear light in vanilla units without the vanilla cap and the daylight reference, `helion_deferred_light.glsl`), multiplies it with the albedo and writes the scene with fog and chunk fade-in, or the light-only view. It used to write the light into an RGBA16_FLOAT light buffer in a pass of its own first; computing it in place saves that full screen write and read. When the physical sky published a `SkyLight`, the pass uses the physical sky variant and also reads the geometry buffer normals and the sky light target; when `ShadowStage` also published a shadow mask, it uses its shadowed variant, which also reads the mask and darkens the shaded color after the vanilla brightness curve. Inactive when lighting is off, the geometry buffer was not written, the scene color is not RGBA8 or a shader failed to compile. With shadows, the shading pass also writes `helion:indirect_share` (R8, cleared to 1) as a second target and publishes it in `ShadowResults`.
 - Depends on: `DeferredLightingResources`, `DeferredLightingPrograms`, `DeferredLightingPipelines`, `GeometryBuffer`, `FullscreenPass`.
 
 #### DeferredLightingPipelines
 - Path: `src/main/java/com/aryston/helion/render/lighting/DeferredLightingPipelines.java`
-- Role: Pipeline definitions of the light pass, its physical sky variant (`HELION_PHYSICAL_SKY_LIGHT`, with the normal and sky light samplers), the shadowed shading and light-only variants (`HELION_PHYSICAL_SKY_LIGHT` and `HELION_SHADOWS`, with the normal, sky light and shadow mask samplers), the shading pass and the light-only view (`HELION_LIGHT_ONLY`), the uniform and sampler names they bind and the target formats. The shadowed shading variants have a second R8 color target for the indirect share.
+- Role: Pipeline definitions of the shading pass and the light-only view (`HELION_LIGHT_ONLY`), their physical sky variants (`HELION_PHYSICAL_SKY_LIGHT`, with the normal and sky light samplers), the shadowed variants (`HELION_PHYSICAL_SKY_LIGHT` and `HELION_SHADOWS`, with the normal, sky light and shadow mask samplers), the uniform and sampler names they bind and the target formats. The shadowed shading variants have a second R8 color target for the indirect share.
 - Depends on: `HelionPipelines`.
 
 #### DeferredLightingPrograms
@@ -302,6 +309,19 @@ Every class and source file of Helion with its purpose. Find the right file here
 #### DeferredLightingSettings
 - Path: `src/main/java/com/aryston/helion/render/lighting/DeferredLightingSettings.java`
 - Role: Player settings: enabled, block light intensity, sky light intensity, light-only view. `DISABLED` for the foundation.
+
+#### DynamicLight
+- Path: `src/main/java/com/aryston/helion/render/lighting/DynamicLight.java`
+- Role: One moving light of a frame: position relative to the camera and light level (0 to 15).
+
+#### DynamicLightSettings
+- Path: `src/main/java/com/aryston/helion/render/lighting/DynamicLightSettings.java`
+- Role: Player setting: dynamic lights on or off. `DISABLED` for the foundation and the screen effects mode.
+
+#### DynamicLightResources
+- Path: `src/main/java/com/aryston/helion/render/lighting/DynamicLightResources.java`
+- Role: The `HelionDynamicLights` uniform ring (up to `MAX_LIGHTS` positions with levels and the count), the shader define names and `upload`, which writes the frame's lights before the frame graph runs and returns nothing when there are no lights, so terrain keeps the vanilla pipelines. `finishFrame` rotates the ring after a frame that wrote it.
+- Depends on: `UniformRing`, `DynamicLight`.
 
 #### LightEnvironment
 - Path: `src/main/java/com/aryston/helion/render/lighting/LightEnvironment.java`
@@ -691,11 +711,25 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### VanillaTerrainSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaTerrainSource.java`
-- Role: `TerrainSource` over vanilla `ChunkSectionsToRender`: fog (the current `SceneFog` buffer, so the physical sky fog reaches terrain), chunk sampler, opaque and translucent layer groups, matching stage events. `renderOpaqueGeometry` draws the solid and cutout layers one by one with the geometry pipelines through `ChunkSectionsToRenderAccessor`; `supportsGeometryBuffer` is false for wireframe terrain or missing shaders.
+- Role: `TerrainSource` over vanilla `ChunkSectionsToRender`: fog (the current `SceneFog` buffer, so the physical sky fog reaches terrain), chunk sampler, opaque and translucent layer groups, matching stage events. `renderOpaqueGeometry` draws the solid and cutout layers one by one with the geometry pipelines through `ChunkSectionsToRenderAccessor`; `supportsGeometryBuffer` is false for wireframe terrain or missing shaders. When the frame has dynamic lights it binds their uniform and draws every layer with the dynamic light pipelines (`VanillaDynamicLightPipelines`, or the geometry pipelines with lights), falling back per layer to the vanilla pipelines when a variant is missing; without lights it draws exactly as before.
+
+#### VanillaDynamicLightPipelines
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaDynamicLightPipelines.java`
+- Role: Copies of the vanilla solid, cutout and translucent terrain pipelines (direct and multi-draw) with the vertex shader `helion:terrain/dynamic_light`, the `HELION_DYNAMIC_LIGHTS` defines and the `HelionDynamicLights` uniform; the fragment shader stays vanilla. `withLights` adds the same to any terrain pipeline builder (the geometry pipelines use it). Warns once when a variant did not compile.
+- Depends on: `DynamicLightResources`, `HelionPipelines`, `VanillaGeometryPipelines`.
+
+#### DynamicLightTracker
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/DynamicLightTracker.java`
+- Role: Finds the light sources of a frame: every rendered entity within 64 blocks of the camera that burns or holds or is a glowing item (`DynamicLightEmitters`), at its interpolated position, nearest first, collected once per frame (cached by level, game time and partial tick). `lights` hands the nearest `MAX_LIGHTS` to the frame relative to the camera; `brighten` raises an entity's packed light coordinates to the dynamic level at its light probe position (level minus distance), so mobs, items and the first-person hand are lit too. Does nothing while the core is inactive, in screen effects mode or with the setting off.
+- Depends on: `DynamicLightEmitters`, `DynamicLight`, `DynamicLightResources`, `HelionRenderCore`.
+
+#### DynamicLightEmitters
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/DynamicLightEmitters.java`
+- Role: Light level an entity gives off: 15 while it burns, the light emission of the default state of a held or dropped block item (torch 14, lantern 15, glowstone 15, ...) and 15 for a lava bucket.
 
 #### VanillaGeometryPipelines
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaGeometryPipelines.java`
-- Role: Geometry buffer terrain pipelines per chunk layer (direct and multi-draw), copied from the vanilla terrain pipelines with `toBuilder()` and switched to `helion:terrain/geometry` with three more color targets. They inherit Aervium's compact terrain vertex format and its `AERVIUM_COMPACT_VERTICES` define with the vanilla pipelines. Registered as optional pipelines; warns once when they did not compile or the compact format version is unknown.
+- Role: Geometry buffer terrain pipelines per chunk layer (direct and multi-draw), copied from the vanilla terrain pipelines with `toBuilder()` and switched to `helion:terrain/geometry` with three more color targets. They inherit Aervium's compact terrain vertex format and its `AERVIUM_COMPACT_VERTICES` define with the vanilla pipelines. A second set (`withDynamicLights`) adds the dynamic light uniform and defines. Registered as optional pipelines; warns once when they did not compile or the compact format version is unknown.
 - Depends on: `GeometryBufferPipelines`, `HelionPipelines`, `CompactTerrainVertices`.
 
 #### VanillaShadowCasterSource
@@ -789,6 +823,11 @@ Every class and source file of Helion with its purpose. Find the right file here
 - Depends on: `VisualTestScene`, `VisualTestVariant`, `VisualTestWorld`, `ParityCheck`, `HelionDebugSnapshot`, `HelionRenderCore`, `HelionConfig`, `LevelRendererAccessor`.
 - Notes: changes blocks, time and game rules of the loaded world; run it on a copy of a save only.
 
+#### GpuProfile
+- Path: `src/main/java/com/aryston/helion/debug/GpuProfile.java`
+- Role: Automated GPU profile that runs when the JVM property `helion.gpuProfile=true` is set in a development run: 15 s after joining it hides the HUD, holds the camera, then runs Helion off and every preset (`HelionPresetSettings`) for 5 s to settle and 10 s to measure, and logs one `Helion GPU profile <preset>` line each with the average frame rate, the sum of the measured GPU stage times and every stage time. Restores the settings and the HUD and closes the game.
+- Depends on: `HelionPresetSettings`, `HelionRenderCore`, `HelionConfig`.
+
 #### VisualTestScene
 - Path: `src/main/java/com/aryston/helion/debug/VisualTestScene.java`
 - Role: The photographed scenes: name, time of day, camera yaw and pitch. `dawn_sun` and `dawn_away` look toward and away from the rising sun, so a sky color that depends on the view direction shows up as a difference between them. `day_showcase` and `morning_showcase` show the platform at noon and in the morning, so shadows fall under the roof and beside the pillar. `dusk` (12700 ticks, facing the sun just after it set) checks that the orange sunset glow stays.
@@ -831,8 +870,8 @@ Every class and source file of Helion with its purpose. Find the right file here
 
 #### EntityRendererMixin
 - Path: `src/main/java/com/aryston/helion/mixin/EntityRendererMixin.java`
-- Role: Skips vanilla's round entity shadow (`EntityRenderer.extractShadow`) while the core is active and drew sun shadows in the last frame, so mobs and items show only their real sun shadow; with Helion off or its shadows off vanilla draws the round shadow as before. Also saves the block scan vanilla runs under every entity for it.
-- Notes: No event lets a mod drop the entity shadow pieces before they are submitted.
+- Role: Skips vanilla's round entity shadow (`EntityRenderer.extractShadow`) while the core is active and drew sun shadows in the last frame, so mobs and items show only their real sun shadow; with Helion off or its shadows off vanilla draws the round shadow as before. Also saves the block scan vanilla runs under every entity for it. Raises the return value of `EntityRenderer.getPackedLightCoords` through `DynamicLightTracker.brighten`, so entities and the first-person hand near a dynamic light are lit by it.
+- Notes: No event lets a mod drop the entity shadow pieces before they are submitted, and none lets it change the light an entity is drawn with.
 
 #### SkyRendererMixin
 - Path: `src/main/java/com/aryston/helion/mixin/SkyRendererMixin.java`
@@ -879,7 +918,7 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | `src/test/java/com/aryston/helion/render/temporal/PreviousViewTest.java` | The reprojection matrix maps a point seen by a moved and turned camera to where the previous camera saw it (plus the jitter), and keeps every pixel in place for a still camera. |
 | `src/test/java/com/aryston/helion/render/shader/ShaderCompilationTest.java` | Every vertex and fragment shader compiles with `glslangValidator` in five variants (default, zero to one depth, multi-draw with alpha cutout, and both terrain variants with Aervium's compact vertex define), with Helion and vanilla includes inlined from the classpath. Skipped when `glslangValidator` is not installed; the CI installs it. |
 | `src/test/java/com/aryston/helion/render/lighting/AmbientOcclusionQualityTest.java` | Higher quality presets never use fewer samples or denoise passes. |
-| `src/test/java/com/aryston/helion/render/lighting/AmbientOcclusionAlgorithmTest.java` | Algorithm shader ids are unique and match the constants in `helion_ambient_occlusion.glsl`. |
+| `src/test/java/com/aryston/helion/render/lighting/AmbientOcclusionVariantsTest.java` | The horizon search shader reads every define its quality and algorithm variants set, and every quality has slices and steps. |
 | `src/test/java/com/aryston/helion/debug/ParityResultTest.java` | Pixel comparison counts color and depth differences, the largest channel and depth differences and color differences that also differ in depth. |
 | `src/test/java/com/aryston/helion/debug/DebugOverlayLinesTest.java` | Debug screen lines: one line per section, wrapping after four values, empty sections and plain values. |
 
@@ -898,16 +937,16 @@ Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI.
 | `src/main/resources/assets/helion/textures/gui/` | `logo.png` (48 x 48, linear filtered through `logo.png.mcmeta`) for the settings sidebar, and `preview/`: placeholder before and after images of ambient occlusion, bloom, shadows and the physical sky from the design handoff, to be replaced with real captures. |
 | `src/main/resources/assets/helion/shaders/ambient_occlusion/` | Ambient occlusion fragment shaders: `view_depth`, `gtao`, `denoise`, `denoise_resolve`, `apply` (with `HELION_INDIRECT_SHARE` also scaled by the indirect share). |
 | `src/main/resources/assets/helion/shaders/image/` | Bloom and image fragment shaders: `bloom_prefilter`, `bloom_downsample`, `bloom_upsample`, `composite` (with `HELION_COLOR_GRADING` also the grading table lookup), `bloom_debug`, `sharpen`, `exposure_meter`, `exposure_average`. |
-| `src/main/resources/assets/helion/shaders/terrain/` | Geometry buffer terrain shaders `geometry.vsh` and `geometry.fsh`: vanilla terrain color plus normal (crossed plant planes point up), light (with chunk fade-in) and albedo (with the fog amount in alpha) targets. |
+| `src/main/resources/assets/helion/shaders/terrain/` | Geometry buffer terrain shaders `geometry.vsh` and `geometry.fsh`: vanilla terrain color plus normal (crossed plant planes point up), light (with chunk fade-in, raised by dynamic lights with `HELION_DYNAMIC_LIGHTS`) and albedo (with the fog amount in alpha) targets. `dynamic_light.vsh`: the vanilla terrain vertex shader with the block light of every vertex raised to the dynamic light level, used with the vanilla terrain fragment shader. |
 | `src/main/resources/assets/helion/shaders/geometry/` | `debug.fsh`: geometry buffer debug views. `terrain_depth.fsh`: copies the depth after the terrain pass into a float target. |
-| `src/main/resources/assets/helion/shaders/lighting/` | Deferred lighting fragment shaders: `deferred_light` (light buffer from the geometry buffer light levels; with `HELION_PHYSICAL_SKY_LIGHT` the sky light color follows the physical sky light per pixel normal at the vanilla brightness,) and `deferred_shading` (albedo times light, HDR above the vanilla cap, fog and chunk fade-in; light-only view with `HELION_LIGHT_ONLY`; with `HELION_SHADOWS` the color is darkened by the shadow transmission after the vanilla brightness curve). |
+| `src/main/resources/assets/helion/shaders/lighting/` | Deferred lighting fragment shader `deferred_shading` (light from the geometry buffer light levels, see `helion_deferred_light`, then albedo times light, HDR above the vanilla cap, fog and chunk fade-in; light-only view with `HELION_LIGHT_ONLY`; with `HELION_SHADOWS` the color is darkened by the shadow transmission after the vanilla brightness curve). |
 | `src/main/resources/assets/helion/shaders/temporal/` | Temporal anti-aliasing fragment shaders: `resolve` (closest-depth reprojection, Catmull-Rom history sample, YCoCg variance clipping, luminance weighted blend, moving object depth in the history alpha with disocclusion rejection and a reactive weight) and `apply` (history back into the scene), `upscale_apply` (history plus the nearest internal depth into the output sized target when upscaling). |
 | `src/main/resources/assets/helion/shaders/motion_blur/` | Motion blur fragment shaders: `tile_max` (longest camera velocity per tile), `neighbor_max` (longest of the 3 x 3 tiles), `gather` (depth and speed weighted blur along the tile velocity, after McGuire et al. 2012) and `apply` (blurred image back into the scene). |
 | `src/main/resources/assets/helion/shaders/depth_of_field/` | Depth of field fragment shaders: `focus` (smoothed center focus distance), `downsample` (half resolution color and signed circle of confusion), `gather` (golden-angle gather with foreground and background rules), `blend` (blurred image faded in over the scene by blur size). |
 | `src/main/resources/assets/helion/shaders/edge_smoothing/` | Edge smoothing fragment shaders: `smooth` (luma edge detection, edge direction, search for the edge ends, sub-pixel blend) and `apply` (result back into the scene). |
 | `src/main/resources/assets/helion/shaders/atmosphere/` | Physical sky fragment shaders: `transmittance` and `multiple_scattering` (constant spectral lookup tables, four targets each), `sky_view` (spectral single and multiple scattering per view direction, converted to RGB, for the sun or the moon with `HELION_MOON_VIEW`; Mie single scattering goes to a second target without its phase), `sky` (sky color per pixel), `fog` (distance fog in the physical horizon color over everything with depth, with the vanilla fog distances), `horizon` (average horizon color over 32 directions into a 1 x 1 target) and `sky_light` (sun light, moon light and sky dome irradiance into a 3 x 1 target). |
 | `src/main/resources/assets/helion/shaders/shadow/` | Shadow shaders: `caster.vsh` and `caster.fsh` (terrain positions only, alpha cutout for cutout layers, crossed plant planes skipped, depth only) and `mask.fsh` (cascade selection, normal and light offset, distance fade, R8 visibility mask). |
-| `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_terrain_vertex` (terrain vertex inputs for `geometry.vsh` and `caster.vsh`: the vanilla block format, or with `AERVIUM_COMPACT_VERTICES` Aervium's 16-byte format decoded to the same position, texture coordinate and light values), `helion_shadow` (`HelionShadow` block, one shadow map sampler per cascade and one entity shadow sampler per near cascade, 4 x 4 tent filtered lookups, the entity lookup turning reversed depth back into the cascade depth), `helion_geometry` (geometry buffer constants, normal encoding and crossed plant plane detection), `helion_view` (depth and view position), `helion_atmosphere` (Earth atmosphere constants, phase functions, ray-sphere intersection, ground shadow, lookup table sizes and coordinate mappings), `helion_spectrum` (`HelionSpectrum` block, densities, spectral scattering and extinction, spectrum to RGB), `helion_transmittance_lookup` and `helion_scattering_lookup` (samplers and per group lookup of the spectral tables), `helion_sky` (sky settings block), `helion_sky_color` (sun and moon sky view lookup with the Mie phase applied per pixel, rain, Neutral encoding, the camera relative position of a pixel from its depth and the view ray of a pixel from two points on it, so view bobbing never moves the sky against the world), `helion_lighting` (lighting settings block, the vanilla light map terms with bilinear level interpolation, ambient term, boss and darkness adjustment and the brightness option), `helion_sky_light` (physical sky light parts per pixel normal: sun, moon, a desaturated sky dome toward the sky and ground bounce light toward the ground, and the shadow transmission: lit sun, moon and dome light against the shadowed sum, weighted by the share of sky light in the pixel), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur), `helion_color` (sRGB conversion, saturation, the Neutral highlight curve and its inverse, film grade, dither noise), `helion_exposure` (size of the exposure meter), `helion_color_grading` (trilinear lookup in the 32 x 32 x 32 grading table), `helion_temporal` (`HelionTemporal` block shared by the resolve and upscale passes), `helion_depth_of_field` (`HelionDepthOfField` block, view depth and circle of confusion), `helion_motion_blur` (`HelionMotionBlur` block, camera velocity of a pixel from its depth, tile size), `helion_image` (image settings block including the sharpening strength, scene expansion, tone mapper switch, Filmic highlight bleach, bloom threshold, dither), `helion_bloom_downsample` (13-tap downsample with optional Karis average over a `helionBloomTap` function the including shader defines). |
+| `src/main/resources/assets/helion/shaders/include/` | Shared GLSL: `helion_terrain_vertex` (terrain vertex inputs for `geometry.vsh` and `caster.vsh`: the vanilla block format, or with `AERVIUM_COMPACT_VERTICES` Aervium's 16-byte format decoded to the same position, texture coordinate and light values), `helion_shadow` (`HelionShadow` block, one shadow map sampler per cascade and one entity shadow sampler per near cascade, 4 x 4 tent filtered lookups, the entity lookup turning reversed depth back into the cascade depth), `helion_geometry` (geometry buffer constants, normal encoding and crossed plant plane detection), `helion_view` (depth and view position), `helion_atmosphere` (Earth atmosphere constants, phase functions, ray-sphere intersection, ground shadow, lookup table sizes and coordinate mappings), `helion_spectrum` (`HelionSpectrum` block, densities, spectral scattering and extinction, spectrum to RGB), `helion_transmittance_lookup` and `helion_scattering_lookup` (samplers and per group lookup of the spectral tables), `helion_sky` (sky settings block), `helion_sky_color` (sun and moon sky view lookup with the Mie phase applied per pixel, rain, Neutral encoding, the camera relative position of a pixel from its depth and the view ray of a pixel from two points on it, so view bobbing never moves the sky against the world), `helion_dynamic_light` (`HelionDynamicLights` block and the block light of a vertex raised to the level of the nearest dynamic light minus its distance; without `HELION_DYNAMIC_LIGHTS` it returns the light unchanged), `helion_deferred_light` (light of a terrain pixel in vanilla units without the cap and its daylight reference; with `HELION_PHYSICAL_SKY_LIGHT` the sky light color follows the physical sky light per pixel normal at the vanilla brightness), `helion_lighting` (lighting settings block, the vanilla light map terms with bilinear level interpolation, ambient term, boss and darkness adjustment and the brightness option), `helion_sky_light` (physical sky light parts per pixel normal: sun, moon, a desaturated sky dome toward the sky and ground bounce light toward the ground, and the shadow transmission: lit sun, moon and dome light against the shadowed sum, weighted by the share of sky light in the pixel), `helion_ambient_occlusion` (settings block, edge packing), `helion_ambient_occlusion_denoise` (edge aware blur), `helion_color` (sRGB conversion, saturation, the Neutral highlight curve and its inverse, film grade, dither noise), `helion_exposure` (size of the exposure meter), `helion_color_grading` (trilinear lookup in the 32 x 32 x 32 grading table), `helion_temporal` (`HelionTemporal` block shared by the resolve and upscale passes), `helion_depth_of_field` (`HelionDepthOfField` block, view depth and circle of confusion), `helion_motion_blur` (`HelionMotionBlur` block, camera velocity of a pixel from its depth, tile size), `helion_image` (image settings block including the sharpening strength, scene expansion, tone mapper switch, Filmic highlight bleach, bloom threshold, dither), `helion_bloom_downsample` (13-tap downsample with optional Karis average over a `helionBloomTap` function the including shader defines). |
 
 ## Build Files
 

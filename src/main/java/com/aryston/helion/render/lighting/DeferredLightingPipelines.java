@@ -14,32 +14,27 @@ public final class DeferredLightingPipelines {
     public static final String SETTINGS = "HelionLighting";
     public static final String GEOMETRY_LIGHT_SAMPLER = "GeometryLightSampler";
     public static final String ALBEDO_SAMPLER = "AlbedoSampler";
-    public static final String LIGHT_BUFFER_SAMPLER = "LightBufferSampler";
     public static final String GEOMETRY_NORMAL_SAMPLER = "GeometryNormalSampler";
     public static final String SKY_LIGHT_SAMPLER = "SkyLightSampler";
     public static final String SHADOW_MASK_SAMPLER = "ShadowMaskSampler";
-    public static final GpuFormat LIGHT_BUFFER_FORMAT = GpuFormat.RGBA16_FLOAT;
     public static final GpuFormat SCENE_COLOR_FORMAT = GpuFormat.RGBA8_UNORM;
     public static final GpuFormat INDIRECT_SHARE_FORMAT = GpuFormat.R8_UNORM;
     private static final int INDIRECT_SHARE_TARGET = 1;
     private static final String LIGHT_ONLY_DEFINE = "HELION_LIGHT_ONLY";
     private static final String SHADING_SHADER = "lighting/deferred_shading";
-    private static final String LIGHT_SHADER = "lighting/deferred_light";
     private static final String PHYSICAL_SKY_LIGHT_DEFINE = "HELION_PHYSICAL_SKY_LIGHT";
     private static final String SHADOWS_DEFINE = "HELION_SHADOWS";
-
-    public static final RenderPipeline LIGHT = light(LIGHT_SHADER, lightBindings().build()).build();
-
-    public static final RenderPipeline PHYSICAL_SKY_LIGHT = light("lighting/deferred_light_physical_sky", lightBindings()
-        .withUniform(GEOMETRY_NORMAL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-        .withUniform(SKY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-        .build())
-        .withShaderDefine(PHYSICAL_SKY_LIGHT_DEFINE)
-        .build();
 
     public static final RenderPipeline SHADING = shading(SHADING_SHADER, shadingBindings().build()).build();
 
     public static final RenderPipeline LIGHT_ONLY_VIEW = shading("lighting/light_only_view", shadingBindings().build())
+        .withShaderDefine(LIGHT_ONLY_DEFINE)
+        .build();
+
+    public static final RenderPipeline PHYSICAL_SKY_SHADING = physicalSky(shading("lighting/deferred_shading_physical_sky", physicalSkyBindings().build()))
+        .build();
+
+    public static final RenderPipeline PHYSICAL_SKY_LIGHT_ONLY_VIEW = physicalSky(shading("lighting/light_only_view_physical_sky", physicalSkyBindings().build()))
         .withShaderDefine(LIGHT_ONLY_DEFINE)
         .build();
 
@@ -53,19 +48,7 @@ public final class DeferredLightingPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(LIGHT, PHYSICAL_SKY_LIGHT, SHADING, LIGHT_ONLY_VIEW, SHADOWED_SHADING, SHADOWED_LIGHT_ONLY_VIEW);
-    }
-
-    private static RenderPipeline.Builder light(String name, BindGroupLayout bindings) {
-        return HelionPipelines.fullscreen(name, LIGHT_SHADER)
-            .withBindGroupLayout(bindings)
-            .withColorTargetState(new ColorTargetState(Optional.empty(), LIGHT_BUFFER_FORMAT, ColorTargetState.WRITE_ALL));
-    }
-
-    private static BindGroupLayout.Builder lightBindings() {
-        return BindGroupLayout.builder()
-            .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
-            .withUniform(GEOMETRY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER);
+        return List.of(SHADING, LIGHT_ONLY_VIEW, PHYSICAL_SKY_SHADING, PHYSICAL_SKY_LIGHT_ONLY_VIEW, SHADOWED_SHADING, SHADOWED_LIGHT_ONLY_VIEW);
     }
 
     private static RenderPipeline.Builder shading(String name, BindGroupLayout bindings) {
@@ -78,22 +61,28 @@ public final class DeferredLightingPipelines {
         return BindGroupLayout.builder()
             .withUniform(FOG, UniformType.UNIFORM_BUFFER)
             .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
-            .withUniform(LIGHT_BUFFER_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(ALBEDO_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(GEOMETRY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER);
     }
 
-    private static BindGroupLayout shadowedShadingBindings() {
+    private static BindGroupLayout.Builder physicalSkyBindings() {
         return shadingBindings()
             .withUniform(GEOMETRY_NORMAL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-            .withUniform(SKY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(SKY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER);
+    }
+
+    private static BindGroupLayout shadowedShadingBindings() {
+        return physicalSkyBindings()
             .withUniform(SHADOW_MASK_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .build();
     }
 
+    private static RenderPipeline.Builder physicalSky(RenderPipeline.Builder builder) {
+        return builder.withShaderDefine(PHYSICAL_SKY_LIGHT_DEFINE);
+    }
+
     private static RenderPipeline.Builder shadowed(RenderPipeline.Builder builder) {
-        return builder
-            .withShaderDefine(PHYSICAL_SKY_LIGHT_DEFINE)
+        return physicalSky(builder)
             .withShaderDefine(SHADOWS_DEFINE)
             .withColorTargetState(INDIRECT_SHARE_TARGET, new ColorTargetState(Optional.empty(), INDIRECT_SHARE_FORMAT, ColorTargetState.WRITE_ALL));
     }

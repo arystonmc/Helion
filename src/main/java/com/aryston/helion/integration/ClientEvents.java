@@ -4,8 +4,10 @@ import com.aryston.helion.config.HelionConfig;
 import com.aryston.helion.debug.HelionDebugEntry;
 import com.aryston.helion.debug.HelionDebugLog;
 import com.aryston.helion.debug.ParityCheck;
+import com.aryston.helion.debug.GpuProfile;
 import com.aryston.helion.debug.VisualTest;
 import com.aryston.helion.integration.vanilla.LevelRenderHook;
+import com.aryston.helion.integration.vanilla.VanillaDynamicLightPipelines;
 import com.aryston.helion.integration.vanilla.VanillaGeometryPipelines;
 import com.aryston.helion.integration.vanilla.VanillaShadowPipelines;
 import com.aryston.helion.render.HelionRenderCore;
@@ -30,6 +32,7 @@ public final class ClientEvents {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final HelionDebugLog DEBUG_LOG = new HelionDebugLog();
     private static final Optional<VisualTest> VISUAL_TEST = VisualTest.requested();
+    private static final Optional<GpuProfile> GPU_PROFILE = GpuProfile.requested();
 
     private ClientEvents() {
     }
@@ -71,6 +74,7 @@ public final class ClientEvents {
         HelionPipelines.all().forEach(event::registerOptionalPipeline);
         VanillaGeometryPipelines.all().forEach(event::registerOptionalPipeline);
         VanillaShadowPipelines.all().forEach(event::registerOptionalPipeline);
+        VanillaDynamicLightPipelines.all().forEach(event::registerOptionalPipeline);
     }
 
     private static void onConfigLoading(ModConfigEvent.Loading event) {
@@ -95,6 +99,7 @@ public final class ClientEvents {
         PassiveModeNotice.showPending(minecraft);
         DEBUG_LOG.tick(minecraft);
         VISUAL_TEST.ifPresent(test -> test.tick(minecraft));
+        GPU_PROFILE.ifPresent(profile -> profile.tick(minecraft));
         while (HelionKeys.TOGGLE.consumeClick()) {
             toggle(minecraft);
         }

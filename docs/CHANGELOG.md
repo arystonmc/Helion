@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Dynamic lights: torches, lanterns and other glowing items light their surroundings while held or dropped, and burning mobs light the area around them
 - Edge smoothing: a light anti-aliasing filter for when temporal anti-aliasing is off
 - Experimental depth of field that keeps the center of the screen in focus
 - Color grading presets: Warm, Cool, Vivid, Cinematic and Muted
@@ -17,6 +18,10 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental motion blur when the camera moves or turns, with a strength setting
 
 ### Changed
+- Make ambient occlusion about a fifth faster with the same look
+- Presets now also set edge smoothing, automatic exposure and dynamic lights, and the Vanilla preset turns motion blur and depth of field off too, so it really draws the vanilla picture
+- Make HDR lighting faster by computing the light of every pixel in the shading pass instead of a pass of its own
+- Make sun shadows faster by skipping the shadow lookup for terrain beyond the shadow distance
 - Reduce short stutters with shadows on, especially while flying or at high render distance
 - With Sodium installed Helion now keeps its screen effects (Sodium mode) instead of switching itself off
 - Mobs and dropped items no longer show vanilla's round shadow spot under them while Helion's sun shadows are on

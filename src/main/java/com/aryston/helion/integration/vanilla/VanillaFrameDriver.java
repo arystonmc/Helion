@@ -20,9 +20,11 @@ import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.ProjectionMatrixBuffer;
@@ -150,12 +152,15 @@ final class VanillaFrameDriver {
                 new ShadowResults(),
                 new PostResults()
             );
+            Optional<GpuBuffer> dynamicLights = HelionRenderCore.get().dynamicLights()
+                .upload(DynamicLightTracker.lights(camera.pos, settings.dynamicLights().enabled()));
             HelionRenderCore.get().recordFrame(frame.camera(), frame.scene());
-            FrameStages.build(frame, sources(request, sections, featureFrame, targets));
+            FrameStages.build(frame, sources(request, sections, featureFrame, targets, dynamicLights));
             profiler.popPush("executeFrameGraph");
             builder.execute(request.resourceAllocator(), new ProfilerInspector(profiler));
             profiler.pop();
         } finally {
+            HelionRenderCore.get().dynamicLights().finishFrame();
             if (levelProjection != null) {
                 RenderSystem.setProjectionMatrix(levelProjection, levelProjectionType);
             }
@@ -181,12 +186,13 @@ final class VanillaFrameDriver {
         LevelFrameRequest request,
         ChunkSectionsToRender sections,
         FeatureRenderDispatcher.PreparedFrame featureFrame,
-        VanillaFrameTargets targets
+        VanillaFrameTargets targets,
+        Optional<GpuBuffer> dynamicLights
     ) {
         StageEvents events = new StageEvents(request);
         SceneFog fog = new SceneFog(request.terrainFog());
         return new FrameSources(
-            new VanillaTerrainSource(request, sections, fog, events),
+            new VanillaTerrainSource(request, sections, fog, events, dynamicLights),
             new VanillaEntitySource(request, featureFrame, events),
             new VanillaAtmosphereSource(request, sky, fog, events),
             new VanillaTransparencySource(request, sections, featureFrame),

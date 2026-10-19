@@ -3,13 +3,16 @@ package com.aryston.helion.integration.vanilla;
 import com.aryston.helion.mixin.ChunkSectionsToRenderAccessor;
 import com.aryston.helion.mixin.LevelRendererAccessor;
 import com.aryston.helion.render.geometry.TerrainSource;
+import com.aryston.helion.render.lighting.DynamicLightResources;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.textures.AddressMode;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalDouble;
 import net.minecraft.client.TextureFilteringMethod;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
@@ -27,12 +30,14 @@ final class VanillaTerrainSource implements TerrainSource {
     private final ChunkSectionsToRender sections;
     private final SceneFog fog;
     private final StageEvents events;
+    private final Optional<GpuBuffer> dynamicLights;
 
-    VanillaTerrainSource(LevelFrameRequest request, ChunkSectionsToRender sections, SceneFog fog, StageEvents events) {
+    VanillaTerrainSource(LevelFrameRequest request, ChunkSectionsToRender sections, SceneFog fog, StageEvents events, Optional<GpuBuffer> dynamicLights) {
         this.level = request.level();
         this.sections = sections;
         this.fog = fog;
         this.events = events;
+        this.dynamicLights = dynamicLights;
     }
 
     @Override
@@ -59,19 +64,12 @@ final class VanillaTerrainSource implements TerrainSource {
     @Override
     public void renderOpaqueGeometry(RenderPass geometryPass) {
         Profiler.get().push("solidTerrainGeometry");
-        ChunkSectionsToRenderAccessor accessor = (ChunkSectionsToRenderAccessor) sections;
-        GpuTextureView lightmap = level.helion$gameRenderer().lightmap();
+        bindDynamicLights(geometryPass);
         for (ChunkSectionLayer layer : ChunkSectionLayerGroup.OPAQUE.layers()) {
-            VanillaGeometryPipelines.LayerPipelines pipelines = VanillaGeometryPipelines.forLayer(layer);
-            accessor.helion$renderLayers(
-                new ChunkSectionLayer[] {layer},
-                chunkSampler(),
-                geometryPass,
-                blockAtlas(),
-                lightmap,
-                pipelines.direct(),
-                pipelines.multiDraw()
-            );
+            VanillaGeometryPipelines.LayerPipelines pipelines = dynamicLights
+                .flatMap(lights -> VanillaGeometryPipelines.withDynamicLights(layer))
+                .orElseGet(() -> VanillaGeometryPipelines.forLayer(layer));
+            renderLayer(layer, geometryPass, pipelines);
         }
         Profiler.get().pop();
     }
@@ -91,7 +89,35 @@ final class VanillaTerrainSource implements TerrainSource {
 
     private void renderGroup(ChunkSectionLayerGroup group, RenderPass pass) {
         LevelRenderState state = level.helion$levelRenderState();
-        sections.renderGroup(group, pass, chunkSampler(), blockAtlas(), state.renderWireframeTerrain);
+        if (dynamicLights.isEmpty() || state.renderWireframeTerrain) {
+            sections.renderGroup(group, pass, chunkSampler(), blockAtlas(), state.renderWireframeTerrain);
+            return;
+        }
+        bindDynamicLights(pass);
+        for (ChunkSectionLayer layer : group.layers()) {
+            Optional<VanillaGeometryPipelines.LayerPipelines> pipelines = VanillaDynamicLightPipelines.forLayer(layer);
+            if (pipelines.isPresent()) {
+                renderLayer(layer, pass, pipelines.get());
+            } else {
+                renderLayer(layer, pass, new VanillaGeometryPipelines.LayerPipelines(layer.pipeline(false), layer.pipeline(true)));
+            }
+        }
+    }
+
+    private void bindDynamicLights(RenderPass pass) {
+        dynamicLights.ifPresent(buffer -> pass.setUniform(DynamicLightResources.UNIFORM, buffer));
+    }
+
+    private void renderLayer(ChunkSectionLayer layer, RenderPass pass, VanillaGeometryPipelines.LayerPipelines pipelines) {
+        ((ChunkSectionsToRenderAccessor) sections).helion$renderLayers(
+            new ChunkSectionLayer[] {layer},
+            chunkSampler(),
+            pass,
+            blockAtlas(),
+            level.helion$gameRenderer().lightmap(),
+            pipelines.direct(),
+            pipelines.multiDraw()
+        );
     }
 
     private GpuSampler chunkSampler() {
