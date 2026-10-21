@@ -1,0 +1,37 @@
+# Helion Code Map: `com.aryston.helion.mixin`
+
+Part of the [Helion code map](../CODEMAP.md). Every class of this package has its entry here and nowhere else (rule D1).
+
+### `com.aryston.helion.mixin`
+
+#### LevelRendererMixin
+- Path: `src/main/java/com/aryston/helion/mixin/LevelRendererMixin.java`
+- Role: Wraps `LevelRenderer.render` to hand the frame to `LevelRenderHook`, and wraps `GameRenderer.mainRenderTarget()` calls inside `LevelRenderer` so they resolve to the scene target during a Helion frame.
+
+#### GameRendererMixin
+- Path: `src/main/java/com/aryston/helion/mixin/GameRendererMixin.java`
+- Role: Hands the level projection matrix that `GameRenderer.renderLevel` uploads (camera projection with view bobbing and nausea distortion) to `HelionRenderCore`, unchanged; frames read it as `HelionCamera.levelProjection`.
+- Notes: no event exposes the final level projection, and temporal anti-aliasing must jitter and reproject exactly the matrix the level is drawn with.
+
+#### EntityRendererMixin
+- Path: `src/main/java/com/aryston/helion/mixin/EntityRendererMixin.java`
+- Role: Skips vanilla's round entity shadow (`EntityRenderer.extractShadow`) while the core is active and drew sun shadows in the last frame, so mobs and items show only their real sun shadow; with Helion off or its shadows off vanilla draws the round shadow as before. Also saves the block scan vanilla runs under every entity for it. Raises the return value of `EntityRenderer.getPackedLightCoords` through `DynamicLightTracker.brighten`, so entities and the first-person hand near a dynamic light are lit by it.
+- Notes: No event lets a mod drop the entity shadow pieces before they are submitted, and none lets it change the light an entity is drawn with.
+
+#### SkyRendererMixin
+- Path: `src/main/java/com/aryston/helion/mixin/SkyRendererMixin.java`
+- Role: Cancels `SkyRenderer.renderSkyDisc` while `HelionSky` draws only the celestial bodies, so the vanilla sunrise and sunset glow, sun, moon, stars and dark disc are drawn over the physical sky, and dims the color of `renderMoon` through `HelionSky.moonColor` whenever Helion draws the sky.
+- Notes: `SkyRenderer.render` draws the sky color and the celestial bodies in one call; no API draws the celestial bodies alone, and keeping the vanilla sun, moon phases and stars avoids copying their textures and geometry.
+
+#### ChunkSectionsToRenderAccessor
+- Path: `src/main/java/com/aryston/helion/mixin/ChunkSectionsToRenderAccessor.java`
+- Role: Invoker for the private `ChunkSectionsToRender.renderLayers`, the only vanilla entry that takes per layer pipeline overrides.
+
+#### RenderSectionMixin
+- Path: `src/main/java/com/aryston/helion/mixin/RenderSectionMixin.java`
+- Role: Stores the shadow-caster list index on each render section and queues it after its mesh is replaced or reset.
+- Notes: No API reports render-section mesh changes.
+
+#### LevelRendererAccessor
+- Path: `src/main/java/com/aryston/helion/mixin/LevelRendererAccessor.java`
+- Role: Accessors and invokers for private `LevelRenderer` fields, constants and methods needed to rebuild `render`, including the setter of the vanilla `skyRenderer` that `VanillaFrameDriver` creates like vanilla does, and the visible sections, view area and multi-draw state the shadow casters need.

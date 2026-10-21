@@ -1,0 +1,32 @@
+# Helion Code Map: Tests
+
+Part of the [Helion code map](../CODEMAP.md).
+
+Plain JUnit 5 tests without a running game, run by `./gradlew build` and the CI. Each test class sits in the package of the class it checks.
+
+| File | What it checks |
+|---|---|
+| `src/test/java/com/aryston/helion/config/HelionShareCodeTest.java` | Settings codes round trip with the documented JSON and no padding, bad prefixes, versions and data are rejected, numbers are clamped, enums are read by name and toggles need booleans. |
+| `src/test/java/com/aryston/helion/LanguageFilesTest.java` | Every language file has the same keys, every config entry has a `.tooltip` and every config section a `.button` translation (lesson L-011). |
+| `src/test/java/com/aryston/helion/render/graph/RenderSettingsTest.java` | `foundation()` turns every effect off including deferred lighting, never needs the composite and keeps the geometry buffer without its view; `OFF` renders nothing extra. |
+| `src/test/java/com/aryston/helion/render/post/ImageSettingsTest.java` | `needsComposite()` for every tone mapper and effect combination. |
+| `src/test/java/com/aryston/helion/render/post/EyeAdaptationTest.java` | A noon scene keeps the vanilla brightness, the exposure stays within its limits, the first measurement applies at once, adaptation is gradual and darkens faster than it brightens, a long pause counts as a short step. |
+| `src/test/java/com/aryston/helion/render/post/ColorGradingLutTest.java` | The neutral grade keeps every color, warm and cool shift the white balance, vivid is more saturated than muted, the table holds every lattice point in order. |
+| `src/test/java/com/aryston/helion/render/motion/MotionBlurResourcesTest.java` | The blur at 30 frames per second equals the strength, faster frames blur longer so the look stays the same, the frame scale stays within its limits. |
+| `src/test/java/com/aryston/helion/render/dof/DepthOfFieldResourcesTest.java` | Focus does not move without time, follows smoothly and settles within a second. |
+| `src/test/java/com/aryston/helion/render/post/ImageResourcesTest.java` | Adaptive bloom threshold: half in darkness, eight times in daylight, rising with ambient light. |
+| `src/test/java/com/aryston/helion/render/post/ToneMapperTest.java` | Tone mapper shader ids are unique and match the constants in `helion_image.glsl`. |
+| `src/test/java/com/aryston/helion/render/camera/HelionFrustumTest.java` | Frustum culling with OpenGL, zero to one and reversed-Z projections. |
+| `src/test/java/com/aryston/helion/render/atmosphere/AtmosphereSpectrumTest.java` | The wavelengths cover 400 to 700 nm, Rayleigh and ozone coefficients agree with Hillaire's published RGB values within 1 %, sunlight converts to white, short wavelengths lean blue and long ones red, and the color matching bands integrate the CIE table. |
+| `src/test/java/com/aryston/helion/render/atmosphere/PhysicalSkyTest.java` | Celestial directions (overhead at angle zero, rising and setting on opposite sides), view height above the planet from the altitude, and the planet radius and lookup table sizes match `helion_atmosphere.glsl`. |
+| `src/test/java/com/aryston/helion/render/atmosphere/SkyViewCacheTest.java` | A new sky view table is never current, a written one stays current while the light and the camera barely move, and is redrawn once either moved far enough or it was invalidated. |
+| `src/test/java/com/aryston/helion/render/shadow/ShadowCascadeCacheTest.java` | Cascades wait while nothing changes and are redrawn after their refresh time, a light step draws the other set (near cascades at once, far ones on their turn) and fades the previous set out over the time between steps, a camera jump drops the previous set, a large light turn and switching to the moon start over, a waiting cascade still shadows the same place in the world after the camera moved, and a camera jump, a turned light or switching from the sun to the moon redraws every cascade. |
+| `src/test/java/com/aryston/helion/render/shadow/ShadowCascadesTest.java` | Every cascade holds its slice of the view, a moving camera shifts the map by whole texels, casters toward the light stay inside the depth range, sections near a cascade are selected, the shadow distance follows the render distance, the sun casts by day and the moon by night, and shadows fade near the horizon., and the shadow direction turns in fixed steps |
+| `src/test/java/com/aryston/helion/render/temporal/JitterSequenceTest.java` | Halton values, jitter offsets inside the pixel, repetition after eight frames, mean near the pixel center, device coordinate scale. | 
+| `src/test/java/com/aryston/helion/render/temporal/RenderScaleTest.java` | Internal sizes follow the upscaler ratios, render scale needs temporal anti-aliasing, the frame size tells whether a frame is upscaled. |
+| `src/test/java/com/aryston/helion/render/temporal/PreviousViewTest.java` | The reprojection matrix maps a point seen by a moved and turned camera to where the previous camera saw it (plus the jitter), and keeps every pixel in place for a still camera. |
+| `src/test/java/com/aryston/helion/render/shader/ShaderCompilationTest.java` | Every vertex and fragment shader compiles with `glslangValidator` in five variants (default, zero to one depth, multi-draw with alpha cutout, and both terrain variants with Aervium's compact vertex define), with Helion and vanilla includes inlined from the classpath. Skipped when `glslangValidator` is not installed; the CI installs it. |
+| `src/test/java/com/aryston/helion/render/lighting/AmbientOcclusionQualityTest.java` | Higher quality presets never use fewer samples or denoise passes. |
+| `src/test/java/com/aryston/helion/render/lighting/AmbientOcclusionVariantsTest.java` | The horizon search shader reads every define its quality and algorithm variants set, and every quality has slices and steps. |
+| `src/test/java/com/aryston/helion/debug/ParityResultTest.java` | Pixel comparison counts color and depth differences, the largest channel and depth differences and color differences that also differ in depth. |
+| `src/test/java/com/aryston/helion/debug/DebugOverlayLinesTest.java` | Debug screen lines: one line per section, wrapping after four values, empty sections and plain values. |
