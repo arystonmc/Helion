@@ -7,8 +7,8 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 #### HelionRenderCore
 - Path: `src/main/java/com/aryston/helion/render/HelionRenderCore.java`
 - Role: Singleton that owns the core state and shared GPU objects. Decides whether Helion renders, detects the backend on first use, starts and ends level frames, redirects the main target during a level frame, releases everything on shutdown and renders nothing after it, because Minecraft can still draw a frame after the shutdown event. Setting fields are volatile because config reloads may arrive from another thread. With Sodium installed `useScreenEffectsOnly()` switches it to Sodium mode (`screenEffectsOnly()`).
-- Members: `get()`, `isActive()`, `toggle()`, `passivate(reason)`, `reportFailure(throwable)`, `beginLevelFrame(main)`, `endLevelFrame()`, `resolveMainTarget(original)`, `recordFrame(camera, scene)`, `lastCamera()`, `lastScene()`, `applySettings(enabled, debugMode, renderSettings)`, `isDebugMode()`, `settings()`, `ambientOcclusion()`, `image()`, `lighting()`, `temporal()`, `motionBlur()`, `sky()`, `shadows()`, `recordLevelProjection(projection)`, `levelProjection()`, `setPassiveListener(listener)`, `shutdown()`.
-- Depends on: `GpuDeviceSummary`, `GpuResources`, `SceneTargets`, `GpuTimings`, `HelionCamera`, `AmbientOcclusionResources`, `ImageResources`, `DeferredLightingResources`, `TemporalResources`, `MotionBlurResources`, `PhysicalSkyResources`, `ShadowResources`.
+- Members: `get()`, `isActive()`, `toggle()`, `passivate(reason)`, `reportFailure(throwable)`, `beginLevelFrame(main)`, `endLevelFrame()`, `resolveMainTarget(original)`, `recordFrame(camera, scene)`, `lastCamera()`, `lastScene()`, `applySettings(enabled, debugMode, renderSettings)`, `isDebugMode()`, `settings()`, `ambientOcclusion()`, `image()`, `lighting()`, `temporal()`, `motionBlur()`, `sky()`, `clouds()`, `shadows()`, `recordLevelProjection(projection)`, `levelProjection()`, `setPassiveListener(listener)`, `shutdown()`.
+- Depends on: `GpuDeviceSummary`, `GpuResources`, `SceneTargets`, `GpuTimings`, `HelionCamera`, `AmbientOcclusionResources`, `ImageResources`, `DeferredLightingResources`, `TemporalResources`, `MotionBlurResources`, `PhysicalSkyResources`, `CloudResources`, `ShadowResources`.
 
 #### PassiveReason
 - Path: `src/main/java/com/aryston/helion/render/PassiveReason.java`
@@ -20,7 +20,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### FrameSources
 - Path: `src/main/java/com/aryston/helion/render/FrameSources.java`
-- Role: Per-frame bundle of the terrain, entity, atmosphere, transparency and shadow caster sources plus the post effects.
+- Role: Per-frame bundle of the terrain, entity, atmosphere, cloud, transparency and shadow caster sources plus the post effects.
 
 #### FrameStages
 - Path: `src/main/java/com/aryston/helion/render/FrameStages.java`

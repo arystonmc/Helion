@@ -141,6 +141,18 @@ A sky that behaves like real air: deep blue overhead, a bright glow around the s
 - Settings: on or off; off by default while it is experimental
 - Since: 1.0
 
+### Volumetric Clouds (Experimental)
+Real 3D clouds that the sun shines through.
+
+- Puffy cumulus clouds with flat bases and rounded tops replace the blocky vanilla clouds, high above the terrain
+- Lit by the physical sky: bright silver edges toward the sun, warm orange undersides at sunset, soft shading inside and a faint moonlit glow at night
+- They drift and slowly change shape with the wind, thicken and darken in rain, and fade gently into the distant sky
+- High quality adds a thin layer of high cirrus streaks
+- Drawn at a lower resolution and smoothed over a few frames, so they cost little; Low, Medium and High trade detail for speed
+- Needs the physical sky; turning clouds off in the vanilla video settings turns them off too, and other dimensions keep their own sky
+- Settings: on or off next to the physical sky, quality on the Performance page; on at Medium in the Experimental preset, off elsewhere
+- Since: Unreleased
+
 ### Dynamic Lights
 Carry a torch into a cave and the cave lights up around you.
 

@@ -102,6 +102,15 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/HelionSky.java`
 - Role: Marks the vanilla sky rendering Helion runs, and whether it only draws the celestial bodies on top of the physical sky, so `SkyRendererMixin` skips the vanilla sky disc then (the sunrise and sunset glow stays). `moonColor` dims the moon to 60 percent while Helion draws the sky, so it no longer blooms like the sun and the two stay easy to tell apart. Render thread only.
 
+#### VanillaCloudSource
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaCloudSource.java`
+- Role: `CloudSource` over the vanilla level: a `CloudEnvironment` (game time with the partial tick in seconds, rain from the sky rain brightness) only for the Overworld skybox without a custom cloud renderer, with clouds on in the video settings and a visible cloud color. Forwards `replaceVanillaClouds` to `HelionClouds`.
+- Depends on: `HelionClouds`.
+
+#### HelionClouds
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/HelionClouds.java`
+- Role: Whether the volumetric clouds replace the vanilla clouds in the current Helion frame, read by `CloudRendererMixin`. `VanillaFrameDriver` clears it when the frame ends, so vanilla frames always keep their clouds.
+
 #### VanillaTransparencySource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaTransparencySource.java`
 - Role: `TransparencySource` that runs vanilla order independent transparency.

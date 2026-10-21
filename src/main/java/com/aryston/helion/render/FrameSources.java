@@ -1,6 +1,7 @@
 package com.aryston.helion.render;
 
 import com.aryston.helion.render.atmosphere.AtmosphereSource;
+import com.aryston.helion.render.clouds.CloudSource;
 import com.aryston.helion.render.geometry.EntitySource;
 import com.aryston.helion.render.geometry.TerrainSource;
 import com.aryston.helion.render.geometry.TransparencySource;
@@ -12,6 +13,7 @@ public record FrameSources(
     TerrainSource terrain,
     EntitySource entities,
     AtmosphereSource atmosphere,
+    CloudSource clouds,
     TransparencySource transparency,
     ShadowCasterSource shadowCasters,
     List<RenderStage> postEffects

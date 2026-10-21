@@ -15,7 +15,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | I want to change | Go to |
 |---|---|
 | Stage order of a frame | `FrameStages` |
-| What a stage draws | `ClearStage`, `SkyStage`, `PhysicalSkyStage`, `OpaqueGeometryStage`, `DeferredLightingStage`, `AmbientOcclusionStage`, `SolidFeatureStage`, `TransparentGeometryStage`, `TemporalStage`, `PostProcessingStage`, `BloomStage`, `SharpeningStage`, `ImageCompositeStage`, `PresentStage` |
+| What a stage draws | `ClearStage`, `SkyStage`, `PhysicalSkyStage`, `OpaqueGeometryStage`, `DeferredLightingStage`, `AmbientOcclusionStage`, `SolidFeatureStage`, `CloudStage`, `TransparentGeometryStage`, `TemporalStage`, `PostProcessingStage`, `BloomStage`, `SharpeningStage`, `ImageCompositeStage`, `PresentStage` |
 | Ambient occlusion look and cost | `AmbientOcclusionResources` (tuning), `AmbientOcclusionQuality` (presets), `shaders/ambient_occlusion/` |
 | Bloom, tone mapping and exposure | `ImageResources` (tuning), `shaders/image/`, `shaders/include/helion_color.glsl`, `bloom_prefilter.fsh` (emissive detection) |
 | Sharpening | `SharpeningStage`, `shaders/image/sharpen.fsh` |
@@ -26,11 +26,12 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | Temporal anti-aliasing: jitter, history, reprojection | `TemporalStage`, `TemporalResources`, `JitterSequence`, `PreviousView`, `GameRendererMixin`, `shaders/temporal/` |
 | Motion blur: tile velocities and gather | `MotionBlurStage`, `MotionBlurResources` (frame rate normalization), `TemporalResources` (camera reprojection), `shaders/motion_blur/` |
 | Physical sky: atmosphere, spectral colors, sun and moon light, fog | `PhysicalSkyStage`, `PhysicalSkyResources` (brightness, fog buffer), `AtmosphereSpectrum` (wavelength data), `SkyEnvironment`, `SkyRendererMixin`, `shaders/atmosphere/`, `shaders/include/helion_atmosphere.glsl`, `helion_spectrum.glsl`, `helion_sky_color.glsl` |
+| Volumetric clouds: raymarching, lighting, history, vanilla clouds off | `CloudStage`, `CloudResources` (tuning), `CloudQuality`, `VanillaCloudSource`, `HelionClouds`, `CloudRendererMixin`, `shaders/clouds/`, `shaders/include/helion_clouds.glsl`, `helion_cloud_noise.glsl` |
 | Physical sky light on terrain | `SkyLight`, `DeferredLightingStage`, `sky_light.fsh`, `helion_deferred_light.glsl` (`HELION_PHYSICAL_SKY_LIGHT`) |
 | Dynamic lights from held and dropped items | `DynamicLightTracker` (sources, entity light), `DynamicLightEmitters` (item and fire luminance), `DynamicLightResources` (uniform), `VanillaDynamicLightPipelines`, `VanillaTerrainSource`, `EntityRendererMixin`, `shaders/terrain/dynamic_light.vsh`, `shaders/include/helion_dynamic_light.glsl` |
 | GPU time of every preset in one run | `GpuProfile`, `HelionPresetSettings` |
 | Sun and moon shadows: cascades, shadow map, mask | `ShadowStage`, `ShadowCascades` (splits, fitting, texel snapping), `ShadowCascadeCache` (which cascades are drawn this frame), `ShadowLight` (sun or moon, horizon fade), `ShadowResources`, `VanillaShadowCasterSource`, `ShadowCasterSections` (incremental cached caster sections), `ShadowCasterChanges`, `ShadowCasterMember`, `RenderSectionMixin`, `VanillaShadowPipelines`, `shaders/shadow/`, `shaders/include/helion_shadow.glsl`, `deferred_shading.fsh` (`HELION_SHADOWS`) |
-| Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines`, `DeferredLightingPipelines`, `TemporalPipelines`, `PhysicalSkyPipelines`, `ImagePipelines` |
+| Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines`, `DeferredLightingPipelines`, `TemporalPipelines`, `PhysicalSkyPipelines`, `CloudPipelines`, `ImagePipelines` |
 | How vanilla terrain, entities, sky or OIT are called | `VanillaTerrainSource`, `VanillaEntitySource`, `VanillaAtmosphereSource`, `VanillaTransparencySource` |
 | The rebuilt vanilla `LevelRenderer.render` | `VanillaFrameDriver` |
 | Frame graph targets and OIT targets | `VanillaFrameTargets` |
@@ -45,7 +46,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | Key bindings | `HelionKeys`, `ParityControl` |
 | Debug mode: on-screen values and JSON log | `HelionDebugSnapshot` (every value), `HelionDebugEntry` (screen), `DebugOverlayLines` (line layout), `HelionDebugLog` (`logs/helion-debug.jsonl`) |
 | Pixel comparison with vanilla | `ParityCheck`, `FrameCapture`, `ParityResult`, `ParityDifferenceImage` |
-| Vanilla hooks | `LevelRendererMixin`, `LevelRendererAccessor`, `ChunkSectionsToRenderAccessor`, `GameRendererMixin`, `RenderSectionMixin`, `SkyRendererMixin` |
+| Vanilla hooks | `LevelRendererMixin`, `LevelRendererAccessor`, `ChunkSectionsToRenderAccessor`, `GameRendererMixin`, `RenderSectionMixin`, `SkyRendererMixin`, `CloudRendererMixin` |
 | Mod name, version, loader versions | `gradle.properties` |
 | Unit tests | `src/test/java/`, see [codemap/tests.md](codemap/tests.md) |
 | Mod list metadata, dependencies, mixin config | `neoforge.mods.toml` |
@@ -64,9 +65,10 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | `com.aryston.helion.config` | [config.md](codemap/config.md) | 8 | Config spec, presets, settings screen and share codes. |
 | `com.aryston.helion.debug` | [debug.md](codemap/debug.md) | 13 | Debug overlay, GPU profile, visual test and pixel parity tools. |
 | `com.aryston.helion.integration` | [integration.md](codemap/integration.md) | 5 | Event wiring, key bindings, parity control and the Sodium and Iris guard. |
-| `com.aryston.helion.integration.vanilla` | [integration.vanilla.md](codemap/integration.vanilla.md) | 26 | Bridges to vanilla frame, terrain, entity, shadow caster and dynamic light sources. |
-| `com.aryston.helion.mixin` | [mixin.md](codemap/mixin.md) | 7 | Mixins and accessors on vanilla renderers. |
+| `com.aryston.helion.integration.vanilla` | [integration.vanilla.md](codemap/integration.vanilla.md) | 28 | Bridges to vanilla frame, terrain, entity, shadow caster and dynamic light sources. |
+| `com.aryston.helion.mixin` | [mixin.md](codemap/mixin.md) | 8 | Mixins and accessors on vanilla renderers. |
 | `com.aryston.helion.render.atmosphere` | [render.atmosphere.md](codemap/render.atmosphere.md) | 14 | Physical sky, atmosphere spectrum, sky light and scene fog. |
+| `com.aryston.helion.render.clouds` | [render.clouds.md](codemap/render.clouds.md) | 9 | Volumetric clouds stage, resources, settings and pipelines. |
 | `com.aryston.helion.render.backend` | [render.backend.md](codemap/render.backend.md) | 1 | GPU device summary. |
 | `com.aryston.helion.render.camera` | [render.camera.md](codemap/render.camera.md) | 2 | Helion camera and frustum. |
 | `com.aryston.helion.render.dof` | [render.dof.md](codemap/render.dof.md) | 4 | Depth of field stage, resources and pipelines. |

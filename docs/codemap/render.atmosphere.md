@@ -52,7 +52,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### AtmosphereResults
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/AtmosphereResults.java`
-- Role: Per-frame results of the physical sky for later stages: the `SkyLight` for deferred lighting and the `SceneFogPass` for transparent geometry, both empty without the physical sky.
+- Role: Per-frame results of the physical sky for later stages: the `SkyLight` for deferred lighting and the `SceneFogPass` for transparent geometry, both empty without the physical sky, and the `SceneCloudPass` that `CloudStage` publishes for transparent geometry.
 
 #### SkyLight
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/SkyLight.java`

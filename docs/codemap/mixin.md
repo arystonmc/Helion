@@ -18,6 +18,11 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Role: Skips vanilla's round entity shadow (`EntityRenderer.extractShadow`) while the core is active and drew sun shadows in the last frame, so mobs and items show only their real sun shadow; with Helion off or its shadows off vanilla draws the round shadow as before. Also saves the block scan vanilla runs under every entity for it. Raises the return value of `EntityRenderer.getPackedLightCoords` through `DynamicLightTracker.brighten`, so entities and the first-person hand near a dynamic light are lit by it.
 - Notes: No event lets a mod drop the entity shadow pieces before they are submitted, and none lets it change the light an entity is drawn with.
 
+#### CloudRendererMixin
+- Path: `src/main/java/com/aryston/helion/mixin/CloudRendererMixin.java`
+- Role: Cancels `CloudRenderer.render` and `renderOit` while `HelionClouds` says the volumetric clouds replace the vanilla clouds this frame.
+- Notes: the vanilla clouds are drawn inside the vanilla transparency code, in the order independent path too; no event or option skips them for one frame.
+
 #### SkyRendererMixin
 - Path: `src/main/java/com/aryston/helion/mixin/SkyRendererMixin.java`
 - Role: Cancels `SkyRenderer.renderSkyDisc` while `HelionSky` draws only the celestial bodies, so the vanilla sunrise and sunset glow, sun, moon, stars and dark disc are drawn over the physical sky, and dims the color of `renderMoon` through `HelionSky.moonColor` whenever Helion draws the sky.

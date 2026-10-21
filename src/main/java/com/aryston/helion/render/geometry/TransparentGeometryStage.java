@@ -2,6 +2,7 @@ package com.aryston.helion.render.geometry;
 
 import com.aryston.helion.render.atmosphere.AtmosphereSource;
 import com.aryston.helion.render.atmosphere.SceneFogPass;
+import com.aryston.helion.render.clouds.SceneCloudPass;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.mojang.blaze3d.framegraph.FramePass;
@@ -47,16 +48,19 @@ public final class TransparentGeometryStage implements RenderStage {
         frame.targets().declareGeometryAttachments(pass);
         Optional<SceneFogPass> fog = frame.atmosphere().fog();
         fog.ifPresent(fogPass -> fogPass.declareReads(pass));
+        Optional<SceneCloudPass> clouds = frame.atmosphere().clouds();
+        clouds.ifPresent(cloudPass -> cloudPass.declareReads(pass));
         boolean orderIndependent = frame.scene().orderIndependentTransparency();
-        pass.executes(frame.graph().timed(NAME, () -> render(scene.get(), orderIndependent, fog)));
+        pass.executes(frame.graph().timed(NAME, () -> render(scene.get(), orderIndependent, fog, clouds)));
     }
 
-    private void render(RenderTarget target, boolean orderIndependent, Optional<SceneFogPass> fog) {
+    private void render(RenderTarget target, boolean orderIndependent, Optional<SceneFogPass> fog, Optional<SceneCloudPass> clouds) {
         if (orderIndependent) {
             transparency.renderOrderIndependent();
             fog.ifPresent(fogPass -> fogPass.draw(target));
-        } else if (fog.isPresent()) {
-            renderSortedThroughFog(target, fog.get());
+            clouds.ifPresent(cloudPass -> cloudPass.draw(target));
+        } else if (fog.isPresent() || clouds.isPresent()) {
+            renderSortedThroughFog(target, fog, clouds);
         } else {
             renderSorted(target);
         }
@@ -70,11 +74,12 @@ public final class TransparentGeometryStage implements RenderStage {
         }
     }
 
-    private void renderSortedThroughFog(RenderTarget target, SceneFogPass fog) {
+    private void renderSortedThroughFog(RenderTarget target, Optional<SceneFogPass> fog, Optional<SceneCloudPass> clouds) {
         try (RenderPass pass = openPass(target)) {
             renderTranslucents(pass);
         }
-        fog.draw(target);
+        fog.ifPresent(fogPass -> fogPass.draw(target));
+        clouds.ifPresent(cloudPass -> cloudPass.draw(target));
         try (RenderPass pass = openPass(target)) {
             renderAtmosphere(pass);
         }

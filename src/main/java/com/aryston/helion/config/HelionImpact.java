@@ -3,6 +3,7 @@ package com.aryston.helion.config;
 import com.aryston.arkea.api.config.ConfigMeter;
 import com.aryston.arkea.api.config.ConfigOption;
 import com.aryston.arkea.api.config.ConfigValues;
+import com.aryston.helion.render.clouds.CloudQuality;
 import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
 import com.aryston.helion.render.shadow.ShadowQuality;
 import java.util.List;
@@ -36,7 +37,7 @@ final class HelionImpact {
 
     private static List<ConfigOption<Boolean>> features(HelionOptions options) {
         return List.of(options.ambientOcclusion, options.bloom, options.sharpening, options.temporal, options.geometryBuffer, options.lighting,
-            options.physicalSky, options.shadows);
+            options.physicalSky, options.clouds, options.shadows);
     }
 
     private static double score(HelionOptions options, ConfigValues values) {
@@ -52,6 +53,9 @@ final class HelionImpact {
         if (values.value(options.shadows)) {
             score += QUALITY_WEIGHT * values.value(options.shadowQuality).ordinal();
         }
+        if (values.value(options.clouds)) {
+            score += QUALITY_WEIGHT * values.value(options.cloudQuality).ordinal();
+        }
         return score;
     }
 
@@ -60,6 +64,7 @@ final class HelionImpact {
         for (ConfigOption<Boolean> feature : features(options)) {
             maximum += feature.cost();
         }
-        return maximum + QUALITY_WEIGHT * (AmbientOcclusionQuality.values().length - 1 + ShadowQuality.values().length - 1);
+        return maximum + QUALITY_WEIGHT * (AmbientOcclusionQuality.values().length - 1 + ShadowQuality.values().length - 1
+            + CloudQuality.values().length - 1);
     }
 }

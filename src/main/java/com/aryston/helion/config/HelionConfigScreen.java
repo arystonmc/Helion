@@ -35,7 +35,7 @@ public final class HelionConfigScreen {
             .page("rendering", text("page.rendering"), Icons.MONITOR, page -> page
                 .section(text("section.geometry"), section -> section.add(options.geometryBuffer))
                 .section(text("section.antialiasing"), section -> section.add(options.temporal))
-                .fullSection(text("section.sky"), section -> section.add(options.physicalSky)))
+                .fullSection(text("section.sky"), section -> section.add(options.physicalSky).add(options.clouds)))
             .page("lighting", text("page.lighting"), Icons.SUN, page -> page
                 .fullSection(text("section.ambientOcclusion"), section -> section.add(options.ambientOcclusion).add(options.ambientOcclusionMethod)
                     .add(options.ambientOcclusionStrength).add(options.ambientOcclusionRadius))
@@ -51,7 +51,7 @@ public final class HelionConfigScreen {
             .group(text("group.system"))
             .page("performance", text("page.performance"), Icons.BOLT, page -> page
                 .notice(text("performance.notice"))
-                .fullSection(text("section.quality"), section -> section.add(options.ambientOcclusionQuality).add(options.shadowQuality).add(options.renderScale)))
+                .fullSection(text("section.quality"), section -> section.add(options.ambientOcclusionQuality).add(options.shadowQuality).add(options.cloudQuality).add(options.renderScale)))
             .page("advanced", text("page.advanced"), Icons.CMD, page -> page
                 .fullSection(text("section.debug"), section -> section.add(options.debugMode))
                 .fullSection(text("section.views"), section -> section.collapsible(false).add(options.ambientOcclusionView).add(options.bloomView)

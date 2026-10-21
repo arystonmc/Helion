@@ -1,6 +1,8 @@
 package com.aryston.helion.config;
 
 import com.aryston.helion.render.atmosphere.PhysicalSkySettings;
+import com.aryston.helion.render.clouds.CloudQuality;
+import com.aryston.helion.render.clouds.CloudSettings;
 import com.aryston.helion.render.geometry.GeometryBufferSettings;
 import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.graph.RenderSettings;
@@ -85,6 +87,8 @@ public final class HelionConfig {
     static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
     static final ModConfigSpec.EnumValue<RenderScale> RENDER_SCALE;
     static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
+    static final ModConfigSpec.BooleanValue CLOUDS_ENABLED;
+    static final ModConfigSpec.EnumValue<CloudQuality> CLOUD_QUALITY;
     static final ModConfigSpec.BooleanValue SHADOWS_ENABLED;
     static final ModConfigSpec.EnumValue<ShadowQuality> SHADOW_QUALITY;
 
@@ -216,6 +220,15 @@ public final class HelionConfig {
             .define("enabled", false);
         BUILDER.pop();
 
+        BUILDER.translation("helion.configuration.clouds").push("clouds");
+        CLOUDS_ENABLED = BUILDER
+            .translation("helion.configuration.clouds.enabled")
+            .define("enabled", false);
+        CLOUD_QUALITY = BUILDER
+            .translation("helion.configuration.clouds.quality")
+            .defineEnum("quality", CloudQuality.MEDIUM);
+        BUILDER.pop();
+
         BUILDER.translation("helion.configuration.shadows").push("shadows");
         SHADOWS_ENABLED = BUILDER
             .translation("helion.configuration.shadows.enabled")
@@ -240,7 +253,8 @@ public final class HelionConfig {
             new TemporalSettings(TEMPORAL_ENABLED.getAsBoolean(), RENDER_SCALE.get()),
             new PhysicalSkySettings(PHYSICAL_SKY_ENABLED.getAsBoolean()),
             new ShadowSettings(SHADOWS_ENABLED.getAsBoolean(), SHADOW_QUALITY.get()),
-            new DynamicLightSettings(DYNAMIC_LIGHTS_ENABLED.getAsBoolean())
+            new DynamicLightSettings(DYNAMIC_LIGHTS_ENABLED.getAsBoolean()),
+            new CloudSettings(CLOUDS_ENABLED.getAsBoolean(), CLOUD_QUALITY.get())
         );
     }
 

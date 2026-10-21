@@ -160,6 +160,7 @@ final class VanillaFrameDriver {
             builder.execute(request.resourceAllocator(), new ProfilerInspector(profiler));
             profiler.pop();
         } finally {
+            HelionClouds.replaceVanilla(false);
             HelionRenderCore.get().dynamicLights().finishFrame();
             if (levelProjection != null) {
                 RenderSystem.setProjectionMatrix(levelProjection, levelProjectionType);
@@ -195,6 +196,7 @@ final class VanillaFrameDriver {
             new VanillaTerrainSource(request, sections, fog, events, dynamicLights),
             new VanillaEntitySource(request, featureFrame, events),
             new VanillaAtmosphereSource(request, sky, fog, events),
+            new VanillaCloudSource(request),
             new VanillaTransparencySource(request, sections, featureFrame),
             new VanillaShadowCasterSource(request, shadowCasters, featureFrame),
             List.of(new VanillaEntityOutlineEffect(request.level(), targets))

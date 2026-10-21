@@ -6,6 +6,9 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 
 ## Unreleased
 
+### Added
+- Experimental volumetric clouds lit by the physical sky, with Low, Medium and High quality
+
 ## [1.0] - 2026-10-21
 
 ### Added

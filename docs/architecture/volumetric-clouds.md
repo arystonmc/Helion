@@ -1,0 +1,21 @@
+# Helion Architecture: Volumetric Clouds
+
+Part of the [Helion architecture](../ARCHITECTURE.md).
+
+## Volumetric Clouds
+
+Off by default (`clouds.enabled`, experimental), on in the Experimental preset at Medium quality. Needs the physical sky: the clouds are lit by its `SkyLight` and run only where the physical sky runs (Overworld style sky, camera in air). Turning clouds off in the vanilla video settings, a NeoForge custom cloud renderer or a dimension without clouds keeps them off. While they run, `CloudRendererMixin` skips the vanilla clouds in the sorted and the order independent path.
+
+| Pass | Writes | Shader |
+|---|---|---|
+| `cloud_noise` | persistent 528 x 528 RGBA8, written once | `noise.fsh`: a tiling 64³ volume packed as 64 slices with a one texel wrapped border; R Perlin-Worley for shapes, G, B, A Worley at 4, 8 and 16 cells for erosion and detail |
+| `cloud_march` | frame RGBA16_FLOAT color and RG16_FLOAT distance at the cloud resolution | `march.fsh`: raymarches the layer, see below |
+| `cloud_resolve` | persistent history pair | `resolve.fsh`: reprojects the history with the cloud distance and the camera motion, clamps it to the 3 x 3 range of the current frame (plus a quarter of that range), blends 12 % of the current frame |
+| clouds, drawn inside `transparent_geometry` | scene color, blended | `composite.fsh`: bilinear upsampling, Neutral encoding, over sky pixels; over geometry only when the camera is above the bottom of the layer |
+
+- **Method.** The cumulus layer is a spherical shell (planet radius 6360 km like the sky) from y 600 to 1100; the ray segment inside it is found with ray to sphere roots written so that float precision holds at that radius. Density follows Schneider's Nubis (Guerrilla Games, "The Real-time Volumetric Cloudscapes of Horizon Zero Dawn", 2015): a 2D coverage map, a height profile with a flat base and rounded tops, Perlin-Worley shapes eroded by Worley fbm and by small detail noise. Lighting per sample: a light march of up to six steps of growing length toward the sun (or the moon at night), three octaves of the multiple scattering approximation of Wrenninge (Oz, 2013), a dual lobe Henyey-Greenstein phase and the powder term near the base. Sun and moon light come from the `SkyLight` texels (already through the atmosphere and dimmed by rain); the sky dome irradiance texel gives the ambient light. Light is integrated energy conserving per step (Hillaire, "Physically Based Sky, Atmosphere and Cloud Rendering in Frostbite", 2016). The clouds thin out between 14 and 40 km so the sky behind them shows through instead of a cut-off edge. High adds a thin cirrus layer at 7000 m from two 2D noise slices.
+- **Cost control.** The march runs at a quarter, a third or half of the scene resolution, with 24 to 56 steps (half again near the horizon) and stops once less than 1 % of the light passes. The start of each ray is dithered per pixel and per frame and the resolve averages the dither away, so few steps still give smooth clouds. No 3D textures: the noise is one 2D atlas sampled with two bilinear taps per lookup.
+- **Why terrain needs no depth test in the march.** Terrain never reaches y 600. Below the layer no ray reaches a cloud before terrain, so the composite simply leaves geometry pixels alone; above the bottom of the layer every ray to terrain crosses the clouds first. The low resolution march therefore ignores depth and no halo appears around mountains.
+- **Wind and time.** The coverage, shape and detail noise move at different speeds with the game time; the time wraps every 6144 s, a period after which every layer has moved a whole number of noise periods.
+- **Rain.** Coverage rises toward 85 % and direct light is dimmed.
+- Not part of it yet: cloud shadows on terrain, clouds in the sky light of terrain, and aerial perspective in front of the clouds (they fade out instead).

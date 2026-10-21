@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.aryston.helion.render.atmosphere.PhysicalSkySettings;
+import com.aryston.helion.render.clouds.CloudQuality;
+import com.aryston.helion.render.clouds.CloudSettings;
 import com.aryston.helion.render.geometry.GeometryBufferSettings;
 import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
@@ -27,7 +29,8 @@ class RenderSettingsTest {
         new TemporalSettings(true, RenderScale.NATIVE),
         new PhysicalSkySettings(true),
         new ShadowSettings(true, ShadowQuality.HIGH),
-        new DynamicLightSettings(true)
+        new DynamicLightSettings(true),
+        new CloudSettings(true, CloudQuality.HIGH)
     );
 
     @Test
@@ -42,6 +45,7 @@ class RenderSettingsTest {
         assertFalse(foundation.sky().enabled());
         assertFalse(foundation.shadows().enabled());
         assertFalse(foundation.dynamicLights().enabled());
+        assertFalse(foundation.clouds().enabled());
     }
 
     @Test
@@ -68,5 +72,6 @@ class RenderSettingsTest {
         assertFalse(RenderSettings.OFF.sky().enabled());
         assertFalse(RenderSettings.OFF.shadows().enabled());
         assertFalse(RenderSettings.OFF.dynamicLights().enabled());
+        assertFalse(RenderSettings.OFF.clouds().enabled());
     }
 }

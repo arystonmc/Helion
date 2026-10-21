@@ -3,6 +3,7 @@ package com.aryston.helion.config;
 import com.aryston.arkea.api.config.ConfigPreset;
 import com.aryston.arkea.ui.render.Icon;
 import com.aryston.arkea.ui.render.Icons;
+import com.aryston.helion.render.clouds.CloudQuality;
 import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
 import com.aryston.helion.render.shadow.ShadowQuality;
 import java.util.List;
@@ -22,6 +23,8 @@ final class HelionPresets {
             .set(options.geometryBuffer, true)
             .set(options.lighting, true)
             .set(options.physicalSky, true)
+            .set(options.clouds, true)
+            .set(options.cloudQuality, CloudQuality.MEDIUM)
             .set(options.shadows, true)
             .set(options.shadowQuality, ShadowQuality.MEDIUM)
             .set(options.temporal, true);
@@ -29,6 +32,7 @@ final class HelionPresets {
             preset.set(options.geometryBuffer, false)
                 .set(options.lighting, false)
                 .set(options.physicalSky, false)
+                .set(options.clouds, false)
                 .set(options.shadows, false)
                 .set(options.temporal, false);
         }

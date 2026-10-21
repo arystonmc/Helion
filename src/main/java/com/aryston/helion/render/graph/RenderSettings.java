@@ -1,6 +1,7 @@
 package com.aryston.helion.render.graph;
 
 import com.aryston.helion.render.atmosphere.PhysicalSkySettings;
+import com.aryston.helion.render.clouds.CloudSettings;
 import com.aryston.helion.render.geometry.GeometryBufferSettings;
 import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.lighting.DeferredLightingSettings;
@@ -17,7 +18,8 @@ public record RenderSettings(
     TemporalSettings temporal,
     PhysicalSkySettings sky,
     ShadowSettings shadows,
-    DynamicLightSettings dynamicLights
+    DynamicLightSettings dynamicLights,
+    CloudSettings clouds
 ) {
     public static final RenderSettings OFF = new RenderSettings(
         AmbientOcclusionSettings.DISABLED,
@@ -27,7 +29,8 @@ public record RenderSettings(
         TemporalSettings.DISABLED,
         PhysicalSkySettings.DISABLED,
         ShadowSettings.DISABLED,
-        DynamicLightSettings.DISABLED
+        DynamicLightSettings.DISABLED,
+        CloudSettings.DISABLED
     );
 
     public RenderSettings screenOnly() {
@@ -39,7 +42,8 @@ public record RenderSettings(
             TemporalSettings.DISABLED,
             PhysicalSkySettings.DISABLED,
             ShadowSettings.DISABLED,
-            DynamicLightSettings.DISABLED
+            DynamicLightSettings.DISABLED,
+            CloudSettings.DISABLED
         );
     }
 
@@ -52,7 +56,8 @@ public record RenderSettings(
             TemporalSettings.DISABLED,
             PhysicalSkySettings.DISABLED,
             ShadowSettings.DISABLED,
-            DynamicLightSettings.DISABLED
+            DynamicLightSettings.DISABLED,
+            CloudSettings.DISABLED
         );
     }
 }

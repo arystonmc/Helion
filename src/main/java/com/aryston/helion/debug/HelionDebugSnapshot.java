@@ -3,6 +3,7 @@ package com.aryston.helion.debug;
 import com.aryston.helion.Helion;
 import com.aryston.helion.render.HelionRenderCore;
 import com.aryston.helion.render.atmosphere.PhysicalSkySettings;
+import com.aryston.helion.render.clouds.CloudSettings;
 import com.aryston.helion.render.backend.GpuDeviceSummary;
 import com.aryston.helion.render.shadow.ShadowSettings;
 import com.aryston.helion.render.camera.HelionCamera;
@@ -60,6 +61,7 @@ public final class HelionDebugSnapshot {
         snapshot.add("temporal", temporal(settings.temporal()));
         snapshot.add("physicalSky", physicalSky(settings.sky()));
         snapshot.add("shadows", shadows(settings.shadows()));
+        snapshot.add("clouds", clouds(settings.clouds()));
         snapshot.add("gpu", gpu(core));
         snapshot.add("gpuStages", gpuStages(core.timings().averageMillis()));
         snapshot.add("resources", resources(core.resources().live()));
@@ -190,6 +192,13 @@ public final class HelionDebugSnapshot {
     }
 
     private static JsonObject shadows(ShadowSettings settings) {
+        JsonObject section = new JsonObject();
+        section.addProperty("enabled", settings.enabled());
+        section.addProperty("quality", settings.quality().name());
+        return section;
+    }
+
+    private static JsonObject clouds(CloudSettings settings) {
         JsonObject section = new JsonObject();
         section.addProperty("enabled", settings.enabled());
         section.addProperty("quality", settings.quality().name());
