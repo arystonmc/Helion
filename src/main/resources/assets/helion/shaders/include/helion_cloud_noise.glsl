@@ -1,8 +1,6 @@
 #ifndef HELION_CLOUD_NOISE_GLSL
 #define HELION_CLOUD_NOISE_GLSL
 
-// The cloud noise is a tiling 64 x 64 x 64 volume packed into a 2D atlas: 64 slices of 64 x 64 texels in an 8 x 8 grid,
-// each slice with a one texel border copied from the opposite edge, so bilinear filtering wraps without seams.
 const float HELION_CLOUD_NOISE_SIZE = 64.0;
 const float HELION_CLOUD_NOISE_TILE = 66.0;
 const float HELION_CLOUD_NOISE_GRID = 8.0;

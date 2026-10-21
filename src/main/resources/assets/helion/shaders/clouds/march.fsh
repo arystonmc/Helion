@@ -13,11 +13,6 @@ layout(location = 0) in vec2 texCoord;
 layout(location = 0) out vec4 cloudColor;
 layout(location = 1) out vec4 cloudDistance;
 
-// Raymarches the cumulus layer (a spherical shell around the planet) at a reduced resolution. The start of every ray
-// is dithered per pixel and per frame; the resolve pass averages the dither away over time.
-// Output 0: scattered light (linear, before tone mapping) and transmittance. Output 1: the distance of the clouds
-// weighted by how much each sample contributes, used to reproject the history.
-
 const float HELION_PI = 3.14159265358979;
 const float HELION_PLANET_RADIUS = 6360000.0;
 const float HELION_SHAPE_PERIOD = 3072.0;
@@ -56,8 +51,6 @@ float helionCloudPhase(float cosTheta, float scale) {
     return mix(mix(forward, silver, HELION_SILVER_LINING * 0.15), back, HELION_BACK_SHARE);
 }
 
-// Distances along a ray from a point at height `height` above the ground to the sphere at height `radius` above the
-// ground, written so that float precision holds with the planet radius in blocks.
 vec2 helionShellHits(float height, float upward, float radius) {
     float b = (HELION_PLANET_RADIUS + height) * upward;
     float c = (height - radius) * (2.0 * HELION_PLANET_RADIUS + height + radius);
@@ -71,7 +64,6 @@ vec2 helionShellHits(float height, float upward, float radius) {
     return vec2(near, far);
 }
 
-// Where the ray is inside the cumulus layer: start and end distance, or an empty range.
 vec2 helionLayerSegment(float height, float upward, float bottom, float top) {
     vec2 bottomHits = helionShellHits(height, upward, bottom);
     vec2 topHits = helionShellHits(height, upward, top);

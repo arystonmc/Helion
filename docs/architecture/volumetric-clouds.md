@@ -8,8 +8,8 @@ Off by default (`clouds.enabled`, experimental), on in the Experimental preset a
 
 | Pass | Writes | Shader |
 |---|---|---|
-| `cloud_noise` | persistent 528 x 528 RGBA8, written once | `noise.fsh`: a tiling 64³ volume packed as 64 slices with a one texel wrapped border; R Perlin-Worley for shapes, G, B, A Worley at 4, 8 and 16 cells for erosion and detail |
-| `cloud_march` | frame RGBA16_FLOAT color and RG16_FLOAT distance at the cloud resolution | `march.fsh`: raymarches the layer, see below |
+| `cloud_noise` | persistent 528 x 528 RGBA8, written once | `noise.fsh`: a tiling 64³ volume packed as 64 slices in an 8 x 8 grid, each with a one texel border copied from the opposite edge so bilinear filtering wraps without seams; R Perlin-Worley for shapes, G, B, A Worley at 4, 8 and 16 cells for erosion and detail |
+| `cloud_march` | frame RGBA16_FLOAT color (scattered light before tone mapping, transmittance) and RG16_FLOAT distance (weighted by each sample's contribution, for the reprojection) at the cloud resolution | `march.fsh`: raymarches the layer, see below |
 | `cloud_resolve` | persistent history pair | `resolve.fsh`: reprojects the history with the cloud distance and the camera motion, clamps it to the 3 x 3 range of the current frame (plus a quarter of that range), blends 12 % of the current frame |
 | clouds, drawn inside `transparent_geometry` | scene color, blended | `composite.fsh`: bilinear upsampling, Neutral encoding, over sky pixels; over geometry only when the camera is above the bottom of the layer |
 
@@ -17,5 +17,6 @@ Off by default (`clouds.enabled`, experimental), on in the Experimental preset a
 - **Cost control.** The march runs at a quarter, a third or half of the scene resolution, with 24 to 56 steps (half again near the horizon) and stops once less than 1 % of the light passes. The start of each ray is dithered per pixel and per frame and the resolve averages the dither away, so few steps still give smooth clouds. No 3D textures: the noise is one 2D atlas sampled with two bilinear taps per lookup.
 - **Why terrain needs no depth test in the march.** Terrain never reaches y 600. Below the layer no ray reaches a cloud before terrain, so the composite simply leaves geometry pixels alone; above the bottom of the layer every ray to terrain crosses the clouds first. The low resolution march therefore ignores depth and no halo appears around mountains.
 - **Wind and time.** The coverage, shape and detail noise move at different speeds with the game time; the time wraps every 6144 s, a period after which every layer has moved a whole number of noise periods.
+- **Uniform block `HelionClouds`** (`include/helion_clouds.glsl`), besides the two matrices: `CloudOrigin` xyz the camera position inside the repeating noise period (y is the real height); `CameraMotion` xyz camera position now minus last frame, w 1 when the history can be used; `CloudLight` xyz direction of the light on the clouds, w 1 for the sun and 0 for the moon; `CloudLayer` bottom and top of the cumulus layer, extinction per block, coverage; `CloudQuality` primary steps, light steps, 1 with the cirrus layer, frame index; `CloudWeather` rain strength, time in seconds, maximum distance, distance where the fade starts; `CloudTarget` size of the cloud target and its inverse.
 - **Rain.** Coverage rises toward 85 % and direct light is dimmed.
 - Not part of it yet: cloud shadows on terrain, clouds in the sky light of terrain, and aerial perspective in front of the clouds (they fade out instead).

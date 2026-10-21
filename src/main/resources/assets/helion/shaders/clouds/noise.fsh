@@ -7,9 +7,6 @@ layout(location = 0) in vec2 texCoord;
 
 layout(location = 0) out vec4 fragColor;
 
-// Writes the cloud noise atlas once: R holds Perlin-Worley noise for the cloud shapes, G, B and A hold Worley noise of
-// rising frequency used to erode the shapes and for the small detail. Every function tiles over the unit cube.
-
 uint helionHash(uvec3 cell) {
     uint h = cell.x * 1597334677u ^ cell.y * 3812015801u ^ cell.z * 2798796415u;
     h ^= h >> 16;

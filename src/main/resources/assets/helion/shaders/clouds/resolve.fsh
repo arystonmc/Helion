@@ -13,10 +13,6 @@ layout(location = 0) in vec2 texCoord;
 layout(location = 0) out vec4 resolvedColor;
 layout(location = 1) out vec4 resolvedDistance;
 
-// Blends the dithered clouds of this frame with the reprojected history. The history is moved to where the clouds
-// were last frame (from their distance and the camera motion) and kept inside the range of the current 3 x 3
-// neighborhood, so moving clouds and disocclusions do not leave trails.
-
 const float HELION_CURRENT_WEIGHT = 0.12;
 const float HELION_CLAMP_MARGIN = 0.25;
 
