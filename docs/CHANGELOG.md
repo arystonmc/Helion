@@ -34,6 +34,8 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Make ambient occlusion smoother while temporal anti-aliasing is on
 
 ### Fixed
+- Depth of field can now focus on distant terrain instead of always blurring land beyond 256 blocks
+- Fix mobs and entities appearing semi-transparent from background indirect light and ambient occlusion leaking through them
 - Fix shaded sides, plants and tree trunks turning blue or green under the physical sky light
 - Fix grass and flowers covering the ground in flickering shadow speckles
 - Fix stutter with shadows on by preparing only chunks that can cast shadows

@@ -16,7 +16,7 @@ integration/vanilla          Minecraft adapter: builds the frame, owns every van
    │  LevelRenderHook → VanillaFrameDriver → Vanilla*Source, VanillaFrameTargets, StageEvents
    ▼
 render/                      Helion render core: stages, graph, resources, camera
-   │  FrameStages: clear → sky → opaque geometry → deferred lighting → solid features → ambient occlusion → transparent geometry → temporal anti-aliasing → post (bloom, sharpen) → present or image composite → geometry buffer view
+   │  FrameStages: clear → sky → opaque geometry → deferred lighting → ambient occlusion → solid features → transparent geometry → temporal anti-aliasing → post (bloom, sharpen) → present or image composite → geometry buffer view
    ▼
 renderpearl api + blaze3d    Mojang GPU abstraction (Vulkan backend)
 ```
@@ -50,8 +50,8 @@ renderpearl api + blaze3d    Mojang GPU abstraction (Vulkan backend)
 | 3 | opaque_geometry | `render.geometry.OpaqueGeometryStage` | Prepares fog, chunk sampler, translucent buffers and lighting, then draws opaque terrain and solid features. With the geometry buffer on, only opaque terrain, in its own render pass through Helion's terrain shaders, see Geometry Buffer below |
 | 3a | shadow_map, shadow_mask | `render.shadow.ShadowStage` | Only with shadows, lighting, the geometry buffer and the physical sky light on: draws the cascaded shadow map and the screen space shadow mask, see Shadows below |
 | 3b | deferred_lighting, deferred_shading | `render.lighting.DeferredLightingStage` | Only with lighting and the geometry buffer on: lights terrain in HDR from the geometry buffer, see Deferred Lighting below |
-| 3c | solid_features | `render.geometry.SolidFeatureStage` | Only with the geometry buffer on: the after-opaque-blocks event and solid features, in the same order as vanilla |
-| 4 | ambient_occlusion | `render.lighting.AmbientOcclusionStage` | Screen space ambient occlusion on the opaque scene, see below. Skipped when disabled or when its shaders failed to compile |
+| 3c | ambient_occlusion | `render.lighting.AmbientOcclusionStage` | Screen space ambient occlusion on the opaque terrain scene, see below. Skipped when disabled or when its shaders failed to compile |
+| 4 | solid_features | `render.geometry.SolidFeatureStage` | Only with the geometry buffer on: the after-opaque-blocks event and solid features, drawn after terrain ambient occlusion |
 | 5 | transparent_geometry | `render.geometry.TransparentGeometryStage` | Sorted or order independent transparency, clouds, weather, world border, then outline, see-through and always-on-top features. With the physical sky, also its distance fog, see Physical Sky below |
 | 5a | terrain_depth (in stage 3), taa_resolve, taa_apply | `render.temporal.TemporalStage` | Only with temporal anti-aliasing on: blends the jittered frame with the reprojected history, see Temporal Anti-Aliasing below |
 | 6 | post | `render.post.PostProcessingStage` | Runs post effects in order: the vanilla entity outline effect, then `render.edge.EdgeSmoothingStage` (see Edge Smoothing below), then `render.motion.MotionBlurStage` (see Motion Blur below), then `render.dof.DepthOfFieldStage` (see Depth of Field below), then `render.post.ExposureStage` (automatic exposure metering), then `render.post.BloomStage`, then `render.post.SharpeningStage`, see Image Pipeline below |
