@@ -10,13 +10,13 @@ Helion is a client-side graphics mod for Minecraft built on the new Vulkan rende
 
 | | |
 |---|---|
-| Version | 0.1 |
+| Version | 1.0 |
 | Minecraft | 26.3 |
 | Loader | NeoForge |
 | Graphics API | Vulkan |
 | Side | Client only, safe to join any server |
-| Requires | Arkea 0.1 or newer |
-| Status | In development |
+| Requires | Arkea 1.0 or newer |
+| Status | Released |
 
 ## Features
 
@@ -26,7 +26,7 @@ The world is rendered through Helion's own pipeline on Minecraft's Vulkan render
 - Terrain, entities, particles, sky, clouds, weather, transparency and outlines all pass through Helion's stages
 - Helion draws into its own color and depth buffers before the image reaches the screen
 - Works with both transparency modes, including improved transparency (F3 + X)
-- Since: 0.1
+- Since: 1.0
 
 ### Ambient Occlusion
 Soft, natural shadows wherever surfaces meet: in corners, under fences and stairs, around doors, beneath mobs and deep in caves.
@@ -35,7 +35,7 @@ Soft, natural shadows wherever surfaces meet: in corners, under fences and stair
 - Bright light sources, lava and glowing blocks stay bright; water, glass and particles are not darkened
 - Fades out with fog and distance so far terrain stays clean
 - Settings: on or off, method (GTAO or Visibility Bitmask, which lets light pass behind thin objects like fences, grass and torches), quality (Low, Medium, High, Ultra), strength, radius in blocks, and a view that shows only the shadows
-- Since: 0.1
+- Since: 1.0
 
 ### Bloom and Tone Mapping
 Bright light sources glow softly into the darkness while the colors you know stay the same.
@@ -46,7 +46,7 @@ Bright light sources glow softly into the darkness while the colors you know sta
 - Tone mapping keeps vanilla colors and only rolls off the brightest highlights; a Filmic option adds film-like contrast, richer colors and whiter cores in bright glows
 - Exposure control and invisible dithering that removes color banding in the sky
 - Settings: bloom on or off, intensity, threshold, a view that shows only the glow, tone mapping (Neutral, Filmic, None), exposure and dithering
-- Since: 0.1
+- Since: 1.0
 
 ### Automatic Exposure (Experimental)
 Your eyes adjust to the light, and now the picture does too.
@@ -99,7 +99,7 @@ Crisper block textures without the halos of ordinary sharpening filters.
 - Brings back fine texture detail that looks soft on large or high resolution screens
 - Adapts to the picture: flat areas and edges that are already sharp are left alone
 - Settings: sharpening on or off and its strength; off by default
-- Since: 0.1
+- Since: 1.0
 
 ### Geometry Buffer (Experimental)
 The foundation for Helion's own lighting, sky and shadows.
@@ -107,7 +107,7 @@ The foundation for Helion's own lighting, sky and shadows.
 - Terrain is drawn by Helion's own shaders, which also record the surface direction, block light, sky light and base color of every pixel
 - The picture stays exactly like vanilla on its own; Helion's lighting builds on top of it
 - Settings: on or off, and a view that shows each recorded value for checking; off by default while it is experimental
-- Since: 0.1
+- Since: 1.0
 
 ### HDR Lighting (Experimental)
 Torches, lanterns and lava finally shine brighter than the vanilla light limit.
@@ -115,7 +115,7 @@ Torches, lanterns and lava finally shine brighter than the vanilla light limit.
 - Helion lights terrain itself, with block light and sky light computed separately and nothing cut off at full brightness
 - In daylight and wherever lights are weak the world looks exactly like vanilla; at night and in caves, blocks next to a light glow and bloom picks them up
 - Settings: on or off, block light intensity, sky light intensity, and a view that shows the light alone; needs the geometry buffer, off by default while it is experimental
-- Since: 0.1
+- Since: 1.0
 
 ### Temporal Anti-Aliasing (Experimental)
 Smooth block edges and calm, shimmer-free distant textures.
@@ -126,7 +126,7 @@ Smooth block edges and calm, shimmer-free distant textures.
 - Also smooths ambient occlusion, which varies its samples every frame while anti-aliasing is on
 - Moving mobs, items and particles stay sharp and leave no trail behind them
 - Settings: on or off; off by default while it is experimental
-- Since: 0.1
+- Since: 1.0
 
 ### Physical Sky (Experimental)
 A sky that behaves like real air: deep blue overhead, a bright glow around the sun and a moonlit night.
@@ -139,7 +139,7 @@ A sky that behaves like real air: deep blue overhead, a bright glow around the s
 - Rain dims and greys the sky; the glow around the sun can bloom
 - Works in the Overworld; other dimensions and views under water keep the vanilla sky
 - Settings: on or off; off by default while it is experimental
-- Since: 0.1
+- Since: 1.0
 
 ### Dynamic Lights
 Carry a torch into a cave and the cave lights up around you.
@@ -167,7 +167,7 @@ Blocks cast real shadows that move with the sun through the day.
 - Shade keeps a soft cool light from the sky and some light bounced off the ground, so shadowed areas look natural instead of black or blue
 - Needs the geometry buffer, HDR lighting and the physical sky to be on
 - Settings: on or off, and Low, Medium or High quality for sharper edges; off by default while it is experimental
-- Since: 0.1
+- Since: 1.0
 
 ### Safe by Design
 Helion never stands between you and the game.
@@ -176,13 +176,13 @@ Helion never stands between you and the game.
 - With Sodium installed, Helion runs in Sodium mode: Sodium draws the world and Helion adds its screen effects (tone mapping, bloom, exposure, sharpening, color grading, depth of field, edge smoothing); shadows, lighting, the sky, ambient occlusion, anti-aliasing and motion blur are off, and a short notice says so
 - With Iris installed, Helion stays inactive to avoid conflicts and tells you why
 - If something goes wrong while rendering, Helion steps aside and the game keeps running with vanilla graphics
-- Since: 0.1
+- Since: 1.0
 
 ### Instant Comparison
 Switch between Helion and vanilla rendering at any moment.
 
 - Press `H` to switch without restarting
-- Since: 0.1
+- Since: 1.0
 
 ### Debug Mode
 Everything Helion knows, on screen and in a log file, only when you ask for it.
@@ -191,7 +191,7 @@ Everything Helion knows, on screen and in a log file, only when you ask for it.
 - Writes the same values once per second as JSON lines to `logs/helion-debug.jsonl`, together with events such as switching Helion on or off and parity check results
 - Press `J` in debug mode to compare a vanilla frame with a Helion frame pixel by pixel. Use `/tick freeze` first; a failed check marks the differing pixels in `screenshots/helion_parity_differences.png` and warns when the game was not frozen
 - Off by default and costs nothing while off; turn it on in the settings
-- Since: 0.1
+- Since: 1.0
 
 ### Settings
 A clear settings window in the Arkea style, with presets and a live estimate of the GPU cost.
@@ -206,4 +206,4 @@ A clear settings window in the Arkea style, with presets and a live estimate of 
 - The GPU impact meter estimates the cost of the current settings
 - Open it from Mods → Helion → Config or from the Arkea options window
 - Needs the Arkea library; the game refuses to start without it
-- Since: 0.1
+- Since: 1.0
