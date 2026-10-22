@@ -27,7 +27,7 @@ const float HELION_FORWARD_ASYMMETRY = 0.75;
 const float HELION_BACK_ASYMMETRY = -0.25;
 const float HELION_BACK_SHARE = 0.25;
 const float HELION_SILVER_LINING = 0.6;
-const float HELION_AMBIENT_STRENGTH = 0.9;
+const float HELION_AMBIENT_STRENGTH = 0.55;
 const float HELION_CIRRUS_HEIGHT = 7000.0;
 const float HELION_CIRRUS_PERIOD = 24576.0;
 const float HELION_CIRRUS_OPACITY = 0.45;
@@ -48,7 +48,7 @@ float helionCloudPhase(float cosTheta, float scale) {
     float forward = helionHenyeyGreenstein(cosTheta, HELION_FORWARD_ASYMMETRY * scale);
     float silver = helionHenyeyGreenstein(cosTheta, 0.99 * scale);
     float back = helionHenyeyGreenstein(cosTheta, HELION_BACK_ASYMMETRY * scale);
-    return mix(mix(forward, silver, HELION_SILVER_LINING * 0.15), back, HELION_BACK_SHARE);
+    return mix(mix(forward, silver, HELION_SILVER_LINING * 0.3), back, HELION_BACK_SHARE);
 }
 
 vec2 helionShellHits(float height, float upward, float radius) {
@@ -143,8 +143,8 @@ float helionScattering(float opticalDepth, float cosTheta, float height) {
     float eccentricity = 1.0;
     for (int octave = 0; octave < HELION_SCATTERING_OCTAVES; octave++) {
         sum += strength * exp(-opticalDepth * attenuation) * helionCloudPhase(cosTheta, eccentricity);
-        strength *= 0.5;
-        attenuation *= 0.4;
+        strength *= 0.6;
+        attenuation *= 0.3;
         eccentricity *= 0.5;
     }
     float powder = 1.0 - exp(-opticalDepth * 2.0 - 0.15);
@@ -221,7 +221,7 @@ void main() {
             float fraction = clamp((height - CloudLayer.x) / (CloudLayer.y - CloudLayer.x), 0.0, 1.0);
             float lightDepth = helionLightOpticalDepth(relative, light, lightNoise);
             vec3 inScattered = lightColor * helionScattering(lightDepth, cosTheta, fraction)
-                + ambient * mix(0.45, 1.0, fraction);
+                + ambient * mix(0.35, 1.0, fraction);
             float stepTransmittance = exp(-extinction * stepLength);
             vec3 integrated = inScattered * (1.0 - stepTransmittance);
             radiance += transmittance * integrated;

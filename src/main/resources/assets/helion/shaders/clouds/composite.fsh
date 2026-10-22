@@ -13,6 +13,7 @@ layout(location = 0) out vec4 fragColor;
 
 const float HELION_SKY_DEPTH = 0.0;
 const float HELION_MIN_COVER = 1.0e-3;
+const float HELION_CLOUD_SATURATION = 1.35;
 
 void main() {
     float depth = texelFetch(DepthSampler, ivec2(gl_FragCoord.xy), 0).r;
@@ -25,5 +26,6 @@ void main() {
         discard;
     }
     vec3 radiance = clouds.rgb / cover;
+    radiance = max(mix(vec3(helionLuminance(radiance)), radiance, HELION_CLOUD_SATURATION), 0.0);
     fragColor = vec4(helionLinearToSrgb(helionNeutral(radiance)), cover);
 }

@@ -24,7 +24,7 @@ public final class CloudResources {
     static final float LAYER_BOTTOM = 600.0F;
     static final float LAYER_TOP = 1100.0F;
     static final float EXTINCTION = 0.045F;
-    static final float COVERAGE = 0.45F;
+    static final float COVERAGE = 0.62F;
     static final float MAX_DISTANCE = 40000.0F;
     static final float FADE_START = 14000.0F;
     private static final Logger LOGGER = LogUtils.getLogger();
