@@ -4,7 +4,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 ### `com.aryston.helion.render.rtx`
 
-The RTX feasibility spike: hardware ray queries on Minecraft's Vulkan device, compared with the voxel grid walk. Everything here runs only with the JVM property `-Dhelion.rtxSpike=true`; without it no class but `RtxSpike` is loaded, the device is created as before and the stages return in `isActive`. It is the only Helion code that uses renderpearl backend types (`VulkanDevice`, `VulkanCommandEncoder`, `VulkanGpuTextureView`) and raw Vulkan, an exception to invariant 2 that ends with the spike. Results are in `docs/architecture/voxel-lighting.md`.
+The RTX feasibility spike: hardware ray queries on Minecraft's Vulkan device, compared with the voxel grid walk. Everything here runs only with the JVM property `-Dhelion.rtxSpike=true`; without it no class but `RtxSpike` is loaded, the device is created as before and the stages return in `isActive`. It is the only Helion code that uses renderpearl backend types (`VulkanDevice`, `VulkanCommandEncoder`, `VulkanGpuTextureView`) and raw Vulkan, an exception to invariant 2 that the planned RTX layer will turn into a proper backend bridge. Results are in `docs/architecture/voxel-lighting.md`.
 
 #### RtxSpike
 - Path: `src/main/java/com/aryston/helion/render/rtx/RtxSpike.java`
