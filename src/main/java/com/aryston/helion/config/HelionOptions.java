@@ -16,6 +16,7 @@ import com.aryston.helion.render.post.ColorGrade;
 import com.aryston.helion.render.post.ToneMapper;
 import com.aryston.helion.render.shadow.ShadowQuality;
 import com.aryston.helion.render.temporal.RenderScale;
+import com.aryston.helion.render.voxel.VoxelLightingMode;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.network.chat.Component;
@@ -53,6 +54,7 @@ final class HelionOptions {
     final ConfigOption<Double> blockLight;
     final ConfigOption<Double> skyLight;
     final ConfigOption<Boolean> dynamicLights;
+    final ConfigOption<VoxelLightingMode> voxelLighting;
     final ConfigOption<Boolean> shadows;
     final ConfigOption<ShadowQuality> shadowQuality;
     final ConfigOption<RenderScale> renderScale;
@@ -114,6 +116,8 @@ final class HelionOptions {
             .requires(this.lighting);
         this.dynamicLights = toggle("dynamicLights", HelionConfig.DYNAMIC_LIGHTS_ENABLED, Icons.HAND, "dynamicLights")
             .cost(LOW_COST).requires(this.enabled);
+        this.voxelLighting = choice("voxelLighting", HelionConfig.VOXEL_LIGHTING_MODE, VoxelLightingMode.class, Icons.BULB, "voxelLighting.mode")
+            .style(ChoiceStyle.SEGMENTED).tag(Tag.beta(Component.translatable(KEY + "tag.experimental"))).requires(this.enabled);
         this.shadows = experimental(toggle("shadows", HelionConfig.SHADOWS_ENABLED, Icons.SUN, "shadows"))
             .cost(HIGH_COST).requires(this.lighting, this.physicalSky).preview(VANILLA_PREVIEW, preview("shadows"), PREVIEW_ASPECT);
         this.shadowQuality = choice("shadowQuality", HelionConfig.SHADOW_QUALITY, ShadowQuality.class, Icons.GAUGE, "shadows.quality")
@@ -159,7 +163,7 @@ final class HelionOptions {
         return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.starDensity, this.milkyWay, this.lightShafts, this.clouds, this.cloudQuality,
             this.ambientOcclusion, this.ambientOcclusionMethod,
             this.ambientOcclusionQuality, this.ambientOcclusionStrength, this.ambientOcclusionRadius, this.lighting, this.blockLight, this.skyLight,
-            this.dynamicLights, this.shadows, this.shadowQuality, this.renderScale, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.colorGrade, this.edgeSmoothing, this.dither,
+            this.dynamicLights, this.voxelLighting, this.shadows, this.shadowQuality, this.renderScale, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.colorGrade, this.edgeSmoothing, this.dither,
             this.sharpening, this.sharpeningStrength, this.motionBlur, this.motionBlurStrength, this.depthOfField, this.depthOfFieldStrength, this.debugMode, this.ambientOcclusionView,
             this.bloomView, this.geometryBufferView, this.lightView);
     }

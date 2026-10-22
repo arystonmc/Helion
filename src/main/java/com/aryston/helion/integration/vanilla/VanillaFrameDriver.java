@@ -25,6 +25,8 @@ import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.ProjectionMatrixBuffer;
@@ -51,6 +53,7 @@ final class VanillaFrameDriver {
     private final SceneSkyRenderer sky = new SceneSkyRenderer();
     private final AmbientLightTracker ambientLight = new AmbientLightTracker();
     private final ShadowCasterSections shadowCasters = new ShadowCasterSections();
+    private final VanillaVoxelSource voxels = new VanillaVoxelSource();
     private @Nullable ProjectionMatrixBuffer jitteredProjection;
 
     void render(LevelFrameRequest request, RenderSettings settings) {
@@ -154,6 +157,7 @@ final class VanillaFrameDriver {
             );
             Optional<GpuBuffer> dynamicLights = HelionRenderCore.get().dynamicLights()
                 .upload(DynamicLightTracker.lights(camera.pos, settings.dynamicLights().enabled()));
+            updateVoxels(settings, camera);
             HelionRenderCore.get().recordFrame(frame.camera(), frame.scene());
             FrameStages.build(frame, sources(request, sections, featureFrame, targets, dynamicLights));
             profiler.popPush("executeFrameGraph");
@@ -171,6 +175,16 @@ final class VanillaFrameDriver {
                 featureFrame.close();
             }
         }
+    }
+
+    private void updateVoxels(RenderSettings settings, CameraRenderState camera) {
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level == null) {
+            return;
+        }
+        boolean enabled = settings.voxels().enabled();
+        HelionRenderCore.get().voxelLighting()
+            .update(settings.voxels(), camera.blockPos.getX(), camera.blockPos.getY(), camera.blockPos.getZ(), voxels.use(level, enabled));
     }
 
     private GpuBufferSlice jitteredProjection(TemporalFrame temporal) {

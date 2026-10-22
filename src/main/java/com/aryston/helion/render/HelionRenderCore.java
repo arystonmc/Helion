@@ -19,6 +19,7 @@ import com.aryston.helion.render.temporal.TemporalResources;
 import com.aryston.helion.render.resource.GpuResources;
 import com.aryston.helion.render.resource.SceneTargets;
 import com.aryston.helion.render.scene.SceneSnapshot;
+import com.aryston.helion.render.voxel.VoxelLightingResources;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.logging.LogUtils;
@@ -46,6 +47,7 @@ public final class HelionRenderCore {
     private final ShadowResources shadows = new ShadowResources(resources);
     private final MotionBlurResources motionBlur = new MotionBlurResources(resources);
     private final DepthOfFieldResources depthOfField = new DepthOfFieldResources(resources);
+    private final VoxelLightingResources voxelLighting = new VoxelLightingResources(resources);
     private PassiveListener passiveListener = reason -> { };
     private @Nullable GpuDeviceSummary device;
     private @Nullable PassiveReason passiveReason;
@@ -169,6 +171,7 @@ public final class HelionRenderCore {
         shadows.close();
         motionBlur.close();
         depthOfField.close();
+        voxelLighting.close();
         sceneTargets.close();
         LOGGER.info("Helion released {} GPU resources on shutdown", released);
     }
@@ -235,6 +238,10 @@ public final class HelionRenderCore {
 
     public LightShaftResources lightShafts() {
         return lightShafts;
+    }
+
+    public VoxelLightingResources voxelLighting() {
+        return voxelLighting;
     }
 
     public ShadowResources shadows() {

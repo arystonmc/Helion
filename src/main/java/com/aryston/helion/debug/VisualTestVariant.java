@@ -18,6 +18,7 @@ import com.aryston.helion.render.shadow.ShadowQuality;
 import com.aryston.helion.render.shadow.ShadowSettings;
 import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalSettings;
+import com.aryston.helion.render.voxel.VoxelLightingSettings;
 import java.util.Locale;
 
 enum VisualTestVariant {
@@ -66,7 +67,8 @@ enum VisualTestVariant {
                 showsShadows() ? PhysicalSkySettings.enabledWithDefaults() : PhysicalSkySettings.DISABLED,
                 showsShadows() ? new ShadowSettings(true, ShadowQuality.MEDIUM) : ShadowSettings.DISABLED,
                 DynamicLightSettings.DISABLED,
-                showsShadows() ? VOLUMETRIC_CLOUDS : CloudSettings.DISABLED
+                showsShadows() ? VOLUMETRIC_CLOUDS : CloudSettings.DISABLED,
+                VoxelLightingSettings.DISABLED
             );
         }
         if (this == TEMPORAL) {
@@ -79,7 +81,8 @@ enum VisualTestVariant {
                 PhysicalSkySettings.DISABLED,
                 ShadowSettings.DISABLED,
                 DynamicLightSettings.DISABLED,
-                CloudSettings.DISABLED
+                CloudSettings.DISABLED,
+                VoxelLightingSettings.DISABLED
             );
         }
         if (this == PHYSICAL_SKY) {
@@ -92,7 +95,8 @@ enum VisualTestVariant {
                 PhysicalSkySettings.enabledWithDefaults(),
                 ShadowSettings.DISABLED,
                 DynamicLightSettings.DISABLED,
-                VOLUMETRIC_CLOUDS
+                VOLUMETRIC_CLOUDS,
+                VoxelLightingSettings.DISABLED
             );
         }
         BloomSettings bloom = new BloomSettings(
@@ -110,7 +114,8 @@ enum VisualTestVariant {
             settings.sky(),
             settings.shadows(),
             settings.dynamicLights(),
-            settings.clouds()
+            settings.clouds(),
+            settings.voxels()
         );
     }
 

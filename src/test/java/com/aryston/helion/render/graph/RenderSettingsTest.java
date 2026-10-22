@@ -17,6 +17,8 @@ import com.aryston.helion.render.shadow.ShadowQuality;
 import com.aryston.helion.render.shadow.ShadowSettings;
 import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalSettings;
+import com.aryston.helion.render.voxel.VoxelLightingMode;
+import com.aryston.helion.render.voxel.VoxelLightingSettings;
 import org.junit.jupiter.api.Test;
 
 class RenderSettingsTest {
@@ -30,7 +32,8 @@ class RenderSettingsTest {
         PhysicalSkySettings.enabledWithDefaults(),
         new ShadowSettings(true, ShadowQuality.HIGH),
         new DynamicLightSettings(true),
-        new CloudSettings(true, CloudQuality.HIGH)
+        new CloudSettings(true, CloudQuality.HIGH),
+        new VoxelLightingSettings(VoxelLightingMode.SHADER)
     );
 
     @Test
@@ -46,6 +49,7 @@ class RenderSettingsTest {
         assertFalse(foundation.shadows().enabled());
         assertFalse(foundation.dynamicLights().enabled());
         assertFalse(foundation.clouds().enabled());
+        assertFalse(foundation.voxels().enabled());
     }
 
     @Test

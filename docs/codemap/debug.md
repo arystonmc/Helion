@@ -6,7 +6,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### HelionDebugSnapshot
 - Path: `src/main/java/com/aryston/helion/debug/HelionDebugSnapshot.java`
-- Role: Single source of every debug value, as a JSON object with one section per topic: `core` (version, active, enabled, debug mode, passive reason, parity running), `device`, `frame` (fps, window and scene size, color format, sky, improved transparency, ambient light, fog color), `camera`, `ambientOcclusion`, `image`, `bloom` (with the effective threshold), `sharpening`, `geometryBuffer`, `lighting`, `temporal`, `physicalSky`, `shadows`, `gpu` (total), `gpuStages` (milliseconds per pass), `resources`, `resourceList` (MiB per label) and `frustum` (Helion versus vanilla visible sections). Numbers are rounded to three decimals.
+- Role: Single source of every debug value, as a JSON object with one section per topic: `core` (version, active, enabled, debug mode, passive reason, parity running), `device`, `frame` (fps, window and scene size, color format, sky, improved transparency, ambient light, fog color), `camera`, `ambientOcclusion`, `image`, `bloom` (with the effective threshold), `sharpening`, `geometryBuffer`, `lighting`, `temporal`, `physicalSky`, `shadows`, `voxelLighting` (mode, pending sections, CPU time of the volume update per frame and of the last full fill), `gpu` (total), `gpuStages` (milliseconds per pass), `resources`, `resourceList` (MiB per label) and `frustum` (Helion versus vanilla visible sections). Numbers are rounded to three decimals.
 - Depends on: `HelionRenderCore`, `ParityCheck`, `ImageResources`.
 
 #### HelionDebugEntry

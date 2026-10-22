@@ -20,6 +20,9 @@ import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.resource.TrackedResource;
 import com.aryston.helion.render.scene.SceneSnapshot;
 import com.aryston.helion.render.temporal.TemporalSettings;
+import com.aryston.helion.render.voxel.VoxelBuildStatistics;
+import com.aryston.helion.render.voxel.VoxelLightingResources;
+import com.aryston.helion.render.voxel.VoxelLightingSettings;
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.platform.Window;
 import java.util.List;
@@ -62,6 +65,7 @@ public final class HelionDebugSnapshot {
         snapshot.add("physicalSky", physicalSky(settings.sky()));
         snapshot.add("shadows", shadows(settings.shadows()));
         snapshot.add("clouds", clouds(settings.clouds()));
+        snapshot.add("voxelLighting", voxelLighting(settings.voxels(), core.voxelLighting()));
         snapshot.add("gpu", gpu(core));
         snapshot.add("gpuStages", gpuStages(core.timings().averageMillis()));
         snapshot.add("resources", resources(core.resources().live()));
@@ -205,6 +209,21 @@ public final class HelionDebugSnapshot {
         JsonObject section = new JsonObject();
         section.addProperty("enabled", settings.enabled());
         section.addProperty("quality", settings.quality().name());
+        return section;
+    }
+
+    private static JsonObject voxelLighting(VoxelLightingSettings settings, VoxelLightingResources resources) {
+        JsonObject section = new JsonObject();
+        VoxelBuildStatistics statistics = resources.statistics();
+        section.addProperty("mode", settings.mode().name());
+        section.addProperty("active", resources.active());
+        section.addProperty("pendingSections", resources.pendingSections());
+        section.addProperty("frameSections", statistics.lastFrameSections());
+        section.addProperty("frameMs", round(statistics.lastFrameMillis()));
+        section.addProperty("averageFrameMs", round(statistics.averageFrameMillis()));
+        section.addProperty("fillCpuMs", round(statistics.lastFillCpuMillis()));
+        section.addProperty("fillWallMs", round(statistics.lastFillWallMillis()));
+        section.addProperty("fillMaxFrameMs", round(statistics.maxFillFrameMillis()));
         return section;
     }
 

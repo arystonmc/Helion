@@ -6,6 +6,7 @@ import com.aryston.arkea.ui.render.Icons;
 import com.aryston.helion.render.clouds.CloudQuality;
 import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
 import com.aryston.helion.render.shadow.ShadowQuality;
+import com.aryston.helion.render.voxel.VoxelLightingMode;
 import java.util.List;
 import net.minecraft.network.chat.Component;
 
@@ -43,7 +44,8 @@ final class HelionPresets {
         for (ConfigPreset preset : List.of(vanilla, balanced, quality, experimental)) {
             preset.set(options.edgeSmoothing, preset == quality)
                 .set(options.autoExposure, preset == experimental)
-                .set(options.dynamicLights, preset != vanilla);
+                .set(options.dynamicLights, preset != vanilla)
+                .set(options.voxelLighting, VoxelLightingMode.OFF);
         }
         return List.of(vanilla, balanced, quality, experimental);
     }

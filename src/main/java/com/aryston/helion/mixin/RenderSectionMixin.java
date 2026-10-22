@@ -2,6 +2,7 @@ package com.aryston.helion.mixin;
 
 import com.aryston.helion.integration.vanilla.ShadowCasterChanges;
 import com.aryston.helion.integration.vanilla.ShadowCasterMember;
+import com.aryston.helion.integration.vanilla.VoxelSectionChanges;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -30,7 +31,9 @@ abstract class RenderSectionMixin implements ShadowCasterMember {
         at = @At(value = "INVOKE", target = "Ljava/util/concurrent/atomic/AtomicReference;getAndSet(Ljava/lang/Object;)Ljava/lang/Object;", shift = At.Shift.AFTER)
     )
     private void helion$meshReplaced(CallbackInfoReturnable<?> callback) {
-        ShadowCasterChanges.meshChanged((SectionRenderDispatcher.RenderSection) (Object) this);
+        SectionRenderDispatcher.RenderSection section = (SectionRenderDispatcher.RenderSection) (Object) this;
+        ShadowCasterChanges.meshChanged(section);
+        VoxelSectionChanges.meshChanged(section.getSectionNode());
     }
 
     @Inject(
@@ -38,6 +41,8 @@ abstract class RenderSectionMixin implements ShadowCasterMember {
         at = @At(value = "INVOKE", target = "Ljava/util/concurrent/atomic/AtomicReference;getAndSet(Ljava/lang/Object;)Ljava/lang/Object;", shift = At.Shift.AFTER)
     )
     private void helion$meshReset(CallbackInfo callback) {
-        ShadowCasterChanges.meshChanged((SectionRenderDispatcher.RenderSection) (Object) this);
+        SectionRenderDispatcher.RenderSection section = (SectionRenderDispatcher.RenderSection) (Object) this;
+        ShadowCasterChanges.meshChanged(section);
+        VoxelSectionChanges.meshChanged(section.getSectionNode());
     }
 }

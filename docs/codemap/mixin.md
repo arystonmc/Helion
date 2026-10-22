@@ -34,7 +34,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### RenderSectionMixin
 - Path: `src/main/java/com/aryston/helion/mixin/RenderSectionMixin.java`
-- Role: Stores the shadow-caster list index on each render section and queues it after its mesh is replaced or reset.
+- Role: Stores the shadow-caster list index on each render section and queues it after its mesh is replaced or reset, for the shadow casters and, by its section node, for the voxel volume (`VoxelSectionChanges`).
 - Notes: No API reports render-section mesh changes.
 
 #### LevelRendererAccessor

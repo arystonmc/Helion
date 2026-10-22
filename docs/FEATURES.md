@@ -181,6 +181,15 @@ Carry a torch into a cave and the cave lights up around you.
 - Settings: on or off on the Lighting page; on in every preset except Vanilla
 - Since: Unreleased
 
+### Voxel Lighting (In Development)
+Groundwork for light that bounces between blocks. It does not change the picture yet.
+
+- Keeps a small map of every block within 64 blocks of you: empty, solid, partial (plants, slabs, fences), see-through (water, stained glass) and how brightly it glows
+- Only the parts of the map you walk into or blocks that change are read again
+- The Voxel Slice view of the geometry buffer shows the map at your height from above, to check that blocks are in the right place
+- Settings: Off or Shader in the Advanced page; Off in every preset and by default, and Off does no work at all
+- Since: Unreleased
+
 ### Sun and Moon Shadows (Experimental)
 Blocks cast real shadows that move with the sun through the day.
 

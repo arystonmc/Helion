@@ -54,6 +54,7 @@ public final class HelionConfigScreen {
                 .fullSection(text("section.quality"), section -> section.add(options.ambientOcclusionQuality).add(options.shadowQuality).add(options.cloudQuality).add(options.renderScale)))
             .page("advanced", text("page.advanced"), Icons.CMD, page -> page
                 .fullSection(text("section.debug"), section -> section.add(options.debugMode))
+                .fullSection(text("section.voxelLighting"), section -> section.add(options.voxelLighting))
                 .fullSection(text("section.views"), section -> section.collapsible(false).add(options.ambientOcclusionView).add(options.bloomView)
                     .add(options.geometryBufferView).add(options.lightView)))
             .build(parent);

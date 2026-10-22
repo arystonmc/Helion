@@ -20,7 +20,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaFrameDriver
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaFrameDriver.java`
-- Role: Rebuilds `LevelRenderer.render` with Helion stages: the vanilla sky renderer created as `addSkyPass` does (vanilla extracts the sky state only while it exists), feature preparation, targets, NeoForge frame graph event, chunk draw preparation, the scene snapshot with the light map inputs, the camera with the captured level projection, the temporal frame with the jittered projection uploaded for the level (and put into the camera) and restored afterwards, the frame sources sharing one `SceneFog`, stage building, graph execution, then section compile, upload and occlusion update.
+- Role: Rebuilds `LevelRenderer.render` with Helion stages: the vanilla sky renderer created as `addSkyPass` does (vanilla extracts the sky state only while it exists), feature preparation, targets, NeoForge frame graph event, chunk draw preparation, the scene snapshot with the light map inputs, the camera with the captured level projection, the temporal frame with the jittered projection uploaded for the level (and put into the camera) and restored afterwards, the frame sources sharing one `SceneFog`, the voxel volume update from `VanillaVoxelSource` before the stages are built, stage building, graph execution, then section compile, upload and occlusion update.
 - Depends on: every class in this package, `FrameStages`, `HelionRenderCore`.
 - Notes: mirrors vanilla code; see Vanilla Coupling in `docs/ARCHITECTURE.md`.
 
@@ -130,3 +130,17 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 #### AmbientLightTracker
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/AmbientLightTracker.java`
 - Role: Sky light that reaches the camera block after the time of day and weather darkening, smoothed over frame time (1.5 s). Feeds `SceneSnapshot.ambientLight`, which raises the bloom threshold in daylight and lowers it in caves and at night.
+
+#### VanillaVoxelSource
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaVoxelSource.java`
+- Role: `VoxelSource` over the client level, on the render thread: reads the 4096 block states of one chunk section (missing chunks, sections outside the build height and all-air sections become empty bricks) through `VoxelBlockClasses`, drains `VoxelSectionChanges`, and raises the level generation on a new level or an overflowed change queue so the volume rebuilds. `use(level, enabled)` also switches the change collection on or off. Owned by `VanillaFrameDriver`.
+- Depends on: `VoxelBlockClasses`, `VoxelSectionChanges`.
+
+#### VoxelBlockClasses
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/VoxelBlockClasses.java`
+- Role: Cached `VoxelClass` byte per block state: air and invisible blocks empty, solid render blocks opaque, water and blocks whose model has translucent material translucent, everything else partial, with the light emission in the high bits.
+
+#### VoxelSectionChanges
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/VoxelSectionChanges.java`
+- Role: Bounded cross-thread queue of section nodes whose meshes changed, filled by `RenderSectionMixin` only while voxel lighting is on, so it costs one volatile read when off. Overflow clears it and asks for a full rebuild.
+- Depends on: nothing of this mod.

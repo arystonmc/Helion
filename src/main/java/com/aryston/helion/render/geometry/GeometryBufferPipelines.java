@@ -59,7 +59,7 @@ public final class GeometryBufferPipelines {
     private static Map<GeometryBufferView, RenderPipeline> debugViews() {
         Map<GeometryBufferView, RenderPipeline> pipelines = new EnumMap<>(GeometryBufferView.class);
         Arrays.stream(GeometryBufferView.values())
-            .filter(view -> view != GeometryBufferView.NONE)
+            .filter(view -> view != GeometryBufferView.NONE && view != GeometryBufferView.VOXEL_SLICE)
             .forEach(view -> pipelines.put(view, HelionPipelines.fullscreen(DEBUG_PIPELINE + view.name().toLowerCase(Locale.ROOT), DEBUG_SHADER)
                 .withShaderDefine(VIEW_DEFINE, view.shaderId())
                 .withBindGroupLayout(BindGroupLayout.builder()

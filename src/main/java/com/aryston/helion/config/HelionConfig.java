@@ -23,6 +23,8 @@ import com.aryston.helion.render.shadow.ShadowQuality;
 import com.aryston.helion.render.shadow.ShadowSettings;
 import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalSettings;
+import com.aryston.helion.render.voxel.VoxelLightingMode;
+import com.aryston.helion.render.voxel.VoxelLightingSettings;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class HelionConfig {
@@ -85,6 +87,7 @@ public final class HelionConfig {
     static final ModConfigSpec.DoubleValue SKY_LIGHT_INTENSITY;
     static final ModConfigSpec.BooleanValue LIGHT_ONLY_VIEW;
     static final ModConfigSpec.BooleanValue DYNAMIC_LIGHTS_ENABLED;
+    static final ModConfigSpec.EnumValue<VoxelLightingMode> VOXEL_LIGHTING_MODE;
     static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
     static final ModConfigSpec.EnumValue<RenderScale> RENDER_SCALE;
     static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
@@ -209,6 +212,12 @@ public final class HelionConfig {
             .define("enabled", true);
         BUILDER.pop();
 
+        BUILDER.translation("helion.configuration.voxelLighting").push("voxelLighting");
+        VOXEL_LIGHTING_MODE = BUILDER
+            .translation("helion.configuration.voxelLighting.mode")
+            .defineEnum("mode", VoxelLightingMode.OFF);
+        BUILDER.pop();
+
         BUILDER.translation("helion.configuration.temporalAntiAliasing").push("temporalAntiAliasing");
         TEMPORAL_ENABLED = BUILDER
             .translation("helion.configuration.temporalAntiAliasing.enabled")
@@ -267,7 +276,8 @@ public final class HelionConfig {
             new PhysicalSkySettings(PHYSICAL_SKY_ENABLED.getAsBoolean(), STAR_DENSITY.get(), MILKY_WAY.getAsBoolean(), LIGHT_SHAFTS.getAsBoolean()),
             new ShadowSettings(SHADOWS_ENABLED.getAsBoolean(), SHADOW_QUALITY.get()),
             new DynamicLightSettings(DYNAMIC_LIGHTS_ENABLED.getAsBoolean()),
-            new CloudSettings(CLOUDS_ENABLED.getAsBoolean(), CLOUD_QUALITY.get())
+            new CloudSettings(CLOUDS_ENABLED.getAsBoolean(), CLOUD_QUALITY.get()),
+            new VoxelLightingSettings(VOXEL_LIGHTING_MODE.get())
         );
     }
 

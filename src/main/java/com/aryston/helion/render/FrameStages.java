@@ -24,6 +24,7 @@ import com.aryston.helion.render.post.SharpeningStage;
 import com.aryston.helion.render.scene.ClearStage;
 import com.aryston.helion.render.shadow.ShadowStage;
 import com.aryston.helion.render.temporal.TemporalStage;
+import com.aryston.helion.render.voxel.VoxelSliceStage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,7 +65,8 @@ public final class FrameStages {
             new TemporalStage(core.temporal()),
             new PostProcessingStage(postEffects(sources.postEffects(), core)),
             output(frame, core),
-            new GeometryBufferDebugStage()
+            new GeometryBufferDebugStage(),
+            new VoxelSliceStage(core.voxelLighting())
         );
     }
 

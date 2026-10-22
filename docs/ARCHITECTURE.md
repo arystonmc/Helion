@@ -38,6 +38,7 @@ The sections live in `docs/architecture/`, one file per topic. Read the invarian
 | Volumetric Clouds | [volumetric-clouds.md](architecture/volumetric-clouds.md) | Off by default (`clouds.enabled`, experimental), on in the Experimental preset at Medium quality. |
 | Light Shafts | [light-shafts.md](architecture/light-shafts.md) | Sun and moon god rays in screen space, on wherever the physical sky runs (`physicalSky.lightShafts`). |
 | Shadows | [shadows.md](architecture/shadows.md) | Off by default (`shadows.enabled`). |
+| Voxel Lighting | [voxel-lighting.md](architecture/voxel-lighting.md) | In development, off by default (`voxelLighting.mode`). Renderpearl API findings for voxel and ray traced lighting, the block volume around the camera, its ring addressing and the voxel slice view. |
 | Sources | [sources.md](architecture/sources.md) | Stages never call vanilla code directly. |
 | Vanilla Coupling | [vanilla-coupling.md](architecture/vanilla-coupling.md) | Places that copy or depend on vanilla internals. |
 | Mixins | [mixins.md](architecture/mixins.md) | Every mixin with its target and why no API is enough. |

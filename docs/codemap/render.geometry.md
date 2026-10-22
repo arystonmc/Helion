@@ -33,11 +33,11 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### GeometryBufferView
 - Path: `src/main/java/com/aryston/helion/render/geometry/GeometryBufferView.java`
-- Role: Debug views `NONE`, `NORMALS`, `BLOCK_LIGHT`, `SKY_LIGHT`, `ALBEDO`, each with the id the debug shader is compiled with.
+- Role: Debug views `NONE`, `NORMALS`, `BLOCK_LIGHT`, `SKY_LIGHT`, `ALBEDO`, each with the id the debug shader is compiled with, and `VOXEL_SLICE`, which `VoxelSliceStage` draws instead of the geometry buffer debug shader.
 
 #### GeometryBufferPipelines
 - Path: `src/main/java/com/aryston/helion/render/geometry/GeometryBufferPipelines.java`
-- Role: Target indices and formats of the geometry buffer, sampler names and one debug view pipeline per view (`geometry/debug.fsh` with `HELION_GEOMETRY_VIEW`) and the terrain depth copy pipeline (`geometry/terrain_depth.fsh`).
+- Role: Target indices and formats of the geometry buffer, sampler names and one debug view pipeline per view except `VOXEL_SLICE` (`geometry/debug.fsh` with `HELION_GEOMETRY_VIEW`) and the terrain depth copy pipeline (`geometry/terrain_depth.fsh`).
 - Depends on: `HelionPipelines`.
 
 #### GeometryBufferDebugStage
