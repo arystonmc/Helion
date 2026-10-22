@@ -16,3 +16,6 @@ Part of the [Helion architecture](../ARCHITECTURE.md).
 | `LevelExtractorMixin.helion$blockChanged` | head of `LevelExtractor.blockChanged` | No client event reports a changed block; the voxel volume must read the section again in the same frame, before the new mesh is compiled |
 | `LevelRendererAccessor` | private members of `LevelRenderer` | Required to rebuild `render` with vanilla behavior |
 | `ChunkSectionsToRenderAccessor.helion$renderLayers` | private `ChunkSectionsToRender.renderLayers` | Only this method takes per layer pipeline overrides; the public `renderGroup` applies one override to every layer, and solid and cutout terrain need different pipelines |
+| `VulkanFeatureSetsMixin.helion$requestRayQuery` (RTX spike only) | return of `VulkanFeatureSets.optionalFeatureSets` | Renderpearl creates the device before any mod event; the optional feature set list is the only way to ask for device extensions and features |
+| `VulkanConstMixin.helion$addStorageUsage` (RTX spike only) | return of `VulkanConst.textureUsageToVk` | Renderpearl texture usages have no storage image flag |
+| `FrontendGpuDeviceAccessor`, `VulkanDeviceAccessor`, `VulkanCommandEncoderAccessor` (RTX spike only) | private renderpearl backend members | No API records raw Vulkan commands or reports the enabled device features |

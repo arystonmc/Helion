@@ -47,8 +47,12 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelVolume
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelVolume.java`
-- Role: The block atlas, the coarse atlas and the 32 x 16 ready-slot table (all R8_UNORM) and its window. Once per frame, before the frame graph runs, applies changed sections, recenters on the camera and rebuilds pending sections nearest first within 1 ms of CPU time, each with one `writeToTexture` of its brick and one of its coarse brick; keeps the light sources of every slot, uploads the ready table when a slot changed state and rebuilds the light grid when the window moved or lights changed. Measures the frames from a section change to its upload.
+- Role: The block atlas, the coarse atlas and the 32 x 16 ready-slot table (all R8_UNORM) and its window. Once per frame, before the frame graph runs, applies changed sections, recenters on the camera and rebuilds pending sections nearest first within 1 ms of CPU time, each with one `writeToTexture` of its brick and one of its coarse brick; keeps the light sources of every slot, uploads the ready table when a slot changed state and rebuilds the light grid when the window moved or lights changed. Measures the frames from a section change to its upload. Hands every built brick to an optional `VoxelBrickSink`.
 - Depends on: `VoxelVolumeWindow`, `VoxelSource`, `VoxelCoarseLevel`, `VoxelLightGrid`, `VoxelLightTextures`, `VoxelBuildStatistics`.
+
+#### VoxelBrickSink
+- Path: `src/main/java/com/aryston/helion/render/voxel/VoxelBrickSink.java`
+- Role: Receives every section brick right after it was read (4096 class bytes in brick layout), for consumers that need the volume on the CPU, such as the RTX spike.
 
 #### VoxelTexture
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelTexture.java`
@@ -73,7 +77,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelLightingResources
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightingResources.java`
-- Role: Owned by `HelionRenderCore`. `update` runs the volume while the mode is not `OFF` and releases it when the mode turns off; also keeps the uniform rings of the slice view and the direct light pass and warns once when the light pass did not compile.
+- Role: Owned by `HelionRenderCore`. `update` runs the volume while the mode is not `OFF` and releases it when the mode turns off; also keeps the uniform rings of the slice view and the direct light pass and warns once when the light pass did not compile. `observeBricks` registers a `VoxelBrickSink`.
 - Depends on: `VoxelVolume`, `UniformRing`.
 
 #### VoxelSlicePipelines

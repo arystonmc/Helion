@@ -21,6 +21,8 @@ import com.aryston.helion.render.post.ImageCompositeStage;
 import com.aryston.helion.render.post.PostProcessingStage;
 import com.aryston.helion.render.post.PresentStage;
 import com.aryston.helion.render.post.SharpeningStage;
+import com.aryston.helion.render.rtx.RtxMaskViewStage;
+import com.aryston.helion.render.rtx.RtxShadowStage;
 import com.aryston.helion.render.scene.ClearStage;
 import com.aryston.helion.render.shadow.ShadowStage;
 import com.aryston.helion.render.temporal.TemporalStage;
@@ -58,6 +60,7 @@ public final class FrameStages {
             new OpaqueGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere()),
             new ShadowStage(sources.shadowCasters(), core.shadows()),
             new VoxelLightStage(core.voxelLighting()),
+            new RtxShadowStage(core.rtxSpike(), core.voxelLighting()),
             new DeferredLightingStage(core.lighting()),
             new AmbientOcclusionStage(core.ambientOcclusion()),
             new SolidFeatureStage(sources.terrain(), sources.entities()),
@@ -68,7 +71,8 @@ public final class FrameStages {
             new PostProcessingStage(postEffects(sources.postEffects(), core)),
             output(frame, core),
             new GeometryBufferDebugStage(),
-            new VoxelSliceStage(core.voxelLighting())
+            new VoxelSliceStage(core.voxelLighting()),
+            new RtxMaskViewStage(core.rtxSpike())
         );
     }
 

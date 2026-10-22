@@ -64,6 +64,10 @@ public final class VoxelLightingResources {
         return volume.lightCount();
     }
 
+    public void observeBricks(VoxelBrickSink sink) {
+        volume.observeBricks(sink);
+    }
+
     public VoxelBuildStatistics statistics() {
         return volume.statistics();
     }

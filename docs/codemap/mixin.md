@@ -45,3 +45,18 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 #### LevelRendererAccessor
 - Path: `src/main/java/com/aryston/helion/mixin/LevelRendererAccessor.java`
 - Role: Accessors and invokers for private `LevelRenderer` fields, constants and methods needed to rebuild `render`, including the setter of the vanilla `skyRenderer` that `VanillaFrameDriver` creates like vanilla does, and the visible sections, view area and multi-draw state the shadow casters need.
+
+#### VulkanFeatureSetsMixin
+- Path: `src/main/java/com/aryston/helion/mixin/VulkanFeatureSetsMixin.java`
+- Role: Adds `RtxFeature.FEATURE_SET` to `VulkanFeatureSets.optionalFeatureSets()` when `helion.rtxSpike` is set, so renderpearl enables ray queries on devices that support them.
+- Notes: The device is created by renderpearl before any mod event; the optional feature set list is the only way to add extensions.
+
+#### VulkanConstMixin
+- Path: `src/main/java/com/aryston/helion/mixin/VulkanConstMixin.java`
+- Role: Adds `VK_IMAGE_USAGE_STORAGE_BIT` to `VulkanConst.textureUsageToVk` for textures created with `RtxSpike.TEXTURE_USAGE_STORAGE`, so the RTX spike mask can be written by a compute shader and sampled by a fragment shader.
+- Notes: Renderpearl texture usages have no storage flag.
+
+#### FrontendGpuDeviceAccessor, VulkanDeviceAccessor, VulkanCommandEncoderAccessor
+- Path: `src/main/java/com/aryston/helion/mixin/FrontendGpuDeviceAccessor.java`, `src/main/java/com/aryston/helion/mixin/VulkanDeviceAccessor.java`, `src/main/java/com/aryston/helion/mixin/VulkanCommandEncoderAccessor.java`
+- Role: The renderpearl backend behind the frontend device, its enabled feature set and the command buffer being recorded, for `RtxDevice`.
+- Notes: Renderpearl has no API for raw Vulkan work; used only by the RTX spike.

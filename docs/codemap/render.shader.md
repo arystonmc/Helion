@@ -6,7 +6,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### HelionPipelines
 - Path: `src/main/java/com/aryston/helion/render/shader/HelionPipelines.java`
-- Role: Registry of every Helion pipeline (ambient occlusion, deferred lighting, temporal, physical sky, shadow mask, image, geometry buffer views and the voxel slice view), builder for fullscreen pipelines on the vanilla screen quad, lookup of compiled pipelines.
+- Role: Registry of every Helion pipeline (ambient occlusion, deferred lighting, temporal, physical sky, shadow mask, image, geometry buffer views, the voxel slice view, the voxel light pass and, with `helion.rtxSpike.view`, the RTX spike mask view), builder for fullscreen pipelines on the vanilla screen quad, lookup of compiled pipelines.
 
 #### FullscreenPass
 - Path: `src/main/java/com/aryston/helion/render/shader/FullscreenPass.java`

@@ -6,12 +6,17 @@
     "ChunkSectionsToRenderAccessor",
     "CloudRendererMixin",
     "EntityRendererMixin",
+    "FrontendGpuDeviceAccessor",
     "GameRendererMixin",
     "LevelExtractorMixin",
     "LevelRendererAccessor",
     "LevelRendererMixin",
     "RenderSectionMixin",
-    "SkyRendererMixin"
+    "SkyRendererMixin",
+    "VulkanCommandEncoderAccessor",
+    "VulkanConstMixin",
+    "VulkanDeviceAccessor",
+    "VulkanFeatureSetsMixin"
   ],
   "injectors": {
     "defaultRequire": 1

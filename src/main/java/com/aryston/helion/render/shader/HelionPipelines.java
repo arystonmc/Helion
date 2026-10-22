@@ -11,6 +11,7 @@ import com.aryston.helion.render.dof.DepthOfFieldPipelines;
 import com.aryston.helion.render.edge.EdgeSmoothingPipelines;
 import com.aryston.helion.render.motion.MotionBlurPipelines;
 import com.aryston.helion.render.post.ImagePipelines;
+import com.aryston.helion.render.rtx.RtxMaskPipelines;
 import com.aryston.helion.render.shadow.ShadowPipelines;
 import com.aryston.helion.render.temporal.TemporalPipelines;
 import com.aryston.helion.render.voxel.VoxelLightPipelines;
@@ -46,7 +47,8 @@ public final class HelionPipelines {
             EdgeSmoothingPipelines.all(),
             GeometryBufferPipelines.all(),
             VoxelSlicePipelines.all(),
-            VoxelLightPipelines.all()
+            VoxelLightPipelines.all(),
+            RtxMaskPipelines.all()
         ).flatMap(List::stream).toList();
     }
 

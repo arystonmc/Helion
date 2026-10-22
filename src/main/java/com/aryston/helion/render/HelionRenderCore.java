@@ -18,6 +18,8 @@ import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalResources;
 import com.aryston.helion.render.resource.GpuResources;
 import com.aryston.helion.render.resource.SceneTargets;
+import com.aryston.helion.render.rtx.RtxSpike;
+import com.aryston.helion.render.rtx.RtxSpikeResources;
 import com.aryston.helion.render.scene.SceneSnapshot;
 import com.aryston.helion.render.voxel.VoxelLightingResources;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -48,6 +50,7 @@ public final class HelionRenderCore {
     private final MotionBlurResources motionBlur = new MotionBlurResources(resources);
     private final DepthOfFieldResources depthOfField = new DepthOfFieldResources(resources);
     private final VoxelLightingResources voxelLighting = new VoxelLightingResources(resources);
+    private final RtxSpikeResources rtxSpike = new RtxSpikeResources(resources);
     private PassiveListener passiveListener = reason -> { };
     private @Nullable GpuDeviceSummary device;
     private @Nullable PassiveReason passiveReason;
@@ -62,6 +65,9 @@ public final class HelionRenderCore {
     private volatile RenderSettings settings = RenderSettings.OFF;
 
     private HelionRenderCore() {
+        if (RtxSpike.ENABLED) {
+            voxelLighting.observeBricks(rtxSpike.blocks());
+        }
     }
 
     public static HelionRenderCore get() {
@@ -172,6 +178,7 @@ public final class HelionRenderCore {
         motionBlur.close();
         depthOfField.close();
         voxelLighting.close();
+        rtxSpike.close();
         sceneTargets.close();
         LOGGER.info("Helion released {} GPU resources on shutdown", released);
     }
@@ -242,6 +249,10 @@ public final class HelionRenderCore {
 
     public VoxelLightingResources voxelLighting() {
         return voxelLighting;
+    }
+
+    public RtxSpikeResources rtxSpike() {
+        return rtxSpike;
     }
 
     public ShadowResources shadows() {

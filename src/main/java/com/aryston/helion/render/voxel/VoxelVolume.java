@@ -39,6 +39,7 @@ final class VoxelVolume {
     private @Nullable ByteBuffer brick;
     private @Nullable ByteBuffer coarseBrick;
     private @Nullable ByteBuffer readyTable;
+    private @Nullable VoxelBrickSink brickSink;
     private int generation = NO_GENERATION;
     private int uploadedReadyVersion = NO_VERSION;
     private int cameraX;
@@ -89,6 +90,10 @@ final class VoxelVolume {
         ));
     }
 
+    void observeBricks(VoxelBrickSink sink) {
+        brickSink = sink;
+    }
+
     VoxelBuildStatistics statistics() {
         return statistics;
     }
@@ -135,6 +140,9 @@ final class VoxelVolume {
             source.readSection(sectionX, sectionY, sectionZ, data, (x, y, z, level, red, green, blue) ->
                 collected.add(new VoxelLight(x, y, z, level, red, green, blue)));
             VoxelCoarseLevel.build(data, coarseData);
+            if (brickSink != null) {
+                brickSink.brickBuilt(sectionX, sectionY, sectionZ, data);
+            }
             atlas.write(data, VoxelVolumeLayout.brickX(slot), VoxelVolumeLayout.brickY(slot), VoxelVolumeLayout.BRICK_SIZE, VoxelVolumeLayout.BRICK_SIZE);
             coarse.write(coarseData, VoxelCoarseLevel.brickX(slot), VoxelCoarseLevel.brickY(slot), VoxelCoarseLevel.BRICK_SIZE, VoxelCoarseLevel.BRICK_SIZE);
             lightsChanged |= !slotLights.get(slot).isEmpty() || !collected.isEmpty();
