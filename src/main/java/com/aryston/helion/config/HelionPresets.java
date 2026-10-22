@@ -7,6 +7,7 @@ import com.aryston.helion.render.clouds.CloudQuality;
 import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
 import com.aryston.helion.render.shadow.ShadowQuality;
 import com.aryston.helion.render.voxel.VoxelLightingMode;
+import com.aryston.helion.render.voxel.VoxelLightingQuality;
 import java.util.List;
 import net.minecraft.network.chat.Component;
 
@@ -29,7 +30,8 @@ final class HelionPresets {
             .set(options.cloudQuality, CloudQuality.MEDIUM)
             .set(options.shadows, true)
             .set(options.shadowQuality, ShadowQuality.MEDIUM)
-            .set(options.temporal, true);
+            .set(options.temporal, true)
+            .set(options.voxelLightingQuality, VoxelLightingQuality.MEDIUM);
         for (ConfigPreset preset : List.of(vanilla, balanced, quality)) {
             preset.set(options.geometryBuffer, false)
                 .set(options.lighting, false)
@@ -45,7 +47,7 @@ final class HelionPresets {
             preset.set(options.edgeSmoothing, preset == quality)
                 .set(options.autoExposure, preset == experimental)
                 .set(options.dynamicLights, preset != vanilla)
-                .set(options.voxelLighting, VoxelLightingMode.OFF);
+                .set(options.voxelLighting, preset == experimental ? VoxelLightingMode.SHADER : VoxelLightingMode.OFF);
         }
         return List.of(vanilla, balanced, quality, experimental);
     }

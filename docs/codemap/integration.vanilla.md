@@ -133,14 +133,18 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaVoxelSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaVoxelSource.java`
-- Role: `VoxelSource` over the client level, on the render thread: reads the 4096 block states of one chunk section (missing chunks, sections outside the build height and all-air sections become empty bricks) through `VoxelBlockClasses`, drains `VoxelSectionChanges`, and raises the level generation on a new level or an overflowed change queue so the volume rebuilds. `use(level, enabled)` also switches the change collection on or off. Owned by `VanillaFrameDriver`.
+- Role: `VoxelSource` over the client level, on the render thread: reads the 4096 block states of one chunk section (missing chunks, sections outside the build height and all-air sections become empty bricks) through `VoxelBlockClasses`, reports every block with light emission with its color, drains `VoxelSectionChanges`, and raises the level generation on a new level, reloaded light colors or an overflowed change queue so the volume rebuilds. `use(level, enabled)` also switches the change collection on or off. Owned by `VanillaFrameDriver`.
 - Depends on: `VoxelBlockClasses`, `VoxelSectionChanges`.
 
 #### VoxelBlockClasses
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VoxelBlockClasses.java`
-- Role: Cached `VoxelClass` byte per block state: air and invisible blocks empty, solid render blocks opaque, water and blocks whose model has translucent material translucent, everything else partial, with the light emission in the high bits.
+- Role: Cached `VoxelClass` byte and light color per block state: air and invisible blocks empty, solid render blocks and blocks with full light dampening opaque, water and blocks whose model has translucent material translucent, everything else partial, with the light emission in the high bits.
 
 #### VoxelSectionChanges
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VoxelSectionChanges.java`
-- Role: Bounded cross-thread queue of section nodes whose meshes changed, filled by `RenderSectionMixin` only while voxel lighting is on, so it costs one volatile read when off. Overflow clears it and asks for a full rebuild.
+- Role: Bounded cross-thread queue of section nodes whose blocks or meshes changed, filled by `LevelExtractorMixin` and `RenderSectionMixin` only while voxel lighting is on, so it costs one volatile read when off. Overflow clears it and asks for a full rebuild.
 - Depends on: nothing of this mod.
+
+#### VoxelLightColors
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/VoxelLightColors.java`
+- Role: Client reload listener for `assets/helion/voxel_light/colors.json` (block id to linear RGB; resource packs can replace it). `color(state)` returns the listed color, else the map color of the block, else warm white, normalized to luminance 1 so every light keeps the vanilla brightness. A reload raises its version so cached colors and the volume are rebuilt.

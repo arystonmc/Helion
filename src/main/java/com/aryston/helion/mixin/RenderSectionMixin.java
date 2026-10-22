@@ -33,7 +33,7 @@ abstract class RenderSectionMixin implements ShadowCasterMember {
     private void helion$meshReplaced(CallbackInfoReturnable<?> callback) {
         SectionRenderDispatcher.RenderSection section = (SectionRenderDispatcher.RenderSection) (Object) this;
         ShadowCasterChanges.meshChanged(section);
-        VoxelSectionChanges.meshChanged(section.getSectionNode());
+        VoxelSectionChanges.sectionChanged(section.getSectionNode());
     }
 
     @Inject(
@@ -43,6 +43,6 @@ abstract class RenderSectionMixin implements ShadowCasterMember {
     private void helion$meshReset(CallbackInfo callback) {
         SectionRenderDispatcher.RenderSection section = (SectionRenderDispatcher.RenderSection) (Object) this;
         ShadowCasterChanges.meshChanged(section);
-        VoxelSectionChanges.meshChanged(section.getSectionNode());
+        VoxelSectionChanges.sectionChanged(section.getSectionNode());
     }
 }

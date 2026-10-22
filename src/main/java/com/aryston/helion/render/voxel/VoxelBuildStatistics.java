@@ -22,6 +22,11 @@ public final class VoxelBuildStatistics {
     private double lastFillCpuMillis;
     private double lastFillWallMillis;
     private int lastFrameSections;
+    private int gridLights;
+    private double lastGridMillis;
+    private double maxGridMillis;
+    private long lastChangeLatency;
+    private long maxChangeLatency;
 
     void beginFrame(int pending, long startNanos) {
         if (!filling && pending == VoxelVolumeLayout.SECTION_COUNT) {
@@ -57,6 +62,17 @@ public final class VoxelBuildStatistics {
         }
     }
 
+    void recordLightGrid(int lights, long nanos) {
+        gridLights = lights;
+        lastGridMillis = nanos / NANOS_PER_MILLI;
+        maxGridMillis = Math.max(maxGridMillis, lastGridMillis);
+    }
+
+    void recordChangeLatency(long frames) {
+        lastChangeLatency = frames;
+        maxChangeLatency = Math.max(maxChangeLatency, frames);
+    }
+
     void reset() {
         filling = false;
         lastFrameMillis = 0.0;
@@ -82,6 +98,26 @@ public final class VoxelBuildStatistics {
 
     public double lastFillWallMillis() {
         return lastFillWallMillis;
+    }
+
+    public long lastChangeLatency() {
+        return lastChangeLatency;
+    }
+
+    public long maxChangeLatency() {
+        return maxChangeLatency;
+    }
+
+    public int gridLights() {
+        return gridLights;
+    }
+
+    public double lastGridMillis() {
+        return lastGridMillis;
+    }
+
+    public double maxGridMillis() {
+        return maxGridMillis;
     }
 
     public double maxFillFrameMillis() {

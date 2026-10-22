@@ -16,6 +16,7 @@ public final class VoxelVolumeWindow {
     private int centerY;
     private int centerZ;
     private int pending = VoxelVolumeLayout.SECTION_COUNT;
+    private int version;
 
     public VoxelVolumeWindow() {
         Arrays.fill(held, NO_SECTION);
@@ -78,6 +79,7 @@ public final class VoxelVolumeWindow {
         if (!ready[slot]) {
             ready[slot] = true;
             pending--;
+            version++;
         }
     }
 
@@ -86,6 +88,14 @@ public final class VoxelVolumeWindow {
             && VoxelVolumeLayout.inWindow(VoxelVolumeLayout.keyX(sectionKey), VoxelVolumeLayout.windowMin(centerX))
             && VoxelVolumeLayout.inWindow(VoxelVolumeLayout.keyY(sectionKey), VoxelVolumeLayout.windowMin(centerY))
             && VoxelVolumeLayout.inWindow(VoxelVolumeLayout.keyZ(sectionKey), VoxelVolumeLayout.windowMin(centerZ));
+    }
+
+    public boolean isReady(int slot) {
+        return ready[slot];
+    }
+
+    public int version() {
+        return version;
     }
 
     public int pendingCount() {
@@ -108,6 +118,7 @@ public final class VoxelVolumeWindow {
         if (ready[slot]) {
             ready[slot] = false;
             pending++;
+            version++;
         }
     }
 

@@ -7,6 +7,7 @@ import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.shader.FullscreenPass;
 import com.aryston.helion.render.shadow.ShadowLight;
 import com.aryston.helion.render.shadow.ShadowResults;
+import com.aryston.helion.render.voxel.VoxelLightResults;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
@@ -33,6 +34,7 @@ public final class DeferredLightingStage implements RenderStage {
 
     private final DeferredLightingResources resources;
     private @Nullable DeferredLightingPrograms programs;
+    private @Nullable DeferredLightingPrograms voxelPrograms;
 
     public DeferredLightingStage(DeferredLightingResources resources) {
         this.resources = resources;
@@ -56,12 +58,14 @@ public final class DeferredLightingStage implements RenderStage {
             return false;
         }
         programs = compiled.get();
+        voxelPrograms = frame.voxels().targets().isPresent() ? voxelPrograms() : null;
         return true;
     }
 
     @Override
     public void addTo(FrameContext frame) {
-        DeferredLightingPrograms compiled = Objects.requireNonNull(programs);
+        Optional<VoxelLightResults.Targets> voxel = voxelPrograms == null ? Optional.empty() : frame.voxels().targets();
+        DeferredLightingPrograms compiled = voxel.isPresent() ? Objects.requireNonNull(voxelPrograms) : Objects.requireNonNull(programs);
         GeometryBuffer.Targets geometry = frame.geometry().targets().orElseThrow();
         Optional<SkyLight> skyLight = frame.atmosphere().skyLight();
         Optional<ShadowResults.Shadows> shadows = skyLight.isPresent() ? frame.shadows().shadows() : Optional.empty();
@@ -73,6 +77,10 @@ public final class DeferredLightingStage implements RenderStage {
             pass.reads(light.irradiance());
         });
         shadows.ifPresent(shadow -> pass.reads(shadow.mask()));
+        voxel.ifPresent(targets -> {
+            pass.reads(targets.light());
+            pass.reads(targets.confidence());
+        });
         ResourceHandle<RenderTarget> scene = pass.readsAndWrites(frame.targets().scene());
         frame.targets().updateScene(scene);
         Optional<ResourceHandle<RenderTarget>> indirectShare = shadows.map(shadow -> pass.createsInternal(INDIRECT_SHARE_TARGET, new RenderTargetDescriptor(
@@ -97,6 +105,7 @@ public final class DeferredLightingStage implements RenderStage {
                 renderPass.setUniform(DeferredLightingPipelines.GEOMETRY_LIGHT_SAMPLER, colorView(geometry.light()), nearest());
                 skyLight.ifPresent(light -> bindSkyLight(renderPass, geometry, light));
                 shadows.ifPresent(shadow -> renderPass.setUniform(DeferredLightingPipelines.SHADOW_MASK_SAMPLER, colorView(shadow.mask()), nearest()));
+                voxel.ifPresent(voxelTargets -> bindVoxelLight(renderPass, voxelTargets));
             });
             resources.finishFrame();
         }));
@@ -110,6 +119,20 @@ public final class DeferredLightingStage implements RenderStage {
             return lightOnly ? compiled.physicalSkyLightOnlyView() : compiled.physicalSkyShading();
         }
         return lightOnly ? compiled.lightOnlyView() : compiled.shading();
+    }
+
+    private @Nullable DeferredLightingPrograms voxelPrograms() {
+        Optional<DeferredLightingPrograms> compiled = DeferredLightingPrograms.compileVoxel();
+        if (compiled.isEmpty()) {
+            resources.reportMissingVoxelPipelines();
+        }
+        return compiled.orElse(null);
+    }
+
+    private static void bindVoxelLight(RenderPass renderPass, VoxelLightResults.Targets targets) {
+        GpuSampler linear = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
+        renderPass.setUniform(DeferredLightingPipelines.VOXEL_LIGHT_SAMPLER, colorView(targets.light()), linear);
+        renderPass.setUniform(DeferredLightingPipelines.VOXEL_CONFIDENCE_SAMPLER, colorView(targets.confidence()), linear);
     }
 
     private static void bindSkyLight(RenderPass renderPass, GeometryBuffer.Targets geometry, SkyLight light) {

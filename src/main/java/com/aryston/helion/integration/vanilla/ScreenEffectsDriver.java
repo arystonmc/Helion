@@ -14,6 +14,7 @@ import com.aryston.helion.render.shadow.ShadowResults;
 import com.aryston.helion.render.temporal.FrameSize;
 import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalFrame;
+import com.aryston.helion.render.voxel.VoxelLightResults;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import java.util.Objects;
@@ -60,7 +61,8 @@ final class ScreenEffectsDriver {
                 temporal,
                 new AtmosphereResults(),
                 new ShadowResults(),
-                new PostResults()
+                new PostResults(),
+                new VoxelLightResults()
             );
             core.recordFrame(frame.camera(), frame.scene());
             FrameStages.buildScreenEffects(frame);

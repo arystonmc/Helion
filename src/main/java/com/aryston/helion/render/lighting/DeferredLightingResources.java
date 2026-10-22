@@ -40,6 +40,7 @@ public final class DeferredLightingResources {
     private final GpuResources resources;
     private @Nullable UniformRing uniforms;
     private boolean missingPipelinesReported;
+    private boolean missingVoxelPipelinesReported;
 
     public DeferredLightingResources(GpuResources resources) {
         this.resources = resources;
@@ -87,6 +88,13 @@ public final class DeferredLightingResources {
         if (!missingPipelinesReported) {
             missingPipelinesReported = true;
             LOGGER.warn("Helion deferred lighting is skipped because its shaders could not be compiled");
+        }
+    }
+
+    void reportMissingVoxelPipelines() {
+        if (!missingVoxelPipelinesReported) {
+            missingVoxelPipelinesReported = true;
+            LOGGER.warn("Helion voxel lighting falls back to vanilla block light because its shading shaders could not be compiled");
         }
     }
 

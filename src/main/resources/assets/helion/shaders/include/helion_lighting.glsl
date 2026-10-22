@@ -1,6 +1,8 @@
 #ifndef HELION_LIGHTING_GLSL
 #define HELION_LIGHTING_GLSL
 
+#include <helion:helion_light_level.glsl>
+
 layout(std140) uniform HelionLighting {
     float SkyFactor;
     float BlockFactor;
@@ -20,14 +22,8 @@ layout(std140) uniform HelionLighting {
     float MoonShadowStrength;
 };
 
-const float HELION_LIGHT_LEVELS = 15.0;
-const float HELION_BRIGHTNESS_CURVE = 3.0;
 const float HELION_BLOCK_TINT_FADE = 0.9;
 const vec3 HELION_BOSS_DARKENING_TINT = vec3(0.7, 0.6, 0.6);
-
-float helionLevelBrightness(float level) {
-    return level / (HELION_BRIGHTNESS_CURVE + 1.0 - HELION_BRIGHTNESS_CURVE * level);
-}
 
 vec3 helionSkyTerm(float level, vec3 skyColor) {
     return skyColor * helionLevelBrightness(level) * SkyFactor;

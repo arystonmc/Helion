@@ -15,7 +15,7 @@ public final class VoxelSectionChanges {
     private VoxelSectionChanges() {
     }
 
-    public static void meshChanged(long sectionNode) {
+    public static void sectionChanged(long sectionNode) {
         if (!collecting || overflowed) {
             return;
         }

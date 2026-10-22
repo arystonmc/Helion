@@ -32,7 +32,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | Dynamic lights from held and dropped items | `DynamicLightTracker` (sources, entity light), `DynamicLightEmitters` (item and fire luminance), `DynamicLightResources` (uniform), `VanillaDynamicLightPipelines`, `VanillaTerrainSource`, `EntityRendererMixin`, `shaders/terrain/dynamic_light.vsh`, `shaders/include/helion_dynamic_light.glsl` |
 | GPU time of every preset in one run | `GpuProfile`, `HelionPresetSettings` |
 | Sun and moon shadows: cascades, shadow map, mask | `ShadowStage`, `ShadowCascades` (splits, fitting, texel snapping), `ShadowCascadeCache` (which cascades are drawn this frame), `ShadowLight` (sun or moon, horizon fade), `ShadowResources`, `VanillaShadowCasterSource`, `ShadowCasterSections` (incremental cached caster sections), `ShadowCasterChanges`, `ShadowCasterMember`, `RenderSectionMixin`, `VanillaShadowPipelines`, `shaders/shadow/`, `shaders/include/helion_shadow.glsl`, `deferred_shading.fsh` (`HELION_SHADOWS`) |
-| Voxel lighting volume (in development) and the voxel slice view | `VoxelVolume`, `VoxelVolumeLayout`, `VoxelVolumeWindow`, `VanillaVoxelSource`, `VoxelBlockClasses`, `VoxelSectionChanges`, `VoxelSliceStage`, `shaders/voxel/`, `shaders/include/helion_voxel.glsl` |
+| Voxel lighting: volume, light grid, traced colored block light, slice view | `VoxelVolume`, `VoxelVolumeLayout`, `VoxelVolumeWindow`, `VoxelCoarseLevel`, `VoxelLightGrid`, `VoxelLightStage`, `VanillaVoxelSource`, `VoxelBlockClasses`, `VoxelLightColors`, `VoxelSectionChanges`, `LevelExtractorMixin`, `VoxelSliceStage`, `DeferredLightingStage` (`HELION_VOXEL_LIGHT`), `shaders/voxel/`, `voxel_light/colors.json`, `shaders/include/helion_voxel.glsl` |
 | Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines`, `DeferredLightingPipelines`, `TemporalPipelines`, `PhysicalSkyPipelines`, `CloudPipelines`, `LightShaftPipelines`, `ImagePipelines` |
 | How vanilla terrain, entities, sky or OIT are called | `VanillaTerrainSource`, `VanillaEntitySource`, `VanillaAtmosphereSource`, `VanillaTransparencySource` |
 | The rebuilt vanilla `LevelRenderer.render` | `VanillaFrameDriver` |
@@ -67,8 +67,8 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | `com.aryston.helion.config` | [config.md](codemap/config.md) | 8 | Config spec, presets, settings screen and share codes. |
 | `com.aryston.helion.debug` | [debug.md](codemap/debug.md) | 13 | Debug overlay, GPU profile, visual test and pixel parity tools. |
 | `com.aryston.helion.integration` | [integration.md](codemap/integration.md) | 5 | Event wiring, key bindings, parity control and the Sodium and Iris guard. |
-| `com.aryston.helion.integration.vanilla` | [integration.vanilla.md](codemap/integration.vanilla.md) | 31 | Bridges to vanilla frame, terrain, entity, shadow caster and dynamic light sources. |
-| `com.aryston.helion.mixin` | [mixin.md](codemap/mixin.md) | 8 | Mixins and accessors on vanilla renderers. |
+| `com.aryston.helion.integration.vanilla` | [integration.vanilla.md](codemap/integration.vanilla.md) | 32 | Bridges to vanilla frame, terrain, entity, shadow caster and dynamic light sources. |
+| `com.aryston.helion.mixin` | [mixin.md](codemap/mixin.md) | 9 | Mixins and accessors on vanilla renderers. |
 | `com.aryston.helion.render.atmosphere` | [render.atmosphere.md](codemap/render.atmosphere.md) | 14 | Physical sky, atmosphere spectrum, sky light and scene fog. |
 | `com.aryston.helion.render.clouds` | [render.clouds.md](codemap/render.clouds.md) | 9 | Volumetric clouds stage, resources, settings and pipelines. |
 | `com.aryston.helion.render.backend` | [render.backend.md](codemap/render.backend.md) | 1 | GPU device summary. |
@@ -86,13 +86,13 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | `com.aryston.helion.render.scene` | [render.scene.md](codemap/render.scene.md) | 2 | Scene snapshot and clear stage. |
 | `com.aryston.helion.render.shader` | [render.shader.md](codemap/render.shader.md) | 2 | Shared pipelines and the fullscreen pass. |
 | `com.aryston.helion.render.shadow` | [render.shadow.md](codemap/render.shadow.md) | 11 | Shadow cascades, cascade cache, shadow light, casters and pipelines. |
-| `com.aryston.helion.render.voxel` | [render.voxel.md](codemap/render.voxel.md) | 12 | Voxel lighting: block volume around the camera, its addressing and the voxel slice view. |
+| `com.aryston.helion.render.voxel` | [render.voxel.md](codemap/render.voxel.md) | 22 | Voxel lighting: block volume around the camera, light grid, traced direct block light and the voxel slice view. |
 | `com.aryston.helion.render.temporal` | [render.temporal.md](codemap/render.temporal.md) | 11 | Temporal anti-aliasing, jitter, history, previous view and render scale. |
 
 ## Other Files
 
 | Topic | Code map file | Contents |
 |---|---|---|
-| Tests | [tests.md](codemap/tests.md) | 26 JUnit test files under `src/test/`. |
+| Tests | [tests.md](codemap/tests.md) | 27 JUnit test files under `src/test/`. |
 | Source files and asset folders | [resources.md](codemap/resources.md) | Non-Java files under `src/` and asset folders. |
 | Build files | [build.md](codemap/build.md) | Gradle and CI files. |

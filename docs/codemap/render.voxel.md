@@ -6,15 +6,31 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelLightingMode
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightingMode.java`
-- Role: `OFF` (no work at all) or `SHADER` (the voxel volume is kept up to date). A later ray traced mode gets its own value.
+- Role: `OFF` (no work at all) or `SHADER` (the voxel volume is kept up to date and block light is traced through it). A later ray traced mode gets its own value.
 
 #### VoxelLightingSettings
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightingSettings.java`
-- Role: Player setting of voxel lighting, part of `RenderSettings`; `enabled()` is true for every mode but `OFF`.
+- Role: Player settings of voxel lighting (mode and quality), part of `RenderSettings`; `enabled()` is true for every mode but `OFF`.
+
+#### VoxelLightingQuality
+- Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightingQuality.java`
+- Role: Lights traced per pixel and resolution divisor: Low 1 at half resolution, Medium 2 at half, High 4 at full.
 
 #### VoxelClass
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelClass.java`
-- Role: Byte per block of the volume: occupancy in bits 0 to 1 (`EMPTY`, `OPAQUE`, `PARTIAL`, `TRANSLUCENT`) and the light emission 0 to 15 in bits 4 to 7.
+- Role: Byte per block of the volume: occupancy in bits 0 to 1 (`EMPTY`, `OPAQUE` = blocks light, `PARTIAL`, `TRANSLUCENT`) and the light emission 0 to 15 in bits 4 to 7.
+
+#### VoxelCoarseLevel
+- Path: `src/main/java/com/aryston/helion/render/voxel/VoxelCoarseLevel.java`
+- Role: Coarse level of the volume: one byte per 4 x 4 x 4 blocks (`BLOCKED` when any block in it blocks light), an 8 x 8 brick per section (4 slices of 4 x 4 laid 2 x 2) in a 256 x 128 atlas with the same slots as the block atlas. `build` derives it from a block brick.
+
+#### VoxelLight, VoxelLightSink
+- Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLight.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelLightSink.java`
+- Role: A light source block found while reading a section (world block position, level, linear color normalized to luminance 1) and the callback that receives them.
+
+#### VoxelLightGrid
+- Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightGrid.java`
+- Role: Pure CPU light grid: keeps the 1024 lights nearest to the camera and lists for every 8 x 8 x 8 cell of the volume (16 x 16 x 16 cells) up to 16 lights whose level reaches the cell by taxicab distance, keeping the strongest when more do.
 
 #### VoxelVolumeLayout
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelVolumeLayout.java`
@@ -27,24 +43,37 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelSource
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelSource.java`
-- Role: Contract for reading the world: a level generation that changes with the level, the queue of changed section keys and `readSection`, which writes all 4096 bytes of one brick.
+- Role: Contract for reading the world: a level generation that changes with the level or the light colors, the queue of changed section keys and `readSection`, which writes all 4096 bytes of one brick and reports its light sources to a `VoxelLightSink`.
 
 #### VoxelVolume
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelVolume.java`
-- Role: The R8_UNORM atlas texture (registered in `GpuResources`) and its window. Once per frame, before the frame graph runs, applies changed sections, recenters on the camera and rebuilds pending sections nearest first within 1 ms of CPU time, each with one `writeToTexture` of its brick.
-- Depends on: `VoxelVolumeWindow`, `VoxelSource`, `VoxelBuildStatistics`.
+- Role: The block atlas, the coarse atlas and the 32 x 16 ready-slot table (all R8_UNORM) and its window. Once per frame, before the frame graph runs, applies changed sections, recenters on the camera and rebuilds pending sections nearest first within 1 ms of CPU time, each with one `writeToTexture` of its brick and one of its coarse brick; keeps the light sources of every slot, uploads the ready table when a slot changed state and rebuilds the light grid when the window moved or lights changed. Measures the frames from a section change to its upload.
+- Depends on: `VoxelVolumeWindow`, `VoxelSource`, `VoxelCoarseLevel`, `VoxelLightGrid`, `VoxelLightTextures`, `VoxelBuildStatistics`.
+
+#### VoxelTexture
+- Path: `src/main/java/com/aryston/helion/render/voxel/VoxelTexture.java`
+- Role: One sampled voxel lighting texture with its view, registered in `GpuResources`, with region and whole uploads.
+
+#### VoxelLightTextures
+- Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightTextures.java`
+- Role: Uploads a `VoxelLightGrid`: the light list as a 1024 x 2 RGBA32_FLOAT texture (row 0 position relative to the volume corner and level, row 1 color) and the grid as a 256 x 256 R16_UNORM texture (light index + 1 per cell slot, 0 for none).
+
+#### VoxelLightPipelines, VoxelLightStage, VoxelLightResults
+- Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightPipelines.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelLightStage.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelLightResults.java`
+- Role: The direct light pass `voxel_light` (`voxel/direct_light.fsh`), right after the shadow stage: per terrain pixel at the resolution of the quality it evaluates the lights of its grid cell with the vanilla falloff of one level per block, traces the strongest ones through the volume and writes the unshadowed colored block light and its visible share (RGBA16_FLOAT) and a confidence (R8: 0 near the volume edge or where a ray crossed a slot that is not ready). `VoxelLightResults` hands both targets to `DeferredLightingStage`.
+- Depends on: `VoxelLightingResources`, `FullscreenPass`.
 
 #### VoxelVolumeView
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelVolumeView.java`
-- Role: The atlas texture view and the lowest block corner of the volume, for passes that read it.
+- Role: The texture views of the volume (blocks, coarse level, ready slots, light list, light grid), its lowest block corner and the light count, for passes that read it.
 
 #### VoxelBuildStatistics
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelBuildStatistics.java`
-- Role: CPU time of the volume update per frame (last and running average) and of the last full fill, which it also logs as `Helion voxel volume filled` once all 512 sections are built.
+- Role: CPU time of the volume update per frame (last and running average), of the last full fill (also logged as `Helion voxel volume filled` once all 512 sections are built) and of the light grid builds, and the frames from a section change to its upload.
 
 #### VoxelLightingResources
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightingResources.java`
-- Role: Owned by `HelionRenderCore`. `update` runs the volume while the mode is not `OFF` and releases it when the mode turns off; also keeps the uniform ring of the slice view.
+- Role: Owned by `HelionRenderCore`. `update` runs the volume while the mode is not `OFF` and releases it when the mode turns off; also keeps the uniform rings of the slice view and the direct light pass and warns once when the light pass did not compile.
 - Depends on: `VoxelVolume`, `UniformRing`.
 
 #### VoxelSlicePipelines

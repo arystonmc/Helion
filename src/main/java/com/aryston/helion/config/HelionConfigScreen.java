@@ -41,7 +41,8 @@ public final class HelionConfigScreen {
                     .add(options.ambientOcclusionStrength).add(options.ambientOcclusionRadius))
                 .section(text("section.hdr"), section -> section.add(options.lighting).add(options.blockLight).add(options.skyLight))
                 .section(text("section.shadows"), section -> section.add(options.shadows))
-                .fullSection(text("section.dynamicLights"), section -> section.add(options.dynamicLights)))
+                .fullSection(text("section.dynamicLights"), section -> section.add(options.dynamicLights))
+                .fullSection(text("section.voxelLighting"), section -> section.add(options.voxelLighting).add(options.voxelLightingQuality)))
             .page("effects", text("page.effects"), Icons.SPARKLE, page -> page
                 .section(text("section.bloom"), section -> section.add(options.bloom).add(options.bloomIntensity).add(options.bloomThreshold))
                 .section(text("section.image"), section -> section.add(options.toneMapper).add(options.exposure).add(options.autoExposure).add(options.colorGrade).add(options.edgeSmoothing).add(options.dither))
@@ -54,7 +55,6 @@ public final class HelionConfigScreen {
                 .fullSection(text("section.quality"), section -> section.add(options.ambientOcclusionQuality).add(options.shadowQuality).add(options.cloudQuality).add(options.renderScale)))
             .page("advanced", text("page.advanced"), Icons.CMD, page -> page
                 .fullSection(text("section.debug"), section -> section.add(options.debugMode))
-                .fullSection(text("section.voxelLighting"), section -> section.add(options.voxelLighting))
                 .fullSection(text("section.views"), section -> section.collapsible(false).add(options.ambientOcclusionView).add(options.bloomView)
                     .add(options.geometryBufferView).add(options.lightView)))
             .build(parent);

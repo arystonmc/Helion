@@ -3,6 +3,7 @@ package com.aryston.helion.render.lighting;
 import com.aryston.helion.render.shader.HelionPipelines;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import java.util.List;
 import java.util.Optional;
 
 record DeferredLightingPrograms(
@@ -14,16 +15,20 @@ record DeferredLightingPrograms(
     CompiledRenderPipeline shadowedLightOnlyView
 ) {
     static Optional<DeferredLightingPrograms> compile() {
-        if (DeferredLightingPipelines.all().stream().anyMatch(pipeline -> HelionPipelines.compiled(pipeline).isEmpty())) {
+        return compile(DeferredLightingPipelines.standard());
+    }
+
+    static Optional<DeferredLightingPrograms> compileVoxel() {
+        return compile(DeferredLightingPipelines.voxel());
+    }
+
+    private static Optional<DeferredLightingPrograms> compile(List<RenderPipeline> pipelines) {
+        if (pipelines.stream().anyMatch(pipeline -> HelionPipelines.compiled(pipeline).isEmpty())) {
             return Optional.empty();
         }
+        List<CompiledRenderPipeline> compiled = pipelines.stream().map(DeferredLightingPrograms::get).toList();
         return Optional.of(new DeferredLightingPrograms(
-            get(DeferredLightingPipelines.SHADING),
-            get(DeferredLightingPipelines.LIGHT_ONLY_VIEW),
-            get(DeferredLightingPipelines.PHYSICAL_SKY_SHADING),
-            get(DeferredLightingPipelines.PHYSICAL_SKY_LIGHT_ONLY_VIEW),
-            get(DeferredLightingPipelines.SHADOWED_SHADING),
-            get(DeferredLightingPipelines.SHADOWED_LIGHT_ONLY_VIEW)
+            compiled.get(0), compiled.get(1), compiled.get(2), compiled.get(3), compiled.get(4), compiled.get(5)
         ));
     }
 

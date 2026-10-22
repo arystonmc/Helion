@@ -24,6 +24,7 @@ import com.aryston.helion.render.shadow.ShadowSettings;
 import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalSettings;
 import com.aryston.helion.render.voxel.VoxelLightingMode;
+import com.aryston.helion.render.voxel.VoxelLightingQuality;
 import com.aryston.helion.render.voxel.VoxelLightingSettings;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -88,6 +89,7 @@ public final class HelionConfig {
     static final ModConfigSpec.BooleanValue LIGHT_ONLY_VIEW;
     static final ModConfigSpec.BooleanValue DYNAMIC_LIGHTS_ENABLED;
     static final ModConfigSpec.EnumValue<VoxelLightingMode> VOXEL_LIGHTING_MODE;
+    static final ModConfigSpec.EnumValue<VoxelLightingQuality> VOXEL_LIGHTING_QUALITY;
     static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
     static final ModConfigSpec.EnumValue<RenderScale> RENDER_SCALE;
     static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
@@ -216,6 +218,9 @@ public final class HelionConfig {
         VOXEL_LIGHTING_MODE = BUILDER
             .translation("helion.configuration.voxelLighting.mode")
             .defineEnum("mode", VoxelLightingMode.OFF);
+        VOXEL_LIGHTING_QUALITY = BUILDER
+            .translation("helion.configuration.voxelLighting.quality")
+            .defineEnum("quality", VoxelLightingQuality.MEDIUM);
         BUILDER.pop();
 
         BUILDER.translation("helion.configuration.temporalAntiAliasing").push("temporalAntiAliasing");
@@ -277,7 +282,7 @@ public final class HelionConfig {
             new ShadowSettings(SHADOWS_ENABLED.getAsBoolean(), SHADOW_QUALITY.get()),
             new DynamicLightSettings(DYNAMIC_LIGHTS_ENABLED.getAsBoolean()),
             new CloudSettings(CLOUDS_ENABLED.getAsBoolean(), CLOUD_QUALITY.get()),
-            new VoxelLightingSettings(VOXEL_LIGHTING_MODE.get())
+            new VoxelLightingSettings(VOXEL_LIGHTING_MODE.get(), VOXEL_LIGHTING_QUALITY.get())
         );
     }
 

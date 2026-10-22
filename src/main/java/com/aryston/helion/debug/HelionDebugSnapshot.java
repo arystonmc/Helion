@@ -224,6 +224,13 @@ public final class HelionDebugSnapshot {
         section.addProperty("fillCpuMs", round(statistics.lastFillCpuMillis()));
         section.addProperty("fillWallMs", round(statistics.lastFillWallMillis()));
         section.addProperty("fillMaxFrameMs", round(statistics.maxFillFrameMillis()));
+        section.addProperty("quality", settings.quality().name());
+        section.addProperty("lights", resources.lightCount());
+        section.addProperty("gridLights", statistics.gridLights());
+        section.addProperty("gridMs", round(statistics.lastGridMillis()));
+        section.addProperty("gridMaxMs", round(statistics.maxGridMillis()));
+        section.addProperty("changeLatencyFrames", statistics.lastChangeLatency());
+        section.addProperty("changeLatencyMaxFrames", statistics.maxChangeLatency());
         return section;
     }
 

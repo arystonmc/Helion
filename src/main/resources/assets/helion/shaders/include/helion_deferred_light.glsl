@@ -22,14 +22,20 @@ vec3 helionSkyLightColor(ivec2 pixel) {
     return SkyLightColor;
 }
 
-vec4 helionDeferredLight(ivec2 pixel, vec4 levels) {
-    vec3 ambient = helionAmbientTerm();
+vec3 helionDeferredBase(ivec2 pixel, vec4 levels) {
     vec3 sky = helionInterpolatedSkyTerm(levels.g, helionSkyLightColor(pixel));
-    vec3 block = helionInterpolatedBlockTerm(levels.r);
-    vec3 light = helionAdjustLight(ambient + sky * SkyLightIntensity + block * BlockLightIntensity);
+    return helionAmbientTerm() + sky * SkyLightIntensity;
+}
+
+vec4 helionDeferredLightWithBlock(ivec2 pixel, vec4 levels, vec3 block) {
+    vec3 light = helionAdjustLight(helionDeferredBase(pixel, levels) + block * BlockLightIntensity);
     vec3 referenceSky = helionInterpolatedSkyTerm(levels.g, SkyLightColor);
-    float reference = max(helionMaxComponent(helionAdjustLight(ambient + referenceSky)) * HELION_SKY_ADAPTATION, HELION_MIN_REFERENCE_LIGHT);
+    float reference = max(helionMaxComponent(helionAdjustLight(helionAmbientTerm() + referenceSky)) * HELION_SKY_ADAPTATION, HELION_MIN_REFERENCE_LIGHT);
     return vec4(light, reference);
+}
+
+vec4 helionDeferredLight(ivec2 pixel, vec4 levels) {
+    return helionDeferredLightWithBlock(pixel, levels, helionInterpolatedBlockTerm(levels.r));
 }
 
 #endif

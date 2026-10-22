@@ -16,16 +16,25 @@ const int HELION_VOXEL_OPAQUE = 1;
 const int HELION_VOXEL_PARTIAL = 2;
 const int HELION_VOXEL_TRANSLUCENT = 3;
 const float HELION_VOXEL_BYTE_SCALE = 255.0;
+const int HELION_VOXEL_COARSE_SHIFT = 2;
+const int HELION_VOXEL_COARSE_CELLS = 4;
+const int HELION_VOXEL_COARSE_SLICES_PER_ROW = 2;
+const int HELION_VOXEL_COARSE_BRICK_SIZE = 8;
+const float HELION_VOXEL_PRESENT_THRESHOLD = 0.5;
 
 bool helionVoxelInVolume(ivec3 block, ivec3 volumeMin, int volumeSize) {
     ivec3 offset = block - volumeMin;
     return all(greaterThanEqual(offset, ivec3(0))) && all(lessThan(offset, ivec3(volumeSize)));
 }
 
-ivec2 helionVoxelTexel(ivec3 block) {
+int helionVoxelSlot(ivec3 block) {
     ivec3 slot = (block >> HELION_VOXEL_SECTION_SHIFT) & HELION_VOXEL_AXIS_MASK;
+    return slot.x + HELION_VOXEL_SECTIONS_PER_AXIS * (slot.y + HELION_VOXEL_SECTIONS_PER_AXIS * slot.z);
+}
+
+ivec2 helionVoxelTexel(ivec3 block) {
     ivec3 local = block & HELION_VOXEL_SECTION_MASK;
-    int brick = slot.x + HELION_VOXEL_SECTIONS_PER_AXIS * (slot.y + HELION_VOXEL_SECTIONS_PER_AXIS * slot.z);
+    int brick = helionVoxelSlot(block);
     ivec2 brickOrigin = ivec2(brick % HELION_VOXEL_BRICKS_PER_ROW, brick / HELION_VOXEL_BRICKS_PER_ROW) * HELION_VOXEL_BRICK_SIZE;
     ivec2 slice = ivec2(local.y % HELION_VOXEL_SLICES_PER_ROW, local.y / HELION_VOXEL_SLICES_PER_ROW) * HELION_VOXEL_SECTION_SIZE;
     return brickOrigin + slice + local.xz;
@@ -33,6 +42,20 @@ ivec2 helionVoxelTexel(ivec3 block) {
 
 int helionVoxelFetch(sampler2D volume, ivec3 block) {
     return int(texelFetch(volume, helionVoxelTexel(block), 0).r * HELION_VOXEL_BYTE_SCALE + 0.5);
+}
+
+bool helionVoxelSlotReady(sampler2D ready, ivec3 block) {
+    int slot = helionVoxelSlot(block);
+    ivec2 texel = ivec2(slot % HELION_VOXEL_BRICKS_PER_ROW, slot / HELION_VOXEL_BRICKS_PER_ROW);
+    return texelFetch(ready, texel, 0).r > HELION_VOXEL_PRESENT_THRESHOLD;
+}
+
+bool helionVoxelCoarseBlocked(sampler2D coarse, ivec3 block) {
+    int brick = helionVoxelSlot(block);
+    ivec3 cell = (block & HELION_VOXEL_SECTION_MASK) >> HELION_VOXEL_COARSE_SHIFT;
+    ivec2 origin = ivec2(brick % HELION_VOXEL_BRICKS_PER_ROW, brick / HELION_VOXEL_BRICKS_PER_ROW) * HELION_VOXEL_COARSE_BRICK_SIZE;
+    ivec2 slice = ivec2(cell.y % HELION_VOXEL_COARSE_SLICES_PER_ROW, cell.y / HELION_VOXEL_COARSE_SLICES_PER_ROW) * HELION_VOXEL_COARSE_CELLS;
+    return texelFetch(coarse, origin + slice + cell.xz, 0).r > HELION_VOXEL_PRESENT_THRESHOLD;
 }
 
 int helionVoxelOccupancy(int voxel) {

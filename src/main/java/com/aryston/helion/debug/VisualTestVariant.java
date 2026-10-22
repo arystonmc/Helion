@@ -18,6 +18,8 @@ import com.aryston.helion.render.shadow.ShadowQuality;
 import com.aryston.helion.render.shadow.ShadowSettings;
 import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalSettings;
+import com.aryston.helion.render.voxel.VoxelLightingMode;
+import com.aryston.helion.render.voxel.VoxelLightingQuality;
 import com.aryston.helion.render.voxel.VoxelLightingSettings;
 import java.util.Locale;
 
@@ -33,6 +35,8 @@ enum VisualTestVariant {
     PHYSICAL_SKY(true, ToneMapper.NEUTRAL, false),
     SHADOWS(true, ToneMapper.NEUTRAL, false),
     SHADOW_LIGHT(true, ToneMapper.NEUTRAL, false),
+    VOXEL_LIGHT(true, ToneMapper.NEUTRAL, false),
+    VOXEL_LIGHT_LOW(true, ToneMapper.NEUTRAL, false),
     PARITY(true, ToneMapper.NEUTRAL, false);
 
     private static final CloudSettings VOLUMETRIC_CLOUDS = new CloudSettings(true, CloudQuality.MEDIUM);
@@ -68,7 +72,7 @@ enum VisualTestVariant {
                 showsShadows() ? new ShadowSettings(true, ShadowQuality.MEDIUM) : ShadowSettings.DISABLED,
                 DynamicLightSettings.DISABLED,
                 showsShadows() ? VOLUMETRIC_CLOUDS : CloudSettings.DISABLED,
-                VoxelLightingSettings.DISABLED
+                voxelLighting()
             );
         }
         if (this == TEMPORAL) {
@@ -120,7 +124,17 @@ enum VisualTestVariant {
     }
 
     private boolean showsDeferredLighting() {
-        return this == LIGHTING || this == LIGHT_ONLY || showsShadows();
+        return this == LIGHTING || this == LIGHT_ONLY || this == VOXEL_LIGHT || this == VOXEL_LIGHT_LOW || showsShadows();
+    }
+
+    private VoxelLightingSettings voxelLighting() {
+        if (this == VOXEL_LIGHT) {
+            return new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.MEDIUM);
+        }
+        if (this == VOXEL_LIGHT_LOW) {
+            return new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.LOW);
+        }
+        return VoxelLightingSettings.DISABLED;
     }
 
     private boolean showsShadows() {

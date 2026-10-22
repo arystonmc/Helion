@@ -6,6 +6,8 @@ import com.aryston.arkea.api.config.ConfigValues;
 import com.aryston.helion.render.clouds.CloudQuality;
 import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
 import com.aryston.helion.render.shadow.ShadowQuality;
+import com.aryston.helion.render.voxel.VoxelLightingMode;
+import com.aryston.helion.render.voxel.VoxelLightingQuality;
 import java.util.List;
 import net.minecraft.network.chat.Component;
 
@@ -56,6 +58,9 @@ final class HelionImpact {
         if (values.value(options.clouds)) {
             score += QUALITY_WEIGHT * values.value(options.cloudQuality).ordinal();
         }
+        if (values.value(options.voxelLighting) != VoxelLightingMode.OFF) {
+            score += options.voxelLighting.cost() + QUALITY_WEIGHT * values.value(options.voxelLightingQuality).ordinal();
+        }
         return score;
     }
 
@@ -64,7 +69,7 @@ final class HelionImpact {
         for (ConfigOption<Boolean> feature : features(options)) {
             maximum += feature.cost();
         }
-        return maximum + QUALITY_WEIGHT * (AmbientOcclusionQuality.values().length - 1 + ShadowQuality.values().length - 1
-            + CloudQuality.values().length - 1);
+        return maximum + options.voxelLighting.cost() + QUALITY_WEIGHT * (AmbientOcclusionQuality.values().length - 1 + ShadowQuality.values().length - 1
+            + CloudQuality.values().length - 1 + VoxelLightingQuality.values().length - 1);
     }
 }

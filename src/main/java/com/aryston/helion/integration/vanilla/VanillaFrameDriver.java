@@ -16,6 +16,7 @@ import com.aryston.helion.render.shadow.ShadowResults;
 import com.aryston.helion.render.scene.SceneSnapshot;
 import com.aryston.helion.render.temporal.FrameSize;
 import com.aryston.helion.render.temporal.TemporalFrame;
+import com.aryston.helion.render.voxel.VoxelLightResults;
 import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -153,7 +154,8 @@ final class VanillaFrameDriver {
                 temporal,
                 new AtmosphereResults(),
                 new ShadowResults(),
-                new PostResults()
+                new PostResults(),
+                new VoxelLightResults()
             );
             Optional<GpuBuffer> dynamicLights = HelionRenderCore.get().dynamicLights()
                 .upload(DynamicLightTracker.lights(camera.pos, settings.dynamicLights().enabled()));

@@ -4,6 +4,11 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 ### `com.aryston.helion.mixin`
 
+#### LevelExtractorMixin
+- Path: `src/main/java/com/aryston/helion/mixin/LevelExtractorMixin.java`
+- Role: Reports the section of every changed block to `VoxelSectionChanges` at the head of `LevelExtractor.blockChanged`, so the voxel volume reads it again in the same frame.
+- Notes: No client event reports a changed block.
+
 #### LevelRendererMixin
 - Path: `src/main/java/com/aryston/helion/mixin/LevelRendererMixin.java`
 - Role: Wraps `LevelRenderer.render` to hand the frame to `LevelRenderHook`, and wraps `GameRenderer.mainRenderTarget()` calls inside `LevelRenderer` so they resolve to the scene target during a Helion frame.

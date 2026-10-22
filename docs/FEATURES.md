@@ -181,13 +181,18 @@ Carry a torch into a cave and the cave lights up around you.
 - Settings: on or off on the Lighting page; on in every preset except Vanilla
 - Since: Unreleased
 
-### Voxel Lighting (In Development)
-Groundwork for light that bounces between blocks. It does not change the picture yet.
+### Voxel Lighting (Experimental)
+Torches, lanterns and every other glowing block light the world in their own color, and walls, pillars and roofs cast real shadows from them.
 
-- Keeps a small map of every block within 64 blocks of you: empty, solid, partial (plants, slabs, fences), see-through (water, stained glass) and how brightly it glows
-- Only the parts of the map you walk into or blocks that change are read again
-- The Voxel Slice view of the geometry buffer shows the map at your height from above, to check that blocks are in the right place
-- Settings: Off or Shader in the Advanced page; Off in every preset and by default, and Off does no work at all
+- Soul lanterns glow cyan, redstone torches red, amethyst purple, sea lanterns and end rods cool white, torches, lava and glowstone warm
+- A pillar next to a torch casts a shadow on the ground behind it; light no longer passes through solid blocks
+- Each light reaches exactly as far and as bright as in vanilla, so caves and bases keep their familiar brightness; around corners a little of the vanilla light stays until bounced light arrives
+- Breaking or placing a block updates the light right away
+- Works within 64 blocks of you; farther away, and for torches held in hand, the vanilla light stays
+- Resource packs can change the light colors (`assets/helion/voxel_light/colors.json`)
+- The Voxel Slice view of the geometry buffer shows the block map at your height from above
+- Needs HDR lighting
+- Settings: Off or Shader, and Low, Medium or High quality on the Lighting page; Shader at Medium in the Experimental preset, Off in every other preset and by default, and Off does no work at all
 - Since: Unreleased
 
 ### Sun and Moon Shadows (Experimental)

@@ -3,9 +3,11 @@ package com.aryston.helion.debug;
 import com.aryston.helion.config.HelionConfig;
 import com.aryston.helion.mixin.LevelRendererAccessor;
 import com.aryston.helion.render.HelionRenderCore;
+import com.aryston.helion.render.voxel.VoxelLightingResources;
 import com.mojang.logging.LogUtils;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -21,6 +23,9 @@ import org.slf4j.Logger;
 public final class VisualTest {
     private static final String PROPERTY = "helion.visualTest";
     private static final String NATURAL_SCENE_PROPERTY = "helion.visualTest.natural";
+    private static final String SCENES_PROPERTY = "helion.visualTest.scenes";
+    private static final String VARIANTS_PROPERTY = "helion.visualTest.variants";
+    private static final String LIST_SEPARATOR = "\\+";
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final int START_DELAY_TICKS = 200;
     private static final int SCENE_SETTLE_TICKS = 100;
@@ -31,7 +36,10 @@ public final class VisualTest {
     private static final boolean DEBUG_MODE_DURING_TEST = true;
 
     private final List<Shot> shots = VisualTestScene.ALL.stream()
-        .flatMap(scene -> Arrays.stream(VisualTestVariant.values()).map(variant -> new Shot(scene, variant)))
+        .filter(scene -> selected(SCENES_PROPERTY, scene.name()))
+        .flatMap(scene -> Arrays.stream(VisualTestVariant.values())
+            .filter(variant -> selected(VARIANTS_PROPERTY, variant.name().toLowerCase(Locale.ROOT)))
+            .map(variant -> new Shot(scene, variant)))
         .toList();
     private int nextShot;
     private int ticksUntilAction = START_DELAY_TICKS;
@@ -45,6 +53,11 @@ public final class VisualTest {
     private boolean parityStarted;
 
     private VisualTest() {
+    }
+
+    private static boolean selected(String property, String name) {
+        String list = System.getProperty(property);
+        return list == null || Arrays.asList(list.split(LIST_SEPARATOR)).contains(name);
     }
 
     public static Optional<VisualTest> requested() {
@@ -74,6 +87,10 @@ public final class VisualTest {
             return;
         }
         Shot shot = shots.get(nextShot);
+        VoxelLightingResources voxels = HelionRenderCore.get().voxelLighting();
+        if (voxels.active() && voxels.pendingSections() > 0) {
+            return;
+        }
         if (shot.variant().comparesWithVanilla()) {
             if (!parityFinished(shot, server)) {
                 return;
