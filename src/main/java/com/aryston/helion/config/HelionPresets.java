@@ -23,6 +23,7 @@ final class HelionPresets {
             .set(options.geometryBuffer, true)
             .set(options.lighting, true)
             .set(options.physicalSky, true)
+            .set(options.lightShafts, true)
             .set(options.clouds, true)
             .set(options.cloudQuality, CloudQuality.MEDIUM)
             .set(options.shadows, true)
@@ -32,6 +33,7 @@ final class HelionPresets {
             preset.set(options.geometryBuffer, false)
                 .set(options.lighting, false)
                 .set(options.physicalSky, false)
+                .set(options.lightShafts, false)
                 .set(options.clouds, false)
                 .set(options.shadows, false)
                 .set(options.temporal, false);

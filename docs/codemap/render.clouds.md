@@ -41,4 +41,4 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### SceneCloudPass
 - Path: `src/main/java/com/aryston/helion/render/clouds/SceneCloudPass.java`
-- Role: Contract of the cloud composite: `declareReads` adds the resolved clouds to the frame graph pass that draws it, `draw` blends them into the scene.
+- Role: Contract of the cloud composite: `resolved` is the resolved cloud color and transmittance of this frame (read by `LightShaftStage`), `declareReads` adds the resolved clouds to the frame graph pass that draws it, `draw` blends them into the scene.

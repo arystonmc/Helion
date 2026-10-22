@@ -41,6 +41,7 @@ final class HelionOptions {
     final ConfigOption<Boolean> physicalSky;
     final ConfigOption<StarDensity> starDensity;
     final ConfigOption<Boolean> milkyWay;
+    final ConfigOption<Boolean> lightShafts;
     final ConfigOption<Boolean> clouds;
     final ConfigOption<CloudQuality> cloudQuality;
     final ConfigOption<Boolean> ambientOcclusion;
@@ -87,6 +88,8 @@ final class HelionOptions {
         this.starDensity = choice("starDensity", HelionConfig.STAR_DENSITY, StarDensity.class, Icons.SPARKLE, "physicalSky.starDensity")
             .style(ChoiceStyle.SEGMENTED).requires(this.physicalSky);
         this.milkyWay = toggle("milkyWay", HelionConfig.MILKY_WAY, Icons.SPARKLE, "physicalSky.milkyWay").requires(this.physicalSky);
+        this.lightShafts = toggle("lightShafts", HelionConfig.LIGHT_SHAFTS, Icons.SUN, "physicalSky.lightShafts")
+            .cost(LOW_COST).requires(this.physicalSky);
         this.clouds = experimental(toggle("clouds", HelionConfig.CLOUDS_ENABLED, Icons.CLOUD, "clouds"))
             .cost(MEDIUM_COST).requires(this.physicalSky);
         this.cloudQuality = choice("cloudQuality", HelionConfig.CLOUD_QUALITY, CloudQuality.class, Icons.GAUGE, "clouds.quality")
@@ -153,7 +156,8 @@ final class HelionOptions {
     }
 
     List<ConfigOption<?>> all() {
-        return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.starDensity, this.milkyWay, this.clouds, this.cloudQuality, this.ambientOcclusion, this.ambientOcclusionMethod,
+        return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.starDensity, this.milkyWay, this.lightShafts, this.clouds, this.cloudQuality,
+            this.ambientOcclusion, this.ambientOcclusionMethod,
             this.ambientOcclusionQuality, this.ambientOcclusionStrength, this.ambientOcclusionRadius, this.lighting, this.blockLight, this.skyLight,
             this.dynamicLights, this.shadows, this.shadowQuality, this.renderScale, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.colorGrade, this.edgeSmoothing, this.dither,
             this.sharpening, this.sharpeningStrength, this.motionBlur, this.motionBlurStrength, this.depthOfField, this.depthOfFieldStrength, this.debugMode, this.ambientOcclusionView,

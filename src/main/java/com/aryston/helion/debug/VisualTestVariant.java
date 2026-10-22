@@ -1,6 +1,7 @@
 package com.aryston.helion.debug;
 
 import com.aryston.helion.render.atmosphere.PhysicalSkySettings;
+import com.aryston.helion.render.clouds.CloudQuality;
 import com.aryston.helion.render.clouds.CloudSettings;
 import com.aryston.helion.render.geometry.GeometryBufferSettings;
 import com.aryston.helion.render.geometry.GeometryBufferView;
@@ -33,6 +34,8 @@ enum VisualTestVariant {
     SHADOW_LIGHT(true, ToneMapper.NEUTRAL, false),
     PARITY(true, ToneMapper.NEUTRAL, false);
 
+    private static final CloudSettings VOLUMETRIC_CLOUDS = new CloudSettings(true, CloudQuality.MEDIUM);
+
     private final boolean helion;
     private final ToneMapper toneMapper;
     private final boolean bloomOnly;
@@ -63,7 +66,7 @@ enum VisualTestVariant {
                 showsShadows() ? PhysicalSkySettings.enabledWithDefaults() : PhysicalSkySettings.DISABLED,
                 showsShadows() ? new ShadowSettings(true, ShadowQuality.MEDIUM) : ShadowSettings.DISABLED,
                 DynamicLightSettings.DISABLED,
-                CloudSettings.DISABLED
+                showsShadows() ? VOLUMETRIC_CLOUDS : CloudSettings.DISABLED
             );
         }
         if (this == TEMPORAL) {
@@ -89,7 +92,7 @@ enum VisualTestVariant {
                 PhysicalSkySettings.enabledWithDefaults(),
                 ShadowSettings.DISABLED,
                 DynamicLightSettings.DISABLED,
-                CloudSettings.DISABLED
+                VOLUMETRIC_CLOUDS
             );
         }
         BloomSettings bloom = new BloomSettings(

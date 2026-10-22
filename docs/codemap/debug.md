@@ -41,7 +41,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VisualTestVariant
 - Path: `src/main/java/com/aryston/helion/debug/VisualTestVariant.java`
-- Role: Render variants per scene: vanilla, None, Neutral, Filmic, bloom only, lighting and light only (geometry buffer and deferred lighting on, every other effect off), temporal (only temporal anti-aliasing on), physical sky (only the physical sky on), shadows and shadow light (geometry buffer, deferred lighting, physical sky and medium shadows on, the second as light-only view), all for comparison with vanilla, and parity, each turning the core on or off and setting default image settings.
+- Role: Render variants per scene: vanilla, None, Neutral, Filmic, bloom only, lighting and light only (geometry buffer and deferred lighting on, every other effect off), temporal (only temporal anti-aliasing on), physical sky (only the physical sky and volumetric clouds at Medium on), shadows and shadow light (geometry buffer, deferred lighting, physical sky, volumetric clouds and medium shadows on, the second as light-only view), all for comparison with vanilla, and parity, each turning the core on or off and setting default image settings.
 
 #### VisualTestWorld
 - Path: `src/main/java/com/aryston/helion/debug/VisualTestWorld.java`

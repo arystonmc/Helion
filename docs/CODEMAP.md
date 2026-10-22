@@ -15,7 +15,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | I want to change | Go to |
 |---|---|
 | Stage order of a frame | `FrameStages` |
-| What a stage draws | `ClearStage`, `SkyStage`, `PhysicalSkyStage`, `OpaqueGeometryStage`, `DeferredLightingStage`, `AmbientOcclusionStage`, `SolidFeatureStage`, `CloudStage`, `TransparentGeometryStage`, `TemporalStage`, `PostProcessingStage`, `BloomStage`, `SharpeningStage`, `ImageCompositeStage`, `PresentStage` |
+| What a stage draws | `ClearStage`, `SkyStage`, `PhysicalSkyStage`, `OpaqueGeometryStage`, `DeferredLightingStage`, `AmbientOcclusionStage`, `SolidFeatureStage`, `CloudStage`, `LightShaftStage`, `TransparentGeometryStage`, `TemporalStage`, `PostProcessingStage`, `BloomStage`, `SharpeningStage`, `ImageCompositeStage`, `PresentStage` |
 | Ambient occlusion look and cost | `AmbientOcclusionResources` (tuning), `AmbientOcclusionQuality` (presets), `shaders/ambient_occlusion/` |
 | Bloom, tone mapping and exposure | `ImageResources` (tuning), `shaders/image/`, `shaders/include/helion_color.glsl`, `bloom_prefilter.fsh` (emissive detection) |
 | Sharpening | `SharpeningStage`, `shaders/image/sharpen.fsh` |
@@ -27,11 +27,12 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | Motion blur: tile velocities and gather | `MotionBlurStage`, `MotionBlurResources` (frame rate normalization), `TemporalResources` (camera reprojection), `shaders/motion_blur/` |
 | Physical sky: atmosphere, spectral colors, sun and moon light, fog | `PhysicalSkyStage`, `PhysicalSkyResources` (brightness, fog buffer), `AtmosphereSpectrum` (wavelength data), `SkyEnvironment`, `SkyRendererMixin`, `shaders/atmosphere/`, `shaders/include/helion_atmosphere.glsl`, `helion_spectrum.glsl`, `helion_sky_color.glsl` |
 | Volumetric clouds: raymarching, lighting, history, vanilla clouds off | `CloudStage`, `CloudResources` (tuning), `CloudQuality`, `VanillaCloudSource`, `HelionClouds`, `CloudRendererMixin`, `shaders/clouds/`, `shaders/include/helion_clouds.glsl`, `helion_cloud_noise.glsl` |
+| Light shafts (god rays) of the sun and moon | `LightShaftStage`, `LightShaftView` (which light, screen position, fades), `LightShaftResources` (tuning), `shaders/light_shafts/`, `shaders/include/helion_light_shafts.glsl` |
 | Physical sky light on terrain | `SkyLight`, `DeferredLightingStage`, `sky_light.fsh`, `helion_deferred_light.glsl` (`HELION_PHYSICAL_SKY_LIGHT`) |
 | Dynamic lights from held and dropped items | `DynamicLightTracker` (sources, entity light), `DynamicLightEmitters` (item and fire luminance), `DynamicLightResources` (uniform), `VanillaDynamicLightPipelines`, `VanillaTerrainSource`, `EntityRendererMixin`, `shaders/terrain/dynamic_light.vsh`, `shaders/include/helion_dynamic_light.glsl` |
 | GPU time of every preset in one run | `GpuProfile`, `HelionPresetSettings` |
 | Sun and moon shadows: cascades, shadow map, mask | `ShadowStage`, `ShadowCascades` (splits, fitting, texel snapping), `ShadowCascadeCache` (which cascades are drawn this frame), `ShadowLight` (sun or moon, horizon fade), `ShadowResources`, `VanillaShadowCasterSource`, `ShadowCasterSections` (incremental cached caster sections), `ShadowCasterChanges`, `ShadowCasterMember`, `RenderSectionMixin`, `VanillaShadowPipelines`, `shaders/shadow/`, `shaders/include/helion_shadow.glsl`, `deferred_shading.fsh` (`HELION_SHADOWS`) |
-| Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines`, `DeferredLightingPipelines`, `TemporalPipelines`, `PhysicalSkyPipelines`, `CloudPipelines`, `ImagePipelines` |
+| Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines`, `DeferredLightingPipelines`, `TemporalPipelines`, `PhysicalSkyPipelines`, `CloudPipelines`, `LightShaftPipelines`, `ImagePipelines` |
 | How vanilla terrain, entities, sky or OIT are called | `VanillaTerrainSource`, `VanillaEntitySource`, `VanillaAtmosphereSource`, `VanillaTransparencySource` |
 | The rebuilt vanilla `LevelRenderer.render` | `VanillaFrameDriver` |
 | Frame graph targets and OIT targets | `VanillaFrameTargets` |
@@ -76,6 +77,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | `com.aryston.helion.render.geometry` | [render.geometry.md](codemap/render.geometry.md) | 11 | Opaque, solid feature and transparent geometry stages and the geometry buffer. |
 | `com.aryston.helion.render.graph` | [render.graph.md](codemap/render.graph.md) | 6 | Render stages, frame context and targets, render settings, render graph, GPU timings. |
 | `com.aryston.helion.render.lighting` | [render.lighting.md](codemap/render.lighting.md) | 16 | Ambient occlusion, deferred lighting and dynamic lights. |
+| `com.aryston.helion.render.lightshaft` | [render.lightshaft.md](codemap/render.lightshaft.md) | 6 | Sun and moon light shafts through clouds, leaves and block gaps. |
 | `com.aryston.helion.render` | [render.md](codemap/render.md) | 5 | Render core, passive mode and the frame stage list. |
 | `com.aryston.helion.render.motion` | [render.motion.md](codemap/render.motion.md) | 4 | Motion blur stage, resources and pipelines. |
 | `com.aryston.helion.render.post` | [render.post.md](codemap/render.post.md) | 22 | Post processing: bloom, exposure, eye adaptation, color grading, tone mapping, sharpening, present. |
@@ -89,6 +91,6 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 
 | Topic | Code map file | Contents |
 |---|---|---|
-| Tests | [tests.md](codemap/tests.md) | 24 JUnit test files under `src/test/`. |
+| Tests | [tests.md](codemap/tests.md) | 25 JUnit test files under `src/test/`. |
 | Source files and asset folders | [resources.md](codemap/resources.md) | Non-Java files under `src/` and asset folders. |
 | Build files | [build.md](codemap/build.md) | Gradle and CI files. |

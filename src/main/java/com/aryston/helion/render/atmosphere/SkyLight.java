@@ -5,7 +5,7 @@ import com.mojang.blaze3d.resource.ResourceHandle;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
-public record SkyLight(ResourceHandle<RenderTarget> irradiance, Vector3fc sunDirection, Vector3fc moonDirection) {
+public record SkyLight(ResourceHandle<RenderTarget> irradiance, Vector3fc sunDirection, Vector3fc moonDirection, float rainBrightness) {
     public SkyLight {
         sunDirection = new Vector3f(sunDirection);
         moonDirection = new Vector3f(moonDirection);

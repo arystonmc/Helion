@@ -106,7 +106,7 @@ public final class PhysicalSkyStage implements RenderStage {
         List<LookupInput> skyLightInputs = new ArrayList<>(skyColorInputs);
         skyLightInputs.addAll(inputs(PhysicalSkyPipelines.TRANSMITTANCE_SAMPLERS, transmittance));
         frame.atmosphere().publishSkyLight(new SkyLight(
-            addSkyLightPass(frame, compiled, sky, skyLightInputs), sky.sunDirection(), sky.moonDirection()
+            addSkyLightPass(frame, compiled, sky, skyLightInputs), sky.sunDirection(), sky.moonDirection(), sky.rainBrightness()
         ));
         atmosphere.useFog(resources.fog().slice());
         addSkyPass(frame, compiled, sky, skyColorInputs);

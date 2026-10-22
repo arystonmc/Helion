@@ -16,8 +16,8 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### TransparentGeometryStage
 - Path: `src/main/java/com/aryston/helion/render/geometry/TransparentGeometryStage.java`
-- Role: Draws sorted transparency (translucent features, translucent terrain, particles, clouds, weather, world border) or vanilla order independent transparency, then outline, see-through and always-on-top features. Declares the auxiliary OIT and outline targets. When the physical sky published a `SceneFogPass`, draws it after the sorted translucents and before clouds, weather and world border (a separate render pass on each side), or after order independent transparency. When `CloudStage` published a `SceneCloudPass`, draws the volumetric clouds right after the fog.
-- Depends on: `TerrainSource`, `EntitySource`, `AtmosphereSource`, `TransparencySource`, `SceneFogPass`, `SceneCloudPass`.
+- Role: Draws sorted transparency (translucent features, translucent terrain, particles, clouds, weather, world border) or vanilla order independent transparency, then outline, see-through and always-on-top features. Declares the auxiliary OIT and outline targets. When the physical sky published a `SceneFogPass`, draws it after the sorted translucents and before clouds, weather and world border (a separate render pass on each side), or after order independent transparency. When `CloudStage` published a `SceneCloudPass`, draws the volumetric clouds right after the fog, and the light shafts of `LightShaftStage` right after the clouds.
+- Depends on: `TerrainSource`, `EntitySource`, `AtmosphereSource`, `TransparencySource`, `SceneFogPass`, `SceneCloudPass`, `SceneLightShaftPass`.
 
 #### TerrainSource
 - Path: `src/main/java/com/aryston/helion/render/geometry/TerrainSource.java`

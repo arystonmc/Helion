@@ -11,6 +11,7 @@ import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.lighting.AmbientOcclusionStage;
 import com.aryston.helion.render.lighting.DeferredLightingStage;
+import com.aryston.helion.render.lightshaft.LightShaftStage;
 import com.aryston.helion.render.dof.DepthOfFieldStage;
 import com.aryston.helion.render.edge.EdgeSmoothingStage;
 import com.aryston.helion.render.motion.MotionBlurStage;
@@ -58,6 +59,7 @@ public final class FrameStages {
             new AmbientOcclusionStage(core.ambientOcclusion()),
             new SolidFeatureStage(sources.terrain(), sources.entities()),
             new CloudStage(sources.clouds(), core.clouds()),
+            new LightShaftStage(core.lightShafts()),
             new TransparentGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere(), sources.transparency()),
             new TemporalStage(core.temporal()),
             new PostProcessingStage(postEffects(sources.postEffects(), core)),

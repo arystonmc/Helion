@@ -37,7 +37,7 @@ final class HelionImpact {
 
     private static List<ConfigOption<Boolean>> features(HelionOptions options) {
         return List.of(options.ambientOcclusion, options.bloom, options.sharpening, options.temporal, options.geometryBuffer, options.lighting,
-            options.physicalSky, options.clouds, options.shadows);
+            options.physicalSky, options.lightShafts, options.clouds, options.shadows);
     }
 
     private static double score(HelionOptions options, ConfigValues values) {

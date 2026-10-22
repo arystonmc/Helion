@@ -35,7 +35,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### PhysicalSkySettings
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/PhysicalSkySettings.java`
-- Role: Player settings: enabled, star density and Milky Way. `DISABLED` for the foundation, `enabledWithDefaults` for tests and the visual test.
+- Role: Player settings: enabled, star density, Milky Way and light shafts. `DISABLED` for the foundation, `enabledWithDefaults` for tests and the visual test.
 
 #### StarDensity
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/StarDensity.java`
@@ -56,11 +56,11 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### AtmosphereResults
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/AtmosphereResults.java`
-- Role: Per-frame results of the physical sky for later stages: the `SkyLight` for deferred lighting and the `SceneFogPass` for transparent geometry, both empty without the physical sky, and the `SceneCloudPass` that `CloudStage` publishes for transparent geometry.
+- Role: Per-frame results of the physical sky for later stages: the `SkyLight` for deferred lighting and the `SceneFogPass` for transparent geometry, both empty without the physical sky, the `SceneCloudPass` that `CloudStage` publishes and the `SceneLightShaftPass` that `LightShaftStage` publishes, both for transparent geometry.
 
 #### SkyLight
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/SkyLight.java`
-- Role: Handle of the 3 x 1 sky light target (sun and moon light that reaches the ground through the atmosphere, and the irradiance of the sky dome on an upward surface) with the sun and moon directions.
+- Role: Handle of the 3 x 1 sky light target (sun and moon light that reaches the ground through the atmosphere, and the irradiance of the sky dome on an upward surface) with the sun and moon directions and the rain brightness.
 
 #### SceneFogPass
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/SceneFogPass.java`

@@ -3,6 +3,7 @@ package com.aryston.helion.render.shader;
 import com.aryston.helion.Helion;
 import com.aryston.helion.render.atmosphere.PhysicalSkyPipelines;
 import com.aryston.helion.render.clouds.CloudPipelines;
+import com.aryston.helion.render.lightshaft.LightShaftPipelines;
 import com.aryston.helion.render.geometry.GeometryBufferPipelines;
 import com.aryston.helion.render.lighting.AmbientOcclusionPipelines;
 import com.aryston.helion.render.lighting.DeferredLightingPipelines;
@@ -35,6 +36,7 @@ public final class HelionPipelines {
             TemporalPipelines.all(),
             PhysicalSkyPipelines.all(),
             CloudPipelines.all(),
+            LightShaftPipelines.all(),
             ShadowPipelines.all(),
             ImagePipelines.all(),
             MotionBlurPipelines.all(),

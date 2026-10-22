@@ -5,6 +5,7 @@ import com.aryston.helion.render.atmosphere.SceneFogPass;
 import com.aryston.helion.render.clouds.SceneCloudPass;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
+import com.aryston.helion.render.lightshaft.SceneLightShaftPass;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.ResourceHandle;
@@ -46,21 +47,20 @@ public final class TransparentGeometryStage implements RenderStage {
         ResourceHandle<RenderTarget> scene = pass.readsAndWrites(frame.targets().scene());
         frame.targets().updateScene(scene);
         frame.targets().declareGeometryAttachments(pass);
-        Optional<SceneFogPass> fog = frame.atmosphere().fog();
-        fog.ifPresent(fogPass -> fogPass.declareReads(pass));
-        Optional<SceneCloudPass> clouds = frame.atmosphere().clouds();
-        clouds.ifPresent(cloudPass -> cloudPass.declareReads(pass));
+        AtmospherePasses atmospherePasses = new AtmospherePasses(
+            frame.atmosphere().fog(), frame.atmosphere().clouds(), frame.atmosphere().lightShafts()
+        );
+        atmospherePasses.declareReads(pass);
         boolean orderIndependent = frame.scene().orderIndependentTransparency();
-        pass.executes(frame.graph().timed(NAME, () -> render(scene.get(), orderIndependent, fog, clouds)));
+        pass.executes(frame.graph().timed(NAME, () -> render(scene.get(), orderIndependent, atmospherePasses)));
     }
 
-    private void render(RenderTarget target, boolean orderIndependent, Optional<SceneFogPass> fog, Optional<SceneCloudPass> clouds) {
+    private void render(RenderTarget target, boolean orderIndependent, AtmospherePasses atmospherePasses) {
         if (orderIndependent) {
             transparency.renderOrderIndependent();
-            fog.ifPresent(fogPass -> fogPass.draw(target));
-            clouds.ifPresent(cloudPass -> cloudPass.draw(target));
-        } else if (fog.isPresent() || clouds.isPresent()) {
-            renderSortedThroughFog(target, fog, clouds);
+            atmospherePasses.draw(target);
+        } else if (!atmospherePasses.isEmpty()) {
+            renderSortedThroughFog(target, atmospherePasses);
         } else {
             renderSorted(target);
         }
@@ -74,12 +74,11 @@ public final class TransparentGeometryStage implements RenderStage {
         }
     }
 
-    private void renderSortedThroughFog(RenderTarget target, Optional<SceneFogPass> fog, Optional<SceneCloudPass> clouds) {
+    private void renderSortedThroughFog(RenderTarget target, AtmospherePasses atmospherePasses) {
         try (RenderPass pass = openPass(target)) {
             renderTranslucents(pass);
         }
-        fog.ifPresent(fogPass -> fogPass.draw(target));
-        clouds.ifPresent(cloudPass -> cloudPass.draw(target));
+        atmospherePasses.draw(target);
         try (RenderPass pass = openPass(target)) {
             renderAtmosphere(pass);
         }
@@ -109,5 +108,27 @@ public final class TransparentGeometryStage implements RenderStage {
             );
         RenderSystem.bindDefaultUniforms(pass);
         return pass;
+    }
+
+    private record AtmospherePasses(
+        Optional<SceneFogPass> fog,
+        Optional<SceneCloudPass> clouds,
+        Optional<SceneLightShaftPass> lightShafts
+    ) {
+        boolean isEmpty() {
+            return fog.isEmpty() && clouds.isEmpty() && lightShafts.isEmpty();
+        }
+
+        void declareReads(FramePass pass) {
+            fog.ifPresent(fogPass -> fogPass.declareReads(pass));
+            clouds.ifPresent(cloudPass -> cloudPass.declareReads(pass));
+            lightShafts.ifPresent(shaftPass -> shaftPass.declareReads(pass));
+        }
+
+        void draw(RenderTarget target) {
+            fog.ifPresent(fogPass -> fogPass.draw(target));
+            clouds.ifPresent(cloudPass -> cloudPass.draw(target));
+            lightShafts.ifPresent(shaftPass -> shaftPass.draw(target));
+        }
     }
 }

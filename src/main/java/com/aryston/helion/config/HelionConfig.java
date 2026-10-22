@@ -90,6 +90,7 @@ public final class HelionConfig {
     static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
     static final ModConfigSpec.EnumValue<StarDensity> STAR_DENSITY;
     static final ModConfigSpec.BooleanValue MILKY_WAY;
+    static final ModConfigSpec.BooleanValue LIGHT_SHAFTS;
     static final ModConfigSpec.BooleanValue CLOUDS_ENABLED;
     static final ModConfigSpec.EnumValue<CloudQuality> CLOUD_QUALITY;
     static final ModConfigSpec.BooleanValue SHADOWS_ENABLED;
@@ -227,6 +228,9 @@ public final class HelionConfig {
         MILKY_WAY = BUILDER
             .translation("helion.configuration.physicalSky.milkyWay")
             .define("milkyWay", true);
+        LIGHT_SHAFTS = BUILDER
+            .translation("helion.configuration.physicalSky.lightShafts")
+            .define("lightShafts", true);
         BUILDER.pop();
 
         BUILDER.translation("helion.configuration.clouds").push("clouds");
@@ -260,7 +264,7 @@ public final class HelionConfig {
             geometryBufferSettings(),
             lightingSettings(),
             new TemporalSettings(TEMPORAL_ENABLED.getAsBoolean(), RENDER_SCALE.get()),
-            new PhysicalSkySettings(PHYSICAL_SKY_ENABLED.getAsBoolean(), STAR_DENSITY.get(), MILKY_WAY.getAsBoolean()),
+            new PhysicalSkySettings(PHYSICAL_SKY_ENABLED.getAsBoolean(), STAR_DENSITY.get(), MILKY_WAY.getAsBoolean(), LIGHT_SHAFTS.getAsBoolean()),
             new ShadowSettings(SHADOWS_ENABLED.getAsBoolean(), SHADOW_QUALITY.get()),
             new DynamicLightSettings(DYNAMIC_LIGHTS_ENABLED.getAsBoolean()),
             new CloudSettings(CLOUDS_ENABLED.getAsBoolean(), CLOUD_QUALITY.get())

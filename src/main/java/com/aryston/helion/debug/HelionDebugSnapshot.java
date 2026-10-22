@@ -190,6 +190,7 @@ public final class HelionDebugSnapshot {
         section.addProperty("enabled", settings.enabled());
         section.addProperty("starDensity", settings.starDensity().name());
         section.addProperty("milkyWay", settings.milkyWay());
+        section.addProperty("lightShafts", settings.lightShafts());
         return section;
     }
 

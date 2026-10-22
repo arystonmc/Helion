@@ -197,6 +197,11 @@ public final class CloudStage implements RenderStage {
         }
 
         @Override
+        public ResourceHandle<RenderTarget> resolved() {
+            return resolved;
+        }
+
+        @Override
         public void declareReads(FramePass pass) {
             pass.reads(resolved);
         }

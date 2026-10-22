@@ -158,6 +158,17 @@ Real 3D clouds that the sun shines through.
 - Settings: on or off next to the physical sky, quality on the Performance page; on at Medium in the Experimental preset, off elsewhere
 - Since: Unreleased
 
+### Light Shafts
+Rays of sunlight and moonlight in the air.
+
+- When you look toward the sun or the moon, rays stream through gaps in the volumetric clouds, between leaves and past the edges of hills and buildings
+- Light passes through glass and water
+- Colored by the sky: white at noon, golden at sunrise and sunset, soft and pale under the moon, and gone in rain
+- Drawn at a low resolution and only while the sun or moon is in view, so they cost almost nothing
+- Needs the physical sky
+- Settings: on or off next to the physical sky; on in the Experimental preset, off elsewhere
+- Since: Unreleased
+
 ### Dynamic Lights
 Carry a torch into a cave and the cave lights up around you.
 

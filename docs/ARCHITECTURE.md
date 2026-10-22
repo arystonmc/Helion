@@ -36,6 +36,7 @@ The sections live in `docs/architecture/`, one file per topic. Read the invarian
 | Depth of Field | [depth-of-field.md](architecture/depth-of-field.md) | Off by default (`image.depthOfField.enabled`, experimental). |
 | Physical Sky | [physical-sky.md](architecture/physical-sky.md) | Off by default (`physicalSky.enabled`). |
 | Volumetric Clouds | [volumetric-clouds.md](architecture/volumetric-clouds.md) | Off by default (`clouds.enabled`, experimental), on in the Experimental preset at Medium quality. |
+| Light Shafts | [light-shafts.md](architecture/light-shafts.md) | Sun and moon god rays in screen space, on wherever the physical sky runs (`physicalSky.lightShafts`). |
 | Shadows | [shadows.md](architecture/shadows.md) | Off by default (`shadows.enabled`). |
 | Sources | [sources.md](architecture/sources.md) | Stages never call vanilla code directly. |
 | Vanilla Coupling | [vanilla-coupling.md](architecture/vanilla-coupling.md) | Places that copy or depend on vanilla internals. |

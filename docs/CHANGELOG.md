@@ -8,6 +8,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 
 ### Added
 - Experimental volumetric clouds lit by the physical sky, with Low, Medium and High quality
+- Light shafts: rays of sunlight and moonlight through clouds, leaves and gaps between blocks, with the physical sky
 
 ### Changed
 - Physical sky: a small sun of realistic size with a bright halo that turns orange and red as it sets
