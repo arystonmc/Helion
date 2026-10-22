@@ -31,7 +31,6 @@ const float HELION_AMBIENT_STRENGTH = 0.55;
 const float HELION_CIRRUS_HEIGHT = 7000.0;
 const float HELION_CIRRUS_PERIOD = 24576.0;
 const float HELION_CIRRUS_OPACITY = 0.45;
-const int HELION_SCATTERING_OCTAVES = 3;
 const float HELION_RAIN_COVERAGE = 0.85;
 const float HELION_RAIN_DARKENING = 0.45;
 const ivec2 HELION_SUN_TEXEL = ivec2(0, 0);
@@ -129,24 +128,21 @@ float helionLightOpticalDepth(vec3 relative, vec3 light, float noise) {
     for (int index = 0; index < steps; index++) {
         float rayDistance = travelled + stepSize * (index == 0 ? noise : 0.5);
         vec3 point = relative + light * rayDistance;
-        depth += helionCloudDensity(point, helionHeightAbove(point), index < 2) * stepSize;
+        depth += helionCloudDensity(point, helionHeightAbove(point), index == 0) * stepSize;
         travelled += stepSize;
         stepSize *= HELION_LIGHT_STEP_GROWTH;
     }
     return depth * CloudLayer.z;
 }
 
-float helionScattering(float opticalDepth, float cosTheta, float height) {
-    float sum = 0.0;
-    float strength = 1.0;
-    float attenuation = 1.0;
-    float eccentricity = 1.0;
-    for (int octave = 0; octave < HELION_SCATTERING_OCTAVES; octave++) {
-        sum += strength * exp(-opticalDepth * attenuation) * helionCloudPhase(cosTheta, eccentricity);
-        strength *= 0.6;
-        attenuation *= 0.3;
-        eccentricity *= 0.5;
-    }
+vec3 helionOctavePhases(float cosTheta) {
+    return vec3(helionCloudPhase(cosTheta, 1.0), helionCloudPhase(cosTheta, 0.5), helionCloudPhase(cosTheta, 0.25));
+}
+
+float helionScattering(float opticalDepth, vec3 phases, float height) {
+    float sum = phases.x * exp(-opticalDepth)
+        + 0.6 * phases.y * exp(-opticalDepth * 0.3)
+        + 0.36 * phases.z * exp(-opticalDepth * 0.09);
     float powder = 1.0 - exp(-opticalDepth * 2.0 - 0.15);
     return sum * mix(1.0, powder, 0.5 * (1.0 - height));
 }
@@ -180,14 +176,14 @@ void helionCirrus(vec3 ray, vec3 light, vec3 lightColor, vec3 ambient, inout vec
 }
 
 void main() {
-    vec3 ray = helionCloudViewRay(texCoord);
+    vec2 pixel = floor(gl_FragCoord.xy) * 2.0 + CloudCheckerboard.xy;
+    vec3 ray = helionCloudViewRay((pixel + 0.5) * CloudTarget.zw);
     vec3 light = CloudLight.xyz;
     vec3 lightColor = texelFetch(SkyLightSampler, CloudLight.w > 0.5 ? HELION_SUN_TEXEL : HELION_MOON_TEXEL, 0).rgb;
     vec3 ambient = texelFetch(SkyLightSampler, HELION_HEMISPHERE_TEXEL, 0).rgb / HELION_PI * HELION_AMBIENT_STRENGTH;
     float rain = CloudWeather.x;
     lightColor *= mix(1.0, HELION_RAIN_DARKENING, rain);
 
-    vec2 pixel = gl_FragCoord.xy;
     float frame = CloudQuality.w;
     float noise = helionInterleavedGradientNoise(pixel + frame * HELION_NOISE_SECOND_OFFSET);
     float lightNoise = helionInterleavedGradientNoise(pixel.yx + frame * 3.1);
@@ -205,7 +201,7 @@ void main() {
         float horizontal = 1.0 - abs(ray.y);
         steps = int(float(steps) * mix(1.0, 1.5, horizontal * horizontal));
         float stepLength = (end - start) / float(steps);
-        float cosTheta = dot(ray, light);
+        vec3 phases = helionOctavePhases(dot(ray, light));
         for (int index = 0; index < steps; index++) {
             float rayDistance = start + (float(index) + noise) * stepLength;
             vec3 relative = ray * rayDistance;
@@ -220,7 +216,7 @@ void main() {
             }
             float fraction = clamp((height - CloudLayer.x) / (CloudLayer.y - CloudLayer.x), 0.0, 1.0);
             float lightDepth = helionLightOpticalDepth(relative, light, lightNoise);
-            vec3 inScattered = lightColor * helionScattering(lightDepth, cosTheta, fraction)
+            vec3 inScattered = lightColor * helionScattering(lightDepth, phases, fraction)
                 + ambient * mix(0.35, 1.0, fraction);
             float stepTransmittance = exp(-extinction * stepLength);
             vec3 integrated = inScattered * (1.0 - stepTransmittance);

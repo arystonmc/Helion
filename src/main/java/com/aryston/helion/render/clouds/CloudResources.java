@@ -24,7 +24,7 @@ public final class CloudResources {
     static final float LAYER_BOTTOM = 600.0F;
     static final float LAYER_TOP = 1100.0F;
     static final float EXTINCTION = 0.045F;
-    static final float COVERAGE = 0.62F;
+    static final float COVERAGE = 0.55F;
     static final float MAX_DISTANCE = 40000.0F;
     static final float FADE_START = 14000.0F;
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -36,10 +36,12 @@ public final class CloudResources {
     private static final double TELEPORT_DISTANCE = 64.0;
     private static final int HISTORY_COUNT = 2;
     private static final int FRAME_CYCLE = 64;
+    private static final int[][] CHECKERBOARD = {{0, 0}, {1, 1}, {1, 0}, {0, 1}};
     private static final float SUN_BELOW_HORIZON = -0.05F;
     private static final int UNIFORM_SIZE = new Std140SizeCalculator()
         .putMat4f()
         .putMat4f()
+        .putVec4()
         .putVec4()
         .putVec4()
         .putVec4()
@@ -121,7 +123,7 @@ public final class CloudResources {
     }
 
     GpuBuffer writeUniforms(HelionCamera camera, Vector3fc sunDirection, Vector3fc moonDirection, CloudEnvironment environment,
-        CloudQuality quality, int width, int height) {
+        CloudQuality quality, int width, int height, int marchWidth, int marchHeight) {
         if (uniforms == null) {
             uniforms = new UniformRing(SETTINGS_LABEL, UNIFORM_SIZE, resources);
         }
@@ -137,6 +139,7 @@ public final class CloudResources {
         Vector3fc light = sunLit ? sunDirection : moonDirection;
         float seconds = (float) (environment.seconds() % TIME_PERIOD);
         int frame = frameIndex++ % FRAME_CYCLE;
+        int[] offset = CHECKERBOARD[frame % CHECKERBOARD.length];
         previousViewProjection = new Matrix4f(viewProjection);
         previousPosition = new Vector3d(position);
         Matrix4f inverse = new Matrix4f(viewProjection).invert();
@@ -149,7 +152,8 @@ public final class CloudResources {
             .putVec4(LAYER_BOTTOM, LAYER_TOP, EXTINCTION, COVERAGE)
             .putVec4(quality.primarySteps(), quality.lightSteps(), quality.cirrus() ? 1.0F : 0.0F, frame)
             .putVec4(environment.rain(), seconds, MAX_DISTANCE, FADE_START)
-            .putVec4(width, height, 1.0F / width, 1.0F / height));
+            .putVec4(width, height, 1.0F / width, 1.0F / height)
+            .putVec4(offset[0], offset[1], marchWidth, marchHeight));
     }
 
     void finishFrame() {

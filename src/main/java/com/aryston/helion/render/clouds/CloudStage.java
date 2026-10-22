@@ -72,13 +72,15 @@ public final class CloudStage implements RenderStage {
         CloudQuality quality = frame.settings().clouds().quality();
         int width = Math.max(1, frame.scene().width() / quality.resolutionDivisor());
         int height = Math.max(1, frame.scene().height() / quality.resolutionDivisor());
+        int marchWidth = (width + 1) / 2;
+        int marchHeight = (height + 1) / 2;
         resources.ensureHistory(width, height);
-        Uniforms uniforms = new Uniforms(frame, quality, width, height);
+        Uniforms uniforms = new Uniforms(frame, quality, width, height, marchWidth, marchHeight);
         ResourceHandle<RenderTarget> noise = frame.graph().builder().importExternal(TARGET_PREFIX + NOISE_PASS, resources.noise());
         if (!resources.noiseWritten()) {
             noise = addNoisePass(frame, compiled, noise);
         }
-        List<ResourceHandle<RenderTarget>> marched = addMarchPass(frame, compiled, noise, uniforms, width, height);
+        List<ResourceHandle<RenderTarget>> marched = addMarchPass(frame, compiled, noise, uniforms, marchWidth, marchHeight);
         CloudResources.History previous = resources.previousHistory();
         CloudResources.History next = resources.nextHistory();
         ResourceHandle<RenderTarget> previousColor = frame.graph().builder().importExternal(TARGET_PREFIX + "cloud_history_color_previous", previous.color());
@@ -97,8 +99,8 @@ public final class CloudStage implements RenderStage {
         pass.executes(frame.graph().timed(RESOLVE_PASS, () -> FullscreenPass.draw(
             "Helion Cloud Resolve", List.of(resolvedColor.get(), resolvedDistance.get()), compiled.resolve(), renderPass -> {
                 renderPass.setUniform(CloudPipelines.SETTINGS, uniforms.get());
-                renderPass.setUniform(CloudPipelines.COLOR_SAMPLER, colorView(marched.get(CloudPipelines.COLOR_TARGET)), sampler(FilterMode.NEAREST));
-                renderPass.setUniform(CloudPipelines.DISTANCE_SAMPLER, colorView(marched.get(CloudPipelines.DISTANCE_TARGET)), sampler(FilterMode.NEAREST));
+                renderPass.setUniform(CloudPipelines.COLOR_SAMPLER, colorView(marched.get(CloudPipelines.COLOR_TARGET)), sampler(FilterMode.LINEAR));
+                renderPass.setUniform(CloudPipelines.DISTANCE_SAMPLER, colorView(marched.get(CloudPipelines.DISTANCE_TARGET)), sampler(FilterMode.LINEAR));
                 renderPass.setUniform(CloudPipelines.HISTORY_COLOR_SAMPLER, colorView(previousColor), sampler(FilterMode.LINEAR));
                 renderPass.setUniform(CloudPipelines.HISTORY_DISTANCE_SAMPLER, colorView(previousDistance), sampler(FilterMode.LINEAR));
             })));
@@ -157,14 +159,18 @@ public final class CloudStage implements RenderStage {
         private final CloudQuality quality;
         private final int width;
         private final int height;
+        private final int marchWidth;
+        private final int marchHeight;
         private final CloudEnvironment clouds;
         private final SkyLight light;
 
-        private Uniforms(FrameContext frame, CloudQuality quality, int width, int height) {
+        private Uniforms(FrameContext frame, CloudQuality quality, int width, int height, int marchWidth, int marchHeight) {
             this.frame = frame;
             this.quality = quality;
             this.width = width;
             this.height = height;
+            this.marchWidth = marchWidth;
+            this.marchHeight = marchHeight;
             this.clouds = Objects.requireNonNull(environment);
             this.light = Objects.requireNonNull(skyLight);
         }
@@ -172,7 +178,7 @@ public final class CloudStage implements RenderStage {
         GpuBuffer get() {
             if (frameUniforms == null) {
                 frameUniforms = resources.writeUniforms(
-                    frame.camera(), light.sunDirection(), light.moonDirection(), clouds, quality, width, height
+                    frame.camera(), light.sunDirection(), light.moonDirection(), clouds, quality, width, height, marchWidth, marchHeight
                 );
             }
             return frameUniforms;

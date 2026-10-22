@@ -11,6 +11,7 @@ layout(std140) uniform HelionClouds {
     vec4 CloudQuality;
     vec4 CloudWeather;
     vec4 CloudTarget;
+    vec4 CloudCheckerboard;
 };
 
 const float HELION_CLOUD_RAY_NEAR_DEPTH = 1.0;

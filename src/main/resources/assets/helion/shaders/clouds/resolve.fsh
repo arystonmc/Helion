@@ -13,19 +13,35 @@ layout(location = 0) in vec2 texCoord;
 layout(location = 0) out vec4 resolvedColor;
 layout(location = 1) out vec4 resolvedDistance;
 
-const float HELION_CURRENT_WEIGHT = 0.12;
+const float HELION_FRESH_WEIGHT = 0.3;
+const float HELION_STALE_WEIGHT = 0.04;
 const float HELION_CLAMP_MARGIN = 0.25;
 
 void main() {
     ivec2 pixel = ivec2(gl_FragCoord.xy);
-    ivec2 last = ivec2(CloudTarget.xy) - 1;
-    vec4 current = texelFetch(CloudColorSampler, pixel, 0);
-    float currentDistance = texelFetch(CloudDistanceSampler, pixel, 0).r;
+    ivec2 offset = ivec2(CloudCheckerboard.xy);
+    ivec2 marchSize = ivec2(CloudCheckerboard.zw);
+    ivec2 last = marchSize - 1;
+    vec2 marchPosition = (vec2(pixel - offset)) * 0.5;
+    ivec2 base = clamp(ivec2(floor(marchPosition)), ivec2(0), last);
+    bool fresh = all(equal(pixel & 1, offset));
+
+    vec4 current;
+    float currentDistance;
+    if (fresh) {
+        current = texelFetch(CloudColorSampler, base, 0);
+        currentDistance = texelFetch(CloudDistanceSampler, base, 0).r;
+    } else {
+        vec2 marchUv = (marchPosition + 0.5) / vec2(marchSize);
+        current = texture(CloudColorSampler, marchUv);
+        currentDistance = texture(CloudDistanceSampler, marchUv).r;
+    }
+
     vec4 low = current;
     vec4 high = current;
     for (int y = -1; y <= 1; y++) {
         for (int x = -1; x <= 1; x++) {
-            vec4 neighbor = texelFetch(CloudColorSampler, clamp(pixel + ivec2(x, y), ivec2(0), last), 0);
+            vec4 neighbor = texelFetch(CloudColorSampler, clamp(base + ivec2(x, y), ivec2(0), last), 0);
             low = min(low, neighbor);
             high = max(high, neighbor);
         }
@@ -47,6 +63,7 @@ void main() {
     float historyDistance = texture(HistoryDistanceSampler, previousUv).r;
     vec4 margin = (high - low) * HELION_CLAMP_MARGIN;
     history = clamp(history, low - margin, high + margin);
-    resolvedColor = mix(history, current, HELION_CURRENT_WEIGHT);
-    resolvedDistance = vec4(mix(historyDistance, currentDistance, HELION_CURRENT_WEIGHT), 0.0, 0.0, 1.0);
+    float weight = fresh ? HELION_FRESH_WEIGHT : HELION_STALE_WEIGHT;
+    resolvedColor = mix(history, current, weight);
+    resolvedDistance = vec4(mix(historyDistance, currentDistance, weight), 0.0, 0.0, 1.0);
 }
