@@ -16,6 +16,7 @@ import com.aryston.helion.render.shadow.ShadowResults;
 import com.aryston.helion.render.scene.SceneSnapshot;
 import com.aryston.helion.render.temporal.FrameSize;
 import com.aryston.helion.render.temporal.TemporalFrame;
+import com.aryston.helion.render.voxel.VoxelDynamicScene;
 import com.aryston.helion.render.voxel.VoxelLightResults;
 import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
@@ -55,6 +56,7 @@ final class VanillaFrameDriver {
     private final AmbientLightTracker ambientLight = new AmbientLightTracker();
     private final ShadowCasterSections shadowCasters = new ShadowCasterSections();
     private final VanillaVoxelSource voxels = new VanillaVoxelSource();
+    private final VanillaVoxelOccluders occluders = new VanillaVoxelOccluders();
     private @Nullable ProjectionMatrixBuffer jitteredProjection;
 
     void render(LevelFrameRequest request, RenderSettings settings) {
@@ -185,6 +187,12 @@ final class VanillaFrameDriver {
             return;
         }
         boolean enabled = settings.voxels().enabled();
+        if (enabled) {
+            float partialTick = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+            HelionRenderCore.get().voxelLighting().useDynamicScene(new VoxelDynamicScene(
+                DynamicLightTracker.voxelLights(settings.dynamicLights().enabled()), occluders.collect(level, camera.pos, partialTick)
+            ));
+        }
         HelionRenderCore.get().voxelLighting()
             .update(settings.voxels(), camera.blockPos.getX(), camera.blockPos.getY(), camera.blockPos.getZ(), voxels.use(level, enabled));
     }

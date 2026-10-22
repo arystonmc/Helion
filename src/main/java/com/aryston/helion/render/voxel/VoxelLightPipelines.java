@@ -13,6 +13,7 @@ public final class VoxelLightPipelines {
     public static final GpuFormat LIGHT_FORMAT = GpuFormat.RGBA16_FLOAT;
     public static final GpuFormat CONFIDENCE_FORMAT = GpuFormat.R8_UNORM;
     public static final String SETTINGS = "HelionVoxelLight";
+    public static final String DYNAMIC = "HelionVoxelDynamic";
     public static final String DEPTH_SAMPLER = "DepthSampler";
     public static final String GEOMETRY_NORMAL_SAMPLER = "GeometryNormalSampler";
     public static final String VOXEL_SAMPLER = "VoxelSampler";
@@ -27,6 +28,7 @@ public final class VoxelLightPipelines {
     public static final RenderPipeline DIRECT = HelionPipelines.fullscreen("voxel/direct_light")
         .withBindGroupLayout(BindGroupLayout.builder()
             .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
+            .withUniform(DYNAMIC, UniformType.UNIFORM_BUFFER)
             .withUniform(DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(GEOMETRY_NORMAL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(VOXEL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)

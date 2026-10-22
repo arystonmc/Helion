@@ -6,11 +6,20 @@
 #include <helion:helion_light_level.glsl>
 #include <helion:helion_voxel.glsl>
 
+const int HELION_MAX_DYNAMIC_LIGHTS = 16;
+const int HELION_MAX_OCCLUDERS = 8;
+
 layout(std140) uniform HelionVoxelLight {
     mat4 InverseViewProjection;
     vec4 CameraToVolume;
     ivec4 VolumeMin;
     ivec4 Trace;
+};
+
+layout(std140) uniform HelionVoxelDynamic {
+    ivec4 DynamicCounts;
+    vec4 DynamicLights[HELION_MAX_DYNAMIC_LIGHTS * 2];
+    vec4 Occluders[HELION_MAX_OCCLUDERS * 2];
 };
 
 uniform sampler2D DepthSampler;
@@ -31,6 +40,31 @@ layout(location = 1) out vec4 confidence;
 const int HELION_MAX_TRACED_LIGHTS = 4;
 const float HELION_EDGE_FADE_BLOCKS = 16.0;
 const float HELION_UNLIT = 1.0e-5;
+
+bool helionOccluded(vec3 from, vec3 to) {
+    vec3 direction = to - from;
+    vec3 safe = mix(direction, vec3(HELION_MIN_DIRECTION), lessThan(abs(direction), vec3(HELION_MIN_DIRECTION)));
+    for (int index = 0; index < HELION_MAX_OCCLUDERS; index++) {
+        if (index >= DynamicCounts.y) {
+            break;
+        }
+        vec3 low = Occluders[index * 2].xyz;
+        vec3 high = Occluders[index * 2 + 1].xyz;
+        if (all(greaterThan(to, low)) && all(lessThan(to, high))) {
+            continue;
+        }
+        vec3 first = (low - from) / safe;
+        vec3 second = (high - from) / safe;
+        vec3 near = min(first, second);
+        vec3 far = max(first, second);
+        float enter = max(near.x, max(near.y, near.z));
+        float leave = min(far.x, min(far.y, far.z));
+        if (enter <= leave && enter > 0.0 && enter < 1.0) {
+            return true;
+        }
+    }
+    return false;
+}
 
 void main() {
     lightColor = vec4(0.0, 0.0, 0.0, 1.0);
@@ -75,6 +109,30 @@ void main() {
         blended += term;
         strongest = max(strongest, weights[slot]);
     }
+    float movingWeight = 0.0;
+    float otherMovingWeight = 0.0;
+    vec3 movingPosition = vec3(0.0);
+    for (int index = 0; index < HELION_MAX_DYNAMIC_LIGHTS; index++) {
+        if (index >= DynamicCounts.x) {
+            break;
+        }
+        vec4 source = DynamicLights[index * 2];
+        float level = source.w - distance(surface, source.xyz);
+        if (level <= 0.0) {
+            continue;
+        }
+        vec3 term = DynamicLights[index * 2 + 1].rgb * helionLevelBrightness(level / HELION_LIGHT_LEVELS);
+        float weight = helionLuminance(term);
+        blended += term;
+        strongest = max(strongest, weight);
+        if (weight > movingWeight) {
+            otherMovingWeight = movingWeight;
+            movingWeight = weight;
+            movingPosition = source.xyz;
+        } else {
+            otherMovingWeight = max(otherMovingWeight, weight);
+        }
+    }
     bool unknown = false;
     for (int attempt = 0; attempt < HELION_MAX_TRACED_LIGHTS; attempt++) {
         if (attempt >= traced) {
@@ -86,18 +144,26 @@ void main() {
                 pick = slot;
             }
         }
+        float pickWeight = pick == HELION_NO_LIGHT ? 0.0 : weights[pick];
+        if (movingWeight > pickWeight) {
+            if (helionTraceVisibility(surface, movingPosition, unknown) > 0.0 && !helionOccluded(surface, movingPosition)) {
+                break;
+            }
+            movingWeight = 0.0;
+            continue;
+        }
         if (pick == HELION_NO_LIGHT) {
             break;
         }
         bool enclosed;
         vec3 exit = helionLightExit(positions[pick], surface, enclosed);
-        bool visible = !enclosed && helionTraceVisibility(surface, exit, unknown) > 0.0;
+        bool visible = !enclosed && helionTraceVisibility(surface, exit, unknown) > 0.0 && !helionOccluded(surface, exit);
         if (visible) {
             break;
         }
         weights[pick] = 0.0;
     }
-    float visibleStrongest = 0.0;
+    float visibleStrongest = max(movingWeight, otherMovingWeight);
     for (int slot = 0; slot < HELION_LIGHTS_PER_CELL; slot++) {
         visibleStrongest = max(visibleStrongest, slot < count ? weights[slot] : 0.0);
     }

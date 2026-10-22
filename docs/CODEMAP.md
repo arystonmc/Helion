@@ -68,7 +68,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | `com.aryston.helion.config` | [config.md](codemap/config.md) | 8 | Config spec, presets, settings screen and share codes. |
 | `com.aryston.helion.debug` | [debug.md](codemap/debug.md) | 13 | Debug overlay, GPU profile, visual test and pixel parity tools. |
 | `com.aryston.helion.integration` | [integration.md](codemap/integration.md) | 5 | Event wiring, key bindings, parity control and the Sodium and Iris guard. |
-| `com.aryston.helion.integration.vanilla` | [integration.vanilla.md](codemap/integration.vanilla.md) | 32 | Bridges to vanilla frame, terrain, entity, shadow caster and dynamic light sources. |
+| `com.aryston.helion.integration.vanilla` | [integration.vanilla.md](codemap/integration.vanilla.md) | 33 | Bridges to vanilla frame, terrain, entity, shadow caster and dynamic light sources. |
 | `com.aryston.helion.mixin` | [mixin.md](codemap/mixin.md) | 14 | Mixins and accessors on vanilla renderers and, for the RTX spike, on the renderpearl Vulkan backend. |
 | `com.aryston.helion.render.atmosphere` | [render.atmosphere.md](codemap/render.atmosphere.md) | 14 | Physical sky, atmosphere spectrum, sky light and scene fog. |
 | `com.aryston.helion.render.clouds` | [render.clouds.md](codemap/render.clouds.md) | 9 | Volumetric clouds stage, resources, settings and pipelines. |
@@ -87,7 +87,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | `com.aryston.helion.render.scene` | [render.scene.md](codemap/render.scene.md) | 2 | Scene snapshot and clear stage. |
 | `com.aryston.helion.render.shader` | [render.shader.md](codemap/render.shader.md) | 2 | Shared pipelines and the fullscreen pass. |
 | `com.aryston.helion.render.shadow` | [render.shadow.md](codemap/render.shadow.md) | 11 | Shadow cascades, cascade cache, shadow light, casters and pipelines. |
-| `com.aryston.helion.render.voxel` | [render.voxel.md](codemap/render.voxel.md) | 23 | Voxel lighting: block volume around the camera, light grid, traced direct block light and the voxel slice view. |
+| `com.aryston.helion.render.voxel` | [render.voxel.md](codemap/render.voxel.md) | 26 | Voxel lighting: block volume around the camera, light grid, traced direct block light and the voxel slice view. |
 | `com.aryston.helion.render.rtx` | [render.rtx.md](codemap/render.rtx.md) | 18 | RTX feasibility spike: optional ray query feature set, own device address memory, box acceleration structures, compute shadow mask and its view. |
 | `com.aryston.helion.render.temporal` | [render.temporal.md](codemap/render.temporal.md) | 11 | Temporal anti-aliasing, jitter, history, previous view and render scale. |
 

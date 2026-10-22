@@ -20,7 +20,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaFrameDriver
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaFrameDriver.java`
-- Role: Rebuilds `LevelRenderer.render` with Helion stages: the vanilla sky renderer created as `addSkyPass` does (vanilla extracts the sky state only while it exists), feature preparation, targets, NeoForge frame graph event, chunk draw preparation, the scene snapshot with the light map inputs, the camera with the captured level projection, the temporal frame with the jittered projection uploaded for the level (and put into the camera) and restored afterwards, the frame sources sharing one `SceneFog`, the voxel volume update from `VanillaVoxelSource` before the stages are built, stage building, graph execution, then section compile, upload and occlusion update.
+- Role: Rebuilds `LevelRenderer.render` with Helion stages: the vanilla sky renderer created as `addSkyPass` does (vanilla extracts the sky state only while it exists), feature preparation, targets, NeoForge frame graph event, chunk draw preparation, the scene snapshot with the light map inputs, the camera with the captured level projection, the temporal frame with the jittered projection uploaded for the level (and put into the camera) and restored afterwards, the frame sources sharing one `SceneFog`, the voxel volume update from `VanillaVoxelSource` with the dynamic lights and entity boxes of the frame before the stages are built, stage building, graph execution, then section compile, upload and occlusion update.
 - Depends on: every class in this package, `FrameStages`, `HelionRenderCore`.
 - Notes: mirrors vanilla code; see Vanilla Coupling in `docs/ARCHITECTURE.md`.
 
@@ -43,12 +43,16 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### DynamicLightTracker
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/DynamicLightTracker.java`
-- Role: Finds the light sources of a frame: every rendered entity within 64 blocks of the camera that burns or holds or is a glowing item (`DynamicLightEmitters`), at its interpolated position, nearest first, collected once per frame (cached by level, game time and partial tick). `lights` hands the nearest `MAX_LIGHTS` to the frame relative to the camera; `brighten` raises an entity's packed light coordinates to the dynamic level at its light probe position (level minus distance), so mobs, items and the first-person hand are lit too. Does nothing while the core is inactive, in screen effects mode or with the setting off.
+- Role: Finds the light sources of a frame: every rendered entity within 64 blocks of the camera that burns or holds or is a glowing item (`DynamicLightEmitters`), at its interpolated position, nearest first, collected once per frame (cached by level, game time and partial tick). Each source keeps the light color of its emitting block (`VoxelLightColors`); `voxelLights` hands the nearest 16 in world coordinates to voxel lighting. `lights` hands the nearest `MAX_LIGHTS` to the frame relative to the camera; `brighten` raises an entity's packed light coordinates to the dynamic level at its light probe position (level minus distance), so mobs, items and the first-person hand are lit too. Does nothing while the core is inactive, in screen effects mode or with the setting off.
 - Depends on: `DynamicLightEmitters`, `DynamicLight`, `DynamicLightResources`, `HelionRenderCore`.
+
+#### VanillaVoxelOccluders
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaVoxelOccluders.java`
+- Role: Collects the interpolated bounding boxes of the nearest 8 living entities within 24 blocks of the camera for voxel lighting, leaving out invisible and spectating entities and the camera entity in first person.
 
 #### DynamicLightEmitters
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/DynamicLightEmitters.java`
-- Role: Light level an entity gives off: 15 while it burns, the light emission of the default state of a held or dropped block item (torch 14, lantern 15, glowstone 15, ...) and 15 for a lava bucket.
+- Role: Light an entity gives off as an `Emission` (level and the emitting block state for its color): 15 and fire while it burns, the light emission of the default state of a held or dropped block item (torch 14, lantern 15, glowstone 15, ...) and 15 and lava for a lava bucket; the brightest wins.
 
 #### VanillaGeometryPipelines
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaGeometryPipelines.java`

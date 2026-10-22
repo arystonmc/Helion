@@ -73,8 +73,10 @@ public final class VoxelLightStage implements RenderStage {
         HelionCamera camera = frame.camera();
         pass.executes(frame.graph().timed(NAME, () -> {
             GpuBuffer uniforms = resources.writeLightUniforms(camera, view, quality);
+            GpuBuffer dynamic = resources.writeDynamicUniforms(view);
             FullscreenPass.draw("Helion Voxel Light", List.of(light.get(), confidence.get()), compiled, renderPass -> {
                 renderPass.setUniform(VoxelLightPipelines.SETTINGS, uniforms);
+                renderPass.setUniform(VoxelLightPipelines.DYNAMIC, dynamic);
                 renderPass.setUniform(VoxelLightPipelines.DEPTH_SAMPLER, Objects.requireNonNull(scene.get().getDepthTextureView()), nearest());
                 renderPass.setUniform(VoxelLightPipelines.GEOMETRY_NORMAL_SAMPLER, colorView(geometry.normal()), nearest());
                 renderPass.setUniform(VoxelLightPipelines.VOXEL_SAMPLER, view.texture(), nearest());

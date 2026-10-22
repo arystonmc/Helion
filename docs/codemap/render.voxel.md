@@ -50,6 +50,10 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Role: The block atlas, the coarse atlas and the 32 x 16 ready-slot table (all R8_UNORM) and its window. Once per frame, before the frame graph runs, applies changed sections, recenters on the camera and rebuilds pending sections nearest first within 1 ms of CPU time, each with one `writeToTexture` of its brick and one of its coarse brick; keeps the light sources of every slot, uploads the ready table when a slot changed state and rebuilds the light grid when the window moved or lights changed. Measures the frames from a section change to its upload. Hands every built brick to an optional `VoxelBrickSink`.
 - Depends on: `VoxelVolumeWindow`, `VoxelSource`, `VoxelCoarseLevel`, `VoxelLightGrid`, `VoxelLightTextures`, `VoxelBuildStatistics`.
 
+#### VoxelDynamicLight, VoxelOccluder, VoxelDynamicScene
+- Path: `src/main/java/com/aryston/helion/render/voxel/VoxelDynamicLight.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelOccluder.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelDynamicScene.java`
+- Role: The moving part of a frame in world coordinates: dynamic lights (position, level, linear color normalized to luminance 1, at most `MAX_LIGHTS` 16) and entity boxes that block light (at most `MAX_OCCLUDERS` 8).
+
 #### VoxelBrickSink
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelBrickSink.java`
 - Role: Receives every section brick right after it was read (4096 class bytes in brick layout), for consumers that need the volume on the CPU, such as the RTX spike.
@@ -64,7 +68,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelLightPipelines, VoxelLightStage, VoxelLightResults
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightPipelines.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelLightStage.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelLightResults.java`
-- Role: The direct light pass `voxel_light` (`voxel/direct_light.fsh`), right after the shadow stage: per terrain pixel at the resolution of the quality it evaluates the lights of its grid cell with the vanilla falloff of one level per block, traces the strongest ones through the volume and writes the unshadowed colored block light and its visible share (RGBA16_FLOAT) and a confidence (R8: 0 near the volume edge or where a ray crossed a slot that is not ready). `VoxelLightResults` hands both targets to `DeferredLightingStage`.
+- Role: The direct light pass `voxel_light` (`voxel/direct_light.fsh`), right after the shadow stage: per terrain pixel at the resolution of the quality it evaluates the lights of its grid cell with the vanilla falloff of one level per block and the dynamic lights of the frame (`HelionVoxelDynamic`), traces the strongest ones through the volume and against the entity boxes and writes the unshadowed colored block light and its visible share (RGBA16_FLOAT) and a confidence (R8: 0 near the volume edge or where a ray crossed a slot that is not ready). `VoxelLightResults` hands both targets to `DeferredLightingStage`.
 - Depends on: `VoxelLightingResources`, `FullscreenPass`.
 
 #### VoxelVolumeView
@@ -77,7 +81,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelLightingResources
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightingResources.java`
-- Role: Owned by `HelionRenderCore`. `update` runs the volume while the mode is not `OFF` and releases it when the mode turns off; also keeps the uniform rings of the slice view and the direct light pass and warns once when the light pass did not compile. `observeBricks` registers a `VoxelBrickSink`.
+- Role: Owned by `HelionRenderCore`. `update` runs the volume while the mode is not `OFF` and releases it when the mode turns off; also keeps the uniform rings of the slice view and the direct light pass and warns once when the light pass did not compile. `observeBricks` registers a `VoxelBrickSink`. `useDynamicScene` takes the frame's `VoxelDynamicScene`, written relative to the volume corner into the `HelionVoxelDynamic` uniform ring for the light pass.
 - Depends on: `VoxelVolume`, `UniformRing`.
 
 #### VoxelSlicePipelines

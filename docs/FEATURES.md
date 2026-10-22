@@ -188,7 +188,9 @@ Torches, lanterns and every other glowing block light the world in their own col
 - A pillar next to a torch casts a shadow on the ground behind it; light no longer passes through solid blocks
 - Each light reaches exactly as far and as bright as in vanilla, so caves and bases keep their familiar brightness; around corners a little of the vanilla light stays until bounced light arrives
 - Breaking or placing a block updates the light right away
-- Works within 64 blocks of you; farther away, and for torches held in hand, the vanilla light stays
+- Torches and lanterns held by you, mobs or players, dropped glowing items and burning mobs light the world in their color and cast shadows too
+- Mobs and players near you cast shadows from torches and other lights
+- Works within 64 blocks of you; farther away the vanilla light stays
 - Resource packs can change the light colors (`assets/helion/voxel_light/colors.json`)
 - The Voxel Slice view of the geometry buffer shows the block map at your height from above
 - Needs HDR lighting
