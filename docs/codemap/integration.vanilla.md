@@ -20,7 +20,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaFrameDriver
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaFrameDriver.java`
-- Role: Rebuilds `LevelRenderer.render` with Helion stages: the vanilla sky renderer created as `addSkyPass` does (vanilla extracts the sky state only while it exists), feature preparation, targets, NeoForge frame graph event, chunk draw preparation, the scene snapshot with the light map inputs, the camera with the captured level projection, the temporal frame with the jittered projection uploaded for the level (and put into the camera) and restored afterwards, the frame sources sharing one `SceneFog`, the voxel volume update from `VanillaVoxelSource` with the dynamic lights and entity boxes of the frame before the stages are built, stage building, graph execution, then section compile, upload and occlusion update.
+- Role: Rebuilds `LevelRenderer.render` with Helion stages: the vanilla sky renderer created as `addSkyPass` does (vanilla extracts the sky state only while it exists), feature preparation, targets, NeoForge frame graph event, chunk draw preparation, the scene snapshot with the light map inputs, the camera with the captured level projection, the temporal frame with the jittered projection uploaded for the level (and put into the camera) and restored afterwards, the frame sources sharing one `SceneFog`, the voxel volume update from `VanillaVoxelSource` with the dynamic lights and entity boxes of the frame and the ray tracing recompile requests before the stages are built, stage building, graph execution, then section compile, upload and occlusion update.
 - Depends on: every class in this package, `FrameStages`, `HelionRenderCore`.
 - Notes: mirrors vanilla code; see Vanilla Coupling in `docs/ARCHITECTURE.md`.
 
@@ -45,6 +45,10 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/DynamicLightTracker.java`
 - Role: Finds the light sources of a frame: every rendered entity within 64 blocks of the camera that burns or holds or is a glowing item (`DynamicLightEmitters`), at its interpolated position, nearest first, collected once per frame (cached by level, game time and partial tick). Each source keeps the light color of its emitting block (`VoxelLightColors`); `voxelLights` hands the nearest 16 in world coordinates to voxel lighting. `lights` hands the nearest `MAX_LIGHTS` to the frame relative to the camera; `brighten` raises an entity's packed light coordinates to the dynamic level at its light probe position (level minus distance), so mobs, items and the first-person hand are lit too. Does nothing while the core is inactive, in screen effects mode or with the setting off.
 - Depends on: `DynamicLightEmitters`, `DynamicLight`, `DynamicLightResources`, `HelionRenderCore`.
+
+#### RtxSectionCapture
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/RtxSectionCapture.java`
+- Role: With `helion.rayTracing`, copies the quad positions of the solid and cutout layers of a compiled section (vanilla `Position` floats or Aervium's compact `PositionLight`, 1/2048 block steps from -8) into a `RtxSectionUpdate` on the compile worker when the section is near the camera, reports reset sections, and once per frame passes the scene's recompile requests to `LevelExtractor.setSectionDirty`. Warns once and skips terrain in an unknown vertex format.
 
 #### VanillaVoxelOccluders
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaVoxelOccluders.java`

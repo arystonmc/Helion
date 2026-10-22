@@ -14,6 +14,8 @@ import com.mojang.blaze3d.resource.ResourceHandle;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.vulkan.VulkanGpuTextureView;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.joml.Matrix4f;
@@ -29,6 +31,7 @@ public final class RtxShadowStage implements RenderStage {
     private static final int RESOLUTION_DIVISOR = 2;
     private static final int MATRIX_BYTES = 16 * Float.BYTES;
     private static final int UNUSED = 0;
+    private static final long NO_OFFSET = 0L;
 
     private final RtxSpikeResources resources;
     private final VoxelLightingResources voxels;
@@ -86,11 +89,16 @@ public final class RtxShadowStage implements RenderStage {
         });
         Runnable trace = frame.graph().timed(mode.stage(), () -> {
             device.memoryBarrier();
-            RtxTraceInputs inputs = new RtxTraceInputs(
-                mask.vkImageView(), scene.topLevel(), resources.agreement().buffer(), agreementOffset, resources.agreement().range(),
-                scene.boxBuffer(), scene.boxBytes(), sampledViews(sceneTarget, geometry.normal(), view)
-            );
-            resources.pipeline().record(device.commandBuffer(), inputs, resources.constants(), mask.width(), mask.height());
+            List<RtxBinding> bindings = new ArrayList<>(List.of(
+                new RtxBinding.StorageImage(mask.vkImageView()),
+                new RtxBinding.Scene(scene.topLevel()),
+                new RtxBinding.StorageBuffer(resources.agreement().buffer(), agreementOffset, resources.agreement().range()),
+                new RtxBinding.StorageBuffer(scene.boxBuffer(), NO_OFFSET, scene.boxBytes())
+            ));
+            for (long sampled : sampledViews(sceneTarget, geometry.normal(), view)) {
+                bindings.add(new RtxBinding.Sampled(sampled));
+            }
+            resources.pipeline().dispatch(device.commandBuffer(), bindings, resources.constants(), mask.width(), mask.height());
             device.memoryBarrier();
         });
         pass.executes(() -> {

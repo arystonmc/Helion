@@ -39,10 +39,10 @@ final class RtxScene {
         long boxBytes = (long) Math.max(count, MIN_BOXES) * RtxAccelerationStructure.BOX_STRIDE;
         RtxBuffer boxes = RtxBuffer.create(device, boxBytes, INPUT_USAGE | VK10.VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, true);
         writeBoxes(boxes, exposed, count);
-        RtxAccelerationStructure bottom = RtxAccelerationStructure.create(device, false, boxes.address(), count);
+        RtxAccelerationStructure bottom = RtxAccelerationStructure.create(device, RtxGeometry.boxes(boxes.address(), count));
         RtxBuffer instance = RtxBuffer.create(device, VkAccelerationStructureInstanceKHR.SIZEOF, INPUT_USAGE, true);
         writeInstance(instance, bottom.address());
-        RtxAccelerationStructure top = RtxAccelerationStructure.create(device, true, instance.address(), SINGLE_INSTANCE);
+        RtxAccelerationStructure top = RtxAccelerationStructure.create(device, RtxGeometry.instances(instance.address(), SINGLE_INSTANCE));
         return new RtxScene(area, count, boxes, instance, bottom, top);
     }
 
@@ -86,8 +86,8 @@ final class RtxScene {
     void destroy(VkDevice vkDevice) {
         top.destroy(vkDevice);
         bottom.destroy(vkDevice);
-        instance.destroy(vkDevice);
-        boxes.destroy(vkDevice);
+        instance.destroy();
+        boxes.destroy();
     }
 
     private static void writeBoxes(RtxBuffer boxes, int[] exposed, int count) {

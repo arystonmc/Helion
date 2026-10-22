@@ -3,7 +3,6 @@ package com.aryston.helion.render.rtx;
 import java.util.Arrays;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VK10;
-import org.lwjgl.vulkan.VkDevice;
 
 final class RtxAgreement {
     private static final int COUNTERS = 4;
@@ -77,8 +76,8 @@ final class RtxAgreement {
         return summary;
     }
 
-    void destroy(VkDevice vkDevice) {
-        buffer.destroy(vkDevice);
+    void destroy() {
+        buffer.destroy();
     }
 
     private static double percent(long part, long whole) {

@@ -11,22 +11,41 @@ import java.util.Objects;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.vulkan.KHRAccelerationStructure;
+import org.lwjgl.vulkan.VK10;
 
 public final class RtxSpikeResources {
     private static final String PIPELINE_LABEL = "Helion RTX Spike Pipeline";
     private static final String AGREEMENT_LABEL = "Helion RTX Spike Agreement";
     private static final String SCENE_LABEL = "Helion RTX Spike Scene";
+    private static final String MASK_LABEL = "Helion RTX Spike Shadow Mask";
     private static final long REBUILD_INTERVAL_FRAMES = 10L;
     private static final long LOG_INTERVAL_FRAMES = 600L;
     private static final double NANOS_PER_MILLI = 1_000_000.0;
     private static final long NO_REVISION = -1L;
     private static final long BYTES_PER_KIB = 1024L;
     private static final long PIPELINE_BYTES = 0L;
+    private static final String SOURCE = "/assets/helion/shaders/rtx/shadow_mask.csh";
+    private static final String SHADER_NAME = "shadow_mask.csh";
+    private static final int PUSH_CONSTANT_BYTES = 128;
+    private static final int[] DESCRIPTORS = {
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        KHRAccelerationStructure.VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    };
 
     private final GpuResources resources;
     private @Nullable RtxBlocks blocks;
     private @Nullable RtxDevice device;
-    private @Nullable RtxShadowPipeline pipeline;
+    private @Nullable RtxComputePipeline pipeline;
     private @Nullable RtxAgreement agreement;
     private @Nullable RtxShadowMask mask;
     private @Nullable RtxScene scene;
@@ -67,7 +86,7 @@ public final class RtxSpikeResources {
         return Objects.requireNonNull(device);
     }
 
-    RtxShadowPipeline pipeline() {
+    RtxComputePipeline pipeline() {
         return Objects.requireNonNull(pipeline);
     }
 
@@ -82,7 +101,7 @@ public final class RtxSpikeResources {
 
     ByteBuffer constants() {
         if (constants == null) {
-            constants = MemoryUtil.memAlloc(RtxShadowPipeline.PUSH_CONSTANT_BYTES);
+            constants = MemoryUtil.memAlloc(PUSH_CONSTANT_BYTES);
         }
         return constants;
     }
@@ -95,7 +114,7 @@ public final class RtxSpikeResources {
         if (current != null) {
             current.close(resources);
         }
-        RtxShadowMask created = RtxShadowMask.create(resources, width, height);
+        RtxShadowMask created = RtxShadowMask.create(resources, MASK_LABEL, width, height);
         mask = created;
         return created;
     }
@@ -179,16 +198,16 @@ public final class RtxSpikeResources {
             return;
         }
         RtxDevice rtx = found.get();
-        RtxShadowPipeline created;
+        RtxComputePipeline created;
         try {
-            created = RtxShadowPipeline.create(rtx);
+            created = RtxComputePipeline.create(rtx, SOURCE, SHADER_NAME, DESCRIPTORS, PUSH_CONSTANT_BYTES);
         } catch (IllegalStateException exception) {
             LOGGER.error("Helion RTX spike is off: {}", exception.getMessage());
             return;
         }
         RtxAgreement counters = RtxAgreement.create(rtx);
         resources.track(PIPELINE_LABEL, PIPELINE_BYTES, created::destroy);
-        resources.track(AGREEMENT_LABEL, counters.bytes(), () -> counters.destroy(rtx.vkDevice()));
+        resources.track(AGREEMENT_LABEL, counters.bytes(), counters::destroy);
         device = rtx;
         pipeline = created;
         agreement = counters;

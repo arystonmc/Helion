@@ -18,6 +18,8 @@ import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalResources;
 import com.aryston.helion.render.resource.GpuResources;
 import com.aryston.helion.render.resource.SceneTargets;
+import com.aryston.helion.render.rtx.RayTracingResources;
+import com.aryston.helion.render.rtx.RayTracingResources;
 import com.aryston.helion.render.rtx.RtxSpike;
 import com.aryston.helion.render.rtx.RtxSpikeResources;
 import com.aryston.helion.render.scene.SceneSnapshot;
@@ -51,6 +53,7 @@ public final class HelionRenderCore {
     private final DepthOfFieldResources depthOfField = new DepthOfFieldResources(resources);
     private final VoxelLightingResources voxelLighting = new VoxelLightingResources(resources);
     private final RtxSpikeResources rtxSpike = new RtxSpikeResources(resources);
+    private final RayTracingResources rayTracing = new RayTracingResources(resources);
     private PassiveListener passiveListener = reason -> { };
     private @Nullable GpuDeviceSummary device;
     private @Nullable PassiveReason passiveReason;
@@ -179,6 +182,7 @@ public final class HelionRenderCore {
         depthOfField.close();
         voxelLighting.close();
         rtxSpike.close();
+        rayTracing.close();
         sceneTargets.close();
         LOGGER.info("Helion released {} GPU resources on shutdown", released);
     }
@@ -253,6 +257,10 @@ public final class HelionRenderCore {
 
     public RtxSpikeResources rtxSpike() {
         return rtxSpike;
+    }
+
+    public RayTracingResources rayTracing() {
+        return rayTracing;
     }
 
     public ShadowResources shadows() {

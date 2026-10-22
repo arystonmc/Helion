@@ -2,9 +2,9 @@ package com.aryston.helion.render.rtx;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
+import java.util.List;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.vulkan.KHRAccelerationStructure;
 import org.lwjgl.vulkan.KHRPushDescriptor;
 import org.lwjgl.vulkan.VK10;
 import org.lwjgl.vulkan.VkCommandBuffer;
@@ -21,21 +21,12 @@ import org.lwjgl.vulkan.VkShaderModuleCreateInfo;
 import org.lwjgl.vulkan.VkWriteDescriptorSet;
 import org.lwjgl.vulkan.VkWriteDescriptorSetAccelerationStructureKHR;
 
-final class RtxShadowPipeline {
-    static final int PUSH_CONSTANT_BYTES = 128;
+final class RtxComputePipeline {
     static final int WORKGROUP_SIZE = 8;
 
-    private static final String SOURCE = "/assets/helion/shaders/rtx/shadow_mask.csh";
-    private static final String NAME = "shadow_mask.csh";
-    private static final int MASK_BINDING = 0;
-    private static final int SCENE_BINDING = 1;
-    private static final int AGREEMENT_BINDING = 2;
-    private static final int BOXES_BINDING = 3;
-    private static final int FIRST_SAMPLER_BINDING = 4;
-    private static final int SAMPLED_TEXTURES = 7;
-    private static final int BINDINGS = FIRST_SAMPLER_BINDING + SAMPLED_TEXTURES;
     private static final int SINGLE = 1;
     private static final int NO_OFFSET = 0;
+    private static final int FIRST_SET = 0;
 
     private final VkDevice device;
     private final long setLayout;
@@ -43,7 +34,7 @@ final class RtxShadowPipeline {
     private final long pipeline;
     private final long sampler;
 
-    private RtxShadowPipeline(VkDevice device, long setLayout, long pipelineLayout, long pipeline, long sampler) {
+    private RtxComputePipeline(VkDevice device, long setLayout, long pipelineLayout, long pipeline, long sampler) {
         this.device = device;
         this.setLayout = setLayout;
         this.pipelineLayout = pipelineLayout;
@@ -51,15 +42,15 @@ final class RtxShadowPipeline {
         this.sampler = sampler;
     }
 
-    static RtxShadowPipeline create(RtxDevice rtxDevice) {
+    static RtxComputePipeline create(RtxDevice rtxDevice, String source, String name, int[] descriptorTypes, int pushConstantBytes) {
         VkDevice device = rtxDevice.vkDevice();
-        ByteBuffer spirv = RtxShaderSource.compileCompute(SOURCE, NAME);
+        ByteBuffer spirv = RtxShaderSource.compileCompute(source, name);
         try {
-            long setLayout = createSetLayout(device);
-            long pipelineLayout = createPipelineLayout(device, setLayout);
+            long setLayout = createSetLayout(device, descriptorTypes);
+            long pipelineLayout = createPipelineLayout(device, setLayout, pushConstantBytes);
             long module = createModule(device, spirv);
             try {
-                return new RtxShadowPipeline(device, setLayout, pipelineLayout, createPipeline(device, pipelineLayout, module), createSampler(device));
+                return new RtxComputePipeline(device, setLayout, pipelineLayout, createPipeline(device, pipelineLayout, module), createSampler(device));
             } finally {
                 VK10.vkDestroyShaderModule(device, module, null);
             }
@@ -68,47 +59,17 @@ final class RtxShadowPipeline {
         }
     }
 
-    void record(VkCommandBuffer commandBuffer, RtxTraceInputs inputs, ByteBuffer constants, int width, int height) {
+    void dispatch(VkCommandBuffer commandBuffer, List<RtxBinding> bindings, ByteBuffer constants, int width, int height) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VK10.vkCmdBindPipeline(commandBuffer, VK10.VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
-            VkWriteDescriptorSet.Buffer writes = VkWriteDescriptorSet.calloc(BINDINGS, stack);
-            writes.get(MASK_BINDING)
-                .sType$Default()
-                .dstBinding(MASK_BINDING)
-                .descriptorType(VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-                .descriptorCount(SINGLE)
-                .pImageInfo(VkDescriptorImageInfo.calloc(SINGLE, stack).imageView(inputs.maskView()).imageLayout(VK10.VK_IMAGE_LAYOUT_GENERAL));
-            VkWriteDescriptorSetAccelerationStructureKHR scene = VkWriteDescriptorSetAccelerationStructureKHR.calloc(stack)
-                .sType$Default()
-                .accelerationStructureCount(SINGLE)
-                .pAccelerationStructures(stack.longs(inputs.scene()));
-            writes.get(SCENE_BINDING)
-                .sType$Default()
-                .pNext(scene)
-                .dstBinding(SCENE_BINDING)
-                .descriptorType(KHRAccelerationStructure.VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR)
-                .descriptorCount(SINGLE);
-            writeBuffer(writes.get(AGREEMENT_BINDING), AGREEMENT_BINDING, inputs.agreement(), inputs.agreementOffset(), inputs.agreementRange(), stack);
-            writeBuffer(writes.get(BOXES_BINDING), BOXES_BINDING, inputs.boxes(), NO_OFFSET, inputs.boxesRange(), stack);
-            for (int index = 0; index < SAMPLED_TEXTURES; index++) {
-                writes.get(FIRST_SAMPLER_BINDING + index)
-                    .sType$Default()
-                    .dstBinding(FIRST_SAMPLER_BINDING + index)
-                    .descriptorType(VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-                    .descriptorCount(SINGLE)
-                    .pImageInfo(VkDescriptorImageInfo.calloc(SINGLE, stack)
-                        .sampler(sampler)
-                        .imageView(inputs.sampledViews()[index])
-                        .imageLayout(VK10.VK_IMAGE_LAYOUT_GENERAL));
+            VkWriteDescriptorSet.Buffer writes = VkWriteDescriptorSet.calloc(bindings.size(), stack);
+            for (int binding = 0; binding < bindings.size(); binding++) {
+                describe(writes.get(binding), binding, bindings.get(binding), stack);
             }
-            KHRPushDescriptor.vkCmdPushDescriptorSetKHR(commandBuffer, VK10.VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, writes);
+            KHRPushDescriptor.vkCmdPushDescriptorSetKHR(commandBuffer, VK10.VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, FIRST_SET, writes);
             VK10.vkCmdPushConstants(commandBuffer, pipelineLayout, VK10.VK_SHADER_STAGE_COMPUTE_BIT, NO_OFFSET, constants);
             VK10.vkCmdDispatch(commandBuffer, Math.ceilDiv(width, WORKGROUP_SIZE), Math.ceilDiv(height, WORKGROUP_SIZE), SINGLE);
         }
-    }
-
-    static int sampledTextures() {
-        return SAMPLED_TEXTURES;
     }
 
     void destroy() {
@@ -118,30 +79,33 @@ final class RtxShadowPipeline {
         VK10.vkDestroySampler(device, sampler, null);
     }
 
-    private static void writeBuffer(VkWriteDescriptorSet write, int binding, long buffer, long offset, long range, MemoryStack stack) {
-        write.sType$Default()
-            .dstBinding(binding)
-            .descriptorType(VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
-            .descriptorCount(SINGLE)
-            .pBufferInfo(VkDescriptorBufferInfo.calloc(SINGLE, stack).buffer(buffer).offset(offset).range(range));
+    private void describe(VkWriteDescriptorSet write, int binding, RtxBinding bound, MemoryStack stack) {
+        write.sType$Default().dstBinding(binding).descriptorType(bound.descriptorType()).descriptorCount(SINGLE);
+        switch (bound) {
+            case RtxBinding.StorageImage image -> write.pImageInfo(
+                VkDescriptorImageInfo.calloc(SINGLE, stack).imageView(image.imageView()).imageLayout(VK10.VK_IMAGE_LAYOUT_GENERAL)
+            );
+            case RtxBinding.Scene scene -> write.pNext(VkWriteDescriptorSetAccelerationStructureKHR.calloc(stack)
+                .sType$Default()
+                .accelerationStructureCount(SINGLE)
+                .pAccelerationStructures(stack.longs(scene.accelerationStructure())));
+            case RtxBinding.StorageBuffer buffer -> write.pBufferInfo(
+                VkDescriptorBufferInfo.calloc(SINGLE, stack).buffer(buffer.buffer()).offset(buffer.offset()).range(buffer.range())
+            );
+            case RtxBinding.Sampled sampled -> write.pImageInfo(
+                VkDescriptorImageInfo.calloc(SINGLE, stack).sampler(sampler).imageView(sampled.imageView()).imageLayout(VK10.VK_IMAGE_LAYOUT_GENERAL)
+            );
+        }
+        write.descriptorCount(SINGLE);
     }
 
-    private static int descriptorType(int binding) {
-        return switch (binding) {
-            case MASK_BINDING -> VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-            case SCENE_BINDING -> KHRAccelerationStructure.VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-            case AGREEMENT_BINDING, BOXES_BINDING -> VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            default -> VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        };
-    }
-
-    private static long createSetLayout(VkDevice device) {
+    private static long createSetLayout(VkDevice device, int[] descriptorTypes) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            VkDescriptorSetLayoutBinding.Buffer bindings = VkDescriptorSetLayoutBinding.calloc(BINDINGS, stack);
-            for (int binding = 0; binding < BINDINGS; binding++) {
+            VkDescriptorSetLayoutBinding.Buffer bindings = VkDescriptorSetLayoutBinding.calloc(descriptorTypes.length, stack);
+            for (int binding = 0; binding < descriptorTypes.length; binding++) {
                 bindings.get(binding)
                     .binding(binding)
-                    .descriptorType(descriptorType(binding))
+                    .descriptorType(descriptorTypes[binding])
                     .descriptorCount(SINGLE)
                     .stageFlags(VK10.VK_SHADER_STAGE_COMPUTE_BIT);
             }
@@ -155,12 +119,12 @@ final class RtxShadowPipeline {
         }
     }
 
-    private static long createPipelineLayout(VkDevice device, long setLayout) {
+    private static long createPipelineLayout(VkDevice device, long setLayout, int pushConstantBytes) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkPushConstantRange.Buffer constants = VkPushConstantRange.calloc(SINGLE, stack)
                 .stageFlags(VK10.VK_SHADER_STAGE_COMPUTE_BIT)
                 .offset(NO_OFFSET)
-                .size(PUSH_CONSTANT_BYTES);
+                .size(pushConstantBytes);
             VkPipelineLayoutCreateInfo info = VkPipelineLayoutCreateInfo.calloc(stack)
                 .sType$Default()
                 .pSetLayouts(stack.longs(setLayout))

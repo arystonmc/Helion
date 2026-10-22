@@ -195,6 +195,7 @@ final class VanillaFrameDriver {
         }
         HelionRenderCore.get().voxelLighting()
             .update(settings.voxels(), camera.blockPos.getX(), camera.blockPos.getY(), camera.blockPos.getZ(), voxels.use(level, enabled));
+        RtxSectionCapture.requestRecompiles();
     }
 
     private GpuBufferSlice jitteredProjection(TemporalFrame temporal) {

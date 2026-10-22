@@ -1,5 +1,6 @@
 package com.aryston.helion.mixin;
 
+import com.aryston.helion.integration.vanilla.RtxSectionCapture;
 import com.aryston.helion.integration.vanilla.ShadowCasterChanges;
 import com.aryston.helion.integration.vanilla.ShadowCasterMember;
 import com.aryston.helion.integration.vanilla.VoxelSectionChanges;
@@ -42,6 +43,7 @@ abstract class RenderSectionMixin implements ShadowCasterMember {
     )
     private void helion$meshReset(CallbackInfo callback) {
         SectionRenderDispatcher.RenderSection section = (SectionRenderDispatcher.RenderSection) (Object) this;
+        RtxSectionCapture.removed(section.getSectionNode());
         ShadowCasterChanges.meshChanged(section);
         VoxelSectionChanges.sectionChanged(section.getSectionNode());
     }

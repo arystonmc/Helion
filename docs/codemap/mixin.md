@@ -39,7 +39,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### RenderSectionMixin
 - Path: `src/main/java/com/aryston/helion/mixin/RenderSectionMixin.java`
-- Role: Stores the shadow-caster list index on each render section and queues it after its mesh is replaced or reset, for the shadow casters and, by its section node, for the voxel volume (`VoxelSectionChanges`).
+- Role: Stores the shadow-caster list index on each render section and queues it after its mesh is replaced or reset, for the shadow casters and, by its section node, for the voxel volume (`VoxelSectionChanges`); a reset section also leaves the ray tracing scene (`RtxSectionCapture.removed`).
 - Notes: No API reports render-section mesh changes.
 
 #### LevelRendererAccessor
@@ -60,3 +60,13 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Path: `src/main/java/com/aryston/helion/mixin/FrontendGpuDeviceAccessor.java`, `src/main/java/com/aryston/helion/mixin/VulkanDeviceAccessor.java`, `src/main/java/com/aryston/helion/mixin/VulkanCommandEncoderAccessor.java`
 - Role: The renderpearl backend behind the frontend device, its enabled feature set and the command buffer being recorded, for `RtxDevice`.
 - Notes: Renderpearl has no API for raw Vulkan work; used only by the RTX spike.
+
+#### VulkanBackendMixin
+- Path: `src/main/java/com/aryston/helion/mixin/VulkanBackendMixin.java`
+- Role: When ray tracing is asked for and the device enabled `VK_KHR_acceleration_structure`, creates renderpearl's VMA allocator with `VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT`, so ray tracing buffers come from VMA's blocks instead of one `vkAllocateMemory` each.
+- Notes: Renderpearl creates the allocator in a private static method; hundreds of section structures would exceed the driver's allocation count limit with own allocations.
+
+#### SectionCompilerMixin
+- Path: `src/main/java/com/aryston/helion/mixin/SectionCompilerMixin.java`
+- Role: Hands the result of every `SectionCompiler.compile` (on the section compile worker) to `RtxSectionCapture`, which copies the solid and cutout quad positions for ray tracing.
+- Notes: NeoForge's `AddSectionGeometryEvent` adds geometry but never sees the finished meshes; selected with the full descriptor because a shorter overload calls this one.

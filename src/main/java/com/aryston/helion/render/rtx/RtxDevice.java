@@ -13,20 +13,15 @@ import org.lwjgl.vulkan.VK11;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkDevice;
 import org.lwjgl.vulkan.VkPhysicalDeviceAccelerationStructurePropertiesKHR;
-import org.lwjgl.vulkan.VkPhysicalDeviceMemoryProperties;
 import org.lwjgl.vulkan.VkPhysicalDeviceProperties2;
 
 final class RtxDevice {
-    private static final int NO_MEMORY_TYPE = -1;
-
     private final VulkanDevice device;
-    private final int[] memoryTypeFlags;
     private final long scratchAlignment;
     private final long storageOffsetAlignment;
 
-    private RtxDevice(VulkanDevice device, int[] memoryTypeFlags, long scratchAlignment, long storageOffsetAlignment) {
+    private RtxDevice(VulkanDevice device, long scratchAlignment, long storageOffsetAlignment) {
         this.device = device;
-        this.memoryTypeFlags = memoryTypeFlags;
         this.scratchAlignment = scratchAlignment;
         this.storageOffsetAlignment = storageOffsetAlignment;
     }
@@ -41,22 +36,20 @@ final class RtxDevice {
         }
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkDevice vkDevice = vulkan.vkDevice();
-            VkPhysicalDeviceMemoryProperties memory = VkPhysicalDeviceMemoryProperties.calloc(stack);
-            VK11.vkGetPhysicalDeviceMemoryProperties(vkDevice.getPhysicalDevice(), memory);
-            int[] flags = new int[memory.memoryTypeCount()];
-            for (int index = 0; index < flags.length; index++) {
-                flags[index] = memory.memoryTypes(index).propertyFlags();
-            }
             VkPhysicalDeviceAccelerationStructurePropertiesKHR acceleration = VkPhysicalDeviceAccelerationStructurePropertiesKHR.calloc(stack).sType$Default();
             VkPhysicalDeviceProperties2 properties = VkPhysicalDeviceProperties2.calloc(stack).sType$Default().pNext(acceleration);
             VK11.vkGetPhysicalDeviceProperties2(vkDevice.getPhysicalDevice(), properties);
             long storageAlignment = properties.properties().limits().minStorageBufferOffsetAlignment();
-            return Optional.of(new RtxDevice(vulkan, flags, acceleration.minAccelerationStructureScratchOffsetAlignment(), storageAlignment));
+            return Optional.of(new RtxDevice(vulkan, acceleration.minAccelerationStructureScratchOffsetAlignment(), storageAlignment));
         }
     }
 
     VkDevice vkDevice() {
         return device.vkDevice();
+    }
+
+    long vma() {
+        return device.vma();
     }
 
     VkCommandBuffer commandBuffer() {
@@ -75,18 +68,5 @@ final class RtxDevice {
 
     long storageOffsetAlignment() {
         return storageOffsetAlignment;
-    }
-
-    int memoryType(int allowedTypes, int requiredFlags) {
-        for (int index = 0; index < memoryTypeFlags.length; index++) {
-            if ((allowedTypes & 1 << index) != 0 && (memoryTypeFlags[index] & requiredFlags) == requiredFlags) {
-                return index;
-            }
-        }
-        return NO_MEMORY_TYPE;
-    }
-
-    static boolean found(int memoryType) {
-        return memoryType != NO_MEMORY_TYPE;
     }
 }

@@ -7,7 +7,7 @@ The sections live in `docs/architecture/`, one file per topic. Read the invarian
 ## Invariants
 
 1. The render core never imports `net.minecraft` or `net.neoforged`, with one exception: `net.minecraft.resources.Identifier`, which the renderpearl API itself requires. Vanilla access lives in `integration` and `mixin` only.
-2. Renderpearl is used through `api` and `frontend` types. Backend packages (`renderpearl.backend.*`) are not used, except by the RTX feasibility spike in `render.rtx` and its accessors, which only run with `-Dhelion.rtxSpike=true`.
+2. Renderpearl is used through `api` and `frontend` types. Backend packages (`renderpearl.backend.*`) are not used, except by the ray tracing code in `render.rtx` and its mixins, which only run with `-Dhelion.rayTracing=true` or `-Dhelion.rtxSpike=true`.
 3. Helion never crashes the game. A runtime exception in the Helion frame passivates the core (`RENDER_FAILURE`) and vanilla rendering continues from the next frame.
 4. Every GPU resource Helion creates is registered in `GpuResources` with a label and size, and released through it.
 5. NeoForge events (`FrameGraphSetupEvent`, every `RenderLevelStageEvent`, `PrepareRenderBuffersEvent`) fire in the same order and with the same render pass as vanilla.
@@ -39,6 +39,7 @@ The sections live in `docs/architecture/`, one file per topic. Read the invarian
 | Light Shafts | [light-shafts.md](architecture/light-shafts.md) | Sun and moon god rays in screen space, on wherever the physical sky runs (`physicalSky.lightShafts`). |
 | Shadows | [shadows.md](architecture/shadows.md) | Off by default (`shadows.enabled`). |
 | Voxel Lighting | [voxel-lighting.md](architecture/voxel-lighting.md) | Experimental, off by default (`voxelLighting.mode`). Renderpearl API findings, the block volume around the camera, light grid, traced colored block light with shadows, the voxel slice view and the RTX feasibility spike. |
+| Ray Tracing | [ray-tracing.md](architecture/ray-tracing.md) | Optional hardware ray tracing layer behind `-Dhelion.rayTracing=true`: device features, VMA buffers, per-section bottom levels from the block meshes, per-frame top level, sun shadow validation view. |
 | Sources | [sources.md](architecture/sources.md) | Stages never call vanilla code directly. |
 | Vanilla Coupling | [vanilla-coupling.md](architecture/vanilla-coupling.md) | Places that copy or depend on vanilla internals. |
 | Mixins | [mixins.md](architecture/mixins.md) | Every mixin with its target and why no API is enough. |

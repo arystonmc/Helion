@@ -9,7 +9,6 @@ import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.vulkan.VulkanGpuTextureView;
 
 final class RtxShadowMask {
-    private static final String LABEL = "Helion RTX Spike Shadow Mask";
     private static final GpuFormat FORMAT = GpuFormat.RGBA8_UNORM;
     private static final int USAGE = GpuTexture.USAGE_TEXTURE_BINDING | RtxSpike.TEXTURE_USAGE_STORAGE;
     private static final int SINGLE_LAYER = 1;
@@ -27,10 +26,10 @@ final class RtxShadowMask {
         this.tracked = tracked;
     }
 
-    static RtxShadowMask create(GpuResources resources, int width, int height) {
-        GpuTexture texture = RenderSystem.getDevice().createTexture(LABEL, USAGE, FORMAT, width, height, SINGLE_LAYER, SINGLE_MIP);
+    static RtxShadowMask create(GpuResources resources, String label, int width, int height) {
+        GpuTexture texture = RenderSystem.getDevice().createTexture(label, USAGE, FORMAT, width, height, SINGLE_LAYER, SINGLE_MIP);
         GpuTextureView view = RenderSystem.getDevice().createTextureView(texture);
-        TrackedResource tracked = resources.track(LABEL, (long) width * height * FORMAT.blockSize(), () -> {
+        TrackedResource tracked = resources.track(label, (long) width * height * FORMAT.blockSize(), () -> {
             view.close();
             texture.close();
         });
