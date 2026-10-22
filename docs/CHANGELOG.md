@@ -9,6 +9,14 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ### Added
 - Experimental volumetric clouds lit by the physical sky, with Low, Medium and High quality
 
+### Changed
+- Physical sky: a small sun of realistic size with a bright halo that turns orange and red as it sets
+- Physical sky: a three-dimensional moon with real phase shadows, seas and craters, drawn larger than the sun
+- Physical sky: more cinematic sunrises and sunsets with a horizon glow, a rose afterglow and a pink band opposite the sun, and calmer daytime colors
+- Physical sky: terrain takes the warm tones of sunrise and sunset, and moonlit skies look a deeper blue
+- Physical sky: a realistic night sky with round, twinkling stars, a faint Milky Way, planets, shooting stars and rare northern lights in snowy biomes, with settings for star density and the Milky Way
+- Depth of field focuses on the sky when you look at it, so the sun, the moon and the stars stay sharp
+
 ## [1.0] - 2026-10-21
 
 ### Added

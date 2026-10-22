@@ -25,8 +25,8 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### SkyRendererMixin
 - Path: `src/main/java/com/aryston/helion/mixin/SkyRendererMixin.java`
-- Role: Cancels `SkyRenderer.renderSkyDisc` while `HelionSky` draws only the celestial bodies, so the vanilla sunrise and sunset glow, sun, moon, stars and dark disc are drawn over the physical sky, and dims the color of `renderMoon` through `HelionSky.moonColor` whenever Helion draws the sky.
-- Notes: `SkyRenderer.render` draws the sky color and the celestial bodies in one call; no API draws the celestial bodies alone, and keeping the vanilla sun, moon phases and stars avoids copying their textures and geometry.
+- Role: Cancels `SkyRenderer.renderSkyDisc`, `renderSunriseAndSunset`, `renderSun`, `renderMoon` and `renderStars` while `HelionSky` draws only the celestial bodies, so only the vanilla dark disc is drawn over the physical sky (which draws its own sun, moon, stars and twilight glow), and dims the color of `renderMoon` through `HelionSky.moonColor` whenever Helion draws the sky.
+- Notes: `SkyRenderer.render` draws the sky color and the celestial bodies in one call; no API draws the celestial bodies alone or sets their size, and keeping the vanilla moon phases and stars avoids copying their textures and geometry.
 
 #### ChunkSectionsToRenderAccessor
 - Path: `src/main/java/com/aryston/helion/mixin/ChunkSectionsToRenderAccessor.java`

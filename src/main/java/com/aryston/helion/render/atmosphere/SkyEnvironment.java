@@ -3,8 +3,18 @@ package com.aryston.helion.render.atmosphere;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
-public record SkyEnvironment(Vector3fc sunDirection, Vector3fc moonDirection, float rainBrightness, float altitude, AtmosphereFog fog) {
+public record SkyEnvironment(
+    Vector3fc sunDirection,
+    Vector3fc moonDirection,
+    float moonPhaseAngle,
+    float starAngle,
+    float aurora,
+    float rainBrightness,
+    float altitude,
+    AtmosphereFog fog
+) {
     private static final float CELESTIAL_YAW = (float) Math.toRadians(-90.0);
+    private static final float FULL_TURN = (float) (2.0 * Math.PI);
 
     public SkyEnvironment {
         sunDirection = new Vector3f(sunDirection);
@@ -13,5 +23,9 @@ public record SkyEnvironment(Vector3fc sunDirection, Vector3fc moonDirection, fl
 
     public static Vector3f celestialDirection(float angle) {
         return new Vector3f(0.0F, 1.0F, 0.0F).rotateX(angle).rotateY(CELESTIAL_YAW);
+    }
+
+    public static float moonPhaseAngle(int phase, int phaseCount) {
+        return FULL_TURN * phase / phaseCount;
     }
 }

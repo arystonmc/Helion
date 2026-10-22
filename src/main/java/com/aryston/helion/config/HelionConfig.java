@@ -1,6 +1,7 @@
 package com.aryston.helion.config;
 
 import com.aryston.helion.render.atmosphere.PhysicalSkySettings;
+import com.aryston.helion.render.atmosphere.StarDensity;
 import com.aryston.helion.render.clouds.CloudQuality;
 import com.aryston.helion.render.clouds.CloudSettings;
 import com.aryston.helion.render.geometry.GeometryBufferSettings;
@@ -87,6 +88,8 @@ public final class HelionConfig {
     static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
     static final ModConfigSpec.EnumValue<RenderScale> RENDER_SCALE;
     static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
+    static final ModConfigSpec.EnumValue<StarDensity> STAR_DENSITY;
+    static final ModConfigSpec.BooleanValue MILKY_WAY;
     static final ModConfigSpec.BooleanValue CLOUDS_ENABLED;
     static final ModConfigSpec.EnumValue<CloudQuality> CLOUD_QUALITY;
     static final ModConfigSpec.BooleanValue SHADOWS_ENABLED;
@@ -218,6 +221,12 @@ public final class HelionConfig {
         PHYSICAL_SKY_ENABLED = BUILDER
             .translation("helion.configuration.physicalSky.enabled")
             .define("enabled", false);
+        STAR_DENSITY = BUILDER
+            .translation("helion.configuration.physicalSky.starDensity")
+            .defineEnum("starDensity", StarDensity.MEDIUM);
+        MILKY_WAY = BUILDER
+            .translation("helion.configuration.physicalSky.milkyWay")
+            .define("milkyWay", true);
         BUILDER.pop();
 
         BUILDER.translation("helion.configuration.clouds").push("clouds");
@@ -251,7 +260,7 @@ public final class HelionConfig {
             geometryBufferSettings(),
             lightingSettings(),
             new TemporalSettings(TEMPORAL_ENABLED.getAsBoolean(), RENDER_SCALE.get()),
-            new PhysicalSkySettings(PHYSICAL_SKY_ENABLED.getAsBoolean()),
+            new PhysicalSkySettings(PHYSICAL_SKY_ENABLED.getAsBoolean(), STAR_DENSITY.get(), MILKY_WAY.getAsBoolean()),
             new ShadowSettings(SHADOWS_ENABLED.getAsBoolean(), SHADOW_QUALITY.get()),
             new DynamicLightSettings(DYNAMIC_LIGHTS_ENABLED.getAsBoolean()),
             new CloudSettings(CLOUDS_ENABLED.getAsBoolean(), CLOUD_QUALITY.get())

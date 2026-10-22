@@ -37,7 +37,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VisualTestScene
 - Path: `src/main/java/com/aryston/helion/debug/VisualTestScene.java`
-- Role: The photographed scenes: name, time of day, camera yaw and pitch. `dawn_sun` and `dawn_away` look toward and away from the rising sun, so a sky color that depends on the view direction shows up as a difference between them. `day_showcase` and `morning_showcase` show the platform at noon and in the morning, so shadows fall under the roof and beside the pillar. `dusk` (12700 ticks, facing the sun just after it set) checks that the orange sunset glow stays.
+- Role: The photographed scenes: name, time of day, camera yaw and pitch. `dawn_sun` and `dawn_away` look toward and away from the rising sun, so a sky color that depends on the view direction shows up as a difference between them. `day_showcase` and `morning_showcase` show the platform at noon and in the morning, so shadows fall under the roof and beside the pillar. `dusk` (12700 ticks, facing the sun just after it set) checks that the orange sunset glow stays. `moonrise` (13500 ticks, facing east) shows the rising moon of the physical sky about 22 degrees above the horizon, `moon_overhead` (midnight, looking straight up) the moon in the middle of the frame.
 
 #### VisualTestVariant
 - Path: `src/main/java/com/aryston/helion/debug/VisualTestVariant.java`

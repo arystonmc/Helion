@@ -35,7 +35,7 @@ public final class HelionConfigScreen {
             .page("rendering", text("page.rendering"), Icons.MONITOR, page -> page
                 .section(text("section.geometry"), section -> section.add(options.geometryBuffer))
                 .section(text("section.antialiasing"), section -> section.add(options.temporal))
-                .fullSection(text("section.sky"), section -> section.add(options.physicalSky).add(options.clouds)))
+                .fullSection(text("section.sky"), section -> section.add(options.physicalSky).add(options.starDensity).add(options.milkyWay).add(options.clouds)))
             .page("lighting", text("page.lighting"), Icons.SUN, page -> page
                 .fullSection(text("section.ambientOcclusion"), section -> section.add(options.ambientOcclusion).add(options.ambientOcclusionMethod)
                     .add(options.ambientOcclusionStrength).add(options.ambientOcclusionRadius))
