@@ -62,7 +62,7 @@ For full technical and player details, see the [Helion Feature Guide](docs/FEATU
 | Requirement | Supported Version |
 |---|---|
 | **Minecraft** | 26.3 |
-| **Loader** | NeoForge 26.3.0.51-beta or newer |
+| **Loader** | NeoForge 26.3.0.95 or newer |
 | **Java** | 25 |
 | **Graphics API** | Vulkan (`Video Settings` → `Graphics API` → `Prefer Vulkan`) |
 | **Side** | Client only (safe to join any multiplayer server) |

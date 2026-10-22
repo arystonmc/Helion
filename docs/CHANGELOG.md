@@ -11,6 +11,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Light shafts: rays of sunlight and moonlight through clouds, leaves and gaps between blocks, with the physical sky
 
 ### Changed
+- Needs NeoForge 26.3.0.95 or newer (NeoForge for Minecraft 26.3 is no longer beta)
 - Physical sky: a small sun of realistic size with a bright halo that turns orange and red as it sets
 - Physical sky: a three-dimensional moon with real phase shadows, seas and craters, drawn larger than the sun
 - Physical sky: more cinematic sunrises and sunsets with a horizon glow, a rose afterglow and a pink band opposite the sun, and calmer daytime colors
