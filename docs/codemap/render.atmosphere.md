@@ -20,7 +20,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### PhysicalSkyResources
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/PhysicalSkyResources.java`
-- Role: Persistent sky state owned by the core: the spectral transmittance and multiple scattering targets (written once, registered in `GpuResources`), the sun and moon sky view targets with their `SkyViewCache`, the constant `HelionSpectrum` buffer (Rayleigh and ozone coefficients and the spectrum to RGB weights from `AtmosphereSpectrum`), the `HelionSky` uniform ring (inverse level view projection, sun and moon directions and brightness, view height, rain, vanilla fog distances), the `Fog` buffer the frame uses under the physical sky (`writeFog`: the read back horizon color, or the vanilla fog color until the first readback, no distance fog, vanilla cloud fog end), the `HorizonColorReadback`, the sun and moon brightness tuning and the one-time missing shader warning. `viewHeight` turns the altitude above sea level into the distance from the planet center.
+- Role: Persistent sky state owned by the core: the spectral transmittance and multiple scattering targets (written once, registered in `GpuResources`), the sun and moon sky view targets with their `SkyViewCache`, the constant `HelionSpectrum` buffer (Rayleigh and ozone coefficients and the spectrum to RGB weights from `AtmosphereSpectrum`), the `HelionSky` uniform ring (inverse level view projection, sun and moon directions and brightness, view height, rain, vanilla fog distances, moon phase angle, star angle, star density, Milky Way, aurora strength and a sky time in seconds that wraps every hour for twinkling, meteors and auroras; the moon brightness scales with the lit fraction of the moon, at least 10 percent), the `Fog` buffer the frame uses under the physical sky (`writeFog`: the read back horizon color, or the vanilla fog color until the first readback, no distance fog, vanilla cloud fog end), the `HorizonColorReadback`, the sun and moon brightness tuning and the one-time missing shader warning. `viewHeight` turns the altitude above sea level into the distance from the planet center.
 - Depends on: `UniformRing`, `GpuResources`, `AtmosphereSpectrum`, `PixelReadback` (horizon color for the cloud fog), `SkyEnvironment`, `AtmosphereFog`, `HelionCamera`.
 - Notes: the `Fog` buffer has the layout of vanilla `FogRenderer` (`FOG_UBO_SIZE`); terrain, entities and clouds read it through `fog.glsl`.
 
@@ -35,11 +35,15 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### PhysicalSkySettings
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/PhysicalSkySettings.java`
-- Role: Player setting: enabled. `DISABLED` for the foundation.
+- Role: Player settings: enabled, star density and Milky Way. `DISABLED` for the foundation, `enabledWithDefaults` for tests and the visual test.
+
+#### StarDensity
+- Path: `src/main/java/com/aryston/helion/render/atmosphere/StarDensity.java`
+- Role: Star density setting of the physical night sky: `LOW`, `MEDIUM` and `HIGH`, each with the fraction of star cells that hold a star.
 
 #### SkyEnvironment
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/SkyEnvironment.java`
-- Role: Per-frame sky inputs: sun and moon directions in world space, rain brightness, camera altitude above sea level in blocks and the vanilla fog values (`AtmosphereFog`). `celestialDirection` turns a vanilla sun or moon angle into the direction vanilla draws the body in.
+- Role: Per-frame sky inputs: sun and moon directions in world space, the moon phase angle (`moonPhaseAngle` turns a phase index into radians, 0 for the full moon), the vanilla star angle, the aurora strength (0 or 1), rain brightness, camera altitude above sea level in blocks and the vanilla fog values (`AtmosphereFog`). `celestialDirection` turns a vanilla sun or moon angle into the direction vanilla draws the body in.
 
 #### AtmosphereSpectrum
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/AtmosphereSpectrum.java`

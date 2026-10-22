@@ -59,7 +59,7 @@ enum VisualTestVariant {
                     this == LIGHT_ONLY || this == SHADOW_LIGHT
                 ),
                 TemporalSettings.DISABLED,
-                new PhysicalSkySettings(showsShadows()),
+                showsShadows() ? PhysicalSkySettings.enabledWithDefaults() : PhysicalSkySettings.DISABLED,
                 showsShadows() ? new ShadowSettings(true, ShadowQuality.MEDIUM) : ShadowSettings.DISABLED,
                 DynamicLightSettings.DISABLED
             );
@@ -83,7 +83,7 @@ enum VisualTestVariant {
                 settings.geometry().withoutView(),
                 DeferredLightingSettings.DISABLED,
                 TemporalSettings.DISABLED,
-                new PhysicalSkySettings(true),
+                PhysicalSkySettings.enabledWithDefaults(),
                 ShadowSettings.DISABLED,
                 DynamicLightSettings.DISABLED
             );

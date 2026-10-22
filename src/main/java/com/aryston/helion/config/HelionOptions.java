@@ -7,6 +7,7 @@ import com.aryston.arkea.ui.render.Icon;
 import com.aryston.arkea.ui.render.Icons;
 import com.aryston.arkea.ui.widget.Tag;
 import com.aryston.helion.Helion;
+import com.aryston.helion.render.atmosphere.StarDensity;
 import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.lighting.AmbientOcclusionAlgorithm;
 import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
@@ -37,6 +38,8 @@ final class HelionOptions {
     final ConfigOption<Boolean> geometryBuffer;
     final ConfigOption<Boolean> temporal;
     final ConfigOption<Boolean> physicalSky;
+    final ConfigOption<StarDensity> starDensity;
+    final ConfigOption<Boolean> milkyWay;
     final ConfigOption<Boolean> ambientOcclusion;
     final ConfigOption<AmbientOcclusionAlgorithm> ambientOcclusionMethod;
     final ConfigOption<AmbientOcclusionQuality> ambientOcclusionQuality;
@@ -78,6 +81,9 @@ final class HelionOptions {
             .cost(LOW_COST).requires(this.enabled);
         this.physicalSky = experimental(toggle("physicalSky", HelionConfig.PHYSICAL_SKY_ENABLED, Icons.CLOUD, "physicalSky"))
             .cost(LOW_COST).requires(this.enabled).preview(VANILLA_PREVIEW, preview("physical_sky"), PREVIEW_ASPECT);
+        this.starDensity = choice("starDensity", HelionConfig.STAR_DENSITY, StarDensity.class, Icons.SPARKLE, "physicalSky.starDensity")
+            .style(ChoiceStyle.SEGMENTED).requires(this.physicalSky);
+        this.milkyWay = toggle("milkyWay", HelionConfig.MILKY_WAY, Icons.SPARKLE, "physicalSky.milkyWay").requires(this.physicalSky);
         this.ambientOcclusion = toggle("ambientOcclusion", HelionConfig.AMBIENT_OCCLUSION_ENABLED, Icons.SHADOW, "ambientOcclusion")
             .cost(MEDIUM_COST).requires(this.enabled).preview(VANILLA_PREVIEW, preview("ambient_occlusion"), PREVIEW_ASPECT);
         this.ambientOcclusionMethod = choice("ambientOcclusionMethod", HelionConfig.AMBIENT_OCCLUSION_ALGORITHM, AmbientOcclusionAlgorithm.class,
@@ -140,7 +146,7 @@ final class HelionOptions {
     }
 
     List<ConfigOption<?>> all() {
-        return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.ambientOcclusion, this.ambientOcclusionMethod,
+        return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.starDensity, this.milkyWay, this.ambientOcclusion, this.ambientOcclusionMethod,
             this.ambientOcclusionQuality, this.ambientOcclusionStrength, this.ambientOcclusionRadius, this.lighting, this.blockLight, this.skyLight,
             this.dynamicLights, this.shadows, this.shadowQuality, this.renderScale, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.colorGrade, this.edgeSmoothing, this.dither,
             this.sharpening, this.sharpeningStrength, this.motionBlur, this.motionBlurStrength, this.depthOfField, this.depthOfFieldStrength, this.debugMode, this.ambientOcclusionView,

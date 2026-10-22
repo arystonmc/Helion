@@ -25,7 +25,7 @@ class RenderSettingsTest {
         new GeometryBufferSettings(true, GeometryBufferView.NORMALS),
         new DeferredLightingSettings(true, STRONG_BLOCK_LIGHT, DeferredLightingSettings.DEFAULT_SKY_LIGHT_INTENSITY, true),
         new TemporalSettings(true, RenderScale.NATIVE),
-        new PhysicalSkySettings(true),
+        PhysicalSkySettings.enabledWithDefaults(),
         new ShadowSettings(true, ShadowQuality.HIGH),
         new DynamicLightSettings(true)
     );

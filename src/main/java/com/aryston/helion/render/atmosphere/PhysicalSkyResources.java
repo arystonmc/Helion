@@ -30,6 +30,10 @@ public final class PhysicalSkyResources {
     static final float SUN_ILLUMINANCE = 16.0F;
     static final float MOON_ILLUMINANCE = 0.08F;
     static final float NO_FOG_DISTANCE = 1.0e30F;
+    private static final double NANOS_PER_SECOND = 1.0e9;
+    private static final float MIN_MOON_LIGHT = 0.1F;
+    private static final float HALF = 0.5F;
+    private static final double SKY_TIME_PERIOD_SECONDS = 3600.0;
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String SKY_LABEL = "Helion Sky Settings";
     private static final String SPECTRUM_LABEL = "Helion Sky Spectrum";
@@ -56,6 +60,12 @@ public final class PhysicalSkyResources {
         .putVec3()
         .putFloat()
         .putVec3()
+        .putFloat()
+        .putFloat()
+        .putFloat()
+        .putFloat()
+        .putFloat()
+        .putFloat()
         .putFloat()
         .putFloat()
         .putFloat()
@@ -92,6 +102,7 @@ public final class PhysicalSkyResources {
     private @Nullable TrackedResource trackedSkyViews;
     private boolean lookupsWritten;
     private boolean missingPipelinesReported;
+    private final long startNanos = System.nanoTime();
 
     public PhysicalSkyResources(GpuResources resources) {
         this.resources = resources;
@@ -170,7 +181,7 @@ public final class PhysicalSkyResources {
         horizon.request(horizonTexture);
     }
 
-    GpuBuffer writeUniforms(SkyEnvironment environment, HelionCamera camera) {
+    GpuBuffer writeUniforms(SkyEnvironment environment, HelionCamera camera, PhysicalSkySettings settings) {
         if (uniforms == null) {
             uniforms = new UniformRing(SKY_LABEL, SKY_UNIFORM_SIZE, resources);
         }
@@ -180,13 +191,28 @@ public final class PhysicalSkyResources {
             .putVec3(environment.sunDirection())
             .putFloat(SUN_ILLUMINANCE)
             .putVec3(environment.moonDirection())
-            .putFloat(MOON_ILLUMINANCE)
+            .putFloat(MOON_ILLUMINANCE * moonLight(environment.moonPhaseAngle()))
             .putFloat(viewHeight(environment.altitude()))
             .putFloat(environment.rainBrightness())
             .putFloat(vanillaFog.environmentalStart())
             .putFloat(vanillaFog.environmentalEnd())
             .putFloat(vanillaFog.renderDistanceStart())
-            .putFloat(vanillaFog.renderDistanceEnd()));
+            .putFloat(vanillaFog.renderDistanceEnd())
+            .putFloat(environment.moonPhaseAngle())
+            .putFloat(environment.starAngle())
+            .putFloat(settings.starDensity().fraction())
+            .putFloat(settings.milkyWay() ? 1.0F : 0.0F)
+            .putFloat(environment.aurora())
+            .putFloat(skyTime()));
+    }
+
+    private static float moonLight(float phaseAngle) {
+        float litFraction = (1.0F + (float) Math.cos(phaseAngle)) * HALF;
+        return MIN_MOON_LIGHT + (1.0F - MIN_MOON_LIGHT) * litFraction;
+    }
+
+    private float skyTime() {
+        return (float) ((System.nanoTime() - startNanos) / NANOS_PER_SECOND % SKY_TIME_PERIOD_SECONDS);
     }
 
     void finishFrame() {

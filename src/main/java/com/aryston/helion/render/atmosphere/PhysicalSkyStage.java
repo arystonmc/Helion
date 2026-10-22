@@ -218,7 +218,7 @@ public final class PhysicalSkyStage implements RenderStage {
 
     private GpuBuffer uniforms(SkyEnvironment sky, FrameContext frame) {
         if (frameUniforms == null) {
-            frameUniforms = resources.writeUniforms(sky, frame.camera());
+            frameUniforms = resources.writeUniforms(sky, frame.camera(), frame.settings().sky());
         }
         return frameUniforms;
     }

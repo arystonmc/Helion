@@ -134,8 +134,13 @@ A sky that behaves like real air: deep blue overhead, a bright glow around the s
 - The sky color comes from how sunlight and moonlight scatter in an Earth-like atmosphere instead of a single vanilla color, computed across the visible spectrum for natural blues, golden sunrises and red sunsets
 - Distant terrain fades into the real sky color in every direction, so the horizon no longer changes color when you turn your head; clouds fade into the horizon color
 - With HDR lighting on, sunlight, moonlight and skylight tint the terrain: warm on faces toward a low sun, slightly cool in shade, at vanilla brightness and with the vanilla colors of grass, leaves and plants
-- The blocky sun, the moon phases, the stars and the orange sunset glow keep their vanilla look; only the moon is a little dimmer
-- Moonlit nights stay dark blue like vanilla instead of turning grey
+- A small sun of realistic size that glows too brightly to show its edge at day, turning orange and red as it sets
+- A three-dimensional moon, larger than the sun: its phases are real light and shadow on a sphere, with dark seas, craters that show relief along the shadow line a faint glow on its dark side and a soft halo of light around it; low moons turn golden. The stars keep their vanilla look
+- Cinematic sunrises and sunsets: an ember to gold glow along the horizon, a rose afterglow after the sun has set and a pink band opposite the sun, in calm, balanced tones
+- Terrain, fog and clouds take the tones of the sky, warm and rosy at sunrise and sunset
+- A realistic night sky: round, colored stars that twinkle and appear one by one at dusk, a faint Milky Way, bright planets, an occasional shooting star and rare northern lights in snowy biomes; a bright moon washes out the faint stars and rain hides them
+- Star density (Low, Medium, High) and the Milky Way can be set in the sky settings; presets leave both as you set them
+- Nights stay a calm dark navy blue instead of turning grey or black
 - Rain dims and greys the sky; the glow around the sun can bloom
 - Works in the Overworld; other dimensions and views under water keep the vanilla sky
 - Settings: on or off; off by default while it is experimental

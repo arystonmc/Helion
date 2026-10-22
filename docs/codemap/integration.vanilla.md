@@ -92,15 +92,19 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 #### VanillaAtmosphereSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaAtmosphereSource.java`
 - Role: `AtmosphereSource` over vanilla sky, cloud, weather and world border renderers, honoring NeoForge custom sky, cloud and weather renderers. Builds the `SkyEnvironment` from the vanilla sky state (sun and moon angles, rain, camera height above sea level, vanilla fog values) only for the Overworld skybox without a custom sky renderer and with the camera outside water, lava and powder snow. `useFog` swaps the fog buffer in the shared `SceneFog`, and `renderSky` and `renderCelestials` draw the vanilla sky through `HelionSky` (the second with only the celestial bodies).
-- Depends on: `SceneSkyRenderer`, `SceneFog`, `StageEvents`, `HelionSky`.
+- Depends on: `SceneSkyRenderer`, `SceneFog`, `StageEvents`, `HelionSky`, `AuroraNights`.
 
 #### SceneFog
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/SceneFog.java`
 - Role: The fog buffer of one frame, shared by the terrain and atmosphere sources. Starts as the vanilla terrain fog; the physical sky replaces it with its own buffer, so terrain, entities, sky renderers and clouds drawn later in the frame use it.
 
+#### AuroraNights
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/AuroraNights.java`
+- Role: Aurora strength for the physical night sky: 1 when the camera stands in a biome cold enough to snow and the current day (overworld clock time over 24000) is one of the rare aurora nights (a 25 percent chance drawn from the day number, so every player sees the same nights), else 0.
+
 #### HelionSky
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/HelionSky.java`
-- Role: Marks the vanilla sky rendering Helion runs, and whether it only draws the celestial bodies on top of the physical sky, so `SkyRendererMixin` skips the vanilla sky disc then (the sunrise and sunset glow stays). `moonColor` dims the moon to 60 percent while Helion draws the sky, so it no longer blooms like the sun and the two stay easy to tell apart. Render thread only.
+- Role: Marks the vanilla sky rendering Helion runs, and whether it only draws the celestial bodies on top of the physical sky, so `SkyRendererMixin` skips the vanilla sky disc, sunrise and sunset glow, sun and moon then. `moonColor` dims the moon to 60 percent while Helion draws the sky, so it no longer blooms like the sun and the two stay easy to tell apart. Render thread only.
 
 #### VanillaTransparencySource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaTransparencySource.java`

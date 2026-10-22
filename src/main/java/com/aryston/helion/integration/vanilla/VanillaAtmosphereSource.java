@@ -18,6 +18,7 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.client.renderer.state.level.SkyRenderState;
 import net.minecraft.util.ARGB;
+import net.minecraft.world.level.MoonPhase;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.material.FogType;
 import net.neoforged.neoforge.client.CustomCloudsRenderer;
@@ -80,6 +81,9 @@ final class VanillaAtmosphereSource implements AtmosphereSource {
         return Optional.of(new SkyEnvironment(
             SkyEnvironment.celestialDirection(skyState.sunAngle),
             SkyEnvironment.celestialDirection(skyState.moonAngle),
+            SkyEnvironment.moonPhaseAngle(skyState.moonPhase.index(), MoonPhase.COUNT),
+            skyState.starAngle,
+            AuroraNights.strength(clientLevel, camera.pos),
             skyState.rainBrightness,
             altitude,
             new AtmosphereFog(

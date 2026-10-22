@@ -41,7 +41,7 @@ float helionMedianFocus(ivec2 size) {
             count++;
         }
     }
-    return count == 0 ? HELION_MAX_FOCUS_DEPTH : min(depths[count / HELION_FOCUS_QUANTILE], HELION_MAX_FOCUS_DEPTH);
+    return count == 0 ? HELION_SKY_VIEW_DEPTH : min(depths[count / HELION_FOCUS_QUANTILE], HELION_MAX_FOCUS_DEPTH);
 }
 
 void main() {

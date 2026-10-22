@@ -13,6 +13,12 @@ layout(std140) uniform HelionSky {
     float AerialEnvironmentalEnd;
     float AerialRenderDistanceStart;
     float AerialRenderDistanceEnd;
+    float MoonPhaseAngle;
+    float StarAngle;
+    float StarDensity;
+    float MilkyWay;
+    float AuroraStrength;
+    float SkyTime;
 };
 
 #endif

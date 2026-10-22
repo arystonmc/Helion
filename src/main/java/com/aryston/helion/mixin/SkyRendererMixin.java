@@ -12,7 +12,35 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(SkyRenderer.class)
 abstract class SkyRendererMixin {
     @Inject(method = "renderSkyDisc", at = @At("HEAD"), cancellable = true)
-    private void helion$skipUnderPhysicalSky(CallbackInfo callback) {
+    private void helion$skipSkyDiscUnderPhysicalSky(CallbackInfo callback) {
+        if (HelionSky.isDrawingCelestialsOnly()) {
+            callback.cancel();
+        }
+    }
+
+    @Inject(method = "renderSunriseAndSunset", at = @At("HEAD"), cancellable = true)
+    private void helion$skipSunriseGlowUnderPhysicalSky(CallbackInfo callback) {
+        if (HelionSky.isDrawingCelestialsOnly()) {
+            callback.cancel();
+        }
+    }
+
+    @Inject(method = "renderSun", at = @At("HEAD"), cancellable = true)
+    private void helion$skipSunUnderPhysicalSky(CallbackInfo callback) {
+        if (HelionSky.isDrawingCelestialsOnly()) {
+            callback.cancel();
+        }
+    }
+
+    @Inject(method = "renderStars", at = @At("HEAD"), cancellable = true)
+    private void helion$skipStarsUnderPhysicalSky(CallbackInfo callback) {
+        if (HelionSky.isDrawingCelestialsOnly()) {
+            callback.cancel();
+        }
+    }
+
+    @Inject(method = "renderMoon", at = @At("HEAD"), cancellable = true)
+    private void helion$skipMoonUnderPhysicalSky(CallbackInfo callback) {
         if (HelionSky.isDrawingCelestialsOnly()) {
             callback.cancel();
         }

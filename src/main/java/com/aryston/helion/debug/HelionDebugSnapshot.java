@@ -186,6 +186,8 @@ public final class HelionDebugSnapshot {
     private static JsonObject physicalSky(PhysicalSkySettings settings) {
         JsonObject section = new JsonObject();
         section.addProperty("enabled", settings.enabled());
+        section.addProperty("starDensity", settings.starDensity().name());
+        section.addProperty("milkyWay", settings.milkyWay());
         return section;
     }
 
