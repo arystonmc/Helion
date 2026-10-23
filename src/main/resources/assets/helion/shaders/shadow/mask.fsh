@@ -6,6 +6,9 @@
 
 uniform sampler2D DepthSampler;
 uniform sampler2D GeometryNormalSampler;
+#ifdef HELION_TRACED_SHADOWS
+uniform sampler2D TracedShadowSampler;
+#endif
 
 layout(location = 0) in vec2 texCoord;
 
@@ -40,6 +43,10 @@ float helionBlendedVisibility(vec3 position, vec3 normal) {
     if (PreviousWeight > 0.0) {
         terrain = mix(terrain, helionShadowVisibility(true, position, normal).x, PreviousWeight);
     }
+    #ifdef HELION_TRACED_SHADOWS
+    vec4 traced = texture(TracedShadowSampler, gl_FragCoord.xy / vec2(textureSize(DepthSampler, 0)));
+    terrain = mix(terrain, traced.r, traced.g);
+    #endif
     return min(terrain, current.y);
 }
 

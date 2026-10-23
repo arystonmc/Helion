@@ -41,12 +41,15 @@ public final class ShadowStage implements RenderStage {
 
     private final ShadowCasterSource casters;
     private final ShadowResources resources;
+    private final TracedShadows traced;
     private @Nullable CompiledRenderPipeline mask;
+    private @Nullable CompiledRenderPipeline tracedMask;
     private @Nullable ShadowLight light;
 
-    public ShadowStage(ShadowCasterSource casters, ShadowResources resources) {
+    public ShadowStage(ShadowCasterSource casters, ShadowResources resources, TracedShadows traced) {
         this.casters = casters;
         this.resources = resources;
+        this.traced = traced;
     }
 
     @Override
@@ -74,6 +77,7 @@ public final class ShadowStage implements RenderStage {
             return false;
         }
         mask = HelionPipelines.compiled(ShadowPipelines.MASK).orElse(null);
+        tracedMask = HelionPipelines.compiled(ShadowPipelines.MASK_TRACED).orElse(null);
         if (mask == null) {
             resources.reportMissingPipelines();
             return false;
@@ -101,7 +105,8 @@ public final class ShadowStage implements RenderStage {
         List<ResourceHandle<RenderTarget>> maps = addShadowMapPass(frame, imported, cascades, due);
         List<ResourceHandle<RenderTarget>> entityMaps = addEntityPass(frame, resolution);
         float previousWeight = resources.cache().previousWeight(now);
-        ResourceHandle<RenderTarget> visibility = addMaskPass(frame, maps, entityMaps, distance, resolution, previousWeight);
+        Optional<GpuTextureView> tracedShadows = tracedMask == null ? Optional.empty() : traced.addTo(frame, shadowLight);
+        ResourceHandle<RenderTarget> visibility = addMaskPass(frame, maps, entityMaps, distance, resolution, previousWeight, tracedShadows);
         frame.shadows().publish(visibility, shadowLight);
     }
 
@@ -173,10 +178,11 @@ public final class ShadowStage implements RenderStage {
         List<ResourceHandle<RenderTarget>> entityMaps,
         float distance,
         int resolution,
-        float previousWeight
+        float previousWeight,
+        Optional<GpuTextureView> tracedShadows
     ) {
         GeometryBuffer.Targets geometry = frame.geometry().targets().orElseThrow();
-        CompiledRenderPipeline pipeline = Objects.requireNonNull(mask);
+        CompiledRenderPipeline pipeline = Objects.requireNonNull(tracedShadows.isPresent() ? tracedMask : mask);
         FramePass pass = frame.graph().addPass(MASK_PASS);
         shadowMaps.forEach(pass::reads);
         entityMaps.forEach(pass::reads);
@@ -198,6 +204,9 @@ public final class ShadowStage implements RenderStage {
                 renderPass.setUniform(ShadowPipelines.SETTINGS, settings);
                 renderPass.setUniform(ShadowPipelines.DEPTH_SAMPLER, depthView(scene), nearest());
                 renderPass.setUniform(ShadowPipelines.GEOMETRY_NORMAL_SAMPLER, colorView(geometry.normal()), nearest());
+                tracedShadows.ifPresent(view -> renderPass.setUniform(
+                    ShadowPipelines.TRACED_SHADOW_SAMPLER, view, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR)
+                ));
                 for (int index = 0; index < ShadowCascades.COUNT; index++) {
                     renderPass.setUniform(
                         ShadowPipelines.SHADOW_MAP_SAMPLERS.get(index), depthView(shadowMaps.get(current * ShadowCascades.COUNT + index)), nearest()

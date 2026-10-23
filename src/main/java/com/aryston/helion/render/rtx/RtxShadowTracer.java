@@ -2,10 +2,10 @@ package com.aryston.helion.render.rtx;
 
 import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.geometry.GeometryBuffer;
+import com.aryston.helion.render.geometry.TerrainSource;
 import com.aryston.helion.render.graph.FrameContext;
-import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.shadow.ShadowLight;
-import com.aryston.helion.render.shadow.ShadowResults;
+import com.aryston.helion.render.shadow.TracedShadows;
 import com.aryston.helion.render.voxel.VoxelVolumeLayout;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -18,67 +18,62 @@ import java.util.Objects;
 import java.util.Optional;
 import org.joml.Vector3dc;
 import org.joml.Vector3fc;
-import org.jspecify.annotations.Nullable;
 
-public final class RtxSunShadowStage implements RenderStage {
+public final class RtxShadowTracer implements TracedShadows {
     static final String NAME = "rt_sun_shadow";
 
     private static final int RESOLUTION_DIVISOR = 2;
     private static final int MATRIX_BYTES = 16 * Float.BYTES;
     private static final float MAX_DISTANCE = 128.0F;
+    private static final float SOFTNESS = 0.012F;
+    private static final float UNUSED = 0.0F;
+    private static final long WHOLE_BUFFER = 0L;
 
     private final RayTracingResources resources;
-    private @Nullable ShadowLight light;
-    private @Nullable RtxSectionPos anchor;
+    private final TerrainSource terrain;
 
-    public RtxSunShadowStage(RayTracingResources resources) {
+    public RtxShadowTracer(RayTracingResources resources, TerrainSource terrain) {
         this.resources = resources;
+        this.terrain = terrain;
     }
 
     @Override
-    public String name() {
-        return NAME;
-    }
-
-    @Override
-    public boolean isActive(FrameContext frame) {
-        if (!RayTracing.VIEW || !frame.settings().rayTracing().active() || frame.geometry().targets().isEmpty() || !resources.available()) {
-            return false;
+    public Optional<GpuTextureView> addTo(FrameContext frame, ShadowLight light) {
+        boolean wanted = frame.settings().rayTracing().tracesShadows() || (RayTracing.VIEW && frame.settings().rayTracing().active());
+        if (!wanted || frame.geometry().targets().isEmpty() || !resources.available() || resources.scene().anchor() == null) {
+            return Optional.empty();
         }
-        Optional<ShadowResults.Shadows> shadows = frame.shadows().shadows();
-        light = shadows.map(ShadowResults.Shadows::light).orElse(null);
-        anchor = resources.scene().anchor();
-        return light != null && anchor != null;
-    }
-
-    @Override
-    public void addTo(FrameContext frame) {
-        ShadowLight shadowLight = Objects.requireNonNull(light);
-        RtxSectionPos center = Objects.requireNonNull(anchor);
+        RtxSectionPos center = Objects.requireNonNull(resources.scene().anchor());
         int width = Math.ceilDiv(frame.scene().width(), RESOLUTION_DIVISOR);
         int height = Math.ceilDiv(frame.scene().height(), RESOLUTION_DIVISOR);
         RtxImage mask = resources.mask(width, height);
         ByteBuffer constants = resources.constants();
-        writeConstants(constants, frame.camera(), center, shadowLight.direction());
+        writeConstants(constants, frame.camera(), center, light.direction());
         GeometryBuffer.Targets geometry = frame.geometry().targets().orElseThrow();
         ResourceHandle<RenderTarget> sceneTarget = frame.targets().scene();
+        GpuTextureView atlas = terrain.textures().atlas();
         FramePass pass = frame.graph().addPass(NAME);
         pass.reads(geometry.normal());
         pass.reads(sceneTarget);
         pass.disableCulling();
         RtxDevice device = resources.device();
-        long topLevel = resources.scene().topLevelHandle();
+        RtxSectionScene scene = resources.scene();
+        long topLevel = scene.topLevelHandle();
+        RtxBuffer table = scene.surfaceTable();
         pass.executes(frame.graph().timed(NAME, () -> {
             device.memoryBarrier();
             List<RtxBinding> bindings = List.of(
                 new RtxBinding.StorageImage(mask.vkImageView()),
                 new RtxBinding.Scene(topLevel),
                 new RtxBinding.Sampled(handle(Objects.requireNonNull(sceneTarget.get().getDepthTextureView()))),
-                new RtxBinding.Sampled(handle(Objects.requireNonNull(geometry.normal().get().getColorTextureView())))
+                new RtxBinding.Sampled(handle(Objects.requireNonNull(geometry.normal().get().getColorTextureView()))),
+                new RtxBinding.Sampled(handle(atlas)),
+                new RtxBinding.StorageBuffer(table.buffer(), WHOLE_BUFFER, table.size())
             );
             resources.sunShadow().dispatch(device.commandBuffer(), bindings, constants, mask.width(), mask.height());
             device.memoryBarrier();
         }));
+        return frame.settings().rayTracing().tracesShadows() ? Optional.of(mask.view()) : Optional.empty();
     }
 
     private static long handle(GpuTextureView view) {
@@ -95,6 +90,7 @@ public final class RtxSunShadowStage implements RenderStage {
             .putFloat((float) (position.z() - center.originZ()))
             .putFloat(RtxSectionInbox.RADIUS * VoxelVolumeLayout.SECTION_SIZE);
         constants.putFloat(toLight.x()).putFloat(toLight.y()).putFloat(toLight.z()).putFloat(MAX_DISTANCE);
+        constants.putFloat(SOFTNESS).putFloat(UNUSED).putFloat(UNUSED).putFloat(UNUSED);
         constants.flip();
     }
 }

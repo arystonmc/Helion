@@ -19,6 +19,8 @@ final class RtxTopLevel {
     private static final int USAGE = KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
     private static final int SURFACE_TABLE_USAGE = VK10.VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     private static final int ALL_RAYS = 0xFF;
+    private static final int SURFACE_ENTRY_BYTES = 4 * Integer.BYTES;
+    private static final int SOLID_QUADS_OFFSET = Long.BYTES;
     private static final int[] DIAGONAL = {0, 5, 10};
     private static final int TRANSLATE_X = 3;
     private static final int TRANSLATE_Y = 7;
@@ -45,7 +47,7 @@ final class RtxTopLevel {
         long bytes = 0L;
         for (int slot = 0; slot < FRAMES_IN_FLIGHT; slot++) {
             instances[slot] = RtxBuffer.create(device, (long) CAPACITY * VkAccelerationStructureInstanceKHR.SIZEOF, USAGE, true);
-            surfaceTables[slot] = RtxBuffer.create(device, (long) CAPACITY * Long.BYTES, SURFACE_TABLE_USAGE, true);
+            surfaceTables[slot] = RtxBuffer.create(device, (long) CAPACITY * SURFACE_ENTRY_BYTES, SURFACE_TABLE_USAGE, true);
             bytes += instances[slot].size() + surfaceTables[slot].size();
         }
         RtxAccelerationStructure structure = RtxAccelerationStructure.create(device, RtxGeometry.instances(instances[0].address(), CAPACITY));
@@ -75,7 +77,9 @@ final class RtxTopLevel {
             transform.matrix(TRANSLATE_X, (section.position().sectionX() - anchor.sectionX()) * VoxelVolumeLayout.SECTION_SIZE);
             transform.matrix(TRANSLATE_Y, (section.position().sectionY() - anchor.sectionY()) * VoxelVolumeLayout.SECTION_SIZE);
             transform.matrix(TRANSLATE_Z, (section.position().sectionZ() - anchor.sectionZ()) * VoxelVolumeLayout.SECTION_SIZE);
-            MemoryUtil.memPutLong(table + (long) index * Long.BYTES, section.surfaceAddress());
+            long entry = table + (long) index * SURFACE_ENTRY_BYTES;
+            MemoryUtil.memPutLong(entry, section.surfaceAddress());
+            MemoryUtil.memPutInt(entry + SOLID_QUADS_OFFSET, section.solidQuads());
             instance.instanceCustomIndex(index)
                 .mask(ALL_RAYS)
                 .flags(KHRAccelerationStructure.VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR)

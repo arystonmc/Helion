@@ -94,6 +94,7 @@ public final class HelionConfig {
     static final ModConfigSpec.EnumValue<VoxelLightingQuality> VOXEL_LIGHTING_QUALITY;
     static final ModConfigSpec.BooleanValue RAY_TRACING_ENABLED;
     static final ModConfigSpec.BooleanValue WATER_REFLECTIONS;
+    static final ModConfigSpec.BooleanValue RAY_TRACED_SHADOWS;
     static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
     static final ModConfigSpec.EnumValue<RenderScale> RENDER_SCALE;
     static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
@@ -235,6 +236,9 @@ public final class HelionConfig {
         WATER_REFLECTIONS = BUILDER
             .translation("helion.configuration.rayTracing.waterReflections")
             .define("waterReflections", true);
+        RAY_TRACED_SHADOWS = BUILDER
+            .translation("helion.configuration.rayTracing.shadows")
+            .define("shadows", true);
         BUILDER.pop();
 
         BUILDER.translation("helion.configuration.temporalAntiAliasing").push("temporalAntiAliasing");
@@ -297,7 +301,7 @@ public final class HelionConfig {
             new DynamicLightSettings(DYNAMIC_LIGHTS_ENABLED.getAsBoolean()),
             new CloudSettings(CLOUDS_ENABLED.getAsBoolean(), CLOUD_QUALITY.get()),
             new VoxelLightingSettings(VOXEL_LIGHTING_MODE.get(), VOXEL_LIGHTING_QUALITY.get()),
-            new RayTracingSettings(RAY_TRACING_ENABLED.getAsBoolean() || RayTracing.forced(), WATER_REFLECTIONS.getAsBoolean())
+            new RayTracingSettings(RAY_TRACING_ENABLED.getAsBoolean() || RayTracing.forced(), WATER_REFLECTIONS.getAsBoolean(), RAY_TRACED_SHADOWS.getAsBoolean())
         );
     }
 

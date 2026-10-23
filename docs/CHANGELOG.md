@@ -13,6 +13,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental voxel lighting: held and burning lights are colored and cast shadows, and mobs and players cast shadows from lights
 - Mobs, players and items are lit like the blocks around them: colored voxel light, sun shadows and ambient occlusion now reach them
 - Experimental ray tracing for RTX and similar cards: water reflects the world, the sky, the sun and the moon, with waves and darker deep water (in the Experimental preset, takes effect after a restart)
+- Experimental ray traced shadows: exact soft sun and moon shadows near you, with leaves and fences casting shadows through their holes
 
 ### Changed
 - Needs NeoForge 26.3.0.95 or newer (NeoForge for Minecraft 26.3 is no longer beta)

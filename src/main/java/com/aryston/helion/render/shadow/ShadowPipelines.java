@@ -18,6 +18,7 @@ public final class ShadowPipelines {
     public static final String PROJECTION = "Projection";
     public static final String DEPTH_SAMPLER = "DepthSampler";
     public static final String GEOMETRY_NORMAL_SAMPLER = "GeometryNormalSampler";
+    public static final String TRACED_SHADOW_SAMPLER = "TracedShadowSampler";
     public static final List<String> SHADOW_MAP_SAMPLERS = IntStream.range(0, ShadowCascades.COUNT)
         .mapToObj(cascade -> "ShadowMapSampler" + cascade)
         .toList();
@@ -37,13 +38,20 @@ public final class ShadowPipelines {
     public static final double CLEAR_DEPTH = 1.0;
     private static final float SLOPE_DEPTH_BIAS = 1.5F;
     private static final float CONSTANT_DEPTH_BIAS = 1.0F;
+    private static final String TRACED_DEFINE = "HELION_TRACED_SHADOWS";
 
     public static final DepthStencilState CASTER_DEPTH = new DepthStencilState(
         CompareOp.LESS_THAN_OR_EQUAL, true, SLOPE_DEPTH_BIAS, CONSTANT_DEPTH_BIAS
     );
 
     public static final RenderPipeline MASK = HelionPipelines.fullscreen("shadow/mask")
-        .withBindGroupLayout(maskBindings())
+        .withBindGroupLayout(maskBindings().build())
+        .withColorTargetState(new ColorTargetState(Optional.empty(), MASK_FORMAT, ColorTargetState.WRITE_ALL))
+        .build();
+
+    public static final RenderPipeline MASK_TRACED = HelionPipelines.fullscreen("shadow/mask_traced", "shadow/mask")
+        .withShaderDefine(TRACED_DEFINE)
+        .withBindGroupLayout(maskBindings().withUniform(TRACED_SHADOW_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER).build())
         .withColorTargetState(new ColorTargetState(Optional.empty(), MASK_FORMAT, ColorTargetState.WRITE_ALL))
         .build();
 
@@ -51,10 +59,10 @@ public final class ShadowPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(MASK);
+        return List.of(MASK, MASK_TRACED);
     }
 
-    private static BindGroupLayout maskBindings() {
+    private static BindGroupLayout.Builder maskBindings() {
         BindGroupLayout.Builder bindings = BindGroupLayout.builder()
             .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
             .withUniform(DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
@@ -65,6 +73,6 @@ public final class ShadowPipelines {
         for (String sampler : samplers) {
             bindings = bindings.withUniform(sampler, UniformType.COMBINED_IMAGE_SAMPLER);
         }
-        return bindings.build();
+        return bindings;
     }
 }

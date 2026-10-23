@@ -31,6 +31,10 @@ final class VisualTestWorld {
         new Placement(3, -1, -9, "redstone_block"),
         new Placement(3, 0, -9, "redstone_lamp[lit=true]")
     );
+    private static final Volume CANOPY = new Volume(new BlockPos(4, 4, -5), new BlockPos(6, 4, -3));
+    private static final String CANOPY_BLOCK = "oak_leaves[persistent=true]";
+    private static final Volume FENCE = new Volume(new BlockPos(2, 0, -1), new BlockPos(4, 0, -1));
+    private static final String FENCE_BLOCK = "oak_fence";
     private static final Volume POOL = new Volume(new BlockPos(-5, -3, -10), new BlockPos(-2, -1, -1));
     private static final int POOL_WALL = 1;
     private static final String CASTER_BLOCK = "stone";
@@ -64,6 +68,8 @@ final class VisualTestWorld {
         SHADOW_CASTERS.forEach(caster -> run(server, fill(origin.offset(caster.from()), origin.offset(caster.to()), CASTER_BLOCK)));
         run(server, fill(origin.offset(POOL.from().offset(-POOL_WALL, -POOL_WALL, -POOL_WALL)), origin.offset(POOL.to().offset(POOL_WALL, 0, POOL_WALL)), CASTER_BLOCK));
         run(server, fill(origin.offset(POOL.from()), origin.offset(POOL.to()), "water"));
+        run(server, fill(origin.offset(CANOPY.from()), origin.offset(CANOPY.to()), CANOPY_BLOCK));
+        run(server, fill(origin.offset(FENCE.from()), origin.offset(FENCE.to()), FENCE_BLOCK));
         ENTITIES.forEach(entity -> run(server, entity.command(origin)));
     }
 

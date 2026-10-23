@@ -204,8 +204,10 @@ Uses the ray tracing hardware of RTX and similar graphics cards for what shaders
 - Water reflects the blocks around it, the sky, the sun and the moon, with gentle animated waves
 - Deep water turns dark blue-green so reflections stand out, while you still see the bottom of shallow water
 - Reflections come from the blocks within about 64 blocks of you; farther away the sky is reflected
+- Ray traced shadows: within about 64 blocks, sun and moon shadows follow the exact block shapes, leaves and fences cast shadows with their holes, and shadow edges soften the farther they fall from what casts them
+- Leaves, flowers and fences show their holes in reflections too
 - Needs a graphics card with hardware ray tracing; on other cards it stays off and nothing changes
-- Settings: on or off (takes effect after restarting the game), and water reflections on or off; on in the Experimental preset, off otherwise
+- Settings: on or off (takes effect after restarting the game), water reflections and ray traced shadows on or off; on in the Experimental preset, off otherwise
 - Since: Unreleased
 
 ### Sun and Moon Shadows (Experimental)

@@ -15,15 +15,15 @@ An optional quality layer for cards with hardware ray tracing, on top of voxel l
 ## Section Scene
 
 1. `SectionCompilerMixin` sees every compiled section on the compile worker. `RtxSectionCapture` copies the quad positions of the solid and cutout layers (relative to the section; vanilla floats or Aervium's compact 16-bit positions) when the section lies within 5 sections of the camera section, and hands them to `RtxSectionInbox`. Translucent terrain (water, glass, ice) is not in the scene yet.
-2. `RtxSceneStage` runs after the opaque geometry. It drains the inbox, keeps sections within 4 sections of the camera section (Chebyshev, 9 x 9 x 9 sections) plus 2 sections of slack, and builds up to 16 bottom level structures per frame, nearest first: indexed triangles (one shared quad index buffer), opaque, prefer fast trace, built with one shared scratch buffer at aligned offsets. The vertex buffer is released right after the build is recorded.
+2. `RtxSceneStage` runs after the opaque geometry. It drains the inbox, keeps sections within 4 sections of the camera section (Chebyshev, 9 x 9 x 9 sections) plus 2 sections of slack, and builds up to 16 bottom level structures per frame, nearest first: indexed triangles (one shared quad index buffer), solid opaque and cutout alpha tested, prefer fast trace, built with one shared scratch buffer at aligned offsets. The vertex buffer is released right after the build is recorded.
 3. Sections in the radius whose mesh was compiled before they came near never arrive by themselves; the scene asks for at most 8 recompiles per frame through `LevelExtractor.setSectionDirty`. A section reset removes its structure.
 4. The top level is rebuilt every frame from the sections within the radius (up to 1024 instances, a ring of four mapped instance buffers), translated relative to the camera section so coordinates stay small, with triangle culling off so one-sided quads (plants, leaves) block rays from both sides.
-5. Cutout quads count as solid for now: leaves are closed blocks and plants are flat panes.
+5. Each section structure has two geometries: solid quads marked opaque and cutout quads not opaque. Rays alpha test cutout candidates against the block atlas (`helionTraceCutout`, alpha at least 0.5 like vanilla's cutout layer), so leaves, flowers and fences let light and reflections through their holes.
 6. Every section also keeps 12 bytes per vertex of surface attributes (atlas texture coordinate, vertex color, light coordinates) in a device local storage buffer. The instance custom index is the instance slot, and a per-frame surface table maps each slot to that buffer's device address, so a ray query hit reads the attributes of its triangle through `GL_EXT_buffer_reference` (instance, primitive and barycentrics; a quad is the triangles 0-1-2 and 2-3-0). This adds about 15 % to the scene memory.
 
-## Validation View
+## Ray Traced Shadows
 
-`RtxSunShadowStage` (`rt_sun_shadow`, only with `helion.rayTracing.view`, after the shadow stage while it has a sun or moon) traces every half resolution terrain pixel inside the scene toward the light with `rayQueryEXT` (terminate on first hit, opaque) and writes lit or blocked into a mask; `rt_sun_shadow_view` paints blocked pixels dark blue over the output. Entities are not in the scene, so they are traced but cast nothing.
+With `rayTracing.shadows` (on by default under ray tracing, needs sun shadows), `ShadowStage` asks its `TracedShadows` (`RtxShadowTracer`) before the mask pass. Pass `rt_sun_shadow` traces four rays per half resolution terrain pixel inside the scene toward the stepped light direction, spread over a cone of 0.012 radians (a little wider than the sun, so shadows soften with the distance to their caster) in a Vogel pattern rotated per pixel. It stores the visibility of the decided rays and a weight: a ray that leaves the scene through a side is undecided, because terrain outside the scene may shade it, while one that leaves through the top counts as lit; the weight also fades over the last 8 blocks of the scene. The mask shader mixes the shadow map terrain visibility toward the traced one by that weight, then keeps the darker of terrain and entities, so mobs still cast their shadow map shadow. `rt_sun_shadow_view` (`-Dhelion.rayTracing.view=true`) paints blocked pixels dark blue over the output.
 
 ## Water Reflections
 
@@ -42,7 +42,7 @@ One visual test run (`day_showcase` and `morning_showcase`, variant `shadows`).
 | Memory of the bottom levels | 23 MiB |
 | Top level build (`rt_top_level`) | 0.08 to 0.10 ms GPU |
 | Bottom level builds while sections change (`rt_bottom_levels`) | 0.18 to 0.31 ms GPU in frames that build |
-| Sun shadow trace, half resolution (`rt_sun_shadow`) | 0.11 to 0.13 ms GPU (the shadow map stages took 0.18 to 0.28 ms plus 0.30 ms for the mask) |
+| Sun shadow trace, half resolution, one ray before soft shadows (`rt_sun_shadow`) | 0.11 to 0.13 ms GPU (the shadow map stages took 0.18 to 0.28 ms plus 0.30 ms for the mask) |
 | Scene update on the render thread | 0.07 to 0.17 ms CPU per frame, 7 ms in the first frame |
 
 - The traced shadows follow the block shapes: slab overhangs, the pillar and the trees around the area cast them, and thin blocks cast thin shadows.
@@ -50,8 +50,10 @@ One visual test run (`day_showcase` and `morning_showcase`, variant `shadows`).
 
 Water reflections (visual test `water_noon`, `water_sunset`, `water_night`, variant `shadows`, window 427 x 240): `water_surface` 0.01 to 0.02 ms, `rt_reflection` 0.03 ms, scene memory 31 MiB for 267 sections with the surface attributes (23 MiB without).
 
+Ray traced shadows (visual test `day_showcase` and `morning_showcase`, variant `shadows`, window 427 x 240): `rt_sun_shadow` with four rays and cutout alpha testing 0.08 to 0.09 ms, `shadow_mask` 0.06 ms.
+
 ## Next
 
 1. Water: screen space reflections for cards without ray tracing and for water beyond the section scene, refraction of the bottom, glass and ice reflections, reflections seen from under water, sun shadow rays at the hit.
-2. Cutout alpha testing, then entities as their own bottom levels (boxes first).
+2. Entities as their own bottom levels (boxes first), so mobs cast traced shadows and show in reflections.
 3. Compaction of the bottom levels and a radius chosen by memory, and a settings switch (with a preset entry, lesson L-117) once a visible feature uses the scene.

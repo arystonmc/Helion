@@ -2,6 +2,7 @@ package com.aryston.helion.render.rtx;
 
 import com.aryston.helion.render.resource.GpuResources;
 import com.aryston.helion.render.resource.TrackedResource;
+import java.util.List;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryStack;
@@ -27,6 +28,7 @@ final class RtxSectionBlas {
     private final RtxAccelerationStructure structure;
     private final TrackedResource tracked;
     private final RtxBuffer surface;
+    private final int solidQuads;
     private final TrackedResource trackedSurface;
     private @Nullable TrackedResource vertices;
     private @Nullable RtxBuffer upload;
@@ -38,6 +40,7 @@ final class RtxSectionBlas {
         TrackedResource tracked,
         TrackedResource vertices,
         RtxBuffer surface,
+        int solidQuads,
         TrackedResource trackedSurface,
         RtxBuffer upload,
         TrackedResource trackedUpload
@@ -47,6 +50,7 @@ final class RtxSectionBlas {
         this.tracked = tracked;
         this.vertices = vertices;
         this.surface = surface;
+        this.solidQuads = solidQuads;
         this.trackedSurface = trackedSurface;
         this.upload = upload;
         this.trackedUpload = trackedUpload;
@@ -66,11 +70,18 @@ final class RtxSectionBlas {
         TrackedResource trackedUpload = resources.track(SURFACE_UPLOAD_LABEL, upload.size(), upload::destroy);
         RtxBuffer surface = RtxBuffer.create(device, surfaceBytes, SURFACE_USAGE, false);
         TrackedResource trackedSurface = resources.track(SURFACE_LABEL, surface.size(), surface::destroy);
-        RtxGeometry geometry = RtxGeometry.triangles(vertexBuffer.address(), indexAddress, vertexCount, mesh.quads() * TRIANGLES_PER_QUAD);
-        RtxAccelerationStructure structure = RtxAccelerationStructure.createForSharedScratch(device, geometry);
+        int solidVertices = mesh.solidQuads() * VERTICES_PER_QUAD;
+        List<RtxGeometry> geometries = List.of(
+            RtxGeometry.triangles(vertexBuffer.address(), indexAddress, solidVertices, mesh.solidQuads() * TRIANGLES_PER_QUAD, true),
+            RtxGeometry.triangles(
+                vertexBuffer.address() + (long) solidVertices * RtxAccelerationStructure.VERTEX_STRIDE, indexAddress,
+                vertexCount - solidVertices, (mesh.quads() - mesh.solidQuads()) * TRIANGLES_PER_QUAD, false
+            )
+        );
+        RtxAccelerationStructure structure = RtxAccelerationStructure.createForSharedScratch(device, geometries);
         TrackedResource tracked = resources.track(LABEL, structure.bytes(), () -> structure.destroy(device.vkDevice()));
         return new RtxSectionBlas(
-            new RtxSectionPos(mesh.sectionX(), mesh.sectionY(), mesh.sectionZ()), structure, tracked, vertices, surface, trackedSurface, upload, trackedUpload
+            new RtxSectionPos(mesh.sectionX(), mesh.sectionY(), mesh.sectionZ()), structure, tracked, vertices, surface, mesh.solidQuads(), trackedSurface, upload, trackedUpload
         );
     }
 
@@ -100,6 +111,10 @@ final class RtxSectionBlas {
 
     long surfaceAddress() {
         return surface.address();
+    }
+
+    int solidQuads() {
+        return solidQuads;
     }
 
     long bytes() {

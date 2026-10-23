@@ -55,9 +55,13 @@ public final class RtxSectionCapture {
             return;
         }
         int quads = 0;
+        int solidQuads = 0;
         for (ChunkSectionLayer layer : SOLID_LAYERS) {
             MeshData mesh = results.renderedLayers.get(layer);
             quads += mesh == null ? NO_QUADS : mesh.drawState().vertexCount() / VERTICES_PER_QUAD;
+            if (layer == ChunkSectionLayer.SOLID) {
+                solidQuads = quads;
+            }
         }
         int vertices = quads * VERTICES_PER_QUAD;
         float[] positions = new float[vertices * FLOATS_PER_VERTEX];
@@ -73,7 +77,7 @@ public final class RtxSectionCapture {
                 written += copied;
             }
         }
-        inbox.offer(RtxSectionUpdate.mesh(position.x(), position.y(), position.z(), positions, surface, quads));
+        inbox.offer(RtxSectionUpdate.mesh(position.x(), position.y(), position.z(), positions, surface, quads, solidQuads));
     }
 
     public static void removed(long sectionNode) {

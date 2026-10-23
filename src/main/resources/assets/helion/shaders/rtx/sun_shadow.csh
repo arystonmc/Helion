@@ -1,5 +1,7 @@
 #version 460
 #extension GL_EXT_ray_query : require
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference_uvec2 : require
 
 #include <helion:helion_geometry.glsl>
 
@@ -9,19 +11,60 @@ layout(set = 0, binding = 0, rgba8) uniform writeonly image2D ShadowMask;
 layout(set = 0, binding = 1) uniform accelerationStructureEXT Scene;
 layout(set = 0, binding = 2) uniform sampler2D DepthSampler;
 layout(set = 0, binding = 3) uniform sampler2D GeometryNormalSampler;
+layout(set = 0, binding = 4) uniform sampler2D AtlasSampler;
+layout(set = 0, binding = 5, std430) readonly buffer HelionSurfaceTable {
+    uvec4 Sections[];
+};
 
 layout(push_constant) uniform HelionRaySunShadow {
     mat4 InverseViewProjection;
     vec4 CameraToAnchor;
     vec4 LightDirection;
+    vec4 Softness;
 };
+
+#include <helion:helion_rt_surface.glsl>
 
 const float HELION_RT_SKY_DEPTH = 0.0;
 const float HELION_RT_NORMAL_OFFSET = 0.02;
 const float HELION_RT_RAY_START = 1.0e-3;
 const float HELION_RT_SECTION_SIZE = 16.0;
+const float HELION_RT_EDGE_FADE = 8.0;
+const float HELION_RT_TAU = 6.28318531;
+const float HELION_RT_GOLDEN_ANGLE = 2.39996323;
+const float HELION_RT_UPRIGHT = 0.99;
+const float HELION_RT_FAR = 1.0e9;
+const float HELION_RT_NOISE_SCALE = 52.9829189;
+const vec2 HELION_RT_NOISE_STEP = vec2(0.06711056, 0.00583715);
+const int HELION_RT_SHADOW_RAYS = 4;
+const int HELION_RT_VERTICAL_AXIS = 1;
 const uint HELION_RT_ALL_INSTANCES = 0xFFu;
 const vec4 HELION_RT_UNTRACED = vec4(1.0, 0.0, 0.0, 1.0);
+const vec3 HELION_RT_UP = vec3(0.0, 1.0, 0.0);
+const vec3 HELION_RT_EAST = vec3(1.0, 0.0, 0.0);
+
+float helionInterleavedNoise(ivec2 pixel) {
+    return fract(HELION_RT_NOISE_SCALE * fract(dot(vec2(pixel), HELION_RT_NOISE_STEP)));
+}
+
+vec2 helionBoxExit(vec3 origin, vec3 direction, float reach) {
+    vec3 low = vec3(-reach);
+    vec3 high = vec3(reach + HELION_RT_SECTION_SIZE);
+    float exit = HELION_RT_FAR;
+    float axis = 0.0;
+    for (int index = 0; index < 3; index++) {
+        if (direction[index] == 0.0) {
+            continue;
+        }
+        float bound = direction[index] > 0.0 ? high[index] : low[index];
+        float distance = (bound - origin[index]) / direction[index];
+        if (distance < exit) {
+            exit = distance;
+            axis = float(index);
+        }
+    }
+    return vec2(exit, axis);
+}
 
 void main() {
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
@@ -34,25 +77,45 @@ void main() {
     ivec2 fullPixel = min(ivec2(screen * vec2(fullSize)), fullSize - 1);
     float depth = texelFetch(DepthSampler, fullPixel, 0).r;
     vec4 encodedNormal = texelFetch(GeometryNormalSampler, fullPixel, 0);
-    if (depth <= HELION_RT_SKY_DEPTH || encodedNormal.a < HELION_GEOMETRY_PRESENT_THRESHOLD) {
+    vec3 light = normalize(LightDirection.xyz);
+    vec3 normal = normalize(encodedNormal.rgb * 2.0 - 1.0);
+    if (depth <= HELION_RT_SKY_DEPTH || encodedNormal.a < HELION_GEOMETRY_PRESENT_THRESHOLD || dot(normal, light) <= 0.0) {
         imageStore(ShadowMask, pixel, HELION_RT_UNTRACED);
         return;
     }
-    vec3 normal = normalize(encodedNormal.rgb * 2.0 - 1.0);
     vec4 world = InverseViewProjection * vec4(screen * 2.0 - 1.0, depth, 1.0);
     vec3 origin = world.xyz / world.w + CameraToAnchor.xyz + normal * HELION_RT_NORMAL_OFFSET;
     float reach = CameraToAnchor.w;
-    if (any(lessThan(origin, vec3(-reach))) || any(greaterThanEqual(origin, vec3(reach + HELION_RT_SECTION_SIZE)))) {
+    vec3 inside = min(origin + reach, vec3(reach + HELION_RT_SECTION_SIZE) - origin);
+    float edge = min(inside.x, min(inside.y, inside.z));
+    if (edge <= 0.0) {
         imageStore(ShadowMask, pixel, HELION_RT_UNTRACED);
         return;
     }
-    rayQueryEXT query;
-    rayQueryInitializeEXT(
-        query, Scene, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT, HELION_RT_ALL_INSTANCES,
-        origin, HELION_RT_RAY_START, normalize(LightDirection.xyz), LightDirection.w
-    );
-    while (rayQueryProceedEXT(query)) {
+    vec3 tangent = normalize(cross(light, abs(light.y) < HELION_RT_UPRIGHT ? HELION_RT_UP : HELION_RT_EAST));
+    vec3 bitangent = cross(light, tangent);
+    float rotation = helionInterleavedNoise(pixel) * HELION_RT_TAU;
+    float lit = 0.0;
+    float decided = 0.0;
+    for (int ray = 0; ray < HELION_RT_SHADOW_RAYS; ray++) {
+        float radius = sqrt((float(ray) + 0.5) / float(HELION_RT_SHADOW_RAYS)) * Softness.x;
+        float angle = float(ray) * HELION_RT_GOLDEN_ANGLE + rotation;
+        vec3 direction = normalize(light + (tangent * cos(angle) + bitangent * sin(angle)) * radius);
+        vec2 exit = helionBoxExit(origin, direction, reach);
+        float reachable = min(exit.x, LightDirection.w);
+        rayQueryEXT query;
+        rayQueryInitializeEXT(
+            query, Scene, gl_RayFlagsTerminateOnFirstHitEXT, HELION_RT_ALL_INSTANCES, origin, HELION_RT_RAY_START, direction, reachable
+        );
+        helionTraceCutout(query);
+        if (rayQueryGetIntersectionTypeEXT(query, true) != gl_RayQueryCommittedIntersectionNoneEXT) {
+            decided += 1.0;
+        } else if (int(exit.y) == HELION_RT_VERTICAL_AXIS || exit.x >= LightDirection.w) {
+            decided += 1.0;
+            lit += 1.0;
+        }
     }
-    bool lit = rayQueryGetIntersectionTypeEXT(query, true) == gl_RayQueryCommittedIntersectionNoneEXT;
-    imageStore(ShadowMask, pixel, vec4(lit ? 1.0 : 0.0, 0.0, 1.0, 1.0));
+    float visibility = decided > 0.0 ? lit / decided : 1.0;
+    float weight = decided / float(HELION_RT_SHADOW_RAYS) * smoothstep(0.0, HELION_RT_EDGE_FADE, edge);
+    imageStore(ShadowMask, pixel, vec4(visibility, weight, 1.0, 1.0));
 }

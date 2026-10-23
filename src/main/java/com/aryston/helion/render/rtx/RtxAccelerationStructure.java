@@ -1,6 +1,7 @@
 package com.aryston.helion.render.rtx;
 
 import java.nio.LongBuffer;
+import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.KHRAccelerationStructure;
@@ -25,8 +26,9 @@ final class RtxAccelerationStructure {
     private static final int LAST_OFFSET = 1;
     private static final long NO_ADDRESS = 0L;
     private static final long NO_BYTES = 0L;
+    private static final int NO_FLAGS = 0;
 
-    private final RtxGeometry geometry;
+    private final List<RtxGeometry> geometries;
     private final long handle;
     private final long address;
     private final RtxBuffer storage;
@@ -35,9 +37,9 @@ final class RtxAccelerationStructure {
     private final long scratchAddress;
 
     private RtxAccelerationStructure(
-        RtxGeometry geometry, long handle, long address, RtxBuffer storage, long scratchSize, @Nullable RtxBuffer scratch, long scratchAddress
+        List<RtxGeometry> geometries, long handle, long address, RtxBuffer storage, long scratchSize, @Nullable RtxBuffer scratch, long scratchAddress
     ) {
-        this.geometry = geometry;
+        this.geometries = geometries;
         this.handle = handle;
         this.address = address;
         this.storage = storage;
@@ -47,20 +49,26 @@ final class RtxAccelerationStructure {
     }
 
     static RtxAccelerationStructure create(RtxDevice device, RtxGeometry geometry) {
-        return create(device, geometry, true);
+        return create(device, List.of(geometry), true);
     }
 
     static RtxAccelerationStructure createForSharedScratch(RtxDevice device, RtxGeometry geometry) {
-        return create(device, geometry, false);
+        return createForSharedScratch(device, List.of(geometry));
     }
 
-    private static RtxAccelerationStructure create(RtxDevice device, RtxGeometry geometry, boolean ownScratch) {
+    static RtxAccelerationStructure createForSharedScratch(RtxDevice device, List<RtxGeometry> geometries) {
+        return create(device, geometries, false);
+    }
+
+    private static RtxAccelerationStructure create(RtxDevice device, List<RtxGeometry> geometries, boolean ownScratch) {
         VkDevice vkDevice = device.vkDevice();
+        RtxGeometry geometry = geometries.getFirst();
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            VkAccelerationStructureBuildGeometryInfoKHR.Buffer info = buildInfo(stack, geometry);
+            VkAccelerationStructureBuildGeometryInfoKHR.Buffer info = buildInfo(stack, geometries);
             VkAccelerationStructureBuildSizesInfoKHR sizes = VkAccelerationStructureBuildSizesInfoKHR.calloc(stack).sType$Default();
+            int[] counts = geometries.stream().mapToInt(RtxGeometry::primitiveCount).toArray();
             KHRAccelerationStructure.vkGetAccelerationStructureBuildSizesKHR(
-                vkDevice, KHRAccelerationStructure.VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, info.get(0), stack.ints(geometry.primitiveCount()), sizes
+                vkDevice, KHRAccelerationStructure.VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, info.get(0), stack.ints(counts), sizes
             );
             RtxBuffer storage = RtxBuffer.create(
                 device, sizes.accelerationStructureSize(), KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, false
@@ -77,20 +85,20 @@ final class RtxAccelerationStructure {
             long address = KHRAccelerationStructure.vkGetAccelerationStructureDeviceAddressKHR(
                 vkDevice, VkAccelerationStructureDeviceAddressInfoKHR.calloc(stack).sType$Default().accelerationStructure(handle.get(0))
             );
-            return new RtxAccelerationStructure(geometry, handle.get(0), address, storage, sizes.buildScratchSize(), scratch, scratchAddress);
+            return new RtxAccelerationStructure(geometries, handle.get(0), address, storage, sizes.buildScratchSize(), scratch, scratchAddress);
         }
     }
 
     void record(VkCommandBuffer commandBuffer) {
-        record(commandBuffer, geometry);
+        record(commandBuffer, geometries, scratchAddress);
     }
 
     void record(VkCommandBuffer commandBuffer, RtxGeometry input) {
-        record(commandBuffer, input, scratchAddress);
+        record(commandBuffer, List.of(input), scratchAddress);
     }
 
     void recordWithScratch(VkCommandBuffer commandBuffer, long sharedScratchAddress) {
-        record(commandBuffer, geometry, sharedScratchAddress);
+        record(commandBuffer, geometries, sharedScratchAddress);
     }
 
     static RtxBuffer scratchBuffer(RtxDevice device, long size) {
@@ -101,12 +109,14 @@ final class RtxAccelerationStructure {
         return (address + alignment - LAST_OFFSET) / alignment * alignment;
     }
 
-    private void record(VkCommandBuffer commandBuffer, RtxGeometry input, long buildScratchAddress) {
+    private void record(VkCommandBuffer commandBuffer, List<RtxGeometry> inputs, long buildScratchAddress) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            VkAccelerationStructureBuildGeometryInfoKHR.Buffer info = buildInfo(stack, input).dstAccelerationStructure(handle);
+            VkAccelerationStructureBuildGeometryInfoKHR.Buffer info = buildInfo(stack, inputs).dstAccelerationStructure(handle);
             info.scratchData().deviceAddress(buildScratchAddress);
-            VkAccelerationStructureBuildRangeInfoKHR.Buffer range = VkAccelerationStructureBuildRangeInfoKHR.calloc(SINGLE, stack)
-                .primitiveCount(input.primitiveCount());
+            VkAccelerationStructureBuildRangeInfoKHR.Buffer range = VkAccelerationStructureBuildRangeInfoKHR.calloc(inputs.size(), stack);
+            for (int index = 0; index < inputs.size(); index++) {
+                range.get(index).primitiveCount(inputs.get(index).primitiveCount());
+            }
             KHRAccelerationStructure.vkCmdBuildAccelerationStructuresKHR(commandBuffer, info, stack.pointers(range.address()));
         }
     }
@@ -135,10 +145,22 @@ final class RtxAccelerationStructure {
         }
     }
 
-    private static VkAccelerationStructureBuildGeometryInfoKHR.Buffer buildInfo(MemoryStack stack, RtxGeometry geometry) {
-        VkAccelerationStructureGeometryKHR.Buffer described = VkAccelerationStructureGeometryKHR.calloc(SINGLE, stack)
+    private static VkAccelerationStructureBuildGeometryInfoKHR.Buffer buildInfo(MemoryStack stack, List<RtxGeometry> geometries) {
+        VkAccelerationStructureGeometryKHR.Buffer described = VkAccelerationStructureGeometryKHR.calloc(geometries.size(), stack);
+        for (int index = 0; index < geometries.size(); index++) {
+            describe(described.get(index), geometries.get(index));
+        }
+        return VkAccelerationStructureBuildGeometryInfoKHR.calloc(SINGLE, stack)
             .sType$Default()
-            .flags(KHRAccelerationStructure.VK_GEOMETRY_OPAQUE_BIT_KHR);
+            .type(type(geometries.getFirst()))
+            .flags(KHRAccelerationStructure.VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR)
+            .mode(KHRAccelerationStructure.VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR)
+            .geometryCount(geometries.size())
+            .pGeometries(described);
+    }
+
+    private static void describe(VkAccelerationStructureGeometryKHR described, RtxGeometry geometry) {
+        described.sType$Default().flags(geometry.opaque() ? KHRAccelerationStructure.VK_GEOMETRY_OPAQUE_BIT_KHR : NO_FLAGS);
         switch (geometry.kind()) {
             case INSTANCES -> {
                 described.geometryType(KHRAccelerationStructure.VK_GEOMETRY_TYPE_INSTANCES_KHR);
@@ -160,13 +182,6 @@ final class RtxAccelerationStructure {
                 triangles.indexData().deviceAddress(geometry.indexAddress());
             }
         }
-        return VkAccelerationStructureBuildGeometryInfoKHR.calloc(SINGLE, stack)
-            .sType$Default()
-            .type(type(geometry))
-            .flags(KHRAccelerationStructure.VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR)
-            .mode(KHRAccelerationStructure.VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR)
-            .geometryCount(SINGLE)
-            .pGeometries(described);
     }
 
     private static int type(RtxGeometry geometry) {

@@ -13,7 +13,8 @@ import org.lwjgl.vulkan.KHRAccelerationStructure;
 import org.lwjgl.vulkan.VK10;
 
 public final class RayTracingResources {
-    static final int SUN_SHADOW_CONSTANT_BYTES = 96;
+    static final int SUN_SHADOW_CONSTANT_BYTES = 112;
+    static final int REFLECTION_CONSTANT_BYTES = 96;
 
     private static final String SUN_SHADOW_SOURCE = "/assets/helion/shaders/rtx/sun_shadow.csh";
     private static final String SUN_SHADOW_NAME = "sun_shadow.csh";
@@ -30,7 +31,9 @@ public final class RayTracingResources {
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
         KHRAccelerationStructure.VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     };
     private static final int[] REFLECTION_DESCRIPTORS = {
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
@@ -116,7 +119,7 @@ public final class RayTracingResources {
 
     ByteBuffer reflectionConstants() {
         if (reflectionConstants == null) {
-            reflectionConstants = MemoryUtil.memAlloc(SUN_SHADOW_CONSTANT_BYTES);
+            reflectionConstants = MemoryUtil.memAlloc(REFLECTION_CONSTANT_BYTES);
         }
         return reflectionConstants;
     }
@@ -170,7 +173,7 @@ public final class RayTracingResources {
             "Helion ray tracing: {} sections built ({} MiB), {} pending, {} in the top level; CPU {} ms; GPU bottom levels {} ms, top level {} ms, sun shadow {} ms, reflections {} ms",
             plan.builtSections(), plan.builtBytes() / BYTES_PER_MIB, plan.pendingSections(), plan.visibleSections(),
             String.format("%.3f", prepareMillis), millis(gpuMillis, RtxSceneStage.BOTTOM_STAGE), millis(gpuMillis, RtxSceneStage.TOP_STAGE),
-            millis(gpuMillis, RtxSunShadowStage.NAME), millis(gpuMillis, RtxReflectionStage.NAME)
+            millis(gpuMillis, RtxShadowTracer.NAME), millis(gpuMillis, RtxReflectionStage.NAME)
         );
     }
 
@@ -216,7 +219,7 @@ public final class RayTracingResources {
         sunShadow = pipeline;
         scene = new RtxSectionScene(rtx, resources);
         try {
-            RtxComputePipeline traced = RtxComputePipeline.create(rtx, REFLECTION_SOURCE, REFLECTION_NAME, REFLECTION_DESCRIPTORS, SUN_SHADOW_CONSTANT_BYTES);
+            RtxComputePipeline traced = RtxComputePipeline.create(rtx, REFLECTION_SOURCE, REFLECTION_NAME, REFLECTION_DESCRIPTORS, REFLECTION_CONSTANT_BYTES);
             resources.track(REFLECTION_PIPELINE_LABEL, PIPELINE_BYTES, traced::destroy);
             reflection = traced;
         } catch (IllegalStateException exception) {

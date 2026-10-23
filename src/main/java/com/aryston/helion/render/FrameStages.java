@@ -26,7 +26,7 @@ import com.aryston.helion.render.rtx.RtxMaskViewStage;
 import com.aryston.helion.render.rtx.RtxReflectionStage;
 import com.aryston.helion.render.rtx.RtxSceneStage;
 import com.aryston.helion.render.rtx.RtxShadowStage;
-import com.aryston.helion.render.rtx.RtxSunShadowStage;
+import com.aryston.helion.render.rtx.RtxShadowTracer;
 import com.aryston.helion.render.scene.ClearStage;
 import com.aryston.helion.render.shadow.ShadowStage;
 import com.aryston.helion.render.temporal.TemporalStage;
@@ -66,8 +66,7 @@ public final class FrameStages {
             new OpaqueGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere()),
             new EntityGeometryStage(sources.entities()),
             new RtxSceneStage(core.rayTracing()),
-            new ShadowStage(sources.shadowCasters(), core.shadows()),
-            new RtxSunShadowStage(core.rayTracing()),
+            new ShadowStage(sources.shadowCasters(), core.shadows(), new RtxShadowTracer(core.rayTracing(), sources.terrain())),
             new VoxelLightStage(core.voxelLighting()),
             new RtxShadowStage(core.rtxSpike(), core.voxelLighting()),
             new DeferredLightingStage(core.lighting()),

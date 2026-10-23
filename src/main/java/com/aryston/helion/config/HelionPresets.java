@@ -49,7 +49,8 @@ final class HelionPresets {
                 .set(options.dynamicLights, preset != vanilla)
                 .set(options.voxelLighting, preset == experimental ? VoxelLightingMode.SHADER : VoxelLightingMode.OFF)
                 .set(options.rayTracing, preset == experimental)
-                .set(options.waterReflections, true);
+                .set(options.waterReflections, true)
+                .set(options.rayTracedShadows, true);
         }
         return List.of(vanilla, balanced, quality, experimental);
     }
