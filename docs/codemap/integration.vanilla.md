@@ -38,7 +38,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaWaveSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaWaveSource.java`
-- Role: `WaveSource` over the client level, kept by `VanillaFrameDriver` across frames: every rendered entity within the wave window whose feet are in water and whose head is not 0.5 blocks under it makes a continuous wake proportional to its horizontal speed (from `xo`, `zo`), and a splash proportional to its falling speed in the frame it starts touching the surface.
+- Role: `WaveSource` over the client level, kept by `VanillaFrameDriver` across frames: every rendered entity within the wave window whose feet are in water and whose head is not 0.5 blocks under it makes a continuous wake proportional to its horizontal speed (from `xo`, `zo`), and a splash proportional to its falling speed in the frame it starts touching the surface. `holdsWaves` classifies a column for the shore mask from the client height map with a short scan below roofs.
 - Depends on: `WaveSource`.
 
 #### VanillaWeatherSource

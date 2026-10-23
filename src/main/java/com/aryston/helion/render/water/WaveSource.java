@@ -4,4 +4,6 @@ import java.util.List;
 
 public interface WaveSource {
     List<WaveImpulse> impulses(double cameraX, double cameraZ, double reach);
+
+    boolean holdsWaves(int blockX, int blockZ, int cameraBlockY);
 }

@@ -33,6 +33,7 @@ public final class WaterPipelines {
     public static final String REFRACTION_SAMPLER = "RefractionSampler";
     public static final String WAVE_SAMPLER = "WaveSampler";
     public static final String WAVE_UNIFORM = "HelionWaterWaves";
+    public static final String SHORE_SAMPLER = "ShoreSampler";
     private static final int POLISHED_TARGET = 1;
     private static final String FOG = "Fog";
     private static final String REFLECTION_SHADER = "water/reflection";
@@ -57,6 +58,7 @@ public final class WaterPipelines {
         .withBindGroupLayout(BindGroupLayout.builder()
             .withUniform(WAVE_UNIFORM, UniformType.UNIFORM_BUFFER)
             .withUniform(WAVE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(SHORE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .build())
         .withColorTargetState(new ColorTargetState(Optional.empty(), WAVE_FORMAT, ColorTargetState.WRITE_ALL))
         .build();

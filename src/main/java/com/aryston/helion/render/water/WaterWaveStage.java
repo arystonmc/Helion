@@ -10,6 +10,7 @@ import com.mojang.blaze3d.resource.ResourceHandle;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.util.List;
 import java.util.Objects;
 import org.joml.Vector3dc;
@@ -63,14 +64,17 @@ public final class WaterWaveStage implements RenderStage {
         ResourceHandle<RenderTarget> stateB = pass.readsAndWrites(frame.graph().builder().importExternal(STATE_PREFIX + second, waves.state(second)));
         frame.water().publishWaves(steps % STATES == 0 ? stateA : stateB);
         double cameraX = camera.x();
+        double cameraY = camera.y();
         double cameraZ = camera.z();
         pass.executes(frame.graph().timed(NAME, () -> {
+            GpuTextureView shore = waves.shore().refresh(source, cameraX, cameraY, cameraZ);
             for (int step = 0; step < steps; step++) {
                 RenderTarget read = step % STATES == 0 ? stateA.get() : stateB.get();
                 RenderTarget written = step % STATES == 0 ? stateB.get() : stateA.get();
                 int index = step;
                 FullscreenPass.draw(PASS_LABEL, written, pipeline, renderPass -> {
                     renderPass.setUniform(WaterPipelines.WAVE_UNIFORM, waves.stepUniforms(index, cameraX, cameraZ, impulses, rain));
+                    renderPass.setUniform(WaterPipelines.SHORE_SAMPLER, shore, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
                     renderPass.setUniform(
                         WaterPipelines.WAVE_SAMPLER,
                         Objects.requireNonNull(read.getColorTextureView()),

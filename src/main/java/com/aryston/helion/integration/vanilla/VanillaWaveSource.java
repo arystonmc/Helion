@@ -9,8 +9,10 @@ import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 
 final class VanillaWaveSource implements WaveSource {
@@ -28,6 +30,9 @@ final class VanillaWaveSource implements WaveSource {
     private static final float MIN_RADIUS = 0.3F;
     private static final boolean CONTINUOUS = false;
     private static final boolean SPLASH = true;
+    private static final int ROOF_MARGIN = 8;
+    private static final int MAX_ROOF_THICKNESS = 3;
+    private static final int MAX_HEADROOM = 12;
 
     private IntSet touching = new IntOpenHashSet();
 
@@ -59,6 +64,31 @@ final class VanillaWaveSource implements WaveSource {
         }
         touching = nowTouching;
         return impulses;
+    }
+
+    @Override
+    public boolean holdsWaves(int blockX, int blockZ, int cameraBlockY) {
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level == null) {
+            return true;
+        }
+        int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING, blockX, blockZ) - 1;
+        if (top > cameraBlockY + ROOF_MARGIN) {
+            return true;
+        }
+        BlockPos.MutableBlockPos position = new BlockPos.MutableBlockPos(blockX, top, blockZ);
+        int lowest = top - MAX_ROOF_THICKNESS;
+        while (position.getY() > lowest && !level.getBlockState(position).isAir()) {
+            if (level.getFluidState(position).is(FluidTags.WATER)) {
+                return true;
+            }
+            position.move(Direction.DOWN);
+        }
+        int floor = position.getY() - MAX_HEADROOM;
+        while (position.getY() > floor && level.getBlockState(position).isAir()) {
+            position.move(Direction.DOWN);
+        }
+        return level.getFluidState(position).is(FluidTags.WATER);
     }
 
     private static boolean touchesSurface(ClientLevel level, AABB box, double x, double z) {

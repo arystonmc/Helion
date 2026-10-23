@@ -27,7 +27,7 @@ final class WaterWaves {
     private static final float WAVE_SPEED = 0.05F;
     private static final float DAMPING = 0.985F;
     private static final float RAIN_DROP_CHANCE = 0.004F;
-    private static final float RAIN_DROP_DEPTH = 0.015F;
+    private static final float RAIN_DROP_DEPTH = 0.025F;
     private static final int HALF = SIZE / 2;
     private static final int RESET = 1;
     private static final int KEEP = 0;
@@ -38,6 +38,7 @@ final class WaterWaves {
     private final List<TextureTarget> states = new ArrayList<>();
     private final UniformRing[] uniforms = new UniformRing[MAX_STEPS];
     private final List<WaveImpulse> splashes = new ArrayList<>();
+    private final WaterShoreMask shore;
     private @Nullable TrackedResource tracked;
     private int current;
     private int originX;
@@ -49,6 +50,7 @@ final class WaterWaves {
 
     WaterWaves(GpuResources resources) {
         this.resources = resources;
+        this.shore = new WaterShoreMask(resources);
     }
 
     int plan(double seconds) {
@@ -79,6 +81,10 @@ final class WaterWaves {
             valid = false;
         }
         return states.get(index);
+    }
+
+    WaterShoreMask shore() {
+        return shore;
     }
 
     int current() {
@@ -133,6 +139,7 @@ final class WaterWaves {
     }
 
     void close() {
+        shore.close();
         if (tracked != null) {
             resources.release(tracked);
         }

@@ -2,6 +2,7 @@
 #extension GL_ARB_separate_shader_objects : require
 
 uniform sampler2D WaveSampler;
+uniform sampler2D ShoreSampler;
 
 layout(std140) uniform HelionWaterWaves {
     ivec4 WaveOrigin;
@@ -29,6 +30,9 @@ const uint HELION_HASH_Z_SCALE = 1973u;
 const uint HELION_HASH_SEED_SCALE = 9277u;
 const float HELION_HASH_RANGE = 4294967295.0;
 const vec4 HELION_CALM = vec4(0.0);
+const int HELION_SHORE_MASK = 127;
+const int HELION_CELLS_PER_BLOCK_SHIFT = 2;
+const float HELION_SHORE_WATER = 0.5;
 
 uint helionWavePcg(uint value) {
     uint state = value * HELION_HASH_MULTIPLIER + HELION_HASH_INCREMENT;
@@ -39,6 +43,10 @@ uint helionWavePcg(uint value) {
 float helionWaveRandom(ivec2 cell, int seed) {
     uint mixed = uint(cell.x) + uint(cell.y) * HELION_HASH_Z_SCALE + uint(seed) * HELION_HASH_SEED_SCALE;
     return float(helionWavePcg(helionWavePcg(mixed))) / HELION_HASH_RANGE;
+}
+
+bool helionHoldsWaves(ivec2 cell) {
+    return texelFetch(ShoreSampler, (cell >> HELION_CELLS_PER_BLOCK_SHIFT) & HELION_SHORE_MASK, 0).r > HELION_SHORE_WATER;
 }
 
 float helionNeighborHeight(ivec2 texel, ivec2 local, ivec2 offset) {
@@ -53,7 +61,7 @@ void main() {
     ivec2 texel = ivec2(gl_FragCoord.xy);
     ivec2 cell = WaveOrigin.xy + ((texel - WaveOrigin.xy) & HELION_WAVE_MASK);
     ivec2 previousCell = WaveOrigin.zw + ((texel - WaveOrigin.zw) & HELION_WAVE_MASK);
-    if (WaveCounts.z != 0 || cell != previousCell) {
+    if (WaveCounts.z != 0 || cell != previousCell || !helionHoldsWaves(cell)) {
         waveState = HELION_CALM;
         return;
     }
