@@ -12,6 +12,7 @@ import com.mojang.blaze3d.resource.ResourceHandle;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.vulkan.VulkanGpuTextureView;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.joml.Vector3dc;
@@ -24,6 +25,8 @@ public final class RtxReflectionStage implements RenderStage {
     private static final float MAX_DISTANCE = 96.0F;
     private static final long WHOLE_BUFFER = 0L;
     private static final float UNUSED = 0.0F;
+    private static final int VECTOR_BYTES = 4 * Float.BYTES;
+    private static final int ENTITY_COUNT_OFFSET = MATRIX_BYTES + VECTOR_BYTES + Float.BYTES;
 
     private final RayTracingResources resources;
     private final TerrainSource terrain;
@@ -66,7 +69,7 @@ public final class RtxReflectionStage implements RenderStage {
         pass.executes(frame.graph().timed(NAME, () -> {
             device.memoryBarrier();
             RenderTarget water = surface.get();
-            List<RtxBinding> bindings = List.of(
+            List<RtxBinding> bindings = new ArrayList<>(List.of(
                 new RtxBinding.StorageImage(image.vkImageView()),
                 new RtxBinding.Scene(topLevel),
                 new RtxBinding.Sampled(handle(Objects.requireNonNull(water.getDepthTextureView()))),
@@ -74,8 +77,16 @@ public final class RtxReflectionStage implements RenderStage {
                 new RtxBinding.Sampled(handle(textures.atlas())),
                 new RtxBinding.Sampled(handle(textures.lightmap())),
                 new RtxBinding.StorageBuffer(table.buffer(), WHOLE_BUFFER, table.size())
-            );
-            resources.reflectionPipeline().dispatch(device.commandBuffer(), bindings, constants, image.width(), image.height());
+            ));
+            long entityTextures = RtxComputePipeline.NO_SET;
+            if (resources.reflectsEntities()) {
+                RtxEntitySurfaces surfaces = resources.entitySurfaces();
+                RtxBuffer entities = surfaces.table();
+                bindings.add(new RtxBinding.StorageBuffer(entities.buffer(), WHOLE_BUFFER, entities.size()));
+                entityTextures = resources.entityTextures().prepare(surfaces.textures(), surfaces.textureCount(), handle(textures.atlas()));
+                constants.putFloat(ENTITY_COUNT_OFFSET, surfaces.count());
+            }
+            resources.reflectionPipeline().dispatch(device.commandBuffer(), bindings, entityTextures, constants, image.width(), image.height());
             device.memoryBarrier();
         }));
         frame.water().publishReflections(image.view());

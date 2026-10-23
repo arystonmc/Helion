@@ -80,8 +80,10 @@ final class RtxSectionScene {
         }
     }
 
-    void recordEntities(VkCommandBuffer commandBuffer, List<RtxEntityDraws.RtxEntityDraw> draws, float translateX, float translateY, float translateZ) {
-        long address = entities.record(commandBuffer, draws);
+    void recordEntities(
+        VkCommandBuffer commandBuffer, List<RtxEntityDraws.RtxEntityDraw> draws, @Nullable RtxEntitySurfaces surfaces, float translateX, float translateY, float translateZ
+    ) {
+        long address = entities.record(commandBuffer, draws, surfaces);
         if (address != RtxEntityScene.NO_ADDRESS) {
             topLevel.appendEntities(address, translateX, translateY, translateZ);
         }

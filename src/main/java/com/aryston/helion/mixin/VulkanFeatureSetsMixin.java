@@ -18,6 +18,7 @@ abstract class VulkanFeatureSetsMixin {
         RayTracingStartup.ensureRequested();
         if (RayTracing.deviceRequested()) {
             callback.getReturnValue().add(RtxFeature.FEATURE_SET);
+            callback.getReturnValue().add(RtxFeature.ENTITY_TEXTURES);
         }
     }
 }
