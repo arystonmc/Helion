@@ -33,9 +33,13 @@ const float HELION_EDGE_FADE = 0.06;
 const float HELION_MIN_FACING = 0.05;
 const float HELION_SKY_DEPTH = 0.0;
 const float HELION_MIN_CLIP_W = 1.0e-4;
+const float HELION_SKY_BEHIND = -1.0e9;
+const float HELION_SKY_MARK = -1.0e8;
+const float HELION_ADDITIVE = 0.0;
 const float HELION_FLAG_SET = 0.5;
-const float HELION_POLISHED_F0 = 0.04;
-const float HELION_POLISHED_STRENGTH = 0.5;
+const float HELION_POLISHED_F0 = 0.15;
+const float HELION_POLISHED_STRENGTH = 0.4;
+const float HELION_POLISHED_REACH = 24.0;
 const float HELION_FRESNEL_POWER = 5.0;
 
 struct HelionScreenPoint {
@@ -61,7 +65,7 @@ HelionScreenPoint helionProject(vec3 position) {
 float helionBehind(vec3 position, vec2 uv) {
     float depth = textureLod(SceneDepthSampler, uv, 0.0).r;
     if (depth <= HELION_SKY_DEPTH) {
-        return -1.0;
+        return HELION_SKY_BEHIND;
     }
     return length(position) - length(helionWorldAt(uv, depth));
 }
@@ -71,7 +75,9 @@ float helionEdgeFade(vec2 uv) {
     return clamp(min(edge.x, edge.y) / HELION_EDGE_FADE, 0.0, 1.0);
 }
 
-vec4 helionMarch(vec3 start, vec3 normal) {
+vec4 helionMarch(vec3 start, vec3 normal, out float distanceToHit, out vec4 skySeen) {
+    distanceToHit = 0.0;
+    skySeen = vec4(0.0);
     vec3 direction = reflect(normalize(start), normal);
     vec3 origin = start + normal * HELION_SURFACE_LIFT;
     float previous = 0.0;
@@ -84,6 +90,9 @@ vec4 helionMarch(vec3 start, vec3 normal) {
             return vec4(0.0);
         }
         float behind = helionBehind(position, point.uv);
+        if (behind < HELION_SKY_MARK && skySeen.a <= 0.0) {
+            skySeen = vec4(textureLod(SceneColorSampler, point.uv, 0.0).rgb, helionEdgeFade(point.uv));
+        }
         float thickness = max(HELION_MIN_THICKNESS, travelled * HELION_THICKNESS_SHARE);
         if (behind > 0.0 && behind < thickness) {
             float near = previous;
@@ -103,6 +112,7 @@ vec4 helionMarch(vec3 start, vec3 normal) {
                     near = middle;
                 }
             }
+            distanceToHit = far;
             return vec4(textureLod(SceneColorSampler, hit, 0.0).rgb, helionEdgeFade(hit));
         }
         previous = travelled;
@@ -122,11 +132,16 @@ vec4 helionPolished(ivec2 pixel, vec2 screen) {
     }
     vec3 normal = normalize(texelFetch(GeometryNormalSampler, pixel, 0).rgb * 2.0 - 1.0);
     vec3 start = helionWorldAt(screen, depth);
-    vec4 hit = helionMarch(start, normal);
+    float reach;
+    vec4 sky;
+    vec4 hit = helionMarch(start, normal, reach, sky);
     float facing = clamp(dot(-normalize(start), normal), 0.0, 1.0);
     float fresnel = (HELION_POLISHED_F0 + (1.0 - HELION_POLISHED_F0) * pow(1.0 - facing, HELION_FRESNEL_POWER)) * HELION_POLISHED_STRENGTH;
-    float weight = fresnel * hit.a;
-    return vec4(hit.rgb * weight, weight);
+    if (hit.a <= 0.0) {
+        return vec4(sky.rgb * fresnel * sky.a, HELION_ADDITIVE);
+    }
+    float weight = fresnel * hit.a * clamp(1.0 - reach / HELION_POLISHED_REACH, 0.0, 1.0);
+    return vec4(hit.rgb * weight, HELION_ADDITIVE);
 }
 
 void main() {
@@ -144,5 +159,7 @@ void main() {
     if (water && normal.y < HELION_MIN_FACING) {
         return;
     }
-    fragColor = helionMarch(helionWorldAt(screen, texelFetch(WaterDepthSampler, pixel, 0).r), normal);
+    float reach;
+    vec4 sky;
+    fragColor = helionMarch(helionWorldAt(screen, texelFetch(WaterDepthSampler, pixel, 0).r), normal, reach, sky);
 }

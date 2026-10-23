@@ -24,6 +24,7 @@ public final class GlossyMask {
     private @Nullable GpuTextureView view;
     private @Nullable TrackedResource tracked;
     private @Nullable GpuTextureView atlas;
+    private @Nullable ByteBuffer upload;
 
     public GlossyMask(GpuResources resources) {
         this.resources = resources;
@@ -41,13 +42,10 @@ public final class GlossyMask {
             texture.close();
         });
         ByteBuffer data = MemoryUtil.memAlloc(cells.cells().length);
-        try {
-            data.put(cells.cells()).flip();
-            RenderSystem.getDevice().createCommandEncoder()
-                .writeToTexture(texture, data, BASE_LEVEL, FIRST_LAYER, ORIGIN, ORIGIN, cells.width(), cells.height());
-        } finally {
-            MemoryUtil.memFree(data);
-        }
+        data.put(cells.cells()).flip();
+        upload = data;
+        RenderSystem.getDevice().createCommandEncoder()
+            .writeToTexture(texture, data, BASE_LEVEL, FIRST_LAYER, ORIGIN, ORIGIN, cells.width(), cells.height());
         view = created;
         atlas = cells.atlas();
         return created;
@@ -57,8 +55,12 @@ public final class GlossyMask {
         if (tracked != null) {
             resources.release(tracked);
         }
+        if (upload != null) {
+            MemoryUtil.memFree(upload);
+        }
         tracked = null;
         view = null;
         atlas = null;
+        upload = null;
     }
 }

@@ -38,7 +38,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaGlossyCells
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaGlossyCells.java`
-- Role: Marks the 16 x 16 cells of the block atlas that hold glossy block textures: every registered block whose id starts with `polished_`, contains `quartz`, `prismarine` or `glass`, or ends with `glazed_terracotta`, `ice` or `smooth_stone` (never ores), looked up as `block/<id>` and its `_top`, `_side`, `_bottom` and `_end` sprites. Cached until the atlas texture changes (resource reload).
+- Role: Marks the 16 x 16 cells of the block atlas that hold glossy block textures: every registered block whose id starts with `polished_`, contains `quartz`, `prismarine` or `glass`, or ends with `glazed_terracotta`, `ice` or `smooth_stone` (never ores), looked up as `block/<id>` and its `_top`, `_side`, `_bottom` and `_end` sprites, marked from their UV bounds (the atlas pads sprites, so `getX()` is not where the UVs start). Cached until the atlas texture changes (resource reload); logs the number of marked cells once per atlas.
 - Depends on: `GlossyCells`.
 
 #### VanillaDynamicLightPipelines
