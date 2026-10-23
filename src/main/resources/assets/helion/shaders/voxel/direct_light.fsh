@@ -47,7 +47,7 @@ layout(location = 1) out vec4 confidence;
 layout(location = 2) out vec4 bounce;
 
 const int HELION_BLOCKED_RETRIES = 3;
-const int HELION_MAX_TRACE_ATTEMPTS = 12;
+const int HELION_MAX_TRACE_ATTEMPTS = 8;
 const float HELION_EDGE_FADE_BLOCKS = 16.0;
 const float HELION_UNLIT = 1.0e-5;
 const float HELION_BOUNCE_GAIN = 4.2;

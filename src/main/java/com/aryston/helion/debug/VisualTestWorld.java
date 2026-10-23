@@ -67,6 +67,12 @@ final class VisualTestWorld {
     private static final Placement CAVE_TORCH = new Placement(21, -23, -12, "torch");
     static final BlockPos WALL_CAMERA = new BlockPos(15, -17, -6);
     static final BlockPos TINT_CAMERA = new BlockPos(15, -17, 1);
+    static final BlockPos SAVANNA_CAMERA = new BlockPos(27, -17, -14);
+    private static final Volume SAVANNA_ROOM = new Volume(new BlockPos(27, -17, -17), new BlockPos(31, -15, -12));
+    private static final Volume SAVANNA_FLOOR = new Volume(new BlockPos(27, -18, -17), new BlockPos(31, -18, -12));
+    private static final Volume SAVANNA_LEAVES = new Volume(new BlockPos(31, -17, -17), new BlockPos(31, -15, -12));
+    private static final Placement SAVANNA_TORCH = new Placement(29, -17, -15, "torch");
+    private static final String SAVANNA_BIOME = "minecraft:savanna";
     private static final Volume TINT_ROOM = new Volume(new BlockPos(14, -17, 0), new BlockPos(24, -15, 3));
     private static final List<Placement> TINT_BLOCKS = List.of(
         new Placement(19, -17, 0, "red_stained_glass"),
@@ -128,6 +134,11 @@ final class VisualTestWorld {
         WALL_LIGHTS.forEach(light -> run(server, light.command(origin)));
         run(server, fill(origin.offset(TINT_ROOM.from()), origin.offset(TINT_ROOM.to()), "air"));
         TINT_BLOCKS.forEach(block -> run(server, block.command(origin)));
+        run(server, fill(origin.offset(SAVANNA_ROOM.from()), origin.offset(SAVANNA_ROOM.to()), "air"));
+        run(server, fill(origin.offset(SAVANNA_FLOOR.from()), origin.offset(SAVANNA_FLOOR.to()), "grass_block"));
+        run(server, fill(origin.offset(SAVANNA_LEAVES.from()), origin.offset(SAVANNA_LEAVES.to()), CANOPY_BLOCK));
+        run(server, SAVANNA_TORCH.command(origin));
+        run(server, "fillbiome " + coordinates(origin.offset(SAVANNA_FLOOR.from())) + " " + coordinates(origin.offset(SAVANNA_ROOM.to())) + " " + SAVANNA_BIOME);
     }
 
     static void placeCamera(IntegratedServer server, Vec3 start, BlockPos origin, BlockPos cameraOffset) {

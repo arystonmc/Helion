@@ -38,7 +38,8 @@ The sections live in `docs/architecture/`, one file per topic. Read the invarian
 | Volumetric Clouds | [volumetric-clouds.md](architecture/volumetric-clouds.md) | Off by default (`clouds.enabled`, experimental), on in the Experimental preset at Medium quality. |
 | Light Shafts | [light-shafts.md](architecture/light-shafts.md) | Sun and moon god rays in screen space, on wherever the physical sky runs (`physicalSky.lightShafts`). |
 | Shadows | [shadows.md](architecture/shadows.md) | Off by default (`shadows.enabled`). |
-| Voxel Lighting | [voxel-lighting.md](architecture/voxel-lighting.md) | Experimental, off by default (`voxelLighting.mode`). Renderpearl API findings, the block volume around the camera, light grid, traced colored block light with shadows, the voxel slice view and the RTX feasibility spike. |
+| Voxel Lighting | [voxel-lighting.md](architecture/voxel-lighting.md) | Experimental, off by default (`voxelLighting.mode`). Renderpearl API findings, the block volume around the camera, light grid, traced colored block light with shadows, bounced light, tinted light and the voxel slice view. |
+| Voxel Lighting RTX Spike | [voxel-lighting-rtx-spike.md](architecture/voxel-lighting-rtx-spike.md) | The 2026-10-22 test of hardware ray queries against the voxel grid walk and the owner's decision for an optional RTX layer. |
 | Ray Tracing | [ray-tracing.md](architecture/ray-tracing.md) | Optional hardware ray tracing layer, experimental setting `rayTracing.enabled` (restart) with water reflections: device features, VMA buffers, per-section bottom levels from the block meshes, per-frame top level, sun shadow validation view. |
 | Sources | [sources.md](architecture/sources.md) | Stages never call vanilla code directly. |
 | Vanilla Coupling | [vanilla-coupling.md](architecture/vanilla-coupling.md) | Places that copy or depend on vanilla internals. |
