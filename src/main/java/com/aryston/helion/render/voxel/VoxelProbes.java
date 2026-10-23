@@ -17,11 +17,11 @@ final class VoxelProbes {
     static final float SPACING = 4.0F;
     static final float HYSTERESIS = 0.9F;
     static final float MAX_DISTANCE = 24.0F;
-    static final float BOUNCE_STRENGTH = 1.0F;
+    static final float MAX_BOUNCED_LIGHT = 1.0F;
 
     private static final String LABEL = "Helion Voxel Probes #";
     private static final String UNIFORM_LABEL = "Helion Voxel Probe Settings";
-    private static final int CHANNELS = 3;
+    private static final int CHANNELS = 4;
     private static final int SETS = 2;
     private static final int UNIFORM_SIZE = new Std140SizeCalculator().putMat4f().putIVec4().putVec4().get();
     private static final int NO_HISTORY = 0;
@@ -65,7 +65,7 @@ final class VoxelProbes {
         return uniforms.write(builder -> builder
             .putMat4f(rotation)
             .putIVec4(shiftX, shiftY, shiftZ, history)
-            .putVec4(HYSTERESIS, rays, MAX_DISTANCE, BOUNCE_STRENGTH));
+            .putVec4(HYSTERESIS, rays, MAX_DISTANCE, MAX_BOUNCED_LIGHT));
     }
 
     void finishFrame(VoxelVolumeView view) {

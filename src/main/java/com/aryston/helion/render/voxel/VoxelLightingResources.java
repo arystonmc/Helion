@@ -56,6 +56,9 @@ public final class VoxelLightingResources {
         cameraY = blockY;
         cameraZ = blockZ;
         volume.update(blockX, blockY, blockZ, source);
+        if (!settings.bounce()) {
+            probes.close();
+        }
     }
 
     public Optional<VoxelVolumeView> volume() {

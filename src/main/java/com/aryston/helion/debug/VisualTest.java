@@ -16,7 +16,9 @@ import net.minecraft.client.Screenshot;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.server.IntegratedServer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.loading.FMLEnvironment;
 import org.slf4j.Logger;
 
@@ -30,6 +32,7 @@ public final class VisualTest {
     private static final int START_DELAY_TICKS = 200;
     private static final int SCENE_SETTLE_TICKS = 100;
     private static final int VARIANT_SETTLE_TICKS = 20;
+    private static final int RETURN_TICKS = 20;
     private static final int SCREENSHOT_DOWNSCALE = 2;
     private static final String SCREENSHOT_PREFIX = "helion_";
     private static final String SCREENSHOT_EXTENSION = ".png";
@@ -51,6 +54,8 @@ public final class VisualTest {
     private final AtomicReference<ParityResult> parityResult = new AtomicReference<>();
     private final AtomicBoolean parityAborted = new AtomicBoolean();
     private boolean parityStarted;
+    private Vec3 start = Vec3.ZERO;
+    private BlockPos origin = BlockPos.ZERO;
 
     private VisualTest() {
     }
@@ -86,6 +91,10 @@ public final class VisualTest {
             beginShot(server);
             return;
         }
+        if (nextShot == shots.size()) {
+            finish(minecraft);
+            return;
+        }
         Shot shot = shots.get(nextShot);
         VoxelLightingResources voxels = HelionRenderCore.get().voxelLighting();
         if (voxels.active() && voxels.pendingSections() > 0) {
@@ -100,7 +109,8 @@ public final class VisualTest {
         }
         nextShot++;
         if (nextShot == shots.size()) {
-            finish(minecraft);
+            VisualTestWorld.placeCamera(server, start, origin, BlockPos.ZERO);
+            ticksUntilAction = RETURN_TICKS;
             return;
         }
         beginShot(server);
@@ -115,7 +125,9 @@ public final class VisualTest {
         }
         pausedOnLostFocus = minecraft.options.pauseOnLostFocus;
         minecraft.options.pauseOnLostFocus = false;
-        VisualTestWorld.prepare(server, player.blockPosition(), !Boolean.getBoolean(NATURAL_SCENE_PROPERTY));
+        start = player.position();
+        origin = player.blockPosition();
+        VisualTestWorld.prepare(server, origin, !Boolean.getBoolean(NATURAL_SCENE_PROPERTY));
         LOGGER.info("Helion visual test started with {} shots", shots.size());
     }
 
@@ -138,6 +150,7 @@ public final class VisualTest {
         if (nextShot == 0 || shot.scene() != scene) {
             scene = shot.scene();
             VisualTestWorld.setTime(server, scene.dayTime());
+            VisualTestWorld.placeCamera(server, start, origin, scene.cameraOffset());
             ticksUntilAction = SCENE_SETTLE_TICKS;
         } else {
             ticksUntilAction = VARIANT_SETTLE_TICKS;

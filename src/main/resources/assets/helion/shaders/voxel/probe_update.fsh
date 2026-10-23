@@ -28,12 +28,15 @@ uniform sampler2D VoxelLightGridSampler;
 uniform sampler2D PreviousProbeRedSampler;
 uniform sampler2D PreviousProbeGreenSampler;
 uniform sampler2D PreviousProbeBlueSampler;
+uniform sampler2D PreviousProbePlacementSampler;
 
 #include <helion:helion_voxel_trace.glsl>
+#include <helion:helion_voxel_probe_gather.glsl>
 
 layout(location = 0) out vec4 probeRed;
 layout(location = 1) out vec4 probeGreen;
 layout(location = 2) out vec4 probeBlue;
+layout(location = 3) out vec4 probePlacement;
 
 const int HELION_MAX_PROBE_RAYS = 16;
 const int HELION_MAX_PROBE_STEPS = 32;
@@ -42,6 +45,10 @@ const float HELION_TAU = 6.28318531;
 const float HELION_SPHERE = 4.0 * 3.14159265;
 const float HELION_HAS_HISTORY = 0.5;
 const float HELION_HIT_OFFSET = 0.5;
+const int HELION_PROBE_CELL = 4;
+const int HELION_PROBE_CELL_BLOCKS = 64;
+const int HELION_PREFERRED_BLOCK = 2;
+const float HELION_FAR_AWAY = 1.0e9;
 
 struct HelionProbeHit {
     bool hit;
@@ -127,15 +134,49 @@ vec3 helionHitLight(vec3 hitPoint, vec3 faceNormal) {
     return total;
 }
 
+vec4 helionPlacement(vec3 block) {
+    return vec4((block + 0.5) / HELION_PROBE_SPACING, 1.0);
+}
+
+vec4 helionPlaceProbe(ivec3 probe) {
+    ivec3 cellMin = probe * HELION_PROBE_CELL;
+    if (!helionBlocksLight(cellMin + ivec3(HELION_PREFERRED_BLOCK))) {
+        return helionPlacement(vec3(HELION_PREFERRED_BLOCK));
+    }
+    float best = HELION_FAR_AWAY;
+    vec4 placement = vec4(0.0);
+    for (int index = 0; index < HELION_PROBE_CELL_BLOCKS; index++) {
+        ivec3 block = ivec3(index & 3, (index >> 2) & 3, index >> 4);
+        vec3 away = vec3(block) + 0.5 - vec3(HELION_PREFERRED_BLOCK);
+        float distanceSquared = dot(away, away);
+        if (distanceSquared >= best || helionBlocksLight(cellMin + block)) {
+            continue;
+        }
+        best = distanceSquared;
+        placement = helionPlacement(vec3(block));
+    }
+    return placement;
+}
+
+vec3 helionBouncedAt(vec3 hitPoint, vec3 faceNormal, bool history) {
+    if (!history) {
+        return vec3(0.0);
+    }
+    vec3 bounced = helionNearestProbe(hitPoint, faceNormal, ProbeShift.xyz, PreviousProbeRedSampler, PreviousProbeGreenSampler, PreviousProbeBlueSampler, PreviousProbePlacementSampler);
+    return min(bounced, vec3(ProbeSettings.w));
+}
+
 void main() {
     ivec2 texel = ivec2(gl_FragCoord.xy);
     ivec3 probe = helionProbeAt(texel);
-    vec3 origin = helionProbePosition(probe);
+    vec4 placement = helionPlaceProbe(probe);
+    vec3 origin = helionProbePlaced(probe, placement.xyz);
+    bool history = ProbeSettings.x > 0.0 && float(ProbeShift.w) > HELION_HAS_HISTORY;
     vec4 red = vec4(0.0);
     vec4 green = vec4(0.0);
     vec4 blue = vec4(0.0);
     int rays = min(int(ProbeSettings.y), HELION_MAX_PROBE_RAYS);
-    bool insideWall = helionBlocksLight(ivec3(floor(origin)));
+    bool insideWall = placement.a < HELION_PROBE_PLACED;
     for (int ray = 0; ray < HELION_MAX_PROBE_RAYS; ray++) {
         if (ray >= rays || insideWall) {
             break;
@@ -148,7 +189,7 @@ void main() {
         vec3 faceNormal = vec3(hit.before - hit.cell);
         vec3 hitPoint = vec3(hit.before) + HELION_HIT_OFFSET;
         vec3 albedo = texelFetch(VoxelColorSampler, helionVoxelTexel(VolumeMin.xyz + hit.cell), 0).rgb;
-        vec3 radiance = albedo * helionHitLight(hitPoint, faceNormal) * ProbeSettings.w;
+        vec3 radiance = albedo * (helionHitLight(hitPoint, faceNormal) + helionBouncedAt(hitPoint, faceNormal, history));
         vec4 basis = helionShBasis(direction);
         red += radiance.r * basis;
         green += radiance.g * basis;
@@ -159,13 +200,14 @@ void main() {
     green *= scale;
     blue *= scale;
     ivec3 previous = probe + ProbeShift.xyz;
-    if (ProbeSettings.x > 0.0 && float(ProbeShift.w) > HELION_HAS_HISTORY && helionProbeInGrid(previous)) {
-        ivec2 history = helionProbeTexel(previous);
-        red = mix(red, texelFetch(PreviousProbeRedSampler, history, 0), ProbeSettings.x);
-        green = mix(green, texelFetch(PreviousProbeGreenSampler, history, 0), ProbeSettings.x);
-        blue = mix(blue, texelFetch(PreviousProbeBlueSampler, history, 0), ProbeSettings.x);
+    if (history && helionProbeInGrid(previous)) {
+        ivec2 historyTexel = helionProbeTexel(previous);
+        red = mix(red, texelFetch(PreviousProbeRedSampler, historyTexel, 0), ProbeSettings.x);
+        green = mix(green, texelFetch(PreviousProbeGreenSampler, historyTexel, 0), ProbeSettings.x);
+        blue = mix(blue, texelFetch(PreviousProbeBlueSampler, historyTexel, 0), ProbeSettings.x);
     }
     probeRed = red;
     probeGreen = green;
     probeBlue = blue;
+    probePlacement = placement;
 }

@@ -28,6 +28,7 @@ const float HELION_DISPLAY_LIGHT_LIMIT = 1.0;
 
 #ifdef HELION_VOXEL_LIGHT
 const float HELION_VOXEL_VANILLA_FLOOR = 0.3;
+const float HELION_BOUNCE_OVER_DIRECT = 0.2;
 
 struct HelionVoxelBlock {
     vec3 unshadowed;
@@ -39,15 +40,20 @@ float helionDisplayedLight(vec3 light) {
     return helionLuminance(helionSrgbToLinear(helionVanillaBrightness(helionLinearToSrgb(clamped))));
 }
 
+vec3 helionWithBounce(vec3 direct, vec3 bounced, vec3 floorTerm) {
+    return max(max(direct, bounced) + bounced * HELION_BOUNCE_OVER_DIRECT, floorTerm);
+}
+
 HelionVoxelBlock helionVoxelBlock(ivec2 pixel, vec4 levels) {
     vec3 vanilla = helionInterpolatedBlockTerm(levels.r);
     vec4 traced = texture(VoxelLightSampler, texCoord);
     float trust = texture(VoxelConfidenceSampler, texCoord).r;
-    vec3 floorTerm = vanilla * HELION_VOXEL_VANILLA_FLOOR;
+    vec4 bounce = texture(VoxelBounceSampler, texCoord);
+    vec3 floorTerm = vanilla * HELION_VOXEL_VANILLA_FLOOR * bounce.a;
     vec3 tracedLight = traced.rgb * BlockFactor;
-    vec3 bounced = texture(VoxelBounceSampler, texCoord).rgb * BlockFactor;
-    vec3 unshadowed = mix(vanilla, max(tracedLight + bounced, floorTerm), trust);
-    vec3 shadowed = mix(vanilla, max(tracedLight * traced.a + bounced, floorTerm), trust);
+    vec3 bounced = bounce.rgb * BlockFactor;
+    vec3 unshadowed = mix(vanilla, helionWithBounce(tracedLight, bounced, floorTerm), trust);
+    vec3 shadowed = mix(vanilla, helionWithBounce(tracedLight * traced.a, bounced, floorTerm), trust);
     vec3 base = helionDeferredBase(pixel, levels);
     float lit = helionDisplayedLight(base + unshadowed * BlockLightIntensity);
     float dimmed = helionDisplayedLight(base + shadowed * BlockLightIntensity);

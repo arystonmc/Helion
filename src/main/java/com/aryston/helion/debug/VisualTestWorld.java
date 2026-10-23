@@ -4,6 +4,7 @@ import java.util.List;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 
 final class VisualTestWorld {
     private static final List<String> RULES = List.of(
@@ -49,6 +50,13 @@ final class VisualTestWorld {
     );
     private static final String FROZEN_ENTITY = " {NoAI:1b,NoGravity:1b,Invulnerable:1b,Rotation:[90f,0f]}";
     private static final double BLOCK_CENTER = 0.5;
+    static final BlockPos CAVE_CAMERA = new BlockPos(24, -23, -2);
+    private static final Volume CAVE_ROCK = new Volume(new BlockPos(12, -26, -18), new BlockPos(32, -12, 4));
+    private static final List<Volume> CAVE_CORRIDORS = List.of(
+        new Volume(new BlockPos(17, -23, -13), new BlockPos(25, -21, -11)),
+        new Volume(new BlockPos(23, -23, -13), new BlockPos(25, -21, -1))
+    );
+    private static final Placement CAVE_TORCH = new Placement(21, -23, -12, "torch");
 
     private VisualTestWorld() {
     }
@@ -71,6 +79,15 @@ final class VisualTestWorld {
         run(server, fill(origin.offset(CANOPY.from()), origin.offset(CANOPY.to()), CANOPY_BLOCK));
         run(server, fill(origin.offset(FENCE.from()), origin.offset(FENCE.to()), FENCE_BLOCK));
         ENTITIES.forEach(entity -> run(server, entity.command(origin)));
+        run(server, killEntities(origin.offset(CAVE_ROCK.from()), origin.offset(CAVE_ROCK.to())));
+        run(server, fill(origin.offset(CAVE_ROCK.from()), origin.offset(CAVE_ROCK.to()), CASTER_BLOCK));
+        CAVE_CORRIDORS.forEach(corridor -> run(server, fill(origin.offset(corridor.from()), origin.offset(corridor.to()), "air")));
+        run(server, CAVE_TORCH.command(origin));
+    }
+
+    static void placeCamera(IntegratedServer server, Vec3 start, BlockPos origin, BlockPos cameraOffset) {
+        Vec3 position = cameraOffset.equals(BlockPos.ZERO) ? start : Vec3.atBottomCenterOf(origin.offset(cameraOffset));
+        run(server, "tp @a " + position.x + " " + position.y + " " + position.z);
     }
 
     static void setTime(IntegratedServer server, int dayTime) {
@@ -83,6 +100,12 @@ final class VisualTestWorld {
 
     private static String fill(BlockPos from, BlockPos to, String block) {
         return "fill " + coordinates(from) + " " + coordinates(to) + " " + block;
+    }
+
+    private static String killEntities(BlockPos from, BlockPos to) {
+        BlockPos size = to.subtract(from);
+        return "kill @e[type=!player,x=" + from.getX() + ",y=" + from.getY() + ",z=" + from.getZ()
+            + ",dx=" + size.getX() + ",dy=" + size.getY() + ",dz=" + size.getZ() + "]";
     }
 
     private static String coordinates(BlockPos position) {

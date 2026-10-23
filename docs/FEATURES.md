@@ -186,7 +186,8 @@ Torches, lanterns and every other glowing block light the world in their own col
 
 - Soul lanterns glow cyan, redstone torches red, amethyst purple, sea lanterns and end rods cool white, torches, lava and glowstone warm
 - A pillar next to a torch casts a shadow on the ground behind it; light no longer passes through solid blocks
-- Each light reaches exactly as far and as bright as in vanilla, so caves and bases keep their familiar brightness; around corners a little of the vanilla light stays until bounced light arrives
+- Each light reaches exactly as far and as bright as in vanilla, so caves and bases keep their familiar brightness
+- Bounced light: torch and lava light bounces off walls, floors and ceilings in their color, so it reaches around corners about as far as vanilla light, fills shaded sides and ceilings softly, and never shines through walls (Bounced Light setting, on with voxel lighting; turning it off falls back to a dim 30 % of the vanilla light around corners)
 - Breaking or placing a block updates the light right away
 - Torches and lanterns held by you, mobs or players, dropped glowing items and burning mobs light the world in their color and cast shadows too
 - Mobs, players and items are lit by the same colored light as the blocks around them, and sun shadows fall on them too
@@ -195,7 +196,7 @@ Torches, lanterns and every other glowing block light the world in their own col
 - Resource packs can change the light colors (`assets/helion/voxel_light/colors.json`)
 - The Voxel Slice view of the geometry buffer shows the block map at your height from above
 - Needs HDR lighting
-- Settings: Off or Shader, and Low, Medium or High quality on the Lighting page; Shader at Medium in the Experimental preset, Off in every other preset and by default, and Off does no work at all
+- Settings: Off or Shader, Low, Medium or High quality, and Bounced Light on the Lighting page; Shader at Medium in the Experimental preset, Off in every other preset and by default, and Off does no work at all
 - Since: Unreleased
 
 ### Ray Tracing (Experimental)

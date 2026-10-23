@@ -53,7 +53,7 @@ public final class VoxelLightStage implements RenderStage {
         }
         volume = view.orElse(null);
         pipeline = compiled.orElse(null);
-        return view.isPresent() && compiled.isPresent() && !frame.voxels().probes().isEmpty();
+        return view.isPresent() && compiled.isPresent();
     }
 
     @Override
@@ -88,8 +88,9 @@ public final class VoxelLightStage implements RenderStage {
                 renderPass.setUniform(VoxelLightPipelines.READY_SAMPLER, view.ready(), nearest());
                 renderPass.setUniform(VoxelLightPipelines.LIGHT_LIST_SAMPLER, view.lights(), nearest());
                 renderPass.setUniform(VoxelLightPipelines.LIGHT_GRID_SAMPLER, view.grid(), nearest());
-                for (int channel = 0; channel < probes.size(); channel++) {
-                    renderPass.setUniform(VoxelLightPipelines.PROBE_SAMPLERS.get(channel), colorView(probes.get(channel)), nearest());
+                for (int channel = 0; channel < VoxelLightPipelines.PROBE_SAMPLERS.size(); channel++) {
+                    GpuTextureView probe = probes.isEmpty() ? view.colors() : colorView(probes.get(channel));
+                    renderPass.setUniform(VoxelLightPipelines.PROBE_SAMPLERS.get(channel), probe, nearest());
                 }
             });
             resources.finishLightFrame();

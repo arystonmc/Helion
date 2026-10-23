@@ -38,6 +38,7 @@ enum VisualTestVariant {
     SHADOW_LIGHT(true, ToneMapper.NEUTRAL, false),
     VOXEL_LIGHT(true, ToneMapper.NEUTRAL, false),
     VOXEL_LIGHT_LOW(true, ToneMapper.NEUTRAL, false),
+    VOXEL_BOUNCE_OFF(true, ToneMapper.NEUTRAL, false),
     PARITY(true, ToneMapper.NEUTRAL, false);
 
     private static final CloudSettings VOLUMETRIC_CLOUDS = new CloudSettings(true, CloudQuality.MEDIUM);
@@ -129,7 +130,7 @@ enum VisualTestVariant {
     }
 
     private boolean showsDeferredLighting() {
-        return this == LIGHTING || this == LIGHT_ONLY || this == VOXEL_LIGHT || this == VOXEL_LIGHT_LOW || showsShadows();
+        return this == LIGHTING || this == LIGHT_ONLY || this == VOXEL_LIGHT || this == VOXEL_LIGHT_LOW || this == VOXEL_BOUNCE_OFF || showsShadows();
     }
 
     private VoxelLightingSettings voxelLighting() {
@@ -138,6 +139,9 @@ enum VisualTestVariant {
         }
         if (this == VOXEL_LIGHT_LOW) {
             return new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.LOW, true);
+        }
+        if (this == VOXEL_BOUNCE_OFF) {
+            return new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.MEDIUM, false);
         }
         return VoxelLightingSettings.DISABLED;
     }

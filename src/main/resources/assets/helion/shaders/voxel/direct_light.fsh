@@ -33,8 +33,10 @@ uniform sampler2D VoxelLightGridSampler;
 uniform sampler2D ProbeRedSampler;
 uniform sampler2D ProbeGreenSampler;
 uniform sampler2D ProbeBlueSampler;
+uniform sampler2D ProbePlacementSampler;
 
 #include <helion:helion_voxel_trace.glsl>
+#include <helion:helion_voxel_probe_gather.glsl>
 
 layout(location = 0) in vec2 texCoord;
 
@@ -45,46 +47,16 @@ layout(location = 2) out vec4 bounce;
 const int HELION_MAX_TRACED_LIGHTS = 4;
 const float HELION_EDGE_FADE_BLOCKS = 16.0;
 const float HELION_UNLIT = 1.0e-5;
-const int HELION_PROBE_CORNERS = 8;
-const float HELION_MIN_PROBE_WEIGHT = 1.0e-3;
-const float HELION_MIN_FACING = 0.05;
-const float HELION_MIN_PROBE_DISTANCE = 1.0e-3;
+const float HELION_BOUNCE_GAIN = 4.2;
+const float HELION_VANILLA_FLOOR_WITH_BOUNCE = 0.0;
+const float HELION_VANILLA_FLOOR_WITHOUT_BOUNCE = 1.0;
 
-vec3 helionProbeBounce(vec3 surface, vec3 normal) {
-    vec3 grid = surface / HELION_PROBE_SPACING - 0.5;
-    ivec3 base = ivec3(floor(grid));
-    vec3 fraction = grid - vec3(base);
-    vec3 total = vec3(0.0);
-    float weights = 0.0;
-    bool unknown = false;
-    for (int corner = 0; corner < HELION_PROBE_CORNERS; corner++) {
-        ivec3 offset = ivec3(corner & 1, (corner >> 1) & 1, (corner >> 2) & 1);
-        ivec3 probe = base + offset;
-        vec3 trilinear = mix(1.0 - fraction, fraction, vec3(offset));
-        float weight = trilinear.x * trilinear.y * trilinear.z;
-        if (!helionProbeInGrid(probe) || weight <= HELION_MIN_PROBE_WEIGHT) {
-            continue;
-        }
-        vec3 position = helionProbePosition(probe);
-        if (helionBlocksLight(ivec3(floor(position)))) {
-            continue;
-        }
-        vec3 toProbe = position - surface;
-        float facing = length(toProbe) > HELION_MIN_PROBE_DISTANCE ? dot(normalize(toProbe), normal) * 0.5 + 0.5 : 1.0;
-        weight *= facing * facing + HELION_MIN_FACING;
-        if (helionTraceVisibility(surface, position, unknown) <= 0.0) {
-            continue;
-        }
-        ivec2 texel = helionProbeTexel(probe);
-        vec3 irradiance = vec3(
-            helionShIrradiance(texelFetch(ProbeRedSampler, texel, 0), normal),
-            helionShIrradiance(texelFetch(ProbeGreenSampler, texel, 0), normal),
-            helionShIrradiance(texelFetch(ProbeBlueSampler, texel, 0), normal)
-        );
-        total += irradiance * weight;
-        weights += weight;
+vec4 helionBounce(vec3 surface, vec3 normal) {
+    if (Trace.z <= 0) {
+        return vec4(0.0, 0.0, 0.0, HELION_VANILLA_FLOOR_WITHOUT_BOUNCE);
     }
-    return weights > 0.0 ? total / weights : vec3(0.0);
+    vec3 gathered = helionGatherProbes(surface, normal, ivec3(0), ProbeRedSampler, ProbeGreenSampler, ProbeBlueSampler, ProbePlacementSampler);
+    return vec4(gathered * HELION_BOUNCE_GAIN, HELION_VANILLA_FLOOR_WITH_BOUNCE);
 }
 
 bool helionOccluded(vec3 from, vec3 to) {
@@ -115,7 +87,7 @@ bool helionOccluded(vec3 from, vec3 to) {
 void main() {
     lightColor = vec4(0.0, 0.0, 0.0, 1.0);
     confidence = vec4(0.0);
-    bounce = vec4(0.0);
+    bounce = vec4(0.0, 0.0, 0.0, HELION_VANILLA_FLOOR_WITHOUT_BOUNCE);
     ivec2 fullSize = textureSize(DepthSampler, 0);
     ivec2 pixel = min(ivec2(texCoord * vec2(fullSize)), fullSize - 1);
     float depth = texelFetch(DepthSampler, pixel, 0).r;
@@ -218,6 +190,6 @@ void main() {
     vec3 unshadowed = blendedLuminance > HELION_UNLIT ? blended * (strongest / blendedLuminance) : vec3(0.0);
     float visibility = strongest > HELION_UNLIT ? visibleStrongest / strongest : 1.0;
     lightColor = vec4(unshadowed, visibility);
-    bounce = vec4(Trace.z > 0 ? helionProbeBounce(surface, normal) : vec3(0.0), 1.0);
+    bounce = helionBounce(surface, normal);
     confidence = vec4(unknown ? 0.0 : smoothstep(0.0, HELION_EDGE_FADE_BLOCKS, edge));
 }

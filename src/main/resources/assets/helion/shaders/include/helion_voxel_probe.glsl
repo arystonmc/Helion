@@ -9,6 +9,7 @@ const float HELION_SH_BAND1 = 0.488603;
 const float HELION_SH_COSINE0 = 3.14159265;
 const float HELION_SH_COSINE1 = 2.09439510;
 const float HELION_PI = 3.14159265;
+const float HELION_PROBE_PLACED = 0.5;
 
 int helionProbeIndex(ivec3 probe) {
     return probe.x + HELION_PROBES_PER_AXIS * (probe.z + HELION_PROBES_PER_AXIS * probe.y);
@@ -28,8 +29,8 @@ bool helionProbeInGrid(ivec3 probe) {
     return all(greaterThanEqual(probe, ivec3(0))) && all(lessThan(probe, ivec3(HELION_PROBES_PER_AXIS)));
 }
 
-vec3 helionProbePosition(ivec3 probe) {
-    return (vec3(probe) + 0.5) * HELION_PROBE_SPACING;
+vec3 helionProbePlaced(ivec3 probe, vec3 placement) {
+    return (vec3(probe) + placement) * HELION_PROBE_SPACING;
 }
 
 vec4 helionShBasis(vec3 direction) {

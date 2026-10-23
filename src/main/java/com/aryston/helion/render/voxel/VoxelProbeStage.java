@@ -24,7 +24,6 @@ public final class VoxelProbeStage implements RenderStage {
     private static final String NAME = "voxel_probes";
     private static final String TARGET_PREFIX = "helion:voxel_probe_";
     private static final String PREVIOUS_PREFIX = "helion:voxel_probe_previous_";
-    private static final int NO_RAYS = 0;
 
     private final VoxelLightingResources resources;
     private @Nullable CompiledRenderPipeline pipeline;
@@ -41,7 +40,8 @@ public final class VoxelProbeStage implements RenderStage {
 
     @Override
     public boolean isActive(FrameContext frame) {
-        if (!frame.settings().voxels().enabled() || !frame.settings().lighting().enabled() || frame.geometry().targets().isEmpty()) {
+        VoxelLightingSettings voxels = frame.settings().voxels();
+        if (!voxels.enabled() || !voxels.bounce() || !frame.settings().lighting().enabled() || frame.geometry().targets().isEmpty()) {
             return false;
         }
         Optional<VoxelVolumeView> view = resources.volume();
@@ -61,7 +61,6 @@ public final class VoxelProbeStage implements RenderStage {
         VoxelProbes probes = resources.probes();
         VoxelLightingQuality quality = frame.settings().voxels().quality();
         VoxelLightingSettings voxelSettings = frame.settings().voxels();
-        boolean bounce = voxelSettings.bounce();
         List<ResourceHandle<RenderTarget>> previous = imported(frame, PREVIOUS_PREFIX, probes.previousSet());
         List<ResourceHandle<RenderTarget>> imported = imported(frame, TARGET_PREFIX, probes.currentSet());
         FramePass pass = frame.graph().addPass(NAME);
@@ -71,7 +70,7 @@ public final class VoxelProbeStage implements RenderStage {
         HelionCamera camera = frame.camera();
         pass.executes(frame.graph().timed(NAME, () -> {
             GpuBuffer light = resources.writeLightUniforms(camera, view, voxelSettings);
-            GpuBuffer settings = probes.writeUniforms(view, bounce ? quality.probeRays() : NO_RAYS);
+            GpuBuffer settings = probes.writeUniforms(view, quality.probeRays());
             List<RenderTarget> written = current.stream().map(ResourceHandle::get).toList();
             FullscreenPass.draw("Helion Voxel Probes", written, compiled, renderPass -> {
                 renderPass.setUniform(VoxelLightPipelines.SETTINGS, light);

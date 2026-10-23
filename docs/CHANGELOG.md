@@ -11,6 +11,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Light shafts: rays of sunlight and moonlight through clouds, leaves and gaps between blocks, with the physical sky
 - Experimental voxel lighting: colored block light with real shadows from walls and pillars, in the Experimental preset
 - Experimental voxel lighting: held and burning lights are colored and cast shadows, and mobs and players cast shadows from lights
+- Experimental voxel lighting: bounced light carries torch and lava light around corners and into shaded corners in the color of the walls
 - Mobs, players and items are lit like the blocks around them: colored voxel light, sun shadows and ambient occlusion now reach them
 - Experimental ray tracing for RTX and similar cards: water reflects the world, the sky, the sun and the moon, with waves and darker deep water (in the Experimental preset, takes effect after a restart)
 - Experimental ray traced shadows: exact soft sun and moon shadows near you, with leaves and fences casting shadows through their holes, and mobs and players casting exact shadows
