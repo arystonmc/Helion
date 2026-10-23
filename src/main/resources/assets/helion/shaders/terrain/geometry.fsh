@@ -11,6 +11,7 @@
 #include <helion:helion_geometry.glsl>
 
 uniform sampler2D Sampler0;
+uniform sampler2D GlossySampler;
 
 layout(location = 0) in float sphericalVertexDistance;
 layout(location = 1) in float cylindricalVertexDistance;
@@ -49,6 +50,7 @@ void main() {
     fragColor = apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
     geometryNormal = vec4(helionEncodeNormal(faceNormal(cameraRelativePosition)), HELION_GEOMETRY_PRESENT);
     float fogAmount = total_fog_value(sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd);
-    geometryLight = vec4(lightLevels, chunkVisibility, HELION_GEOMETRY_PRESENT);
+    float glossy = texture(GlossySampler, texCoord0).r > HELION_GLOSSY_CELL ? HELION_GEOMETRY_GLOSSY : HELION_GEOMETRY_PRESENT;
+    geometryLight = vec4(lightLevels, chunkVisibility, glossy);
     geometryAlbedo = vec4((texel * surfaceColor).rgb, fogAmount);
 }

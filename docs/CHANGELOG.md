@@ -14,6 +14,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental screen space reflections: water reflects what is on screen on every graphics card, mobs and players included
 - Ice, stained glass and other see-through blocks reflect their surroundings with the reflection settings
 - Experimental voxel lighting: light through stained glass takes the color of the glass
+- Plain glass and polished blocks such as polished stone, quartz and prismarine reflect their surroundings faintly with screen space reflections
 - Experimental voxel lighting: bounced light carries torch and lava light around corners and into shaded corners in the color of the walls
 - Mobs, players and items are lit like the blocks around them: colored voxel light, sun shadows and ambient occlusion now reach them
 - Experimental ray tracing for RTX and similar cards: water reflects the world, the sky, the sun and the moon, with waves and darker deep water (in the Experimental preset, takes effect after a restart)

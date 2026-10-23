@@ -28,6 +28,7 @@ public final class GeometryBufferPipelines {
     public static final String LIGHT_SAMPLER = "LightSampler";
     public static final String ALBEDO_SAMPLER = "AlbedoSampler";
     public static final String DEPTH_SAMPLER = "DepthSampler";
+    public static final String GLOSSY_SAMPLER = "GlossySampler";
     private static final String VIEW_DEFINE = "HELION_GEOMETRY_VIEW";
     private static final String DEBUG_SHADER = "geometry/debug";
     private static final String DEBUG_PIPELINE = "geometry/debug_";

@@ -65,7 +65,7 @@ public final class FrameStages {
         return List.of(
             new ClearStage(),
             sky(frame, sources, core),
-            new OpaqueGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere()),
+            new OpaqueGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere(), core.glossy()),
             new EntityGeometryStage(sources.entities()),
             new RtxSceneStage(core.rayTracing()),
             new ShadowStage(sources.shadowCasters(), core.shadows(), new RtxShadowTracer(core.rayTracing(), sources.terrain())),
@@ -75,7 +75,7 @@ public final class FrameStages {
             new DeferredLightingStage(core.lighting()),
             new AmbientOcclusionStage(core.ambientOcclusion()),
             new SolidFeatureStage(sources.terrain(), sources.entities()),
-            new WaterSurfaceStage(sources.terrain(), core.water()),
+            new WaterSurfaceStage(sources.terrain(), core.water(), core.glossy()),
             new ScreenReflectionStage(core.water()),
             new RtxReflectionStage(core.rayTracing(), sources.terrain()),
             new WaterReflectionStage(core.water()),

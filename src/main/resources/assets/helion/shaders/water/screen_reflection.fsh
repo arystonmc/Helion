@@ -2,20 +2,25 @@
 #extension GL_ARB_separate_shader_objects : require
 
 #include <helion:helion_water.glsl>
+#include <helion:helion_geometry.glsl>
 
 uniform sampler2D WaterSurfaceSampler;
 uniform sampler2D WaterDepthSampler;
 uniform sampler2D SceneColorSampler;
 uniform sampler2D SceneDepthSampler;
+uniform sampler2D GeometryNormalSampler;
+uniform sampler2D GeometryLightSampler;
 
 layout(std140) uniform HelionScreenReflection {
     mat4 ReflectionViewProjection;
     mat4 ReflectionInverseViewProjection;
+    vec4 ReflectionFlags;
 };
 
 layout(location = 0) in vec2 texCoord;
 
 layout(location = 0) out vec4 fragColor;
+layout(location = 1) out vec4 polishedColor;
 
 const int HELION_MARCH_STEPS = 48;
 const int HELION_REFINE_STEPS = 5;
@@ -28,6 +33,10 @@ const float HELION_EDGE_FADE = 0.06;
 const float HELION_MIN_FACING = 0.05;
 const float HELION_SKY_DEPTH = 0.0;
 const float HELION_MIN_CLIP_W = 1.0e-4;
+const float HELION_FLAG_SET = 0.5;
+const float HELION_POLISHED_F0 = 0.04;
+const float HELION_POLISHED_STRENGTH = 0.5;
+const float HELION_FRESNEL_POWER = 5.0;
 
 struct HelionScreenPoint {
     bool valid;
@@ -62,20 +71,7 @@ float helionEdgeFade(vec2 uv) {
     return clamp(min(edge.x, edge.y) / HELION_EDGE_FADE, 0.0, 1.0);
 }
 
-void main() {
-    fragColor = vec4(0.0);
-    ivec2 pixel = ivec2(gl_FragCoord.xy);
-    vec4 surface = texelFetch(WaterSurfaceSampler, pixel, 0);
-    bool water = helionIsWater(surface);
-    if (!water && !helionIsGlossy(surface)) {
-        return;
-    }
-    vec3 normal = helionDecodeOctahedral(surface.xy);
-    if (water && normal.y < HELION_MIN_FACING) {
-        return;
-    }
-    vec2 screen = (vec2(pixel) + 0.5) / vec2(textureSize(WaterDepthSampler, 0));
-    vec3 start = helionWorldAt(screen, texelFetch(WaterDepthSampler, pixel, 0).r);
+vec4 helionMarch(vec3 start, vec3 normal) {
     vec3 direction = reflect(normalize(start), normal);
     vec3 origin = start + normal * HELION_SURFACE_LIFT;
     float previous = 0.0;
@@ -85,7 +81,7 @@ void main() {
         vec3 position = origin + direction * travelled;
         HelionScreenPoint point = helionProject(position);
         if (!point.valid) {
-            return;
+            return vec4(0.0);
         }
         float behind = helionBehind(position, point.uv);
         float thickness = max(HELION_MIN_THICKNESS, travelled * HELION_THICKNESS_SHARE);
@@ -107,11 +103,46 @@ void main() {
                     near = middle;
                 }
             }
-            fragColor = vec4(textureLod(SceneColorSampler, hit, 0.0).rgb, helionEdgeFade(hit));
-            return;
+            return vec4(textureLod(SceneColorSampler, hit, 0.0).rgb, helionEdgeFade(hit));
         }
         previous = travelled;
         step *= HELION_STEP_GROWTH;
         travelled += step;
     }
+    return vec4(0.0);
+}
+
+vec4 helionPolished(ivec2 pixel, vec2 screen) {
+    if (ReflectionFlags.x < HELION_FLAG_SET || !helionIsGlossyGeometry(texelFetch(GeometryLightSampler, pixel, 0).a)) {
+        return vec4(0.0);
+    }
+    float depth = texelFetch(SceneDepthSampler, pixel, 0).r;
+    if (depth <= HELION_SKY_DEPTH) {
+        return vec4(0.0);
+    }
+    vec3 normal = normalize(texelFetch(GeometryNormalSampler, pixel, 0).rgb * 2.0 - 1.0);
+    vec3 start = helionWorldAt(screen, depth);
+    vec4 hit = helionMarch(start, normal);
+    float facing = clamp(dot(-normalize(start), normal), 0.0, 1.0);
+    float fresnel = (HELION_POLISHED_F0 + (1.0 - HELION_POLISHED_F0) * pow(1.0 - facing, HELION_FRESNEL_POWER)) * HELION_POLISHED_STRENGTH;
+    float weight = fresnel * hit.a;
+    return vec4(hit.rgb * weight, weight);
+}
+
+void main() {
+    fragColor = vec4(0.0);
+    polishedColor = vec4(0.0);
+    ivec2 pixel = ivec2(gl_FragCoord.xy);
+    vec2 screen = (vec2(pixel) + 0.5) / vec2(textureSize(WaterDepthSampler, 0));
+    vec4 surface = texelFetch(WaterSurfaceSampler, pixel, 0);
+    bool water = helionIsWater(surface);
+    if (!water && !helionIsGlossy(surface)) {
+        polishedColor = helionPolished(pixel, screen);
+        return;
+    }
+    vec3 normal = helionDecodeOctahedral(surface.xy);
+    if (water && normal.y < HELION_MIN_FACING) {
+        return;
+    }
+    fragColor = helionMarch(helionWorldAt(screen, texelFetch(WaterDepthSampler, pixel, 0).r), normal);
 }

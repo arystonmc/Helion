@@ -4,9 +4,11 @@
 #include <minecraft:globals.glsl>
 #include <helion:helion_view.glsl>
 #include <helion:helion_water.glsl>
+#include <helion:helion_geometry.glsl>
 
 uniform sampler2D Sampler0;
 uniform sampler2D SceneDepthSampler;
+uniform sampler2D GlossySampler;
 
 layout(std140) uniform HelionWaterSurface {
     vec4 WaterStill;
@@ -58,7 +60,11 @@ float helionWaterThickness(float sceneDepth) {
 void main() {
     vec4 texel = texture(Sampler0, texCoord0);
     vec3 normal = normalize(cross(dFdx(cameraRelativePosition), dFdy(cameraRelativePosition)));
-    #ifdef ALPHA_CUTOUT
+    #ifdef HELION_GLOSSY_ONLY
+    if (texture(GlossySampler, texCoord0).r < HELION_GLOSSY_CELL) {
+        discard;
+    }
+    #elif defined(ALPHA_CUTOUT)
     if (texel.a * vertexAlpha < ALPHA_CUTOUT) {
         discard;
     }
