@@ -27,6 +27,7 @@ public final class VisualTest {
     private static final String NATURAL_SCENE_PROPERTY = "helion.visualTest.natural";
     private static final String SCENES_PROPERTY = "helion.visualTest.scenes";
     private static final String VARIANTS_PROPERTY = "helion.visualTest.variants";
+    private static final String FULL_SIZE_PROPERTY = "helion.visualTest.fullSize";
     private static final String LIST_SEPARATOR = "\\+";
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final int START_DELAY_TICKS = 200;
@@ -34,6 +35,7 @@ public final class VisualTest {
     private static final int VARIANT_SETTLE_TICKS = 20;
     private static final int RETURN_TICKS = 20;
     private static final int SCREENSHOT_DOWNSCALE = 2;
+    private static final int FULL_SIZE = 1;
     private static final String SCREENSHOT_PREFIX = "helion_";
     private static final String SCREENSHOT_EXTENSION = ".png";
     private static final boolean DEBUG_MODE_DURING_TEST = true;
@@ -208,7 +210,7 @@ public final class VisualTest {
 
     private static void capture(Minecraft minecraft, Shot shot) {
         String fileName = SCREENSHOT_PREFIX + shot.name() + SCREENSHOT_EXTENSION;
-        Screenshot.grab(minecraft.gameDirectory, fileName, minecraft.gameRenderer.mainRenderTarget(), SCREENSHOT_DOWNSCALE, message -> { });
+        Screenshot.grab(minecraft.gameDirectory, fileName, minecraft.gameRenderer.mainRenderTarget(), Boolean.getBoolean(FULL_SIZE_PROPERTY) ? FULL_SIZE : SCREENSHOT_DOWNSCALE, message -> { });
         LOGGER.info("Helion visual test {}: {}", shot.name(), HelionDebugSnapshot.capture(minecraft));
     }
 

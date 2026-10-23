@@ -52,12 +52,15 @@ final class VisualTestWorld {
         new Volume(new BlockPos(-6, 2, -5), new BlockPos(-4, 2, -3))
     );
 
+    private static final BlockPos POOL_COW = new BlockPos(-4, 0, -11);
     private static final List<Summon> ENTITIES = List.of(
         new Summon(-1, 0, -3, "armor_stand"),
-        new Summon(1, 0, -3, "cow")
+        new Summon(1, 0, -3, "cow"),
+        new Summon(POOL_COW.getX(), POOL_COW.getY(), POOL_COW.getZ(), "cow")
     );
     private static final String FROZEN_ENTITY = " {NoAI:1b,NoGravity:1b,Invulnerable:1b,Rotation:[90f,0f]}";
     private static final double BLOCK_CENTER = 0.5;
+    static final BlockPos POOL_CAMERA = new BlockPos(-4, 0, 1);
     static final BlockPos CAVE_CAMERA = new BlockPos(24, -23, -2);
     private static final Volume CAVE_ROCK = new Volume(new BlockPos(12, -26, -18), new BlockPos(32, -12, 4));
     private static final List<Volume> CAVE_CORRIDORS = List.of(
