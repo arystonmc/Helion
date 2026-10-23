@@ -62,6 +62,7 @@ final class HelionOptions {
     final ConfigOption<Boolean> waterReflections;
     final ConfigOption<Boolean> rayTracedShadows;
     final ConfigOption<Boolean> screenReflections;
+    final ConfigOption<Boolean> rainWetness;
     final ConfigOption<Boolean> shadows;
     final ConfigOption<ShadowQuality> shadowQuality;
     final ConfigOption<RenderScale> renderScale;
@@ -138,6 +139,8 @@ final class HelionOptions {
             .cost(LOW_COST).requires(this.rayTracing, this.shadows);
         this.screenReflections = experimental(toggle("screenReflections", HelionConfig.SCREEN_REFLECTIONS, Icons.SPARKLE, "reflections.screenSpace"))
             .cost(MEDIUM_COST).requires(this.enabled);
+        this.rainWetness = toggle("rainWetness", HelionConfig.RAIN_WETNESS, Icons.CLOUD, "reflections.rainWetness")
+            .cost(LOW_COST).requires(this.lighting);
         this.shadowQuality = choice("shadowQuality", HelionConfig.SHADOW_QUALITY, ShadowQuality.class, Icons.GAUGE, "shadows.quality")
             .style(ChoiceStyle.SEGMENTED).cost(HIGH_COST).requires(this.shadows);
         this.renderScale = choice("renderScale", HelionConfig.RENDER_SCALE, RenderScale.class, Icons.GAUGE, "temporalAntiAliasing.renderScale")
@@ -181,7 +184,7 @@ final class HelionOptions {
         return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.starDensity, this.milkyWay, this.lightShafts, this.clouds, this.cloudQuality,
             this.ambientOcclusion, this.ambientOcclusionMethod,
             this.ambientOcclusionQuality, this.ambientOcclusionStrength, this.ambientOcclusionRadius, this.lighting, this.blockLight, this.skyLight,
-            this.dynamicLights, this.voxelLighting, this.voxelLightingQuality, this.voxelBounce, this.rayTracing, this.waterReflections, this.rayTracedShadows, this.screenReflections, this.shadows, this.shadowQuality, this.renderScale, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.colorGrade, this.edgeSmoothing, this.dither,
+            this.dynamicLights, this.voxelLighting, this.voxelLightingQuality, this.voxelBounce, this.rayTracing, this.waterReflections, this.rayTracedShadows, this.screenReflections, this.rainWetness, this.shadows, this.shadowQuality, this.renderScale, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.colorGrade, this.edgeSmoothing, this.dither,
             this.sharpening, this.sharpeningStrength, this.motionBlur, this.motionBlurStrength, this.depthOfField, this.depthOfFieldStrength, this.debugMode, this.ambientOcclusionView,
             this.bloomView, this.geometryBufferView, this.lightView);
     }

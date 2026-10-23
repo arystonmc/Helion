@@ -34,6 +34,7 @@ import com.aryston.helion.render.voxel.VoxelBounceStage;
 import com.aryston.helion.render.voxel.VoxelLightStage;
 import com.aryston.helion.render.voxel.VoxelProbeStage;
 import com.aryston.helion.render.voxel.VoxelSliceStage;
+import com.aryston.helion.render.water.RainWetnessStage;
 import com.aryston.helion.render.water.ScreenReflectionStage;
 import com.aryston.helion.render.water.WaterReflectionStage;
 import com.aryston.helion.render.water.WaterSurfaceStage;
@@ -65,6 +66,7 @@ public final class FrameStages {
         HelionRenderCore core = HelionRenderCore.get();
         return List.of(
             new ClearStage(),
+            new RainWetnessStage(sources.weather(), core.water()),
             sky(frame, sources, core),
             new OpaqueGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere(), core.glossy()),
             new EntityGeometryStage(sources.entities()),

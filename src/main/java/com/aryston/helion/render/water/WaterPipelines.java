@@ -30,6 +30,7 @@ public final class WaterPipelines {
     private static final int POLISHED_TARGET = 1;
     private static final String FOG = "Fog";
     private static final String REFLECTION_SHADER = "water/reflection";
+    private static final String SCREEN_REFLECTION_SHADER = "water/screen_reflection";
     private static final String PHYSICAL_SKY_DEFINE = "HELION_PHYSICAL_SKY";
 
     public static final RenderPipeline REFLECTION = reflection("water/reflection", BindGroupLayout.builder()
@@ -39,18 +40,11 @@ public final class WaterPipelines {
         .withShaderDefine(PHYSICAL_SKY_DEFINE)
         .build();
 
-    public static final RenderPipeline SCREEN_REFLECTION = HelionPipelines.fullscreen("water/screen_reflection")
-        .withBindGroupLayout(BindGroupLayout.builder()
-            .withUniform(SCREEN_REFLECTION_UNIFORM, UniformType.UNIFORM_BUFFER)
-            .withUniform(SURFACE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-            .withUniform(DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-            .withUniform(SCENE_COLOR_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-            .withUniform(SCENE_DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-            .withUniform(GEOMETRY_NORMAL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-            .withUniform(GEOMETRY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-            .build())
-        .withColorTargetState(new ColorTargetState(Optional.empty(), SCREEN_REFLECTION_FORMAT, ColorTargetState.WRITE_ALL))
-        .withColorTargetState(POLISHED_TARGET, new ColorTargetState(Optional.empty(), SCREEN_REFLECTION_FORMAT, ColorTargetState.WRITE_ALL))
+    public static final RenderPipeline SCREEN_REFLECTION = screenReflection("water/screen_reflection", BindGroupLayout.builder()
+        .withUniform(FOG, UniformType.UNIFORM_BUFFER)).build();
+
+    public static final RenderPipeline SCREEN_REFLECTION_PHYSICAL_SKY = screenReflection("water/screen_reflection_physical_sky", PhysicalSkyPipelines.skyColorBindings())
+        .withShaderDefine(PHYSICAL_SKY_DEFINE)
         .build();
 
     public static final RenderPipeline POLISHED_COMPOSITE = HelionPipelines.fullscreen("water/polished_composite")
@@ -64,7 +58,22 @@ public final class WaterPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(REFLECTION, REFLECTION_PHYSICAL_SKY, SCREEN_REFLECTION, POLISHED_COMPOSITE);
+        return List.of(REFLECTION, REFLECTION_PHYSICAL_SKY, SCREEN_REFLECTION, SCREEN_REFLECTION_PHYSICAL_SKY, POLISHED_COMPOSITE);
+    }
+
+    private static RenderPipeline.Builder screenReflection(String name, BindGroupLayout.Builder bindings) {
+        return HelionPipelines.fullscreen(name, SCREEN_REFLECTION_SHADER)
+            .withBindGroupLayout(bindings
+                .withUniform(SCREEN_REFLECTION_UNIFORM, UniformType.UNIFORM_BUFFER)
+                .withUniform(SURFACE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform(DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform(SCENE_COLOR_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform(SCENE_DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform(GEOMETRY_NORMAL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform(GEOMETRY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .build())
+            .withColorTargetState(new ColorTargetState(Optional.empty(), SCREEN_REFLECTION_FORMAT, ColorTargetState.WRITE_ALL))
+            .withColorTargetState(POLISHED_TARGET, new ColorTargetState(Optional.empty(), SCREEN_REFLECTION_FORMAT, ColorTargetState.WRITE_ALL));
     }
 
     private static RenderPipeline.Builder reflection(String name, BindGroupLayout.Builder bindings) {

@@ -76,6 +76,20 @@ final class VisualTestWorld {
     private static final Volume SAVANNA_LEAVES = new Volume(new BlockPos(31, -17, -17), new BlockPos(31, -15, -12));
     private static final Placement SAVANNA_TORCH = new Placement(29, -17, -15, "torch");
     private static final String SAVANNA_BIOME = "minecraft:savanna";
+    static final BlockPos RAIN_CAMERA = new BlockPos(12, 0, 4);
+    private static final Volume RAIN_YARD_AIR = new Volume(new BlockPos(8, 0, -12), new BlockPos(16, 8, 4));
+    private static final Volume RAIN_YARD_FLOOR = new Volume(new BlockPos(8, -1, -12), new BlockPos(16, -1, 4));
+    private static final Volume RAIN_YARD_BIOME = new Volume(new BlockPos(8, -4, -12), new BlockPos(16, 12, 4));
+    private static final String RAIN_YARD_BLOCK = "stone_bricks";
+    private static final String RAIN_BIOME = "minecraft:plains";
+    private static final List<Fill> RAIN_YARD_PATCHES = List.of(
+        new Fill(new Volume(new BlockPos(8, -1, -12), new BlockPos(9, -1, 4)), "sand"),
+        new Fill(new Volume(new BlockPos(15, -1, -12), new BlockPos(16, -1, 4)), "grass_block"),
+        new Fill(new Volume(new BlockPos(11, -1, -4), new BlockPos(13, -1, -2)), "oak_planks"),
+        new Fill(new Volume(new BlockPos(12, 3, -10), new BlockPos(15, 3, -8)), "stone_slab"),
+        new Fill(new Volume(new BlockPos(12, 0, -11), new BlockPos(12, 2, -11)), "stone_bricks"),
+        new Fill(new Volume(new BlockPos(10, 0, -7), new BlockPos(10, 0, -7)), "lantern")
+    );
     private static final Volume TINT_ROOM = new Volume(new BlockPos(14, -17, 0), new BlockPos(24, -15, 3));
     private static final List<Placement> TINT_BLOCKS = List.of(
         new Placement(19, -17, 0, "red_stained_glass"),
@@ -142,6 +156,11 @@ final class VisualTestWorld {
         run(server, fill(origin.offset(SAVANNA_LEAVES.from()), origin.offset(SAVANNA_LEAVES.to()), CANOPY_BLOCK));
         run(server, SAVANNA_TORCH.command(origin));
         run(server, "fillbiome " + coordinates(origin.offset(SAVANNA_FLOOR.from())) + " " + coordinates(origin.offset(SAVANNA_ROOM.to())) + " " + SAVANNA_BIOME);
+        run(server, killEntities(origin.offset(RAIN_YARD_AIR.from()), origin.offset(RAIN_YARD_AIR.to())));
+        run(server, fill(origin.offset(RAIN_YARD_AIR.from()), origin.offset(RAIN_YARD_AIR.to()), "air"));
+        run(server, fill(origin.offset(RAIN_YARD_FLOOR.from()), origin.offset(RAIN_YARD_FLOOR.to()), RAIN_YARD_BLOCK));
+        RAIN_YARD_PATCHES.forEach(patch -> run(server, fill(origin.offset(patch.volume().from()), origin.offset(patch.volume().to()), patch.block())));
+        run(server, "fillbiome " + coordinates(origin.offset(RAIN_YARD_BIOME.from())) + " " + coordinates(origin.offset(RAIN_YARD_BIOME.to())) + " " + RAIN_BIOME);
     }
 
     static void placeCamera(IntegratedServer server, Vec3 start, BlockPos origin, BlockPos cameraOffset) {
@@ -151,6 +170,10 @@ final class VisualTestWorld {
 
     static void setTime(IntegratedServer server, int dayTime) {
         run(server, "time set " + dayTime);
+    }
+
+    static void setRain(IntegratedServer server, boolean rain) {
+        run(server, rain ? "weather rain" : "weather clear");
     }
 
     static void freezeTicks(IntegratedServer server, boolean frozen) {
@@ -179,6 +202,9 @@ final class VisualTestWorld {
     }
 
     private record Volume(BlockPos from, BlockPos to) {
+    }
+
+    private record Fill(Volume volume, String block) {
     }
 
     private record Placement(int x, int y, int z, String block) {

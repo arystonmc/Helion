@@ -210,6 +210,16 @@ Water reflects what is on screen on every graphics card, mobs and players includ
 - With ray tracing on, what is off screen still comes from ray tracing; without it, the sky is reflected there
 - Settings: Screen Space Reflections on the Lighting page; on in the Experimental preset, off otherwise
 
+### Rain Wetness
+Rain makes the world wet instead of only falling past it.
+
+- Ground, walls and roofs that the rain reaches turn darker and get a soft wet sheen; places under a roof or under trees stay dry
+- Puddles slowly gather on flat stone, brick, wood and other surfaces that hold water, reflect the sky, lights and the world around them, and ripple where the raindrops land
+- Sand, gravel, dirt, grass, leaves and wool only darken, they soak the water up; snow and magma stay dry
+- Surfaces get wet within half a minute of rain and dry over a minute and a half after it; puddles fill and dry more slowly
+- Only where it rains: snowy and dry biomes stay as they are
+- Settings: Rain Wetness on or off on the Lighting page, on in every preset but Vanilla; needs Helion lighting
+
 ### Ray Tracing (Experimental)
 Uses the ray tracing hardware of RTX and similar graphics cards for what shaders cannot do well.
 

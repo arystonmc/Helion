@@ -11,6 +11,7 @@ public final class WaterResults {
     private @Nullable GpuTextureView reflections;
     private @Nullable SceneReflectionPass reflectionPass;
     private @Nullable ResourceHandle<RenderTarget> screenReflections;
+    private @Nullable Wetness wetness;
 
     public Optional<ResourceHandle<RenderTarget>> surface() {
         return Optional.ofNullable(surface);
@@ -18,6 +19,10 @@ public final class WaterResults {
 
     public Optional<GpuTextureView> reflections() {
         return Optional.ofNullable(reflections);
+    }
+
+    public Optional<Wetness> wetness() {
+        return Optional.ofNullable(wetness);
     }
 
     public Optional<SceneReflectionPass> reflectionPass() {
@@ -34,6 +39,10 @@ public final class WaterResults {
 
     public void publishReflections(GpuTextureView traced) {
         reflections = traced;
+    }
+
+    void publishWetness(Wetness current) {
+        wetness = current;
     }
 
     void publishSurface(ResourceHandle<RenderTarget> written) {

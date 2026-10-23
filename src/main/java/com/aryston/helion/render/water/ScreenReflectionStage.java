@@ -1,5 +1,6 @@
 package com.aryston.helion.render.water;
 
+import com.aryston.helion.render.atmosphere.SceneSkyColor;
 import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.geometry.GeometryBuffer;
 import com.aryston.helion.render.graph.FrameContext;
@@ -42,10 +43,10 @@ public final class ScreenReflectionStage implements RenderStage {
 
     @Override
     public boolean isActive(FrameContext frame) {
-        if (!frame.settings().reflections().screenSpace() || frame.water().surface().isEmpty()) {
+        if (!reflectsWater(frame) && !wetsSurfaces(frame)) {
             return false;
         }
-        program = resources.screenReflectionProgram().orElse(null);
+        program = resources.screenReflectionProgram(frame.atmosphere().skyColor().isPresent()).orElse(null);
         return program != null;
     }
 
@@ -53,29 +54,37 @@ public final class ScreenReflectionStage implements RenderStage {
     public void addTo(FrameContext frame) {
         CompiledRenderPipeline pipeline = Objects.requireNonNull(program);
         FramePass pass = frame.graph().addPass(NAME);
-        ResourceHandle<RenderTarget> surface = frame.water().surface().orElseThrow();
+        Optional<ResourceHandle<RenderTarget>> surface = frame.water().surface();
         ResourceHandle<RenderTarget> scene = frame.targets().scene();
         Optional<GeometryBuffer.Targets> geometry = frame.geometry().targets();
-        pass.reads(surface);
+        Optional<SceneSkyColor> sky = frame.atmosphere().skyColor();
+        boolean water = reflectsWater(frame);
+        Wetness wetness = frame.water().wetness().orElse(Wetness.DRY);
+        surface.ifPresent(pass::reads);
         pass.reads(scene);
+        sky.ifPresent(color -> color.declareReads(pass));
         geometry.ifPresent(targets -> {
             pass.reads(targets.normal());
             pass.reads(targets.light());
         });
         ResourceHandle<RenderTarget> reflections = pass.createsInternal(TARGET, descriptor(frame));
         ResourceHandle<RenderTarget> polished = pass.createsInternal(POLISHED_TARGET, descriptor(frame));
-        frame.water().publishScreenReflections(reflections);
+        if (water) {
+            frame.water().publishScreenReflections(reflections);
+        }
         HelionCamera camera = frame.camera();
         pass.executes(frame.graph().timed(NAME, () -> {
-            RenderTarget water = surface.get();
             RenderTarget lit = scene.get();
+            RenderTarget waterTarget = surface.map(ResourceHandle::get).orElse(lit);
             GpuSampler nearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
             GpuSampler linear = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
-            GpuTextureView standIn = Objects.requireNonNull(water.getColorTextureView());
+            GpuTextureView standIn = Objects.requireNonNull(waterTarget.getColorTextureView());
             FullscreenPass.draw(PASS_LABEL, List.of(reflections.get(), polished.get()), pipeline, renderPass -> {
-                renderPass.setUniform(WaterPipelines.SCREEN_REFLECTION_UNIFORM, resources.screenUniforms(camera, geometry.isPresent()));
+                RenderSystem.bindDefaultUniforms(renderPass);
+                sky.ifPresent(color -> color.bind(renderPass));
+                renderPass.setUniform(WaterPipelines.SCREEN_REFLECTION_UNIFORM, resources.screenUniforms(camera, geometry.isPresent(), water, frame.settings().reflections().screenSpace(), wetness));
                 renderPass.setUniform(WaterPipelines.SURFACE_SAMPLER, standIn, nearest);
-                renderPass.setUniform(WaterPipelines.DEPTH_SAMPLER, Objects.requireNonNull(water.getDepthTextureView()), nearest);
+                renderPass.setUniform(WaterPipelines.DEPTH_SAMPLER, Objects.requireNonNull(waterTarget.getDepthTextureView()), nearest);
                 renderPass.setUniform(WaterPipelines.SCENE_COLOR_SAMPLER, Objects.requireNonNull(lit.getColorTextureView()), linear);
                 renderPass.setUniform(WaterPipelines.SCENE_DEPTH_SAMPLER, Objects.requireNonNull(lit.getDepthTextureView()), nearest);
                 renderPass.setUniform(WaterPipelines.GEOMETRY_NORMAL_SAMPLER, geometry.map(targets -> colorView(targets.normal())).orElse(standIn), nearest);
@@ -86,6 +95,14 @@ public final class ScreenReflectionStage implements RenderStage {
         if (geometry.isPresent()) {
             resources.polishedProgram().ifPresent(composite -> addComposite(frame, polished, composite));
         }
+    }
+
+    private static boolean reflectsWater(FrameContext frame) {
+        return frame.settings().reflections().screenSpace() && frame.water().surface().isPresent();
+    }
+
+    private static boolean wetsSurfaces(FrameContext frame) {
+        return frame.water().wetness().isPresent() && frame.geometry().targets().isPresent();
     }
 
     private static void addComposite(FrameContext frame, ResourceHandle<RenderTarget> polished, CompiledRenderPipeline composite) {

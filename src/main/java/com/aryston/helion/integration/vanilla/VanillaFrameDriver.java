@@ -224,6 +224,7 @@ final class VanillaFrameDriver {
             new VanillaEntitySource(request, featureFrame, events),
             new VanillaAtmosphereSource(request, sky, fog, events),
             new VanillaCloudSource(request),
+            new VanillaWeatherSource(),
             new VanillaTransparencySource(request, sections, featureFrame),
             new VanillaShadowCasterSource(request, shadowCasters, featureFrame),
             List.of(new VanillaEntityOutlineEffect(request.level(), targets))

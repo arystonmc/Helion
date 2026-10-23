@@ -152,6 +152,10 @@ public final class VisualTest {
         if (nextShot == 0 || shot.scene() != scene) {
             scene = shot.scene();
             VisualTestWorld.setTime(server, scene.dayTime());
+            VisualTestWorld.setRain(server, scene.rain());
+            if (scene.rain()) {
+                HelionRenderCore.get().water().rainWetness().saturate();
+            }
             VisualTestWorld.placeCamera(server, start, origin, scene.cameraOffset());
             ticksUntilAction = SCENE_SETTLE_TICKS;
         } else {

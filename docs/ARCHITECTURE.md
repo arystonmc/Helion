@@ -41,6 +41,7 @@ The sections live in `docs/architecture/`, one file per topic. Read the invarian
 | Voxel Lighting | [voxel-lighting.md](architecture/voxel-lighting.md) | Experimental, off by default (`voxelLighting.mode`). Renderpearl API findings, the block volume around the camera, light grid, traced colored block light with shadows, bounced light, tinted light and the voxel slice view. |
 | Voxel Lighting RTX Spike | [voxel-lighting-rtx-spike.md](architecture/voxel-lighting-rtx-spike.md) | The 2026-10-22 test of hardware ray queries against the voxel grid walk and the owner's decision for an optional RTX layer. |
 | Ray Tracing | [ray-tracing.md](architecture/ray-tracing.md) | Optional hardware ray tracing layer, experimental setting `rayTracing.enabled` (restart) with water reflections: device features, VMA buffers, per-section bottom levels from the block meshes, per-frame top level, sun shadow validation view. |
+| Rain Wetness | [rain-wetness.md](architecture/rain-wetness.md) | On by default (`reflections.rainWetness`): wet, darker surfaces in rain, puddles with screen space reflections and rain ripples on blocks that hold water, material classes from the block atlas mask. |
 | Sources | [sources.md](architecture/sources.md) | Stages never call vanilla code directly. |
 | Vanilla Coupling | [vanilla-coupling.md](architecture/vanilla-coupling.md) | Places that copy or depend on vanilla internals. |
 | Mixins | [mixins.md](architecture/mixins.md) | Every mixin with its target and why no API is enough. |

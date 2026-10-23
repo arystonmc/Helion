@@ -3,7 +3,7 @@ package com.aryston.helion.debug;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 
-record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPos cameraOffset) {
+record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPos cameraOffset, boolean rain) {
     private static final int SUNRISE = 1500;
     private static final int MORNING = 3000;
     private static final int NOON = 6000;
@@ -20,6 +20,9 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final float TINT_PITCH = 20.0F;
     private static final float SAVANNA_PITCH = 30.0F;
     private static final float POOL_PITCH = 8.0F;
+    private static final float SHOWCASE_PITCH = 25.0F;
+    private static final boolean RAIN = true;
+    private static final boolean CLEAR = false;
 
     static final List<VisualTestScene> ALL = List.of(
         new VisualTestScene("day_sky", NOON, NORTH, -35.0F, BlockPos.ZERO),
@@ -42,6 +45,13 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("cave_corner", MIDNIGHT, NORTH, CAVE_PITCH, VisualTestWorld.CAVE_CAMERA),
         new VisualTestScene("wall_leak", MIDNIGHT, EAST, WALL_PITCH, VisualTestWorld.WALL_CAMERA),
         new VisualTestScene("tinted_glass", MIDNIGHT, EAST, TINT_PITCH, VisualTestWorld.TINT_CAMERA),
-        new VisualTestScene("savanna_room", MIDNIGHT, EAST, SAVANNA_PITCH, VisualTestWorld.SAVANNA_CAMERA)
+        new VisualTestScene("savanna_room", MIDNIGHT, EAST, SAVANNA_PITCH, VisualTestWorld.SAVANNA_CAMERA),
+        new VisualTestScene("rain_yard", NOON, NORTH, SHOWCASE_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),
+        new VisualTestScene("rain_yard_low", NOON, NORTH, POOL_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),
+        new VisualTestScene("rain_yard_dusk", SUNSET, NORTH, POOL_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN)
     );
+
+    VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPos cameraOffset) {
+        this(name, dayTime, yaw, pitch, cameraOffset, CLEAR);
+    }
 }

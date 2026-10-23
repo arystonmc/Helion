@@ -29,8 +29,11 @@ layout(location = 3) out vec4 geometryAlbedo;
 
 const vec3 HELION_FOLIAGE_NORMAL = vec3(0.0, 1.0, 0.0);
 
-vec3 faceNormal(vec3 position) {
-    vec3 normal = normalize(cross(dFdx(position), dFdy(position)));
+vec3 derivedNormal(vec3 position) {
+    return normalize(cross(dFdx(position), dFdy(position)));
+}
+
+vec3 faceNormal(vec3 position, vec3 normal) {
     if (helionIsCrossPlane(normal)) {
         return HELION_FOLIAGE_NORMAL;
     }
@@ -48,9 +51,10 @@ void main() {
     #endif
 
     fragColor = apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
-    geometryNormal = vec4(helionEncodeNormal(faceNormal(cameraRelativePosition)), HELION_GEOMETRY_PRESENT);
+    vec3 derived = derivedNormal(cameraRelativePosition);
+    geometryNormal = vec4(helionEncodeNormal(faceNormal(cameraRelativePosition, derived)), HELION_GEOMETRY_PRESENT);
     float fogAmount = total_fog_value(sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd);
-    float glossy = texture(GlossySampler, texCoord0).r > HELION_GLOSSY_CELL ? HELION_GEOMETRY_GLOSSY : HELION_GEOMETRY_PRESENT;
-    geometryLight = vec4(lightLevels, chunkVisibility, glossy);
+    float material = helionIsCrossPlane(derived) ? HELION_GEOMETRY_POROUS : helionGeometryMaterial(texture(GlossySampler, texCoord0).r);
+    geometryLight = vec4(lightLevels, chunkVisibility, material);
     geometryAlbedo = vec4((texel * surfaceColor).rgb, fogAmount);
 }

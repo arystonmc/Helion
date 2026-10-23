@@ -56,7 +56,7 @@ void main() {
 
     fragColor = apply_fog(surface * lightMapColor, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
     geometryNormal = vec4(helionEncodeNormal(faceNormal(cameraRelativePosition)), HELION_GEOMETRY_PRESENT);
-    geometryLight = vec4(lightLevels, HELION_ENTITY_FULLY_VISIBLE, HELION_GEOMETRY_PRESENT);
+    geometryLight = vec4(lightLevels, HELION_ENTITY_FULLY_VISIBLE, HELION_GEOMETRY_POROUS);
     float fogAmount = total_fog_value(sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd);
     geometryAlbedo = vec4(surface.rgb, fogAmount);
 }

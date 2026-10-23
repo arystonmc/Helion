@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Rain wetness: rain darkens and wets the ground, puddles gather on stone, brick and wood, reflect the world and ripple with the drops
 - Experimental volumetric clouds lit by the physical sky, with Low, Medium and High quality
 - Light shafts: rays of sunlight and moonlight through clouds, leaves and gaps between blocks, with the physical sky
 - Experimental voxel lighting: colored block light with real shadows from walls and pillars, in the Experimental preset

@@ -158,7 +158,7 @@ enum VisualTestVariant {
     }
 
     private ReflectionSettings reflections(RenderSettings settings) {
-        return this == SCREEN_REFLECTIONS || this == HYBRID_REFLECTIONS ? new ReflectionSettings(true) : settings.reflections();
+        return this == SCREEN_REFLECTIONS || this == HYBRID_REFLECTIONS ? new ReflectionSettings(true, settings.reflections().rainWetness()) : settings.reflections();
     }
 
     private boolean showsShadows() {

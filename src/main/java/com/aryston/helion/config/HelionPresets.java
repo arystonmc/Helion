@@ -52,7 +52,8 @@ final class HelionPresets {
                 .set(options.rayTracing, preset == experimental)
                 .set(options.waterReflections, true)
                 .set(options.rayTracedShadows, true)
-                .set(options.screenReflections, preset == experimental);
+                .set(options.screenReflections, preset == experimental)
+                .set(options.rainWetness, preset != vanilla);
         }
         return List.of(vanilla, balanced, quality, experimental);
     }

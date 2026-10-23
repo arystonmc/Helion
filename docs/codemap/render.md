@@ -20,9 +20,9 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### FrameSources
 - Path: `src/main/java/com/aryston/helion/render/FrameSources.java`
-- Role: Per-frame bundle of the terrain, entity, atmosphere, cloud, transparency and shadow caster sources plus the post effects.
+- Role: Per-frame bundle of the terrain, entity, atmosphere, cloud, weather, transparency and shadow caster sources plus the post effects.
 
 #### FrameStages
 - Path: `src/main/java/com/aryston/helion/render/FrameStages.java`
-- Role: Single place that defines the stage order (clear, sky, opaque geometry, entity geometry, ray tracing scene, shadows, ray traced sun shadow, voxel light, RTX spike shadow mask, deferred lighting, ambient occlusion, solid features, water surface, ray traced reflections, water reflection, transparent geometry, temporal anti-aliasing, post with motion blur, exposure metering, bloom and sharpening, output, geometry buffer view, voxel slice view, RTX spike mask view, ray traced sun shadow view) and adds active stages to the frame one by one, so a stage can see what earlier stages published (the geometry buffer). The output stage is `ImageCompositeStage` when an image effect is active, otherwise `PresentStage`. `buildScreenEffects` adds only the post effects and the output for Sodium mode, from the same list.
+- Role: Single place that defines the stage order (clear, rain wetness, sky, opaque geometry, entity geometry, ray tracing scene, shadows, ray traced sun shadow, voxel light, RTX spike shadow mask, deferred lighting, ambient occlusion, solid features, water surface, ray traced reflections, water reflection, transparent geometry, temporal anti-aliasing, post with motion blur, exposure metering, bloom and sharpening, output, geometry buffer view, voxel slice view, RTX spike mask view, ray traced sun shadow view) and adds active stages to the frame one by one, so a stage can see what earlier stages published (the geometry buffer). The output stage is `ImageCompositeStage` when an image effect is active, otherwise `PresentStage`. `buildScreenEffects` adds only the post effects and the output for Sodium mode, from the same list.
 - Depends on: every stage class.

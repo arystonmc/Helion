@@ -3,6 +3,12 @@
 
 #include <helion:helion_water.glsl>
 #include <helion:helion_geometry.glsl>
+#include <helion:helion_wetness.glsl>
+#ifdef HELION_PHYSICAL_SKY
+#include <helion:helion_sky_color.glsl>
+#else
+#include <minecraft:fog.glsl>
+#endif
 
 uniform sampler2D WaterSurfaceSampler;
 uniform sampler2D WaterDepthSampler;
@@ -15,6 +21,8 @@ layout(std140) uniform HelionScreenReflection {
     mat4 ReflectionViewProjection;
     mat4 ReflectionInverseViewProjection;
     vec4 ReflectionFlags;
+    vec4 Wetness;
+    vec4 WetnessOrigin;
 };
 
 layout(location = 0) in vec2 texCoord;
@@ -41,6 +49,10 @@ const float HELION_POLISHED_F0 = 0.15;
 const float HELION_POLISHED_STRENGTH = 0.4;
 const float HELION_POLISHED_REACH = 24.0;
 const float HELION_FRESNEL_POWER = 5.0;
+const float HELION_WET_F0 = 0.02;
+const float HELION_PUDDLE_F0 = 0.3;
+const float HELION_PUDDLE_MARCH = 0.05;
+const float HELION_WET_REACH = 48.0;
 
 struct HelionScreenPoint {
     bool valid;
@@ -122,26 +134,51 @@ vec4 helionMarch(vec3 start, vec3 normal, out float distanceToHit, out vec4 skyS
     return vec4(0.0);
 }
 
-vec4 helionPolished(ivec2 pixel, vec2 screen) {
-    if (ReflectionFlags.x < HELION_FLAG_SET || !helionIsGlossyGeometry(texelFetch(GeometryLightSampler, pixel, 0).a)) {
+vec3 helionReflectedSky(vec3 direction) {
+    #ifdef HELION_PHYSICAL_SKY
+    return helionSkyColor(direction);
+    #else
+    return FogColor.rgb;
+    #endif
+}
+
+float helionFresnel(float baseReflectance, vec3 view, vec3 normal) {
+    float facing = clamp(dot(-view, normal), 0.0, 1.0);
+    return baseReflectance + (1.0 - baseReflectance) * pow(1.0 - facing, HELION_FRESNEL_POWER);
+}
+
+vec4 helionSurfaceSheen(ivec2 pixel, vec2 screen) {
+    if (ReflectionFlags.x < HELION_FLAG_SET) {
         return vec4(0.0);
     }
+    vec4 light = texelFetch(GeometryLightSampler, pixel, 0);
     float depth = texelFetch(SceneDepthSampler, pixel, 0).r;
-    if (depth <= HELION_SKY_DEPTH) {
+    if (light.a < HELION_GEOMETRY_PRESENT_THRESHOLD || depth <= HELION_SKY_DEPTH) {
         return vec4(0.0);
     }
-    vec3 normal = normalize(texelFetch(GeometryNormalSampler, pixel, 0).rgb * 2.0 - 1.0);
+    bool polished = ReflectionFlags.z > HELION_FLAG_SET && helionIsGlossyGeometry(light.a);
+    vec3 surfaceNormal = normalize(texelFetch(GeometryNormalSampler, pixel, 0).rgb * 2.0 - 1.0);
     vec3 start = helionWorldAt(screen, depth);
-    float reach;
-    vec4 sky;
-    vec4 hit = helionMarch(start, normal, reach, sky);
-    float facing = clamp(dot(-normalize(start), normal), 0.0, 1.0);
-    float fresnel = (HELION_POLISHED_F0 + (1.0 - HELION_POLISHED_F0) * pow(1.0 - facing, HELION_FRESNEL_POWER)) * HELION_POLISHED_STRENGTH;
-    if (hit.a <= 0.0) {
-        return vec4(sky.rgb * fresnel * sky.a, HELION_ADDITIVE);
+    HelionWetSurface wet = helionWetSurface(light, surfaceNormal, start + WetnessOrigin.xyz, Wetness);
+    if (!polished && wet.sheen <= 0.0) {
+        return vec4(0.0);
     }
-    float weight = fresnel * hit.a * clamp(1.0 - reach / HELION_POLISHED_REACH, 0.0, 1.0);
-    return vec4(hit.rgb * weight, HELION_ADDITIVE);
+    vec3 view = normalize(start);
+    vec3 normal = wet.normal;
+    float polishedWeight = polished ? helionFresnel(HELION_POLISHED_F0, view, normal) * HELION_POLISHED_STRENGTH : 0.0;
+    float wetWeight = helionFresnel(mix(HELION_WET_F0, HELION_PUDDLE_F0, wet.puddle), view, normal) * wet.sheen;
+    vec3 sky = helionReflectedSky(reflect(view, normal)) * light.g * light.g;
+    vec3 reflection = sky;
+    float reach = 0.0;
+    if (polished || wet.puddle > HELION_PUDDLE_MARCH) {
+        vec4 skySeen;
+        vec4 hit = helionMarch(start, normal, reach, skySeen);
+        vec3 missed = polished && skySeen.a > 0.0 ? mix(sky, skySeen.rgb, skySeen.a) : sky;
+        float fade = clamp(1.0 - reach / (polished ? HELION_POLISHED_REACH : HELION_WET_REACH), 0.0, 1.0);
+        reflection = mix(missed, hit.rgb, hit.a * fade);
+    }
+    float kept = (1.0 - wet.darkening) * (1.0 - wetWeight);
+    return vec4(reflection * (polishedWeight + wetWeight), 1.0 - kept);
 }
 
 void main() {
@@ -151,8 +188,8 @@ void main() {
     vec2 screen = (vec2(pixel) + 0.5) / vec2(textureSize(WaterDepthSampler, 0));
     vec4 surface = texelFetch(WaterSurfaceSampler, pixel, 0);
     bool water = helionIsWater(surface);
-    if (!water && !helionIsGlossy(surface)) {
-        polishedColor = helionPolished(pixel, screen);
+    if (ReflectionFlags.y < HELION_FLAG_SET || !water && !helionIsGlossy(surface)) {
+        polishedColor = helionSurfaceSheen(pixel, screen);
         return;
     }
     vec3 normal = helionDecodeOctahedral(surface.xy);
