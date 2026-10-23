@@ -27,6 +27,9 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Physical sky: a realistic night sky with round, twinkling stars, a faint Milky Way, planets, shooting stars and rare northern lights in snowy biomes, with settings for star density and the Milky Way
 - Depth of field focuses on the sky when you look at it, so the sun, the moon and the stars stay sharp
 
+### Fixed
+- Experimental voxel lighting: several lights right behind a wall no longer shine through it
+
 ## [1.0] - 2026-10-21
 
 ### Added

@@ -61,6 +61,17 @@ final class VisualTestWorld {
         new Volume(new BlockPos(23, -23, -13), new BlockPos(25, -21, -1))
     );
     private static final Placement CAVE_TORCH = new Placement(21, -23, -12, "torch");
+    static final BlockPos WALL_CAMERA = new BlockPos(15, -17, -6);
+    private static final List<Volume> WALL_ROOMS = List.of(
+        new Volume(new BlockPos(14, -17, -9), new BlockPos(20, -15, -3)),
+        new Volume(new BlockPos(22, -17, -9), new BlockPos(26, -15, -3))
+    );
+    private static final List<Placement> WALL_LIGHTS = List.of(
+        new Placement(22, -17, -8, "torch"),
+        new Placement(22, -16, -6, "glowstone"),
+        new Placement(22, -17, -4, "torch"),
+        new Placement(23, -17, -6, "sea_lantern")
+    );
 
     private VisualTestWorld() {
     }
@@ -89,6 +100,8 @@ final class VisualTestWorld {
         run(server, fill(origin.offset(CAVE_ROCK.from()), origin.offset(CAVE_ROCK.to()), CASTER_BLOCK));
         CAVE_CORRIDORS.forEach(corridor -> run(server, fill(origin.offset(corridor.from()), origin.offset(corridor.to()), "air")));
         run(server, CAVE_TORCH.command(origin));
+        WALL_ROOMS.forEach(room -> run(server, fill(origin.offset(room.from()), origin.offset(room.to()), "air")));
+        WALL_LIGHTS.forEach(light -> run(server, light.command(origin)));
     }
 
     static void placeCamera(IntegratedServer server, Vec3 start, BlockPos origin, BlockPos cameraOffset) {
