@@ -18,7 +18,8 @@ final class RtxTopLevel {
     private static final int FRAMES_IN_FLIGHT = 4;
     private static final int USAGE = KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
     private static final int SURFACE_TABLE_USAGE = VK10.VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-    private static final int ALL_RAYS = 0xFF;
+    static final int SECTION_RAYS = 0x01;
+    static final int ENTITY_RAYS = 0x02;
     private static final int SURFACE_ENTRY_BYTES = 4 * Integer.BYTES;
     private static final int SOLID_QUADS_OFFSET = Long.BYTES;
     private static final int[] DIAGONAL = {0, 5, 10};
@@ -81,10 +82,30 @@ final class RtxTopLevel {
             MemoryUtil.memPutLong(entry, section.surfaceAddress());
             MemoryUtil.memPutInt(entry + SOLID_QUADS_OFFSET, section.solidQuads());
             instance.instanceCustomIndex(index)
-                .mask(ALL_RAYS)
+                .mask(SECTION_RAYS)
                 .flags(KHRAccelerationStructure.VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR)
                 .accelerationStructureReference(section.address());
         }
+    }
+
+    void appendEntities(long address, float translateX, float translateY, float translateZ) {
+        if (count >= CAPACITY) {
+            return;
+        }
+        VkAccelerationStructureInstanceKHR instance = VkAccelerationStructureInstanceKHR.create(instances[frame].mapped() + (long) count * VkAccelerationStructureInstanceKHR.SIZEOF);
+        MemoryUtil.memSet(instance.address(), 0, VkAccelerationStructureInstanceKHR.SIZEOF);
+        VkTransformMatrixKHR transform = instance.transform();
+        for (int diagonal : DIAGONAL) {
+            transform.matrix(diagonal, ONE);
+        }
+        transform.matrix(TRANSLATE_X, translateX);
+        transform.matrix(TRANSLATE_Y, translateY);
+        transform.matrix(TRANSLATE_Z, translateZ);
+        instance.instanceCustomIndex(count)
+            .mask(ENTITY_RAYS)
+            .flags(KHRAccelerationStructure.VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR)
+            .accelerationStructureReference(address);
+        count++;
     }
 
     void record(VkCommandBuffer commandBuffer) {

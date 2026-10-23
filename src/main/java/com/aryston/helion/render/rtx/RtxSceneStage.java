@@ -49,8 +49,17 @@ public final class RtxSceneStage implements RenderStage {
             device.memoryBarrier();
             scene.recordBottomLevels(device.commandBuffer(), plan);
         });
+        boolean withEntities = frame.settings().rayTracing().tracesShadows();
+        resources.entityDraws().capture(withEntities);
+        float translateX = (float) (position.x() - center.originX());
+        float translateY = (float) (position.y() - center.originY());
+        float translateZ = (float) (position.z() - center.originZ());
         Runnable top = frame.graph().timed(TOP_STAGE, () -> {
             device.memoryBarrier();
+            if (withEntities) {
+                scene.recordEntities(device.commandBuffer(), resources.entityDraws().take(), translateX, translateY, translateZ);
+                device.memoryBarrier();
+            }
             scene.recordTopLevel(device.commandBuffer());
             device.memoryBarrier();
         });

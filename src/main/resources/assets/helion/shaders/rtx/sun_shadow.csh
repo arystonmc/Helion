@@ -37,6 +37,9 @@ const float HELION_RT_FAR = 1.0e9;
 const float HELION_RT_NOISE_SCALE = 52.9829189;
 const vec2 HELION_RT_NOISE_STEP = vec2(0.06711056, 0.00583715);
 const int HELION_RT_SHADOW_RAYS = 4;
+const float HELION_RT_HALF = 0.5;
+const float HELION_RT_WITH_ENTITIES = 1.0;
+const float HELION_RT_WITHOUT_ENTITIES = 0.5;
 const int HELION_RT_VERTICAL_AXIS = 1;
 const uint HELION_RT_ALL_INSTANCES = 0xFFu;
 const vec4 HELION_RT_UNTRACED = vec4(1.0, 0.0, 0.0, 1.0);
@@ -117,5 +120,5 @@ void main() {
     }
     float visibility = decided > 0.0 ? lit / decided : 1.0;
     float weight = decided / float(HELION_RT_SHADOW_RAYS) * smoothstep(0.0, HELION_RT_EDGE_FADE, edge);
-    imageStore(ShadowMask, pixel, vec4(visibility, weight, 1.0, 1.0));
+    imageStore(ShadowMask, pixel, vec4(visibility, weight, 1.0, Softness.y > HELION_RT_HALF ? HELION_RT_WITH_ENTITIES : HELION_RT_WITHOUT_ENTITIES));
 }

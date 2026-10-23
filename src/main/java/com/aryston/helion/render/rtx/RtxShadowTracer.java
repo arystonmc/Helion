@@ -27,6 +27,7 @@ public final class RtxShadowTracer implements TracedShadows {
     private static final float MAX_DISTANCE = 128.0F;
     private static final float SOFTNESS = 0.012F;
     private static final float UNUSED = 0.0F;
+    private static final float TRACED = 1.0F;
     private static final long WHOLE_BUFFER = 0L;
 
     private final RayTracingResources resources;
@@ -48,7 +49,7 @@ public final class RtxShadowTracer implements TracedShadows {
         int height = Math.ceilDiv(frame.scene().height(), RESOLUTION_DIVISOR);
         RtxImage mask = resources.mask(width, height);
         ByteBuffer constants = resources.constants();
-        writeConstants(constants, frame.camera(), center, light.direction());
+        writeConstants(constants, frame.camera(), center, light.direction(), frame.geometry().includesEntities());
         GeometryBuffer.Targets geometry = frame.geometry().targets().orElseThrow();
         ResourceHandle<RenderTarget> sceneTarget = frame.targets().scene();
         GpuTextureView atlas = terrain.textures().atlas();
@@ -80,7 +81,7 @@ public final class RtxShadowTracer implements TracedShadows {
         return ((VulkanGpuTextureView) view).vkImageView();
     }
 
-    private static void writeConstants(ByteBuffer constants, HelionCamera camera, RtxSectionPos center, Vector3fc toLight) {
+    private static void writeConstants(ByteBuffer constants, HelionCamera camera, RtxSectionPos center, Vector3fc toLight, boolean entities) {
         Vector3dc position = camera.position();
         constants.clear();
         camera.levelViewProjection().invert().get(0, constants);
@@ -90,7 +91,7 @@ public final class RtxShadowTracer implements TracedShadows {
             .putFloat((float) (position.z() - center.originZ()))
             .putFloat(RtxSectionInbox.RADIUS * VoxelVolumeLayout.SECTION_SIZE);
         constants.putFloat(toLight.x()).putFloat(toLight.y()).putFloat(toLight.z()).putFloat(MAX_DISTANCE);
-        constants.putFloat(SOFTNESS).putFloat(UNUSED).putFloat(UNUSED).putFloat(UNUSED);
+        constants.putFloat(SOFTNESS).putFloat(entities ? TRACED : UNUSED).putFloat(UNUSED).putFloat(UNUSED);
         constants.flip();
     }
 }

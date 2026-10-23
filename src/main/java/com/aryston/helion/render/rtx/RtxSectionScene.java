@@ -22,6 +22,7 @@ final class RtxSectionScene {
     private final RtxQuadIndices indices = new RtxQuadIndices();
     private final RtxSharedScratch scratch = new RtxSharedScratch();
     private final RtxTopLevel topLevel;
+    private final RtxEntityScene entities;
     private final Long2ObjectOpenHashMap<RtxSectionBlas> built = new Long2ObjectOpenHashMap<>();
     private final Long2ObjectOpenHashMap<RtxSectionUpdate> pending = new Long2ObjectOpenHashMap<>();
     private final LongOpenHashSet known = new LongOpenHashSet();
@@ -35,6 +36,7 @@ final class RtxSectionScene {
         this.device = device;
         this.resources = resources;
         this.topLevel = RtxTopLevel.create(device, resources);
+        this.entities = new RtxEntityScene(device, resources);
     }
 
     RtxScenePlan prepare(RtxSectionInbox inbox, RtxSectionPos center) {
@@ -78,6 +80,13 @@ final class RtxSectionScene {
         }
     }
 
+    void recordEntities(VkCommandBuffer commandBuffer, List<RtxEntityDraws.RtxEntityDraw> draws, float translateX, float translateY, float translateZ) {
+        long address = entities.record(commandBuffer, draws);
+        if (address != RtxEntityScene.NO_ADDRESS) {
+            topLevel.appendEntities(address, translateX, translateY, translateZ);
+        }
+    }
+
     void recordTopLevel(VkCommandBuffer commandBuffer) {
         topLevel.record(commandBuffer);
     }
@@ -101,6 +110,7 @@ final class RtxSectionScene {
         known.clear();
         requested.clear();
         indices.close(resources);
+        entities.release();
         scratch.close(resources);
         topLevel.release(resources);
         builtBytes = NO_BYTES;

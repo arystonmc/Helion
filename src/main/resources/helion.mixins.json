@@ -20,7 +20,8 @@
     "VulkanCommandEncoderAccessor",
     "VulkanConstMixin",
     "VulkanDeviceAccessor",
-    "VulkanFeatureSetsMixin"
+    "VulkanFeatureSetsMixin",
+    "VulkanGpuBufferMixin"
   ],
   "injectors": {
     "defaultRequire": 1

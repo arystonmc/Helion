@@ -20,7 +20,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### PreparedRenderTypeMixin
 - Path: `src/main/java/com/aryston/helion/mixin/PreparedRenderTypeMixin.java`
-- Role: In `PreparedRenderType.draw` skips the draws `EntityGeometryDraws` leaves to the other pass and swaps the pipeline for its geometry buffer variant in the entity geometry pass.
+- Role: In `PreparedRenderType.draw` skips the draws `EntityGeometryDraws` leaves to the other pass and swaps the pipeline for its geometry buffer variant in the entity geometry pass. It also reports every draw it keeps in the entity geometry pass to `EntityGeometryDraws.drawn`.
 - Notes: No API lets a mod change the pipeline of a prepared render type or skip one draw of the feature dispatcher.
 
 #### FeatureGroupMixin
@@ -70,6 +70,11 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Path: `src/main/java/com/aryston/helion/mixin/FrontendGpuDeviceAccessor.java`, `src/main/java/com/aryston/helion/mixin/VulkanDeviceAccessor.java`, `src/main/java/com/aryston/helion/mixin/VulkanCommandEncoderAccessor.java`
 - Role: The renderpearl backend behind the frontend device, its enabled feature set and the command buffer being recorded, for `RtxDevice`.
 - Notes: Renderpearl has no API for raw Vulkan work; used only by the RTX spike.
+
+#### VulkanGpuBufferMixin
+- Path: `src/main/java/com/aryston/helion/mixin/VulkanGpuBufferMixin.java`
+- Role: When ray tracing was requested and the device enabled acceleration structures, adds the shader device address and acceleration structure build input usages to every renderpearl vertex and index buffer, so the entity bottom level is built straight from the staged vertex buffers of the frame.
+- Notes: Renderpearl chooses the Vulkan usage of its buffers inside the constructor of `VulkanGpuBuffer.Direct`; the handler is static because it runs before the super constructor call.
 
 #### VulkanBackendMixin
 - Path: `src/main/java/com/aryston/helion/mixin/VulkanBackendMixin.java`

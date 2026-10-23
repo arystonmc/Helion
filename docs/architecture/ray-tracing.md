@@ -23,7 +23,9 @@ An optional quality layer for cards with hardware ray tracing, on top of voxel l
 
 ## Ray Traced Shadows
 
-With `rayTracing.shadows` (on by default under ray tracing, needs sun shadows), `ShadowStage` asks its `TracedShadows` (`RtxShadowTracer`) before the mask pass. Pass `rt_sun_shadow` traces four rays per half resolution terrain pixel inside the scene toward the stepped light direction, spread over a cone of 0.012 radians (a little wider than the sun, so shadows soften with the distance to their caster) in a Vogel pattern rotated per pixel. It stores the visibility of the decided rays and a weight: a ray that leaves the scene through a side is undecided, because terrain outside the scene may shade it, while one that leaves through the top counts as lit; the weight also fades over the last 8 blocks of the scene. The mask shader mixes the shadow map terrain visibility toward the traced one by that weight, then keeps the darker of terrain and entities, so mobs still cast their shadow map shadow. `rt_sun_shadow_view` (`-Dhelion.rayTracing.view=true`) paints blocked pixels dark blue over the output.
+With `rayTracing.shadows` (on by default under ray tracing, needs sun shadows), `ShadowStage` asks its `TracedShadows` (`RtxShadowTracer`) before the mask pass. Pass `rt_sun_shadow` traces four rays per half resolution terrain pixel inside the scene toward the stepped light direction, spread over a cone of 0.012 radians (a little wider than the sun, so shadows soften with the distance to their caster) in a Vogel pattern rotated per pixel. It stores the visibility of the decided rays and a weight: a ray that leaves the scene through a side is undecided, because terrain outside the scene may shade it, while one that leaves through the top counts as lit; the weight also fades over the last 8 blocks of the scene. The mask shader mixes the shadow map terrain visibility toward the traced one by that weight, and when the geometry buffer holds entities it also fades the entity shadow map out by that weight, because the traced rays already hit the entities.
+
+Entities: while ray traced shadows run, every draw of the entity geometry pass (mobs, players, armor stands, dropped items, block entities with an entity or item pipeline) is recorded with its renderpearl vertex and index buffer. `VulkanGpuBufferMixin` gives renderpearl's vertex and index buffers the device address and build input usages, so `RtxEntityScene` builds one bottom level straight from the staged buffers, one geometry per draw, with the exact vertex range for sequential index buffers. It is built for fast builds with updates allowed: when the draws have the same shape as last frame (same triangle and vertex counts) it is only updated, with a full rebuild every 30 frames. It is added to the top level as one instance with ray mask 2, translated by the camera position, since entity vertices are camera relative. Reflections trace mask 1 only, so entities do not show in water yet. `rt_sun_shadow_view` (`-Dhelion.rayTracing.view=true`) paints blocked pixels dark blue over the output.
 
 ## Water Reflections
 
@@ -52,8 +54,10 @@ Water reflections (visual test `water_noon`, `water_sunset`, `water_night`, vari
 
 Ray traced shadows (visual test `day_showcase` and `morning_showcase`, variant `shadows`, window 427 x 240): `rt_sun_shadow` with four rays and cutout alpha testing 0.08 to 0.09 ms, `shadow_mask` 0.06 ms.
 
+Entities (same scenes, about 2,900 entity quads in view across the whole render distance): a full rebuild every frame cost 0.6 ms; with updates `rt_top_level` takes 0.16 ms instead of 0.09 ms without entities.
+
 ## Next
 
 1. Water: screen space reflections for cards without ray tracing and for water beyond the section scene, refraction of the bottom, glass and ice reflections, reflections seen from under water, sun shadow rays at the hit.
-2. Entities as their own bottom levels (boxes first), so mobs cast traced shadows and show in reflections.
+2. Entities in reflections (their textures are not in the block atlas), entities only within the section scene, alpha tested entity cutouts.
 3. Compaction of the bottom levels and a radius chosen by memory, and a settings switch (with a preset entry, lesson L-117) once a visible feature uses the scene.

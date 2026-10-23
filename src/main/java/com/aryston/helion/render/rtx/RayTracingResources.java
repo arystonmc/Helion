@@ -47,6 +47,7 @@ public final class RayTracingResources {
 
     private final GpuResources resources;
     private final RtxSectionInbox inbox = new RtxSectionInbox();
+    private final RtxEntityDraws entityDraws = new RtxEntityDraws();
     private @Nullable RtxDevice device;
     private @Nullable RtxSectionScene scene;
     private @Nullable RtxComputePipeline sunShadow;
@@ -62,6 +63,10 @@ public final class RayTracingResources {
 
     public RayTracingResources(GpuResources resources) {
         this.resources = resources;
+    }
+
+    public RtxEntityDraws entityDraws() {
+        return entityDraws;
     }
 
     public RtxSectionInbox inbox() {
@@ -86,6 +91,7 @@ public final class RayTracingResources {
         scene.close();
         scene = null;
         inbox.clear();
+        entityDraws.capture(false);
         if (mask != null) {
             mask.close(resources);
             mask = null;

@@ -29,7 +29,7 @@ const float HELION_RT_SKY_DEPTH = 0.0;
 const float HELION_RT_NORMAL_OFFSET = 0.02;
 const float HELION_RT_RAY_START = 1.0e-3;
 const float HELION_RT_SECTION_SIZE = 16.0;
-const uint HELION_RT_ALL_INSTANCES = 0xFFu;
+const uint HELION_RT_SECTION_INSTANCES = 0x01u;
 const float HELION_RT_LIGHTMAP_SCALE = 1.0 / 256.0;
 const float HELION_RT_LIGHTMAP_TEXEL = 0.5 / 16.0;
 const vec4 HELION_RT_MISS = vec4(0.0);
@@ -65,7 +65,7 @@ void main() {
         return;
     }
     rayQueryEXT query;
-    rayQueryInitializeEXT(query, Scene, gl_RayFlagsNoneEXT, HELION_RT_ALL_INSTANCES, origin, HELION_RT_RAY_START, direction, Trace.x);
+    rayQueryInitializeEXT(query, Scene, gl_RayFlagsNoneEXT, HELION_RT_SECTION_INSTANCES, origin, HELION_RT_RAY_START, direction, Trace.x);
     helionTraceCutout(query);
     if (rayQueryGetIntersectionTypeEXT(query, true) == gl_RayQueryCommittedIntersectionNoneEXT) {
         imageStore(Reflection, pixel, HELION_RT_MISS);

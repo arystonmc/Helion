@@ -20,6 +20,7 @@ const float HELION_LIGHT_OFFSET_TEXELS = 1.0;
 const float HELION_CASCADE_BORDER_TEXELS = 2.0;
 const float HELION_FADE_START = 0.85;
 const float HELION_FULLY_LIT = 1.0;
+const float HELION_TRACED_ENTITIES = 0.75;
 
 vec2 helionShadowVisibility(bool previous, vec3 position, vec3 normal) {
     float border = 1.0 - 2.0 * HELION_CASCADE_BORDER_TEXELS / CascadeResolution;
@@ -43,11 +44,13 @@ float helionBlendedVisibility(vec3 position, vec3 normal) {
     if (PreviousWeight > 0.0) {
         terrain = mix(terrain, helionShadowVisibility(true, position, normal).x, PreviousWeight);
     }
+    float entities = current.y;
     #ifdef HELION_TRACED_SHADOWS
     vec4 traced = texture(TracedShadowSampler, gl_FragCoord.xy / vec2(textureSize(DepthSampler, 0)));
     terrain = mix(terrain, traced.r, traced.g);
+    entities = mix(entities, HELION_FULLY_LIT, traced.g * step(HELION_TRACED_ENTITIES, traced.a));
     #endif
-    return min(terrain, current.y);
+    return min(terrain, entities);
 }
 
 void main() {

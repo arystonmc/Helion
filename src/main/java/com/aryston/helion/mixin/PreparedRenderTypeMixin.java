@@ -17,7 +17,9 @@ abstract class PreparedRenderTypeMixin {
     private void helion$skipOtherEntityPass(StagedVertexBuffer.ExecuteInfo info, RenderPass renderPass, RenderPipeline pipeline, CallbackInfo callback) {
         if (EntityGeometryDraws.skipsDraw(pipeline)) {
             callback.cancel();
+            return;
         }
+        EntityGeometryDraws.drawn(info, pipeline);
     }
 
     @ModifyArg(
