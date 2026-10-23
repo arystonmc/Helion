@@ -7,6 +7,7 @@ import com.aryston.helion.render.voxel.VoxelVolumeLayout;
 import java.nio.ByteBuffer;
 import java.util.function.LongConsumer;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
@@ -21,6 +22,7 @@ final class VanillaVoxelSource implements VoxelSource {
     private static final int NO_COLOR = 0;
 
     private final VoxelBlockClasses classes = new VoxelBlockClasses();
+    private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
     private @Nullable ClientLevel level;
     private int generation;
     private int colorVersion = VoxelLightColors.version();
@@ -55,8 +57,9 @@ final class VanillaVoxelSource implements VoxelSource {
 
     @Override
     public void readSection(int sectionX, int sectionY, int sectionZ, ByteBuffer brick, ByteBuffer colors, VoxelLightSink lights) {
-        LevelChunkSection section = section(sectionX, sectionY, sectionZ);
-        if (section == null || section.hasOnlyAir()) {
+        ClientLevel current = level;
+        LevelChunkSection section = current == null ? null : section(current, sectionX, sectionY, sectionZ);
+        if (current == null || section == null || section.hasOnlyAir()) {
             fill(brick, VoxelClass.EMPTY);
             fillColors(colors);
             return;
@@ -71,22 +74,19 @@ final class VanillaVoxelSource implements VoxelSource {
                     byte voxel = classes.classify(state);
                     int index = VoxelVolumeLayout.brickIndex(x, y, z);
                     brick.put(index, voxel);
-                    colors.putInt(index * VoxelVolumeLayout.COLOR_BYTES_PER_BLOCK, classes.albedo(state));
+                    cursor.set(originX + x, originY + y, originZ + z);
+                    colors.putInt(index * VoxelVolumeLayout.COLOR_BYTES_PER_BLOCK, classes.albedo(state, voxel, current, cursor));
                     int emission = VoxelBlockClasses.emission(voxel);
                     if (emission > 0) {
                         float[] color = classes.color(state);
-                        lights.light(originX + x, originY + y, originZ + z, emission, color[RED], color[GREEN], color[BLUE]);
+                        lights.light(cursor.getX(), cursor.getY(), cursor.getZ(), emission, color[RED], color[GREEN], color[BLUE]);
                     }
                 }
             }
         }
     }
 
-    private @Nullable LevelChunkSection section(int sectionX, int sectionY, int sectionZ) {
-        ClientLevel current = level;
-        if (current == null) {
-            return null;
-        }
+    private static @Nullable LevelChunkSection section(ClientLevel current, int sectionX, int sectionY, int sectionZ) {
         int index = current.getSectionIndexFromSectionY(sectionY);
         if (index < 0 || index >= current.getSectionsCount()) {
             return null;
