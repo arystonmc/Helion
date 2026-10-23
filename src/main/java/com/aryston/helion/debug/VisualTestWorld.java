@@ -36,6 +36,10 @@ final class VisualTestWorld {
     private static final String CANOPY_BLOCK = "oak_leaves[persistent=true]";
     private static final Volume FENCE = new Volume(new BlockPos(2, 0, -1), new BlockPos(4, 0, -1));
     private static final String FENCE_BLOCK = "oak_fence";
+    private static final Volume ICE = new Volume(new BlockPos(2, -1, -3), new BlockPos(4, -1, -2));
+    private static final String ICE_BLOCK = "ice";
+    private static final Volume GLASS = new Volume(new BlockPos(6, 0, -2), new BlockPos(6, 1, -1));
+    private static final String GLASS_BLOCK = "light_blue_stained_glass";
     private static final Volume POOL = new Volume(new BlockPos(-5, -3, -10), new BlockPos(-2, -1, -1));
     private static final int POOL_WALL = 1;
     private static final String CASTER_BLOCK = "stone";
@@ -78,6 +82,8 @@ final class VisualTestWorld {
         run(server, fill(origin.offset(POOL.from()), origin.offset(POOL.to()), "water"));
         run(server, fill(origin.offset(CANOPY.from()), origin.offset(CANOPY.to()), CANOPY_BLOCK));
         run(server, fill(origin.offset(FENCE.from()), origin.offset(FENCE.to()), FENCE_BLOCK));
+        run(server, fill(origin.offset(ICE.from()), origin.offset(ICE.to()), ICE_BLOCK));
+        run(server, fill(origin.offset(GLASS.from()), origin.offset(GLASS.to()), GLASS_BLOCK));
         ENTITIES.forEach(entity -> run(server, entity.command(origin)));
         run(server, killEntities(origin.offset(CAVE_ROCK.from()), origin.offset(CAVE_ROCK.to())));
         run(server, fill(origin.offset(CAVE_ROCK.from()), origin.offset(CAVE_ROCK.to()), CASTER_BLOCK));

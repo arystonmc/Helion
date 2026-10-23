@@ -67,12 +67,12 @@ void main() {
     if (gl_FragCoord.z < sceneDepth) {
         discard;
     }
-    if (!helionInside(texCoord0, WaterStill) && !helionInside(texCoord0, WaterFlow)) {
-        waterSurface = vec4(0.0);
-        return;
-    }
     if (dot(normal, cameraRelativePosition) > 0.0) {
         normal = -normal;
+    }
+    if (!helionInside(texCoord0, WaterStill) && !helionInside(texCoord0, WaterFlow)) {
+        waterSurface = vec4(helionEncodeOctahedral(normal), HELION_GLOSSY_MARKER, skyLight);
+        return;
     }
     if (normal.y > HELION_FLAT_SURFACE) {
         normal = helionWaveNormal(wavePosition, GameTime * HELION_SECONDS_PER_DAY);
