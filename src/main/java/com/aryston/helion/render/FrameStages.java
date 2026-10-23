@@ -31,6 +31,7 @@ import com.aryston.helion.render.scene.ClearStage;
 import com.aryston.helion.render.shadow.ShadowStage;
 import com.aryston.helion.render.temporal.TemporalStage;
 import com.aryston.helion.render.voxel.VoxelLightStage;
+import com.aryston.helion.render.voxel.VoxelProbeStage;
 import com.aryston.helion.render.voxel.VoxelSliceStage;
 import com.aryston.helion.render.water.WaterReflectionStage;
 import com.aryston.helion.render.water.WaterSurfaceStage;
@@ -67,6 +68,7 @@ public final class FrameStages {
             new EntityGeometryStage(sources.entities()),
             new RtxSceneStage(core.rayTracing()),
             new ShadowStage(sources.shadowCasters(), core.shadows(), new RtxShadowTracer(core.rayTracing(), sources.terrain())),
+            new VoxelProbeStage(core.voxelLighting()),
             new VoxelLightStage(core.voxelLighting()),
             new RtxShadowStage(core.rtxSpike(), core.voxelLighting()),
             new DeferredLightingStage(core.lighting()),

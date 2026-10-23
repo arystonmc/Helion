@@ -18,6 +18,7 @@ final class VanillaVoxelSource implements VoxelSource {
     private static final int RED = 0;
     private static final int GREEN = 1;
     private static final int BLUE = 2;
+    private static final int NO_COLOR = 0;
 
     private final VoxelBlockClasses classes = new VoxelBlockClasses();
     private @Nullable ClientLevel level;
@@ -53,10 +54,11 @@ final class VanillaVoxelSource implements VoxelSource {
     }
 
     @Override
-    public void readSection(int sectionX, int sectionY, int sectionZ, ByteBuffer brick, VoxelLightSink lights) {
+    public void readSection(int sectionX, int sectionY, int sectionZ, ByteBuffer brick, ByteBuffer colors, VoxelLightSink lights) {
         LevelChunkSection section = section(sectionX, sectionY, sectionZ);
         if (section == null || section.hasOnlyAir()) {
             fill(brick, VoxelClass.EMPTY);
+            fillColors(colors);
             return;
         }
         int originX = sectionX * VoxelVolumeLayout.SECTION_SIZE;
@@ -67,7 +69,9 @@ final class VanillaVoxelSource implements VoxelSource {
                 for (int x = 0; x < VoxelVolumeLayout.SECTION_SIZE; x++) {
                     BlockState state = section.getBlockState(x, y, z);
                     byte voxel = classes.classify(state);
-                    brick.put(VoxelVolumeLayout.brickIndex(x, y, z), voxel);
+                    int index = VoxelVolumeLayout.brickIndex(x, y, z);
+                    brick.put(index, voxel);
+                    colors.putInt(index * VoxelVolumeLayout.COLOR_BYTES_PER_BLOCK, classes.albedo(state));
                     int emission = VoxelBlockClasses.emission(voxel);
                     if (emission > 0) {
                         float[] color = classes.color(state);
@@ -89,6 +93,12 @@ final class VanillaVoxelSource implements VoxelSource {
         }
         LevelChunk chunk = current.getChunkSource().getChunk(sectionX, sectionZ, ChunkStatus.FULL, NEVER_LOAD);
         return chunk == null ? null : chunk.getSection(index);
+    }
+
+    private static void fillColors(ByteBuffer colors) {
+        for (int index = 0; index < VoxelVolumeLayout.BRICK_BYTES; index++) {
+            colors.putInt(index * VoxelVolumeLayout.COLOR_BYTES_PER_BLOCK, NO_COLOR);
+        }
     }
 
     private static void fill(ByteBuffer brick, byte value) {

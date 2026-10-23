@@ -93,3 +93,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelSliceStage.java`
 - Role: Last stage of a frame. With the geometry buffer view `VOXEL_SLICE` and a voxel volume, draws the volume at the camera's height as a top-down map (north up) in a square over the output: grey solid, green partial, blue translucent, yellow light sources, purple section borders, red the camera column. Timed as `voxel_slice`.
 - Depends on: `VoxelLightingResources`, `VoxelSlicePipelines`, `FullscreenPass`.
+
+#### VoxelProbes, VoxelProbeStage
+- Path: `src/main/java/com/aryston/helion/render/voxel/VoxelProbes.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelProbeStage.java`
+- Role: Bounced light (Phase 5, work in progress). A 32 x 32 x 32 grid of probes every 4 blocks over the voxel volume, stored as L1 spherical harmonics in two sets of three RGBA16_FLOAT 256 x 128 targets. Pass `voxel_probes` (before `voxel_light`) traces 4, 8 or 16 randomly rotated rays per probe through the volume, lights each hit with the block lights of its grid cell (one shadow ray to the brightest) times the block's map color from the new voxel color atlas, and blends with the previous set (shifted when the volume moves). `voxel_light` gathers the 8 nearest visible probes into a bounce target that deferred shading adds to the traced block light. Setting `voxelLighting.bounce`.

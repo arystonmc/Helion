@@ -23,9 +23,11 @@ public final class VoxelLightingResources {
     private static final float NO_VALUE = 0.0F;
     private static final int VECTORS_PER_ENTRY = 2;
     private static final int UNUSED = 0;
+    private static final int BOUNCE = 1;
 
     private final GpuResources resources;
     private final VoxelVolume volume;
+    private final VoxelProbes probes;
     private @Nullable UniformRing sliceUniforms;
     private @Nullable UniformRing lightUniforms;
     private @Nullable UniformRing dynamicUniforms;
@@ -39,6 +41,7 @@ public final class VoxelLightingResources {
     public VoxelLightingResources(GpuResources resources) {
         this.resources = resources;
         this.volume = new VoxelVolume(resources);
+        this.probes = new VoxelProbes(resources);
     }
 
     public void update(VoxelLightingSettings settings, int blockX, int blockY, int blockZ, VoxelSource source) {
@@ -79,6 +82,10 @@ public final class VoxelLightingResources {
         return volume.statistics();
     }
 
+    VoxelProbes probes() {
+        return probes;
+    }
+
     void reportMissingPipelines() {
         if (!missingPipelinesReported) {
             missingPipelinesReported = true;
@@ -96,7 +103,8 @@ public final class VoxelLightingResources {
             .putIVec4(outputWidth, outputHeight, UNUSED, UNUSED));
     }
 
-    GpuBuffer writeLightUniforms(HelionCamera camera, VoxelVolumeView view, VoxelLightingQuality quality) {
+    GpuBuffer writeLightUniforms(HelionCamera camera, VoxelVolumeView view, VoxelLightingSettings settings) {
+        VoxelLightingQuality quality = settings.quality();
         if (lightUniforms == null) {
             lightUniforms = new UniformRing(LIGHT_LABEL, LIGHT_UNIFORM_SIZE, resources);
         }
@@ -109,7 +117,7 @@ public final class VoxelLightingResources {
             .putMat4f(inverse)
             .putVec4(relativeX, relativeY, relativeZ, VoxelVolumeLayout.VOLUME_SIZE)
             .putIVec4(view.minBlockX(), view.minBlockY(), view.minBlockZ(), view.lightCount())
-            .putIVec4(quality.tracedLights(), quality.resolutionDivisor(), UNUSED, UNUSED));
+            .putIVec4(quality.tracedLights(), quality.resolutionDivisor(), settings.bounce() ? BOUNCE : UNUSED, UNUSED));
     }
 
     public void useDynamicScene(VoxelDynamicScene scene) {
@@ -191,6 +199,7 @@ public final class VoxelLightingResources {
         dynamicUniforms = null;
         dynamicScene = VoxelDynamicScene.EMPTY;
         volume.close();
+        probes.close();
         active = false;
     }
 }

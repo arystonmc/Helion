@@ -80,6 +80,7 @@ public final class DeferredLightingStage implements RenderStage {
         voxel.ifPresent(targets -> {
             pass.reads(targets.light());
             pass.reads(targets.confidence());
+            pass.reads(targets.bounce());
         });
         ResourceHandle<RenderTarget> scene = pass.readsAndWrites(frame.targets().scene());
         frame.targets().updateScene(scene);
@@ -133,6 +134,7 @@ public final class DeferredLightingStage implements RenderStage {
         GpuSampler linear = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
         renderPass.setUniform(DeferredLightingPipelines.VOXEL_LIGHT_SAMPLER, colorView(targets.light()), linear);
         renderPass.setUniform(DeferredLightingPipelines.VOXEL_CONFIDENCE_SAMPLER, colorView(targets.confidence()), linear);
+        renderPass.setUniform(DeferredLightingPipelines.VOXEL_BOUNCE_SAMPLER, colorView(targets.bounce()), linear);
     }
 
     private static void bindSkyLight(RenderPass renderPass, GeometryBuffer.Targets geometry, SkyLight light) {

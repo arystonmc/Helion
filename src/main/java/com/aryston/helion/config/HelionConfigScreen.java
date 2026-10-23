@@ -42,7 +42,7 @@ public final class HelionConfigScreen {
                 .section(text("section.hdr"), section -> section.add(options.lighting).add(options.blockLight).add(options.skyLight))
                 .section(text("section.shadows"), section -> section.add(options.shadows))
                 .fullSection(text("section.dynamicLights"), section -> section.add(options.dynamicLights))
-                .fullSection(text("section.voxelLighting"), section -> section.add(options.voxelLighting).add(options.voxelLightingQuality))
+                .fullSection(text("section.voxelLighting"), section -> section.add(options.voxelLighting).add(options.voxelLightingQuality).add(options.voxelBounce))
                 .fullSection(text("section.rayTracing"), section -> section.add(options.rayTracing).add(options.waterReflections).add(options.rayTracedShadows)))
             .page("effects", text("page.effects"), Icons.SPARKLE, page -> page
                 .section(text("section.bloom"), section -> section.add(options.bloom).add(options.bloomIntensity).add(options.bloomThreshold))

@@ -5,6 +5,7 @@ import com.mojang.renderpearl.api.textures.GpuTextureView;
 public record VoxelVolumeView(
     GpuTextureView texture,
     GpuTextureView coarse,
+    GpuTextureView colors,
     GpuTextureView ready,
     GpuTextureView lights,
     GpuTextureView grid,

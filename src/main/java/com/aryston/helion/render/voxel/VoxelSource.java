@@ -8,5 +8,5 @@ public interface VoxelSource {
 
     void drainChangedSections(LongConsumer changed);
 
-    void readSection(int sectionX, int sectionY, int sectionZ, ByteBuffer brick, VoxelLightSink lights);
+    void readSection(int sectionX, int sectionY, int sectionZ, ByteBuffer brick, ByteBuffer colors, VoxelLightSink lights);
 }

@@ -16,6 +16,7 @@ import org.lwjgl.system.MemoryUtil;
 
 final class VoxelVolume {
     static final GpuFormat FORMAT = GpuFormat.R8_UNORM;
+    static final GpuFormat COLOR_FORMAT = GpuFormat.RGBA8_UNORM;
 
     private static final long FRAME_BUDGET_NANOS = 1_000_000L;
     private static final int NO_GENERATION = Integer.MIN_VALUE;
@@ -31,12 +32,14 @@ final class VoxelVolume {
     private final VoxelVolumeWindow window = new VoxelVolumeWindow();
     private final VoxelBuildStatistics statistics = new VoxelBuildStatistics();
     private final VoxelTexture atlas = new VoxelTexture("Helion Voxel Volume", FORMAT, VoxelVolumeLayout.ATLAS_WIDTH, VoxelVolumeLayout.ATLAS_HEIGHT);
+    private final VoxelTexture colors = new VoxelTexture("Helion Voxel Colors", COLOR_FORMAT, VoxelVolumeLayout.ATLAS_WIDTH, VoxelVolumeLayout.ATLAS_HEIGHT);
     private final VoxelTexture coarse = new VoxelTexture("Helion Voxel Coarse Level", FORMAT, VoxelCoarseLevel.ATLAS_WIDTH, VoxelCoarseLevel.ATLAS_HEIGHT);
     private final VoxelTexture ready = new VoxelTexture("Helion Voxel Ready Slots", FORMAT, READY_WIDTH, READY_HEIGHT);
     private final VoxelLightTextures lightTextures = new VoxelLightTextures();
     private final List<List<VoxelLight>> slotLights = new ArrayList<>(Collections.nCopies(VoxelVolumeLayout.SECTION_COUNT, List.of()));
     private final List<VoxelLight> collected = new ArrayList<>();
     private @Nullable ByteBuffer brick;
+    private @Nullable ByteBuffer colorBrick;
     private @Nullable ByteBuffer coarseBrick;
     private @Nullable ByteBuffer readyTable;
     private @Nullable VoxelBrickSink brickSink;
@@ -85,7 +88,7 @@ final class VoxelVolume {
             return Optional.empty();
         }
         return Optional.of(new VoxelVolumeView(
-            atlas.view(), coarse.view(), ready.view(), lightTextures.lightView(), lightTextures.gridView(),
+            atlas.view(), coarse.view(), colors.view(), ready.view(), lightTextures.lightView(), lightTextures.gridView(),
             window.minBlockX(), window.minBlockY(), window.minBlockZ(), lightTextures.lightCount()
         ));
     }
@@ -108,13 +111,16 @@ final class VoxelVolume {
 
     void close() {
         atlas.close(resources);
+        colors.close(resources);
         coarse.close(resources);
         ready.close(resources);
         lightTextures.close(resources);
         free(brick);
+        free(colorBrick);
         free(coarseBrick);
         free(readyTable);
         brick = null;
+        colorBrick = null;
         coarseBrick = null;
         readyTable = null;
         generation = NO_GENERATION;
@@ -128,6 +134,7 @@ final class VoxelVolume {
 
     private BuildResult buildPending(VoxelSource source, long start) {
         ByteBuffer data = Objects.requireNonNull(brick);
+        ByteBuffer colorData = Objects.requireNonNull(colorBrick);
         ByteBuffer coarseData = Objects.requireNonNull(coarseBrick);
         int built = 0;
         boolean lightsChanged = false;
@@ -137,13 +144,14 @@ final class VoxelVolume {
             int sectionZ = VoxelVolumeLayout.keyZ(key);
             int slot = VoxelVolumeLayout.slot(sectionX, sectionY, sectionZ);
             collected.clear();
-            source.readSection(sectionX, sectionY, sectionZ, data, (x, y, z, level, red, green, blue) ->
+            source.readSection(sectionX, sectionY, sectionZ, data, colorData, (x, y, z, level, red, green, blue) ->
                 collected.add(new VoxelLight(x, y, z, level, red, green, blue)));
             VoxelCoarseLevel.build(data, coarseData);
             if (brickSink != null) {
                 brickSink.brickBuilt(sectionX, sectionY, sectionZ, data);
             }
             atlas.write(data, VoxelVolumeLayout.brickX(slot), VoxelVolumeLayout.brickY(slot), VoxelVolumeLayout.BRICK_SIZE, VoxelVolumeLayout.BRICK_SIZE);
+            colors.write(colorData, VoxelVolumeLayout.brickX(slot), VoxelVolumeLayout.brickY(slot), VoxelVolumeLayout.BRICK_SIZE, VoxelVolumeLayout.BRICK_SIZE);
             coarse.write(coarseData, VoxelCoarseLevel.brickX(slot), VoxelCoarseLevel.brickY(slot), VoxelCoarseLevel.BRICK_SIZE, VoxelCoarseLevel.BRICK_SIZE);
             lightsChanged |= !slotLights.get(slot).isEmpty() || !collected.isEmpty();
             slotLights.set(slot, List.copyOf(collected));
@@ -200,10 +208,12 @@ final class VoxelVolume {
             return;
         }
         atlas.allocate(resources);
+        colors.allocate(resources);
         coarse.allocate(resources);
         ready.allocate(resources);
         lightTextures.ensureAllocated(resources);
         brick = MemoryUtil.memAlloc(VoxelVolumeLayout.BRICK_BYTES);
+        colorBrick = MemoryUtil.memAlloc(VoxelVolumeLayout.BRICK_COLOR_BYTES);
         coarseBrick = MemoryUtil.memAlloc(VoxelCoarseLevel.BRICK_BYTES);
         readyTable = MemoryUtil.memCalloc(VoxelVolumeLayout.SECTION_COUNT);
         window.markAllChanged();

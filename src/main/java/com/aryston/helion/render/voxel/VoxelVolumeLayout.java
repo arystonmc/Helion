@@ -13,6 +13,8 @@ public final class VoxelVolumeLayout {
     public static final int ATLAS_WIDTH = BRICK_SIZE * BRICKS_PER_ROW;
     public static final int ATLAS_HEIGHT = BRICK_SIZE * (SECTION_COUNT / BRICKS_PER_ROW);
     public static final int ATLAS_BYTES = ATLAS_WIDTH * ATLAS_HEIGHT;
+    public static final int COLOR_BYTES_PER_BLOCK = 4;
+    public static final int BRICK_COLOR_BYTES = BRICK_BYTES * COLOR_BYTES_PER_BLOCK;
 
     private static final int SECTION_MASK = SECTION_SIZE - 1;
     private static final int SECTION_SHIFT = 4;

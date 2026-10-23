@@ -26,6 +26,7 @@ public final class VoxelLightStage implements RenderStage {
     private static final String NAME = "voxel_light";
     private static final String LIGHT_TARGET = "helion:voxel_light";
     private static final String CONFIDENCE_TARGET = "helion:voxel_confidence";
+    private static final String BOUNCE_TARGET = "helion:voxel_bounce";
 
     private final VoxelLightingResources resources;
     private @Nullable CompiledRenderPipeline pipeline;
@@ -52,7 +53,7 @@ public final class VoxelLightStage implements RenderStage {
         }
         volume = view.orElse(null);
         pipeline = compiled.orElse(null);
-        return view.isPresent() && compiled.isPresent();
+        return view.isPresent() && compiled.isPresent() && !frame.voxels().probes().isEmpty();
     }
 
     @Override
@@ -69,12 +70,15 @@ public final class VoxelLightStage implements RenderStage {
         pass.reads(scene);
         ResourceHandle<RenderTarget> light = pass.createsInternal(LIGHT_TARGET, descriptor(width, height, VoxelLightPipelines.LIGHT_FORMAT));
         ResourceHandle<RenderTarget> confidence = pass.createsInternal(CONFIDENCE_TARGET, descriptor(width, height, VoxelLightPipelines.CONFIDENCE_FORMAT));
-        frame.voxels().publish(new VoxelLightResults.Targets(light, confidence));
+        ResourceHandle<RenderTarget> bounce = pass.createsInternal(BOUNCE_TARGET, descriptor(width, height, VoxelLightPipelines.BOUNCE_FORMAT));
+        List<ResourceHandle<RenderTarget>> probes = frame.voxels().probes();
+        probes.forEach(pass::reads);
+        frame.voxels().publish(new VoxelLightResults.Targets(light, confidence, bounce));
         HelionCamera camera = frame.camera();
         pass.executes(frame.graph().timed(NAME, () -> {
-            GpuBuffer uniforms = resources.writeLightUniforms(camera, view, quality);
+            GpuBuffer uniforms = resources.writeLightUniforms(camera, view, frame.settings().voxels());
             GpuBuffer dynamic = resources.writeDynamicUniforms(view);
-            FullscreenPass.draw("Helion Voxel Light", List.of(light.get(), confidence.get()), compiled, renderPass -> {
+            FullscreenPass.draw("Helion Voxel Light", List.of(light.get(), confidence.get(), bounce.get()), compiled, renderPass -> {
                 renderPass.setUniform(VoxelLightPipelines.SETTINGS, uniforms);
                 renderPass.setUniform(VoxelLightPipelines.DYNAMIC, dynamic);
                 renderPass.setUniform(VoxelLightPipelines.DEPTH_SAMPLER, Objects.requireNonNull(scene.get().getDepthTextureView()), nearest());
@@ -84,6 +88,9 @@ public final class VoxelLightStage implements RenderStage {
                 renderPass.setUniform(VoxelLightPipelines.READY_SAMPLER, view.ready(), nearest());
                 renderPass.setUniform(VoxelLightPipelines.LIGHT_LIST_SAMPLER, view.lights(), nearest());
                 renderPass.setUniform(VoxelLightPipelines.LIGHT_GRID_SAMPLER, view.grid(), nearest());
+                for (int channel = 0; channel < probes.size(); channel++) {
+                    renderPass.setUniform(VoxelLightPipelines.PROBE_SAMPLERS.get(channel), colorView(probes.get(channel)), nearest());
+                }
             });
             resources.finishLightFrame();
         }));

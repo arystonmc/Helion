@@ -20,6 +20,7 @@ public final class DeferredLightingPipelines {
     public static final String SHADOW_MASK_SAMPLER = "ShadowMaskSampler";
     public static final String VOXEL_LIGHT_SAMPLER = "VoxelLightSampler";
     public static final String VOXEL_CONFIDENCE_SAMPLER = "VoxelConfidenceSampler";
+    public static final String VOXEL_BOUNCE_SAMPLER = "VoxelBounceSampler";
     public static final GpuFormat SCENE_COLOR_FORMAT = GpuFormat.RGBA8_UNORM;
     public static final GpuFormat INDIRECT_SHARE_FORMAT = GpuFormat.R8_UNORM;
     private static final int INDIRECT_SHARE_TARGET = 1;
@@ -94,7 +95,8 @@ public final class DeferredLightingPipelines {
         }
         if (voxel) {
             builder.withUniform(VOXEL_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-                .withUniform(VOXEL_CONFIDENCE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER);
+                .withUniform(VOXEL_CONFIDENCE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform(VOXEL_BOUNCE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER);
         }
         return builder.build();
     }

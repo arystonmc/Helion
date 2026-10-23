@@ -35,7 +35,7 @@ class RenderSettingsTest {
         new ShadowSettings(true, ShadowQuality.HIGH),
         new DynamicLightSettings(true),
         new CloudSettings(true, CloudQuality.HIGH),
-        new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.HIGH),
+        new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.HIGH, true),
         new RayTracingSettings(true, true, true)
     );
 

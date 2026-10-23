@@ -13,6 +13,7 @@ uniform sampler2D GeometryLightSampler;
 #ifdef HELION_VOXEL_LIGHT
 uniform sampler2D VoxelLightSampler;
 uniform sampler2D VoxelConfidenceSampler;
+uniform sampler2D VoxelBounceSampler;
 #endif
 
 layout(location = 0) in vec2 texCoord;
@@ -44,8 +45,9 @@ HelionVoxelBlock helionVoxelBlock(ivec2 pixel, vec4 levels) {
     float trust = texture(VoxelConfidenceSampler, texCoord).r;
     vec3 floorTerm = vanilla * HELION_VOXEL_VANILLA_FLOOR;
     vec3 tracedLight = traced.rgb * BlockFactor;
-    vec3 unshadowed = mix(vanilla, max(tracedLight, floorTerm), trust);
-    vec3 shadowed = mix(vanilla, max(tracedLight * traced.a, floorTerm), trust);
+    vec3 bounced = texture(VoxelBounceSampler, texCoord).rgb * BlockFactor;
+    vec3 unshadowed = mix(vanilla, max(tracedLight + bounced, floorTerm), trust);
+    vec3 shadowed = mix(vanilla, max(tracedLight * traced.a + bounced, floorTerm), trust);
     vec3 base = helionDeferredBase(pixel, levels);
     float lit = helionDisplayedLight(base + unshadowed * BlockLightIntensity);
     float dimmed = helionDisplayedLight(base + shadowed * BlockLightIntensity);

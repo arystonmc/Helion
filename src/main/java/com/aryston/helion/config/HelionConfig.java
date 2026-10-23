@@ -92,6 +92,7 @@ public final class HelionConfig {
     static final ModConfigSpec.BooleanValue DYNAMIC_LIGHTS_ENABLED;
     static final ModConfigSpec.EnumValue<VoxelLightingMode> VOXEL_LIGHTING_MODE;
     static final ModConfigSpec.EnumValue<VoxelLightingQuality> VOXEL_LIGHTING_QUALITY;
+    static final ModConfigSpec.BooleanValue VOXEL_BOUNCE;
     static final ModConfigSpec.BooleanValue RAY_TRACING_ENABLED;
     static final ModConfigSpec.BooleanValue WATER_REFLECTIONS;
     static final ModConfigSpec.BooleanValue RAY_TRACED_SHADOWS;
@@ -226,6 +227,9 @@ public final class HelionConfig {
         VOXEL_LIGHTING_QUALITY = BUILDER
             .translation("helion.configuration.voxelLighting.quality")
             .defineEnum("quality", VoxelLightingQuality.MEDIUM);
+        VOXEL_BOUNCE = BUILDER
+            .translation("helion.configuration.voxelLighting.bounce")
+            .define("bounce", true);
         BUILDER.pop();
 
         BUILDER.translation("helion.configuration.rayTracing").push("rayTracing");
@@ -300,7 +304,7 @@ public final class HelionConfig {
             new ShadowSettings(SHADOWS_ENABLED.getAsBoolean(), SHADOW_QUALITY.get()),
             new DynamicLightSettings(DYNAMIC_LIGHTS_ENABLED.getAsBoolean()),
             new CloudSettings(CLOUDS_ENABLED.getAsBoolean(), CLOUD_QUALITY.get()),
-            new VoxelLightingSettings(VOXEL_LIGHTING_MODE.get(), VOXEL_LIGHTING_QUALITY.get()),
+            new VoxelLightingSettings(VOXEL_LIGHTING_MODE.get(), VOXEL_LIGHTING_QUALITY.get(), VOXEL_BOUNCE.getAsBoolean()),
             new RayTracingSettings(RAY_TRACING_ENABLED.getAsBoolean() || RayTracing.forced(), WATER_REFLECTIONS.getAsBoolean(), RAY_TRACED_SHADOWS.getAsBoolean())
         );
     }

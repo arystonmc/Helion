@@ -2,6 +2,7 @@ package com.aryston.helion.integration.vanilla;
 
 import com.aryston.helion.render.voxel.VoxelClass;
 import it.unimi.dsi.fastutil.objects.Reference2ByteOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
@@ -18,9 +19,14 @@ final class VoxelBlockClasses {
     private static final int FULL_DAMPENING = 15;
     private static final int EMISSION_SHIFT = 4;
     private static final int EMISSION_MASK = 0xF;
+    private static final int BYTE_MASK = 0xFF;
+    private static final int RED_SHIFT = 16;
+    private static final int GREEN_SHIFT = 8;
+    private static final int OPAQUE_ALPHA = 0xFF << 24;
 
     private final Reference2ByteOpenHashMap<BlockState> classes = new Reference2ByteOpenHashMap<>();
     private final Reference2ObjectOpenHashMap<BlockState, float[]> colors = new Reference2ObjectOpenHashMap<>();
+    private final Reference2IntOpenHashMap<BlockState> albedos = new Reference2IntOpenHashMap<>();
 
     VoxelBlockClasses() {
         classes.defaultReturnValue(UNKNOWN);
@@ -40,6 +46,10 @@ final class VoxelBlockClasses {
         return voxel >> EMISSION_SHIFT & EMISSION_MASK;
     }
 
+    int albedo(BlockState state) {
+        return albedos.computeIfAbsent(state, (BlockState key) -> packed(key.getMapColor(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).col));
+    }
+
     float[] color(BlockState state) {
         return colors.computeIfAbsent(state, VoxelLightColors::color);
     }
@@ -47,6 +57,14 @@ final class VoxelBlockClasses {
     void clear() {
         classes.clear();
         colors.clear();
+        albedos.clear();
+    }
+
+    private static int packed(int rgb) {
+        int red = rgb >> RED_SHIFT & BYTE_MASK;
+        int green = rgb >> GREEN_SHIFT & BYTE_MASK;
+        int blue = rgb & BYTE_MASK;
+        return red | green << GREEN_SHIFT | blue << RED_SHIFT | OPAQUE_ALPHA;
     }
 
     private static byte occupancy(BlockState state) {

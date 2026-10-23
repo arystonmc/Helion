@@ -134,10 +134,10 @@ enum VisualTestVariant {
 
     private VoxelLightingSettings voxelLighting() {
         if (this == VOXEL_LIGHT) {
-            return new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.MEDIUM);
+            return new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.MEDIUM, true);
         }
         if (this == VOXEL_LIGHT_LOW) {
-            return new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.LOW);
+            return new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.LOW, true);
         }
         return VoxelLightingSettings.DISABLED;
     }
