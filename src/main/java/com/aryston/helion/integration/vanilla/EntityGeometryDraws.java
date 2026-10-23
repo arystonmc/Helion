@@ -23,6 +23,8 @@ public final class EntityGeometryDraws {
     private static final String COLOR = "Color";
     private static final String UV0 = "UV0";
     private static final String UV2 = "UV2";
+    private static final String UV1 = "UV1";
+    private static final String NORMAL = "Normal";
     private static final String TEXTURE = "Sampler0";
     private static final int QUAD_INDICES = 6;
     private static final int QUAD_VERTICES = 4;
@@ -75,12 +77,19 @@ public final class EntityGeometryDraws {
         VertexFormatElement color = format.getElement(COLOR);
         VertexFormatElement uv = format.getElement(UV0);
         VertexFormatElement light = format.getElement(UV2);
+        VertexFormatElement normal = format.getElement(NORMAL);
+        VertexFormatElement overlay = format.getElement(UV1);
         Optional<GpuTextureView> texture = textures.stream().filter(bound -> bound.name().equals(TEXTURE)).map(PreparedRenderType.Texture::textureView).findFirst();
         if (color == null || color.format() != GpuFormat.RGBA8_UNORM || uv == null || uv.format() != GpuFormat.RG32_FLOAT || texture.isEmpty()) {
             return RtxEntityDraws.Surface.NONE;
         }
-        int lightOffset = light != null && light.format() == GpuFormat.RG16_SINT ? light.offset() : RtxEntityDraws.Surface.NO_LIGHT;
-        return new RtxEntityDraws.Surface(texture.get(), color.offset(), uv.offset(), lightOffset);
+        return new RtxEntityDraws.Surface(
+            texture.get(), color.offset(), uv.offset(), offset(light, GpuFormat.RG16_SINT), offset(normal, GpuFormat.RGBA8_SNORM), offset(overlay, GpuFormat.RG16_SINT)
+        );
+    }
+
+    private static int offset(@Nullable VertexFormatElement element, GpuFormat expected) {
+        return element != null && element.format() == expected ? element.offset() : RtxEntityDraws.Surface.ABSENT;
     }
 
     public static RenderPipeline substitute(RenderPipeline pipeline) {

@@ -31,6 +31,7 @@ final class RtxEntitySurfaces {
     private static final int LAYOUT = STRIDE + Integer.BYTES;
     private static final int SLOT = LAYOUT + Integer.BYTES;
     private static final int INDEX_OFFSET = SLOT + Integer.BYTES;
+    private static final int SHADING = INDEX_OFFSET + Integer.BYTES;
 
     private final RtxBuffer[] tables;
     private final TrackedResource tracked;
@@ -77,6 +78,7 @@ final class RtxEntitySurfaces {
             MemoryUtil.memPutInt(record + LAYOUT, layout(draw));
             MemoryUtil.memPutInt(record + SLOT, slot(draw));
             MemoryUtil.memPutInt(record + INDEX_OFFSET, draw.indexOffset());
+            MemoryUtil.memPutInt(record + SHADING, offsetOrAbsent(draw.normalOffset()) | offsetOrAbsent(draw.overlayOffset()) << BYTE_SHIFT);
         }
     }
 
@@ -114,15 +116,19 @@ final class RtxEntitySurfaces {
 
     private static boolean readable(RtxEntityDraws.RtxEntityDraw draw) {
         return draw.vertexStride() % Integer.BYTES == 0 && readable(draw.colorOffset()) && readable(draw.uvOffset())
-            && (draw.lightOffset() == RtxEntityDraws.Surface.NO_LIGHT || readable(draw.lightOffset()));
+            && (draw.lightOffset() == RtxEntityDraws.Surface.ABSENT || readable(draw.lightOffset()));
     }
 
     private static boolean readable(int offset) {
         return offset >= 0 && offset < NO_OFFSET && offset % Integer.BYTES == 0;
     }
 
+    private static int offsetOrAbsent(int offset) {
+        return readable(offset) ? offset : NO_OFFSET;
+    }
+
     private static int layout(RtxEntityDraws.RtxEntityDraw draw) {
-        int light = draw.lightOffset() == RtxEntityDraws.Surface.NO_LIGHT ? NO_OFFSET : draw.lightOffset();
+        int light = draw.lightOffset() == RtxEntityDraws.Surface.ABSENT ? NO_OFFSET : draw.lightOffset();
         int flags = draw.indexType() == VK10.VK_INDEX_TYPE_UINT16 ? SHORT_INDICES : NO_FLAGS;
         return (draw.colorOffset() & NO_OFFSET) | (draw.uvOffset() & NO_OFFSET) << BYTE_SHIFT | (light & NO_OFFSET) << LIGHT_SHIFT | flags << FLAG_SHIFT;
     }

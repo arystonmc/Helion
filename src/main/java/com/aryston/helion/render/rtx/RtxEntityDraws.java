@@ -43,7 +43,9 @@ public final class RtxEntityDraws {
             surface.texture() instanceof VulkanGpuTextureView view ? view.vkImageView() : RtxEntityDraw.NO_TEXTURE,
             surface.colorOffset(),
             surface.uvOffset(),
-            surface.lightOffset()
+            surface.lightOffset(),
+            surface.normalOffset(),
+            surface.overlayOffset()
         ));
     }
 
@@ -58,9 +60,9 @@ public final class RtxEntityDraws {
         return taken;
     }
 
-    public record Surface(@Nullable GpuTextureView texture, int colorOffset, int uvOffset, int lightOffset) {
-        public static final int NO_LIGHT = -1;
-        public static final Surface NONE = new Surface(null, NO_LIGHT, NO_LIGHT, NO_LIGHT);
+    public record Surface(@Nullable GpuTextureView texture, int colorOffset, int uvOffset, int lightOffset, int normalOffset, int overlayOffset) {
+        public static final int ABSENT = -1;
+        public static final Surface NONE = new Surface(null, ABSENT, ABSENT, ABSENT, ABSENT, ABSENT);
     }
 
     record RtxEntityDraw(
@@ -76,7 +78,9 @@ public final class RtxEntityDraws {
         long textureView,
         int colorOffset,
         int uvOffset,
-        int lightOffset
+        int lightOffset,
+        int normalOffset,
+        int overlayOffset
     ) {
         static final long NO_TEXTURE = 0L;
     }

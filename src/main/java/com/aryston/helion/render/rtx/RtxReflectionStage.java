@@ -1,5 +1,6 @@
 package com.aryston.helion.render.rtx;
 
+import com.aryston.helion.render.atmosphere.SkyLight;
 import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.geometry.TerrainSource;
 import com.aryston.helion.render.geometry.TerrainTextures;
@@ -15,7 +16,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import org.joml.Vector3dc;
+import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import org.jspecify.annotations.Nullable;
 
 public final class RtxReflectionStage implements RenderStage {
@@ -25,6 +29,9 @@ public final class RtxReflectionStage implements RenderStage {
     private static final float MAX_DISTANCE = 96.0F;
     private static final long WHOLE_BUFFER = 0L;
     private static final float UNUSED = 0.0F;
+    private static final float TRACED = 1.0F;
+    private static final float HORIZON = 0.0F;
+    private static final Vector3fc NO_LIGHT = new Vector3f(0.0F, 1.0F, 0.0F);
 
     private final RayTracingResources resources;
     private final TerrainSource terrain;
@@ -54,7 +61,7 @@ public final class RtxReflectionStage implements RenderStage {
         RtxSectionPos center = Objects.requireNonNull(anchor);
         RtxImage image = resources.reflection(frame.scene().width(), frame.scene().height());
         ByteBuffer constants = resources.reflectionConstants();
-        writeConstants(constants, frame.camera(), center);
+        writeConstants(constants, frame.camera(), center, frame.atmosphere().skyLight());
         ResourceHandle<RenderTarget> surface = frame.water().surface().orElseThrow();
         TerrainTextures textures = terrain.textures();
         FramePass pass = frame.graph().addPass(NAME);
@@ -93,11 +100,15 @@ public final class RtxReflectionStage implements RenderStage {
         );
     }
 
+    private static Vector3fc shadowLight(SkyLight sky) {
+        return sky.sunDirection().y() > HORIZON ? sky.sunDirection() : sky.moonDirection();
+    }
+
     private static long handle(GpuTextureView view) {
         return ((VulkanGpuTextureView) view).vkImageView();
     }
 
-    private static void writeConstants(ByteBuffer constants, HelionCamera camera, RtxSectionPos center) {
+    private static void writeConstants(ByteBuffer constants, HelionCamera camera, RtxSectionPos center, Optional<SkyLight> sky) {
         Vector3dc position = camera.position();
         constants.clear();
         camera.levelViewProjection().invert().get(0, constants);
@@ -107,6 +118,9 @@ public final class RtxReflectionStage implements RenderStage {
             .putFloat((float) (position.z() - center.originZ()))
             .putFloat(RtxSectionInbox.RADIUS * VoxelVolumeLayout.SECTION_SIZE);
         constants.putFloat(MAX_DISTANCE).putFloat(UNUSED).putFloat(UNUSED).putFloat(UNUSED);
+        Optional<Vector3fc> light = sky.map(RtxReflectionStage::shadowLight).filter(direction -> direction.y() > HORIZON);
+        Vector3fc direction = light.orElse(NO_LIGHT);
+        constants.putFloat(direction.x()).putFloat(direction.y()).putFloat(direction.z()).putFloat(light.isPresent() ? TRACED : UNUSED);
         constants.flip();
     }
 }

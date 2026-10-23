@@ -65,9 +65,10 @@ Entities (same scenes, about 2,900 entity quads in view across the whole render 
 
 ## Next
 
-1. Water: refraction of the bottom, glass and ice reflections, reflections seen from under water, sun shadow rays at the hit.
-2. Entities in reflections: armor glint, emissive layers, the hurt overlay and translucent entities; entity diffuse shading.
-3. Compaction of the bottom levels and a radius chosen by memory, and a settings switch (with a preset entry, lesson L-117) once a visible feature uses the scene.
+1. Water: reflections seen from under water; ray traced puddles (puddles reflect only the screen and the sky). Done 2026-10-24: refraction of the bottom (realistic water, every card), traced reflections on glass and ice, a sun or moon shadow ray at every reflection hit.
+2. Entities in reflections: armor glint, emissive layers and translucent entities.
+3. Compaction of the bottom levels and a radius chosen by memory. Weighed on 2026-10-24 and left for later: the whole scene is 31 MiB for 267 sections, compaction would save roughly a third of it but needs a query readback and the destruction of the old structure only after every frame in flight has finished with it.
+4. Bounced light with ray queries. Weighed on 2026-10-24 and left for later: the voxel probes already give bounce on every card at 0.25 to 0.3 ms; ray queries would add exact shapes and texture colors to the probe hits but need a compute probe pass that writes the probe textures of the voxel pass, and the 2026-10-22 spike measured ray queries only 5 % faster than the voxel walk.
 
 ## Mobs in Ray Traced Reflections (2026-10-23)
 
@@ -78,5 +79,5 @@ Mobs, players, armor stands, dropped items and entity-drawn block entities show 
 3. Hit table: `RtxEntitySurfaces` writes 48 bytes per entity geometry (geometry index = draw index) into a ring of mapped storage buffers: buffer addresses, base vertex, stride, attribute offsets, index size, index byte offset and a texture slot (16 slots per frame; further textures stay out of reflections, unreadable formats too).
 4. Instances: the entity bottom level holds non-opaque geometries; shadows see it through a mask 2 instance forced opaque, reflections through a mask 4 instance forced non-opaque with custom index `0xFFFFFF`, which `helion_rt_entity.glsl` uses to tell entity hits from sections.
 5. Shader: `rtx/reflection.csh` traces masks 1 and 4; an entity candidate is confirmed where texture alpha times vertex alpha is at least 0.1 (vanilla entity cutout); a committed entity hit interpolates UV0, color and light from the staged buffers through buffer references and shades `EntityTextures[nonuniformEXT(slot)]` times the vertex color times the lightmap, like block hits. Unused slots hold the block atlas.
-6. Missing: armor glint, emissive layers (eyes), the hurt overlay, translucent entities (not in the entity geometry pass) and the vanilla entity diffuse shading.
+6. Since 2026-10-24 entity hits get the vanilla entity diffuse light (fixed light directions 0.2, 1, -0.7 and -0.2, 1, 0.7) and the hurt and white flash overlay computed from UV1 like `OverlayTexture`. Still missing: armor glint, emissive layers (eyes) and translucent entities, which are not in the entity geometry pass.
 7. Tested 2026-10-24 (RTX 4050 Laptop, 1920 x 1080 fullscreen, visual test `water_mob`, `water_noon`, `water_sunset`, `day_showcase`, variant `shadows` with screen space reflections off): the cow and a villager at the pool show in the traced reflection with their textures, at the same place as in `screen_reflections`; ray traced shadows unchanged; no Helion warning or error.

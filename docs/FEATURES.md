@@ -239,7 +239,8 @@ Uses the ray tracing hardware of RTX and similar graphics cards for what shaders
 - Ray traced shadows: within about 64 blocks, sun and moon shadows follow the exact block shapes, leaves and fences cast shadows with their holes, and shadow edges soften the farther they fall from what casts them
 - Leaves, flowers and fences show their holes in reflections too
 - Mobs, players, armor stands and dropped items cast ray traced shadows too, with their exact shapes
-- Mobs, players, armor stands and dropped items show in ray traced water reflections, even when they are off screen (without glowing eyes, armor shine or the red hurt flash)
+- Mobs, players, armor stands and dropped items show in ray traced water reflections, even when they are off screen, shaded like in the world and flashing red when hurt (without glowing eyes or armor shine)
+- Glass and ice reflect the world with ray tracing too, and reflected places that lie in shadow are darker
 - Needs a graphics card with hardware ray tracing; on other cards it stays off and nothing changes
 - Settings: on or off (takes effect after restarting the game), water reflections and ray traced shadows on or off; on in the Experimental preset, off otherwise
 - Since: Unreleased

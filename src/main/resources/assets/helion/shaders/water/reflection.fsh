@@ -102,7 +102,7 @@ void main() {
     float facing = clamp(dot(-view, normal), 0.0, 1.0);
     float baseReflectance = water ? HELION_WATER_F0 : HELION_GLOSSY_F0;
     float fresnel = (baseReflectance + (1.0 - baseReflectance) * pow(1.0 - facing, HELION_FRESNEL_POWER)) * ReflectionStrength;
-    vec4 traced = water && TracedReflections > HELION_PRESENT ? texelFetch(ReflectionSampler, pixel, 0) : vec4(0.0);
+    vec4 traced = TracedReflections > HELION_PRESENT ? texelFetch(ReflectionSampler, pixel, 0) : vec4(0.0);
     vec3 sky = helionReflectedSky(reflected) * (water ? 1.0 : surface.w * surface.w);
     vec3 fallback = traced.a > HELION_GEOMETRY_PRESENT_THRESHOLD ? traced.rgb : sky;
     vec4 screenHit = ScreenReflections > HELION_PRESENT ? texelFetch(ScreenReflectionSampler, pixel, 0) : vec4(0.0);

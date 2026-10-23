@@ -15,7 +15,7 @@ import org.lwjgl.vulkan.VK10;
 
 public final class RayTracingResources {
     static final int SUN_SHADOW_CONSTANT_BYTES = 112;
-    static final int REFLECTION_CONSTANT_BYTES = 96;
+    static final int REFLECTION_CONSTANT_BYTES = 112;
 
     private static final String SUN_SHADOW_SOURCE = "/assets/helion/shaders/rtx/sun_shadow.csh";
     private static final String SUN_SHADOW_NAME = "sun_shadow.csh";
