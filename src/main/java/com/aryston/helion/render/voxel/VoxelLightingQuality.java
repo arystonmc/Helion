@@ -3,7 +3,7 @@ package com.aryston.helion.render.voxel;
 public enum VoxelLightingQuality {
     LOW(1, 2, 4),
     MEDIUM(2, 2, 8),
-    HIGH(4, 1, 16);
+    HIGH(4, 2, 12);
 
     private final int tracedLights;
     private final int resolutionDivisor;

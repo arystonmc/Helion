@@ -44,7 +44,7 @@ Checked in the extracted `minecraft-patched-26.3.0.51-beta-sources.jar` (renderp
 
 ## Direct Light
 
-1. `voxel_light` runs right after the shadow stage and `voxel_probes`, at half resolution (Low, Medium) or full (High). Per terrain pixel it takes the point half a block in front of the surface, the block vanilla reads the light of.
+1. `voxel_light` runs right after the shadow stage and `voxel_probes`, at half resolution (every quality since 2026-10-23; High was full resolution before). Per terrain pixel it takes the point half a block in front of the surface, the block vanilla reads the light of.
 2. Every light of its grid cell gives `level - taxicab distance`, the vanilla falloff of one level per block, and the vanilla level brightness curve (`helion_light_level.glsl`) times the light color. The dynamic lights of the frame (`DynamicLightTracker`: held, dropped and burning sources, at most 16, in the color of their block from `colors.json`) join them with `level - distance`, the falloff the dynamic terrain light uses.
 3. The brightest is traced first (3D grid walk, coarse level first) toward the face of the light block that faces the pixel and has no light-blocking neighbor, so a lava pool in the floor lights the floor. A dynamic light is traced straight to its point. Every ray is also tested against the boxes of up to 8 living entities within 24 blocks (every box is tested by every traced ray: 32 boxes took the pass from 0.17 to 0.29 ms at Medium, 8 boxes cost 0.18 ms; lesson L-152) (`VanillaVoxelOccluders`, interpolated, without the camera entity in first person and invisible or spectating entities); a box that holds the light end is skipped, so a mob does not shadow its own torch. If it is blocked the next brightest is traced, up to 3 (Low), 6 (Medium) or 8 (High) lights; when the first visible light is found the remaining dimmer lights do not matter, and when every traced light is blocked the untraced ones count as blocked too, so a cluster of lights behind a wall cannot shine through it. Like vanilla, the brightest visible light sets the level; the color is the blend of all lights by their share.
 4. It writes the unshadowed colored light and the visible share (RGBA16_FLOAT) and a confidence (R8): 0 for unknown slots, fading to 0 over the last 16 blocks before the volume edge.
@@ -61,7 +61,7 @@ Setting `voxelLighting.bounce` (Bounced Light, on by default and in every preset
 3. Per frame each probe traces 4 (Low), 8 (Medium) or 16 (High) Fibonacci rays, rotated randomly per frame, up to 24 blocks through the volume. A hit is lit by the block lights of its light grid cell (shadow rays to the brightest and, when it is blocked, the next one; if both are blocked the hit gets no direct light) plus the bounced light of the probe that owns the hit cell in the previous set (one visibility ray, capped at 1), times the block's map color. Hits feed the harmonics; the result is blended with the previous set (90 % history, shifted when the volume moves), so light keeps bouncing over frames.
 4. Gather: `voxel_light` takes the 8 probes around the pixel (trilinear weights times a facing term), drops probes that are off or not visible from the surface (one grid walk each, so no light leaks through walls), evaluates the harmonics with the pixel normal and writes `4.2 x` the result into the bounce target. The gain makes up for the single scattering and the low map colors: vanilla light floods around corners at one level per block.
 5. Deferred shading adds bounced light only up to the vanilla brightness of the pixel: the fill is the bounce scaled to at most the luminance gap between vanilla and the direct light, plus 10 % of the bounce for color (20 % made the grass next to a torch 27 % brighter than vanilla). Directly lit surfaces keep their vanilla brightness, shaded sides, ceilings and corners fill in, and a small room next to bright lights cannot be flooded past vanilla (gain 4.2 alone gave 3 to 5 times vanilla there). Final numbers (2026-10-23, after the leak fix and tinting): hidden corner floor 99 % of vanilla, whole frame 82 %; open night scene 90 %; noon identical.
-6. `include/helion_voxel_probe.glsl` holds the probe layout and harmonics, `include/helion_voxel_probe_gather.glsl` the gather (8 probes) and the nearest probe lookup used for the second bounce.
+6. Since 2026-10-23 the gather runs in its own half resolution pass, see Separate Bounce Pass below. `include/helion_voxel_probe.glsl` holds the probe layout and harmonics, `include/helion_voxel_probe_gather.glsl` the gather (8 probes) and the nearest probe lookup used for the second bounce.
 
 ### Measured, Phase 5 (RTX 4050 Laptop, 1080p, visual test world, 2026-10-23)
 
@@ -89,7 +89,19 @@ One run per change with `helion.visualTest.scenes=cave_corner+night_showcase+day
 | `voxel_probes` GPU | 0.15 to 0.16 ms | 0.25 to 0.29 ms | 0.45 to 0.53 ms |
 | `voxel_light` GPU | 0.09 to 0.16 ms | 0.09 to 0.21 ms | 0.28 to 0.73 ms |
 
-- High runs at full resolution and gathers 8 visibility-tested probes per pixel, so it costs three to four times Medium in closed rooms; capping its light traces from 12 to 8 did not change that.
+- High ran at full resolution and gathered 8 visibility-tested probes per pixel inside `voxel_light`, so it cost three to four times Medium in closed rooms; capping its light traces from 12 to 8 did not change that. Fixed the same day (next section).
+
+### Separate Bounce Pass (2026-10-23)
+
+The gather moved out of `voxel_light` into its own pass `voxel_bounce` (`VoxelBounceStage`, `voxel/bounce_gather.fsh`) at half resolution for every quality, between `voxel_probes` and `voxel_light`; with bounced light off it only writes the neutral value (black, full vanilla floor), 0.007 ms. High now traces its 4 lights at half resolution too and casts 12 probe rays instead of 16. One run, same scenes, probes + bounce + light:
+
+| Scene | Low | Medium | High (before) | High |
+|---|---|---|---|---|
+| `cave_corner` | 0.31 ms | 0.46 ms | 1.10 ms | 0.59 ms (1.28 x Medium) |
+| `night_showcase` | 0.33 ms | 0.47 ms | 0.87 ms | 0.60 ms (1.29 x) |
+| `savanna_room` | 0.24 ms | 0.34 ms | 0.63 ms | 0.45 ms (1.30 x) |
+
+Brightness is unchanged within run-to-run spread: the hidden corner floor measured 81 to 99 % of vanilla at Medium over the last runs, because the probes rotate their rays randomly every frame and a screenshot catches one frame of that.
 - Savanna (`savanna_room`, made with `/fillbiome`): grass and leaves keep their olive savanna tint with bounce on and off; bounced light uses the block map color, which is not biome tinted, but next to the warm torch color the difference does not show.
 
 ## Tinted Light

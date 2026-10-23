@@ -9,6 +9,7 @@ import org.jspecify.annotations.Nullable;
 public final class VoxelLightResults {
     private @Nullable Targets targets;
     private List<ResourceHandle<RenderTarget>> probes = List.of();
+    private @Nullable ResourceHandle<RenderTarget> bounce;
 
     public Optional<Targets> targets() {
         return Optional.ofNullable(targets);
@@ -20,6 +21,14 @@ public final class VoxelLightResults {
 
     void publishProbes(List<ResourceHandle<RenderTarget>> written) {
         probes = written;
+    }
+
+    Optional<ResourceHandle<RenderTarget>> bounce() {
+        return Optional.ofNullable(bounce);
+    }
+
+    void publishBounce(ResourceHandle<RenderTarget> written) {
+        bounce = written;
     }
 
     void publish(Targets written) {

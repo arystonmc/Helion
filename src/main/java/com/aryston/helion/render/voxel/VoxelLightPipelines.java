@@ -32,7 +32,6 @@ public final class VoxelLightPipelines {
     public static final int PROBE_WIDTH = 256;
     public static final int PROBE_HEIGHT = 128;
     private static final int CONFIDENCE_TARGET = 1;
-    private static final int BOUNCE_TARGET = 2;
 
     public static final RenderPipeline DIRECT = HelionPipelines.fullscreen("voxel/direct_light")
         .withBindGroupLayout(BindGroupLayout.builder()
@@ -46,14 +45,26 @@ public final class VoxelLightPipelines {
             .withUniform(READY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(LIGHT_LIST_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(LIGHT_GRID_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .build())
+        .withColorTargetState(target(LIGHT_FORMAT))
+        .withColorTargetState(CONFIDENCE_TARGET, target(CONFIDENCE_FORMAT))
+        .build();
+
+    public static final RenderPipeline BOUNCE = HelionPipelines.fullscreen("voxel/bounce_gather")
+        .withBindGroupLayout(BindGroupLayout.builder()
+            .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
+            .withUniform(DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(GEOMETRY_NORMAL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(VOXEL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(COARSE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(READY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(LIGHT_GRID_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(PROBE_SAMPLERS.get(0), UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(PROBE_SAMPLERS.get(1), UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(PROBE_SAMPLERS.get(2), UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(PROBE_SAMPLERS.get(3), UniformType.COMBINED_IMAGE_SAMPLER)
             .build())
-        .withColorTargetState(target(LIGHT_FORMAT))
-        .withColorTargetState(CONFIDENCE_TARGET, target(CONFIDENCE_FORMAT))
-        .withColorTargetState(BOUNCE_TARGET, target(BOUNCE_FORMAT))
+        .withColorTargetState(target(BOUNCE_FORMAT))
         .build();
 
     public static final RenderPipeline PROBE_UPDATE = HelionPipelines.fullscreen("voxel/probe_update")
@@ -81,7 +92,7 @@ public final class VoxelLightPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(DIRECT, PROBE_UPDATE);
+        return List.of(DIRECT, PROBE_UPDATE, BOUNCE);
     }
 
     private static ColorTargetState target(GpuFormat format) {

@@ -14,7 +14,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelLightingQuality
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightingQuality.java`
-- Role: Lights traced per pixel and resolution divisor: Low 1 at half resolution, Medium 2 at half, High 4 at full.
+- Role: Lights traced per pixel and resolution divisor: Low 1, Medium 2, High 4, all at half resolution; probe rays 4, 8 and 12.
 
 #### VoxelClass
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelClass.java`
@@ -68,7 +68,12 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelLightPipelines, VoxelLightStage, VoxelLightResults
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightPipelines.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelLightStage.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelLightResults.java`
-- Role: The direct light pass `voxel_light` (`voxel/direct_light.fsh`), right after the shadow stage: per terrain pixel at the resolution of the quality it evaluates the lights of its grid cell with the vanilla falloff of one level per block and the dynamic lights of the frame (`HelionVoxelDynamic`), traces the strongest ones through the volume and against the entity boxes and writes the unshadowed colored block light and its visible share (RGBA16_FLOAT) and a confidence (R8: 0 near the volume edge or where a ray crossed a slot that is not ready). `VoxelLightResults` hands both targets to `DeferredLightingStage`.
+- Role: The direct light pass `voxel_light` (`voxel/direct_light.fsh`), right after the shadow stage: per terrain pixel at the resolution of the quality it evaluates the lights of its grid cell with the vanilla falloff of one level per block and the dynamic lights of the frame (`HelionVoxelDynamic`), traces the strongest ones through the volume and against the entity boxes and writes the unshadowed colored block light and its visible share (RGBA16_FLOAT) and a confidence (R8: 0 near the volume edge or where a ray crossed a slot that is not ready). `VoxelLightResults` hands both targets and the bounce target of `VoxelBounceStage` to `DeferredLightingStage`.
+
+#### VoxelBounceStage
+- Path: `src/main/java/com/aryston/helion/render/voxel/VoxelBounceStage.java`
+- Role: Pass `voxel_bounce` between `voxel_probes` and `voxel_light`, at half resolution for every quality: `voxel/bounce_gather.fsh` gathers the 8 visible probes around each terrain pixel into `helion:voxel_bounce` (RGBA16_FLOAT, gain 4.2, alpha = share of the 30 % vanilla floor). With bounced light off it binds the color atlas in place of the probes and writes black with the full floor. Publishes the target in `VoxelLightResults`; `VoxelLightStage` runs only when it exists.
+- Depends on: `VoxelLightingResources`, `VoxelLightPipelines`, `VoxelLightResults`, `FullscreenPass`.
 - Depends on: `VoxelLightingResources`, `FullscreenPass`.
 
 #### VoxelVolumeView
@@ -96,4 +101,4 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelProbes, VoxelProbeStage
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelProbes.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelProbeStage.java`
-- Role: Bounced light (Phase 5). A 32 x 32 x 32 grid of probes, one per 4 x 4 x 4 cell of the voxel volume, stored as L1 spherical harmonics plus a placement in two sets of four RGBA16_FLOAT 256 x 128 targets. Pass `voxel_probes` (before `voxel_light`, only with `voxelLighting.bounce`) moves each probe to a free block of its cell, traces 4, 8 or 16 randomly rotated rays per probe through the volume, lights each hit with the block lights of its grid cell (one shadow ray to the brightest) plus the previous bounce of the probe owning the hit cell, times the block's map color from the voxel color atlas, and blends with the previous set (shifted when the volume moves). `voxel_light` gathers the 8 nearest visible probes into a bounce target (gain 4.2, alpha = share of the 30 % vanilla floor). With bounce off the probe targets are released and the pass does not run. See `docs/architecture/voxel-lighting.md`, Bounced Light.
+- Role: Bounced light (Phase 5). A 32 x 32 x 32 grid of probes, one per 4 x 4 x 4 cell of the voxel volume, stored as L1 spherical harmonics plus a placement in two sets of four RGBA16_FLOAT 256 x 128 targets. Pass `voxel_probes` (before `voxel_light`, only with `voxelLighting.bounce`) moves each probe to a free block of its cell, traces 4, 8 or 16 randomly rotated rays per probe through the volume, lights each hit with the block lights of its grid cell (one shadow ray to the brightest) plus the previous bounce of the probe owning the hit cell, times the block's map color from the voxel color atlas, and blends with the previous set (shifted when the volume moves). `voxel_bounce` (`VoxelBounceStage`) gathers the 8 nearest visible probes into the bounce target. With bounce off the probe targets are released and the pass does not run. See `docs/architecture/voxel-lighting.md`, Bounced Light.
