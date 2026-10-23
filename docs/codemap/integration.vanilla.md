@@ -161,7 +161,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelBlockClasses
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VoxelBlockClasses.java`
-- Role: Cached `VoxelClass` byte and light color per block state: air and invisible blocks empty, solid render blocks and blocks with full light dampening opaque, water and blocks whose model has translucent material translucent, everything else partial, with the light emission in the high bits.
+- Role: Cached `VoxelClass` byte and light color per block state: air and invisible blocks empty, solid render blocks and blocks with full light dampening opaque, water and blocks whose model has translucent material translucent, everything else partial, with the light emission in the high bits; stained glass and panes also get `TINTS_LIGHT` and their dye color, brightest channel scaled to 1, in place of the map color.
 
 #### VoxelSectionChanges
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VoxelSectionChanges.java`

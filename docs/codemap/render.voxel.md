@@ -18,11 +18,11 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelClass
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelClass.java`
-- Role: Byte per block of the volume: occupancy in bits 0 to 1 (`EMPTY`, `OPAQUE` = blocks light, `PARTIAL`, `TRANSLUCENT`) and the light emission 0 to 15 in bits 4 to 7.
+- Role: Byte per block of the volume: occupancy in bits 0 to 1 (`EMPTY`, `OPAQUE` = blocks light, `PARTIAL`, `TRANSLUCENT`) `TINTS_LIGHT` in bit 2 (stained glass), and the light emission 0 to 15 in bits 4 to 7.
 
 #### VoxelCoarseLevel
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelCoarseLevel.java`
-- Role: Coarse level of the volume: one byte per 4 x 4 x 4 blocks (`BLOCKED` when any block in it blocks light), an 8 x 8 brick per section (4 slices of 4 x 4 laid 2 x 2) in a 256 x 128 atlas with the same slots as the block atlas. `build` derives it from a block brick.
+- Role: Coarse level of the volume: one byte per 4 x 4 x 4 blocks (`BLOCKED` when any block in it blocks or tints light), an 8 x 8 brick per section (4 slices of 4 x 4 laid 2 x 2) in a 256 x 128 atlas with the same slots as the block atlas. `build` derives it from a block brick.
 
 #### VoxelLight, VoxelLightSink
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLight.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelLightSink.java`

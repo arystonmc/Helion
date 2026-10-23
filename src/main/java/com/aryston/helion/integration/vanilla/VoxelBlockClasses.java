@@ -4,13 +4,17 @@ import com.aryston.helion.render.voxel.VoxelClass;
 import it.unimi.dsi.fastutil.objects.Reference2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
+import java.util.Optional;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.EmptyBlockGetter;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.StainedGlassBlock;
+import net.minecraft.world.level.block.StainedGlassPaneBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 
@@ -37,7 +41,8 @@ final class VoxelBlockClasses {
         if (cached != UNKNOWN || classes.containsKey(state)) {
             return cached;
         }
-        byte computed = VoxelClass.encode(occupancy(state), state.getLightEmission(EmptyBlockGetter.INSTANCE, BlockPos.ZERO));
+        byte encoded = VoxelClass.encode(occupancy(state), state.getLightEmission(EmptyBlockGetter.INSTANCE, BlockPos.ZERO));
+        byte computed = tint(state).isPresent() ? VoxelClass.tinting(encoded) : encoded;
         classes.put(state, computed);
         return computed;
     }
@@ -47,7 +52,7 @@ final class VoxelBlockClasses {
     }
 
     int albedo(BlockState state) {
-        return albedos.computeIfAbsent(state, (BlockState key) -> packed(key.getMapColor(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).col));
+        return albedos.computeIfAbsent(state, (BlockState key) -> packed(tint(key).orElseGet(() -> key.getMapColor(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).col)));
     }
 
     float[] color(BlockState state) {
@@ -65,6 +70,29 @@ final class VoxelBlockClasses {
         int green = rgb >> GREEN_SHIFT & BYTE_MASK;
         int blue = rgb & BYTE_MASK;
         return red | green << GREEN_SHIFT | blue << RED_SHIFT | OPAQUE_ALPHA;
+    }
+
+    private static Optional<Integer> tint(BlockState state) {
+        Block block = state.getBlock();
+        if (block instanceof StainedGlassBlock glass) {
+            return Optional.of(brightest(glass.getColor().getTextureDiffuseColor()));
+        }
+        if (block instanceof StainedGlassPaneBlock pane) {
+            return Optional.of(brightest(pane.getColor().getTextureDiffuseColor()));
+        }
+        return Optional.empty();
+    }
+
+    private static int brightest(int rgb) {
+        int red = rgb >> RED_SHIFT & BYTE_MASK;
+        int green = rgb >> GREEN_SHIFT & BYTE_MASK;
+        int blue = rgb & BYTE_MASK;
+        int peak = Math.max(1, Math.max(red, Math.max(green, blue)));
+        return scaled(red, peak) << RED_SHIFT | scaled(green, peak) << GREEN_SHIFT | scaled(blue, peak);
+    }
+
+    private static int scaled(int channel, int peak) {
+        return channel * BYTE_MASK / peak;
     }
 
     private static byte occupancy(BlockState state) {

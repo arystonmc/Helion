@@ -39,7 +39,8 @@ public final class VoxelCoarseLevel {
         for (int y = 0; y < VoxelVolumeLayout.SECTION_SIZE; y++) {
             for (int z = 0; z < VoxelVolumeLayout.SECTION_SIZE; z++) {
                 for (int x = 0; x < VoxelVolumeLayout.SECTION_SIZE; x++) {
-                    if ((brick.get(VoxelVolumeLayout.brickIndex(x, y, z)) & OCCUPANCY_MASK) == VoxelClass.OPAQUE) {
+                    byte voxel = brick.get(VoxelVolumeLayout.brickIndex(x, y, z));
+                    if ((voxel & OCCUPANCY_MASK) == VoxelClass.OPAQUE || VoxelClass.tints(voxel)) {
                         coarse.put(cellIndex(x / CELL_SIZE, y / CELL_SIZE, z / CELL_SIZE), BLOCKED);
                     }
                 }

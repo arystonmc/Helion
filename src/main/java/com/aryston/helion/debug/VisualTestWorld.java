@@ -62,6 +62,24 @@ final class VisualTestWorld {
     );
     private static final Placement CAVE_TORCH = new Placement(21, -23, -12, "torch");
     static final BlockPos WALL_CAMERA = new BlockPos(15, -17, -6);
+    static final BlockPos TINT_CAMERA = new BlockPos(15, -17, 1);
+    private static final Volume TINT_ROOM = new Volume(new BlockPos(14, -17, 0), new BlockPos(24, -15, 3));
+    private static final List<Placement> TINT_BLOCKS = List.of(
+        new Placement(19, -17, 0, "red_stained_glass"),
+        new Placement(19, -16, 0, "red_stained_glass"),
+        new Placement(19, -15, 0, "red_stained_glass"),
+        new Placement(19, -17, 1, "red_stained_glass"),
+        new Placement(19, -16, 1, "red_stained_glass"),
+        new Placement(19, -15, 1, "red_stained_glass"),
+        new Placement(19, -17, 2, "blue_stained_glass"),
+        new Placement(19, -16, 2, "blue_stained_glass"),
+        new Placement(19, -15, 2, "blue_stained_glass"),
+        new Placement(19, -17, 3, "blue_stained_glass"),
+        new Placement(19, -16, 3, "blue_stained_glass"),
+        new Placement(19, -15, 3, "blue_stained_glass"),
+        new Placement(22, -17, 1, "sea_lantern"),
+        new Placement(22, -17, 2, "sea_lantern")
+    );
     private static final List<Volume> WALL_ROOMS = List.of(
         new Volume(new BlockPos(14, -17, -9), new BlockPos(20, -15, -3)),
         new Volume(new BlockPos(22, -17, -9), new BlockPos(26, -15, -3))
@@ -102,6 +120,8 @@ final class VisualTestWorld {
         run(server, CAVE_TORCH.command(origin));
         WALL_ROOMS.forEach(room -> run(server, fill(origin.offset(room.from()), origin.offset(room.to()), "air")));
         WALL_LIGHTS.forEach(light -> run(server, light.command(origin)));
+        run(server, fill(origin.offset(TINT_ROOM.from()), origin.offset(TINT_ROOM.to()), "air"));
+        TINT_BLOCKS.forEach(block -> run(server, block.command(origin)));
     }
 
     static void placeCamera(IntegratedServer server, Vec3 start, BlockPos origin, BlockPos cameraOffset) {

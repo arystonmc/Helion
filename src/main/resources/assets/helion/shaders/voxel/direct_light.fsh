@@ -27,6 +27,7 @@ uniform sampler2D DepthSampler;
 uniform sampler2D GeometryNormalSampler;
 uniform sampler2D VoxelSampler;
 uniform sampler2D VoxelCoarseSampler;
+uniform sampler2D VoxelColorSampler;
 uniform sampler2D VoxelReadySampler;
 uniform sampler2D VoxelLightListSampler;
 uniform sampler2D VoxelLightGridSampler;
@@ -37,6 +38,7 @@ uniform sampler2D ProbePlacementSampler;
 
 #include <helion:helion_voxel_trace.glsl>
 #include <helion:helion_voxel_probe_gather.glsl>
+#include <helion:helion_voxel_tint.glsl>
 
 layout(location = 0) in vec2 texCoord;
 
@@ -155,6 +157,7 @@ void main() {
     }
     bool unknown = false;
     bool settled = false;
+    vec3 tint = vec3(1.0);
     for (int attempt = 0; attempt < HELION_MAX_TRACE_ATTEMPTS; attempt++) {
         if (attempt >= traced) {
             break;
@@ -167,7 +170,9 @@ void main() {
         }
         float pickWeight = pick == HELION_NO_LIGHT ? 0.0 : weights[pick];
         if (movingWeight > pickWeight) {
-            if (helionTraceVisibility(surface, movingPosition, unknown) > 0.0 && !helionOccluded(surface, movingPosition)) {
+            vec3 movingTint = helionTraceTint(surface, movingPosition, unknown);
+            if (helionLuminance(movingTint) > 0.0 && !helionOccluded(surface, movingPosition)) {
+                tint = movingTint;
                 settled = true;
                 break;
             }
@@ -180,8 +185,9 @@ void main() {
         }
         bool enclosed;
         vec3 exit = helionLightExit(positions[pick], surface, enclosed);
-        bool visible = !enclosed && helionTraceVisibility(surface, exit, unknown) > 0.0 && !helionOccluded(surface, exit);
-        if (visible) {
+        vec3 pickTint = enclosed ? vec3(0.0) : helionTraceTint(surface, exit, unknown);
+        if (helionLuminance(pickTint) > 0.0 && !helionOccluded(surface, exit)) {
+            tint = pickTint;
             settled = true;
             break;
         }
@@ -201,7 +207,7 @@ void main() {
     float blendedLuminance = helionLuminance(blended);
     vec3 unshadowed = blendedLuminance > HELION_UNLIT ? blended * (strongest / blendedLuminance) : vec3(0.0);
     float visibility = strongest > HELION_UNLIT ? visibleStrongest / strongest : 1.0;
-    lightColor = vec4(unshadowed, visibility);
+    lightColor = vec4(unshadowed * tint, visibility);
     bounce = helionBounce(surface, normal);
     confidence = vec4(unknown ? 0.0 : smoothstep(0.0, HELION_EDGE_FADE_BLOCKS, edge));
 }
