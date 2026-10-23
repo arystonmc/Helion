@@ -95,7 +95,17 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaEntitySource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaEntitySource.java`
-- Role: `EntitySource` over the vanilla prepared feature frame, including outline, see-through and always-on-top passes.
+- Role: `EntitySource` over the vanilla prepared feature frame, including outline, see-through and always-on-top passes. Runs the solid phase twice when entities go into the geometry buffer: once through `EntityGeometryDraws` in geometry mode, once for the remainder with the after-opaque-features event.
+
+#### EntityGeometryPipelines
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/EntityGeometryPipelines.java`
+- Role: Geometry buffer variants of the vanilla entity and item pipelines (`core/entity`, `core/item`): every required or optional vanilla pipeline with one unblended color target, depth writes, the lightmap sampler and an overlay or `NO_OVERLAY`, without emissive, glint, dissolve or OIT defines, is copied with `toBuilder()`, switched to `helion:entity/geometry` (with `HELION_ITEM_LAYOUT` for the item vertex format) and given the three geometry buffer targets. Registered as optional pipelines; a pipeline without a compiled variant stays vanilla.
+- Depends on: `GeometryBufferPipelines`, `HelionPipelines`.
+
+#### EntityGeometryDraws
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/EntityGeometryDraws.java`
+- Role: Render-thread switch for the solid feature phase: in geometry mode only render type features draw, each with its geometry variant, and draws without one are skipped; in remainder mode exactly those skipped draws and the other features (particles, features of other mods) draw. Read by `PreparedRenderTypeMixin` and `FeatureGroupMixin`.
+- Depends on: `EntityGeometryPipelines`.
 
 #### VanillaAtmosphereSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaAtmosphereSource.java`

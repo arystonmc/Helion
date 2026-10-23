@@ -8,6 +8,7 @@ import org.jspecify.annotations.Nullable;
 public final class GeometryBuffer {
     private @Nullable Targets targets;
     private @Nullable ResourceHandle<RenderTarget> terrainDepth;
+    private boolean entities;
 
     public Optional<Targets> targets() {
         return Optional.ofNullable(targets);
@@ -17,8 +18,16 @@ public final class GeometryBuffer {
         return Optional.ofNullable(terrainDepth);
     }
 
+    public boolean includesEntities() {
+        return entities;
+    }
+
     void publish(Targets written) {
         targets = written;
+    }
+
+    void publishEntities() {
+        entities = true;
     }
 
     void publishTerrainDepth(ResourceHandle<RenderTarget> written) {

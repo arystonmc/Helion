@@ -3,6 +3,7 @@ package com.aryston.helion.render;
 import com.aryston.helion.render.atmosphere.PhysicalSkyStage;
 import com.aryston.helion.render.atmosphere.SkyStage;
 import com.aryston.helion.render.clouds.CloudStage;
+import com.aryston.helion.render.geometry.EntityGeometryStage;
 import com.aryston.helion.render.geometry.GeometryBufferDebugStage;
 import com.aryston.helion.render.geometry.OpaqueGeometryStage;
 import com.aryston.helion.render.geometry.SolidFeatureStage;
@@ -60,6 +61,7 @@ public final class FrameStages {
             new ClearStage(),
             sky(frame, sources, core),
             new OpaqueGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere()),
+            new EntityGeometryStage(sources.entities()),
             new RtxSceneStage(core.rayTracing()),
             new ShadowStage(sources.shadowCasters(), core.shadows()),
             new RtxSunShadowStage(core.rayTracing()),

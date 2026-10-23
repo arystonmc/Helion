@@ -6,6 +6,7 @@ import com.aryston.helion.debug.HelionDebugLog;
 import com.aryston.helion.debug.ParityCheck;
 import com.aryston.helion.debug.GpuProfile;
 import com.aryston.helion.debug.VisualTest;
+import com.aryston.helion.integration.vanilla.EntityGeometryPipelines;
 import com.aryston.helion.integration.vanilla.LevelRenderHook;
 import com.aryston.helion.integration.vanilla.VanillaDynamicLightPipelines;
 import com.aryston.helion.integration.vanilla.VanillaGeometryPipelines;
@@ -80,6 +81,7 @@ public final class ClientEvents {
     private static void onRegisterPipelines(RegisterRenderPipelinesEvent event) {
         HelionPipelines.all().forEach(event::registerOptionalPipeline);
         VanillaGeometryPipelines.all().forEach(event::registerOptionalPipeline);
+        EntityGeometryPipelines.all().forEach(event::registerOptionalPipeline);
         VanillaShadowPipelines.all().forEach(event::registerOptionalPipeline);
         VanillaDynamicLightPipelines.all().forEach(event::registerOptionalPipeline);
     }

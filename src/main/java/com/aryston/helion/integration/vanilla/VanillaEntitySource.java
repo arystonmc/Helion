@@ -29,9 +29,29 @@ final class VanillaEntitySource implements EntitySource {
     }
 
     @Override
+    public boolean supportsGeometryBuffer() {
+        return EntityGeometryPipelines.anyCompiled();
+    }
+
+    @Override
     public void renderSolid(RenderPass pass) {
         Profiler.get().push("renderSolidFeatures");
         featureFrame.executeSolid(pass);
+        Profiler.get().pop();
+        events.afterOpaqueFeatures(pass);
+    }
+
+    @Override
+    public void renderSolidGeometry(RenderPass pass) {
+        Profiler.get().push("renderSolidFeatureGeometry");
+        EntityGeometryDraws.run(EntityGeometryDraws.Mode.GEOMETRY_ONLY, () -> featureFrame.executeSolid(pass));
+        Profiler.get().pop();
+    }
+
+    @Override
+    public void renderSolidRemainder(RenderPass pass) {
+        Profiler.get().push("renderSolidFeatures");
+        EntityGeometryDraws.run(EntityGeometryDraws.Mode.REMAINDER_ONLY, () -> featureFrame.executeSolid(pass));
         Profiler.get().pop();
         events.afterOpaqueFeatures(pass);
     }

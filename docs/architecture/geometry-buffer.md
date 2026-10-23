@@ -20,6 +20,12 @@ Foundation for Helion's own lighting. Off by default (`geometryBuffer.enabled`).
 | 2 `helion:geometry_light` | RGBA8_UNORM | R block light, G sky light (lightmap coordinate / 240), B chunk fade-in visibility, alpha 1 where terrain was drawn |
 | 3 `helion:geometry_albedo` | RGBA8_UNORM | texture color times vertex color (biome tint and vanilla shading), before light and fog; alpha is the vanilla fog amount of the pixel |
 
-Translucent terrain, entities, particles and the sky are not in the geometry buffer yet; their pixels keep alpha 0.
+Solid entities are in the geometry buffer as well (`EntityGeometryStage`, pass `entity_geometry`), so sun shadows, ambient occlusion, deferred and voxel lighting light mobs and players per pixel like the ground they stand on:
+
+- `EntityGeometryPipelines` copies every vanilla `core/entity` and `core/item` pipeline that draws opaque or cutout with depth writes and the lightmap, with `toBuilder()`, and switches it to `helion:entity/geometry`, which repeats the vanilla entity math for target 0 and writes the derivative face normal, the lightmap coordinates (light B is 1, entities have no chunk fade-in) and the shaded texture color as albedo, like terrain. Emissive, glint, dissolve, blended and OIT pipelines stay vanilla.
+- The vanilla solid feature phase runs twice. In the entity geometry pass `FeatureGroupMixin` skips every feature group whose renderer does not draw through render types, and `PreparedRenderTypeMixin` swaps each draw's pipeline for its variant or skips it. `SolidFeatureStage` then runs the phase again in the one-attachment pass after deferred lighting and draws exactly what was skipped, plus the after-opaque-features event. Draws stay in vanilla order within each pass; only opaque draws move between passes, so no blending order changes.
+- The pass runs after the terrain depth copy, so temporal anti-aliasing still sees entities as moving objects.
+
+Translucent terrain, translucent entities, particles and the sky are not in the geometry buffer yet; their pixels keep alpha 0.
 
 Renderpearl in 26.3 has no compute shaders (`ShaderType` only has vertex and fragment), so every geometry buffer consumer is a fragment pass.

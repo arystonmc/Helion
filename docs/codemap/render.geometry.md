@@ -9,9 +9,14 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Role: Prepares fog, chunk sampler, translucent buffers and lighting, then draws opaque terrain and solid features in one pass, as vanilla does. With the geometry buffer on, creates the normal, light and albedo targets (cleared to zero, so alpha 0 marks pixels without terrain), draws only opaque terrain into them and the scene in a four-attachment render pass and publishes them in `GeometryBuffer`; while temporal anti-aliasing runs it also copies the terrain-only depth into `helion:terrain_depth` (R32_FLOAT, pass `terrain_depth`) for the moving object detection of `taa_resolve`; `SolidFeatureStage` draws the rest after deferred lighting.
 - Depends on: `TerrainSource`, `EntitySource`, `AtmosphereSource`.
 
+#### EntityGeometryStage
+- Path: `src/main/java/com/aryston/helion/render/geometry/EntityGeometryStage.java`
+- Role: Only when the geometry buffer was written and `EntitySource.supportsGeometryBuffer()`: draws the solid mobs, players, items and block entities that have a geometry pipeline into the scene and the normal, light and albedo targets in a four-attachment pass (pass `entity_geometry`), after the terrain depth copy, so shadows, ambient occlusion, deferred and voxel lighting light them per pixel like terrain. Republishes the targets and marks them as holding entities.
+- Depends on: `EntitySource`, `GeometryBuffer`.
+
 #### SolidFeatureStage
 - Path: `src/main/java/com/aryston/helion/render/geometry/SolidFeatureStage.java`
-- Role: Only when the geometry buffer was written: fires the after-opaque-blocks event and draws solid entities, block entities and particles into the scene, after deferred lighting so the lighting never paints over them.
+- Role: Only when the geometry buffer was written: fires the after-opaque-blocks event and draws solid entities, block entities and particles into the scene, after deferred lighting so the lighting never paints over them. When `EntityGeometryStage` already drew entities into the geometry buffer it draws only the rest (`renderSolidRemainder`).
 - Depends on: `TerrainSource`, `EntitySource`.
 
 #### TransparentGeometryStage
@@ -25,7 +30,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### GeometryBuffer
 - Path: `src/main/java/com/aryston/helion/render/geometry/GeometryBuffer.java`
-- Role: Per-frame holder of the geometry buffer target handles (normal, light, albedo), empty when the geometry buffer was not written this frame, and of the terrain-only depth copy when temporal anti-aliasing runs.
+- Role: Per-frame holder of the geometry buffer target handles (normal, light, albedo), empty when the geometry buffer was not written this frame, and of the terrain-only depth copy when temporal anti-aliasing runs. `includesEntities()` tells whether `EntityGeometryStage` drew entities into it.
 
 #### GeometryBufferSettings
 - Path: `src/main/java/com/aryston/helion/render/geometry/GeometryBufferSettings.java`
@@ -47,7 +52,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### EntitySource
 - Path: `src/main/java/com/aryston/helion/render/geometry/EntitySource.java`
-- Role: Contract for entities, block entities and particles: lighting setup, solid, translucent, after-terrain and overlay drawing.
+- Role: Contract for entities, block entities and particles: lighting setup, solid, translucent, after-terrain and overlay drawing. `supportsGeometryBuffer`, `renderSolidGeometry` (only draws with a geometry pipeline, into the four-attachment pass) and `renderSolidRemainder` (every other solid draw) split the solid drawing for the geometry buffer.
 
 #### TransparencySource
 - Path: `src/main/java/com/aryston/helion/render/geometry/TransparencySource.java`

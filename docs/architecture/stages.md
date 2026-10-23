@@ -9,6 +9,7 @@ Part of the [Helion architecture](../ARCHITECTURE.md).
 | 1 | clear | `render.scene.ClearStage` | Clears scene color to the fog color and scene depth to the reversed-Z far value |
 | 2 | sky | `render.atmosphere.SkyStage` | Draws the sky through `AtmosphereSource`, or with the physical sky on `render.atmosphere.PhysicalSkyStage`, see Physical Sky below |
 | 3 | opaque_geometry | `render.geometry.OpaqueGeometryStage` | Prepares fog, chunk sampler, translucent buffers and lighting, then draws opaque terrain and solid features. With the geometry buffer on, only opaque terrain, in its own render pass through Helion's terrain shaders, see Geometry Buffer below |
+| 3 | entity_geometry | `render.geometry.EntityGeometryStage` | Only with the geometry buffer on: solid mobs, players, items and block entities with a geometry pipeline, into the scene and the geometry buffer, see Geometry Buffer below |
 | 3a | shadow_map, shadow_mask | `render.shadow.ShadowStage` | Only with shadows, lighting, the geometry buffer and the physical sky light on: draws the cascaded shadow map and the screen space shadow mask, see Shadows below |
 | 3b | deferred_lighting, deferred_shading | `render.lighting.DeferredLightingStage` | Only with lighting and the geometry buffer on: lights terrain in HDR from the geometry buffer, see Deferred Lighting below |
 | 3c | ambient_occlusion | `render.lighting.AmbientOcclusionStage` | Screen space ambient occlusion on the opaque terrain scene, see below. Skipped when disabled or when its shaders failed to compile |

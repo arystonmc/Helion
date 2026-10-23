@@ -18,6 +18,16 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Role: Hands the level projection matrix that `GameRenderer.renderLevel` uploads (camera projection with view bobbing and nausea distortion) to `HelionRenderCore`, unchanged; frames read it as `HelionCamera.levelProjection`.
 - Notes: no event exposes the final level projection, and temporal anti-aliasing must jitter and reproject exactly the matrix the level is drawn with.
 
+#### PreparedRenderTypeMixin
+- Path: `src/main/java/com/aryston/helion/mixin/PreparedRenderTypeMixin.java`
+- Role: In `PreparedRenderType.draw` skips the draws `EntityGeometryDraws` leaves to the other pass and swaps the pipeline for its geometry buffer variant in the entity geometry pass.
+- Notes: No API lets a mod change the pipeline of a prepared render type or skip one draw of the feature dispatcher.
+
+#### FeatureGroupMixin
+- Path: `src/main/java/com/aryston/helion/mixin/FeatureGroupMixin.java`
+- Role: Skips feature groups whose renderer does not draw through render types (particles, features added by other mods) in the entity geometry pass, at the head of `FeatureRenderDispatcher.PreparedGroup.execute`, so they draw in the one-attachment pass as before.
+- Notes: A renderer that sets its own pipeline would fail in a four-attachment pass; no API filters feature groups.
+
 #### EntityRendererMixin
 - Path: `src/main/java/com/aryston/helion/mixin/EntityRendererMixin.java`
 - Role: Skips vanilla's round entity shadow (`EntityRenderer.extractShadow`) while the core is active and drew sun shadows in the last frame, so mobs and items show only their real sun shadow; with Helion off or its shadows off vanilla draws the round shadow as before. Also saves the block scan vanilla runs under every entity for it. Raises the return value of `EntityRenderer.getPackedLightCoords` through `DynamicLightTracker.brighten`, so entities and the first-person hand near a dynamic light are lit by it.

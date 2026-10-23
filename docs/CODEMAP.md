@@ -22,6 +22,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | Bloom threshold in daylight and caves | `AmbientLightTracker`, `ImageResources` |
 | Effect settings per frame | `RenderSettings`, `HelionConfig.renderSettings` |
 | Geometry buffer (normals, light, albedo of terrain) | `OpaqueGeometryStage`, `VanillaGeometryPipelines`, `GeometryBufferPipelines`, `shaders/terrain/`, `shaders/geometry/` |
+| Mobs, players and items in the geometry buffer | `EntityGeometryStage`, `EntityGeometryPipelines`, `EntityGeometryDraws`, `PreparedRenderTypeMixin`, `FeatureGroupMixin`, `shaders/entity/` |
 | Deferred terrain lighting in HDR (block and sky light) | `DeferredLightingStage`, `DeferredLightingResources`, `LightEnvironment`, `shaders/lighting/`, `shaders/include/helion_lighting.glsl` |
 | Temporal anti-aliasing: jitter, history, reprojection | `TemporalStage`, `TemporalResources`, `JitterSequence`, `PreviousView`, `GameRendererMixin`, `shaders/temporal/` |
 | Motion blur: tile velocities and gather | `MotionBlurStage`, `MotionBlurResources` (frame rate normalization), `TemporalResources` (camera reprojection), `shaders/motion_blur/` |
@@ -68,15 +69,15 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | `com.aryston.helion.config` | [config.md](codemap/config.md) | 8 | Config spec, presets, settings screen and share codes. |
 | `com.aryston.helion.debug` | [debug.md](codemap/debug.md) | 13 | Debug overlay, GPU profile, visual test and pixel parity tools. |
 | `com.aryston.helion.integration` | [integration.md](codemap/integration.md) | 5 | Event wiring, key bindings, parity control and the Sodium and Iris guard. |
-| `com.aryston.helion.integration.vanilla` | [integration.vanilla.md](codemap/integration.vanilla.md) | 34 | Bridges to vanilla frame, terrain, entity, shadow caster and dynamic light sources. |
-| `com.aryston.helion.mixin` | [mixin.md](codemap/mixin.md) | 16 | Mixins and accessors on vanilla renderers and, for ray tracing, on the renderpearl Vulkan backend. |
+| `com.aryston.helion.integration.vanilla` | [integration.vanilla.md](codemap/integration.vanilla.md) | 36 | Bridges to vanilla frame, terrain, entity, shadow caster and dynamic light sources. |
+| `com.aryston.helion.mixin` | [mixin.md](codemap/mixin.md) | 18 | Mixins and accessors on vanilla renderers and, for ray tracing, on the renderpearl Vulkan backend. |
 | `com.aryston.helion.render.atmosphere` | [render.atmosphere.md](codemap/render.atmosphere.md) | 14 | Physical sky, atmosphere spectrum, sky light and scene fog. |
 | `com.aryston.helion.render.clouds` | [render.clouds.md](codemap/render.clouds.md) | 9 | Volumetric clouds stage, resources, settings and pipelines. |
 | `com.aryston.helion.render.backend` | [render.backend.md](codemap/render.backend.md) | 1 | GPU device summary. |
 | `com.aryston.helion.render.camera` | [render.camera.md](codemap/render.camera.md) | 2 | Helion camera and frustum. |
 | `com.aryston.helion.render.dof` | [render.dof.md](codemap/render.dof.md) | 4 | Depth of field stage, resources and pipelines. |
 | `com.aryston.helion.render.edge` | [render.edge.md](codemap/render.edge.md) | 2 | Edge smoothing stage and pipelines. |
-| `com.aryston.helion.render.geometry` | [render.geometry.md](codemap/render.geometry.md) | 11 | Opaque, solid feature and transparent geometry stages and the geometry buffer. |
+| `com.aryston.helion.render.geometry` | [render.geometry.md](codemap/render.geometry.md) | 12 | Opaque, entity, solid feature and transparent geometry stages and the geometry buffer. |
 | `com.aryston.helion.render.graph` | [render.graph.md](codemap/render.graph.md) | 6 | Render stages, frame context and targets, render settings, render graph, GPU timings. |
 | `com.aryston.helion.render.lighting` | [render.lighting.md](codemap/render.lighting.md) | 16 | Ambient occlusion, deferred lighting and dynamic lights. |
 | `com.aryston.helion.render.lightshaft` | [render.lightshaft.md](codemap/render.lightshaft.md) | 6 | Sun and moon light shafts through clouds, leaves and block gaps. |

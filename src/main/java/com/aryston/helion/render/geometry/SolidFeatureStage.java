@@ -38,10 +38,11 @@ public final class SolidFeatureStage implements RenderStage {
         FramePass pass = frame.graph().addPass(NAME);
         ResourceHandle<RenderTarget> scene = pass.readsAndWrites(frame.targets().scene());
         frame.targets().updateScene(scene);
-        pass.executes(frame.graph().timed(NAME, () -> render(scene.get())));
+        boolean entitiesInGeometry = frame.geometry().includesEntities();
+        pass.executes(frame.graph().timed(NAME, () -> render(scene.get(), entitiesInGeometry)));
     }
 
-    private void render(RenderTarget target) {
+    private void render(RenderTarget target, boolean entitiesInGeometry) {
         try (RenderPass pass = RenderSystem.getDevice()
                 .createCommandEncoder()
                 .createRenderPass(
@@ -53,7 +54,11 @@ public final class SolidFeatureStage implements RenderStage {
                 )) {
             RenderSystem.bindDefaultUniforms(pass);
             terrain.afterOpaque(pass);
-            entities.renderSolid(pass);
+            if (entitiesInGeometry) {
+                entities.renderSolidRemainder(pass);
+            } else {
+                entities.renderSolid(pass);
+            }
         }
     }
 }

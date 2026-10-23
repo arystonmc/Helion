@@ -104,7 +104,7 @@ Crisper block textures without the halos of ordinary sharpening filters.
 ### Geometry Buffer (Experimental)
 The foundation for Helion's own lighting, sky and shadows.
 
-- Terrain is drawn by Helion's own shaders, which also record the surface direction, block light, sky light and base color of every pixel
+- Terrain, mobs, players, items and block entities are drawn by Helion's own shaders, which also record the surface direction, block light, sky light and base color of every pixel
 - The picture stays exactly like vanilla on its own; Helion's lighting builds on top of it
 - Settings: on or off, and a view that shows each recorded value for checking; off by default while it is experimental
 - Since: 1.0
@@ -189,6 +189,7 @@ Torches, lanterns and every other glowing block light the world in their own col
 - Each light reaches exactly as far and as bright as in vanilla, so caves and bases keep their familiar brightness; around corners a little of the vanilla light stays until bounced light arrives
 - Breaking or placing a block updates the light right away
 - Torches and lanterns held by you, mobs or players, dropped glowing items and burning mobs light the world in their color and cast shadows too
+- Mobs, players and items are lit by the same colored light as the blocks around them, and sun shadows fall on them too
 - Mobs and players near you cast shadows from torches and other lights
 - Works within 64 blocks of you; farther away the vanilla light stays
 - Resource packs can change the light colors (`assets/helion/voxel_light/colors.json`)

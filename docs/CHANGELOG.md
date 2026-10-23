@@ -11,6 +11,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Light shafts: rays of sunlight and moonlight through clouds, leaves and gaps between blocks, with the physical sky
 - Experimental voxel lighting: colored block light with real shadows from walls and pillars, in the Experimental preset
 - Experimental voxel lighting: held and burning lights are colored and cast shadows, and mobs and players cast shadows from lights
+- Mobs, players and items are lit like the blocks around them: colored voxel light, sun shadows and ambient occlusion now reach them
 
 ### Changed
 - Needs NeoForge 26.3.0.95 or newer (NeoForge for Minecraft 26.3 is no longer beta)
