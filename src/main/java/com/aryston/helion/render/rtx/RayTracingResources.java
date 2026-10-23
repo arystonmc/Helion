@@ -70,7 +70,28 @@ public final class RayTracingResources {
             checked = true;
             open();
         }
+        if (scene == null && device != null) {
+            scene = new RtxSectionScene(device, resources);
+        }
         return scene != null;
+    }
+
+    void suspend() {
+        if (scene == null) {
+            return;
+        }
+        scene.close();
+        scene = null;
+        inbox.clear();
+        if (mask != null) {
+            mask.close(resources);
+            mask = null;
+        }
+        if (reflectionImage != null) {
+            reflectionImage.close(resources);
+            reflectionImage = null;
+        }
+        LOGGER.info("Helion ray tracing is paused: its scene was released");
     }
 
     RtxDevice device() {

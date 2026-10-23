@@ -18,8 +18,8 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### RenderSettings
 - Path: `src/main/java/com/aryston/helion/render/graph/RenderSettings.java`
-- Role: Immutable per-frame effect settings. `OFF` is the startup value; `foundation()` turns every effect off for the parity check, deferred lighting, temporal anti-aliasing, the physical sky and shadows included, and voxel lighting, but keeps the geometry buffer (without its view) because it belongs to the core. `screenOnly()` keeps only what works on a finished image (image settings without motion blur) and turns ambient occlusion, the geometry buffer, lighting, temporal anti-aliasing, the physical sky, shadows and volumetric clouds off, for Sodium mode.
-- Depends on: `AmbientOcclusionSettings`, `ImageSettings`, `GeometryBufferSettings`, `DeferredLightingSettings`, `TemporalSettings`, `PhysicalSkySettings`, `ShadowSettings`, `CloudSettings`, `VoxelLightingSettings`.
+- Role: Immutable per-frame effect settings. `OFF` is the startup value; `foundation()` turns every effect off for the parity check, deferred lighting, temporal anti-aliasing, the physical sky and shadows included, and voxel lighting, but keeps the geometry buffer (without its view) because it belongs to the core. `screenOnly()` keeps only what works on a finished image (image settings without motion blur) and turns ambient occlusion, the geometry buffer, lighting, temporal anti-aliasing, the physical sky, shadows and volumetric clouds off, for Sodium mode. Ray tracing is off in `OFF`, `screenOnly()` and `foundation()`.
+- Depends on: `AmbientOcclusionSettings`, `ImageSettings`, `GeometryBufferSettings`, `DeferredLightingSettings`, `TemporalSettings`, `PhysicalSkySettings`, `ShadowSettings`, `CloudSettings`, `VoxelLightingSettings`, `RayTracingSettings`.
 
 #### RenderGraph
 - Path: `src/main/java/com/aryston/helion/render/graph/RenderGraph.java`

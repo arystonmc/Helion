@@ -35,7 +35,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | GPU time of every preset in one run | `GpuProfile`, `HelionPresetSettings` |
 | Sun and moon shadows: cascades, shadow map, mask | `ShadowStage`, `ShadowCascades` (splits, fitting, texel snapping), `ShadowCascadeCache` (which cascades are drawn this frame), `ShadowLight` (sun or moon, horizon fade), `ShadowResources`, `VanillaShadowCasterSource`, `ShadowCasterSections` (incremental cached caster sections), `ShadowCasterChanges`, `ShadowCasterMember`, `RenderSectionMixin`, `VanillaShadowPipelines`, `shaders/shadow/`, `shaders/include/helion_shadow.glsl`, `deferred_shading.fsh` (`HELION_SHADOWS`) |
 | Voxel lighting: volume, light grid, traced colored block light, slice view | `VoxelVolume`, `VoxelVolumeLayout`, `VoxelVolumeWindow`, `VoxelCoarseLevel`, `VoxelLightGrid`, `VoxelLightStage`, `VanillaVoxelSource`, `VoxelBlockClasses`, `VoxelLightColors`, `VoxelSectionChanges`, `LevelExtractorMixin`, `VoxelSliceStage`, `DeferredLightingStage` (`HELION_VOXEL_LIGHT`), `shaders/voxel/`, `voxel_light/colors.json`, `shaders/include/helion_voxel.glsl` |
-| Ray tracing foundation and RTX spike (behind `-Dhelion.rayTracing=true` and `-Dhelion.rtxSpike=true`) | `RayTracingResources`, `RtxSectionScene`, `RtxSceneStage`, `RtxSectionCapture`, `RtxSunShadowStage`, `RtxComputePipeline`, `RtxSpikeResources`, `SectionCompilerMixin`, `VulkanBackendMixin`, `VulkanFeatureSetsMixin`, `shaders/rtx/` |
+| Ray tracing (setting `rayTracing.enabled`, read at startup) and RTX spike (`-Dhelion.rtxSpike=true`) | `RayTracingResources`, `RtxSectionScene`, `RtxSceneStage`, `RtxSectionCapture`, `RtxSunShadowStage`, `RtxComputePipeline`, `RtxSpikeResources`, `SectionCompilerMixin`, `VulkanBackendMixin`, `VulkanFeatureSetsMixin`, `shaders/rtx/` |
 | Shader pipelines | `HelionPipelines`, `AmbientOcclusionPipelines`, `DeferredLightingPipelines`, `TemporalPipelines`, `PhysicalSkyPipelines`, `CloudPipelines`, `LightShaftPipelines`, `ImagePipelines` |
 | How vanilla terrain, entities, sky or OIT are called | `VanillaTerrainSource`, `VanillaEntitySource`, `VanillaAtmosphereSource`, `VanillaTransparencySource` |
 | The rebuilt vanilla `LevelRenderer.render` | `VanillaFrameDriver` |
@@ -69,7 +69,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | `com.aryston.helion` | [root.md](codemap/root.md) | 1 | Entry class with the mod id and logger. |
 | `com.aryston.helion.config` | [config.md](codemap/config.md) | 8 | Config spec, presets, settings screen and share codes. |
 | `com.aryston.helion.debug` | [debug.md](codemap/debug.md) | 13 | Debug overlay, GPU profile, visual test and pixel parity tools. |
-| `com.aryston.helion.integration` | [integration.md](codemap/integration.md) | 5 | Event wiring, key bindings, parity control and the Sodium and Iris guard. |
+| `com.aryston.helion.integration` | [integration.md](codemap/integration.md) | 6 | Event wiring, key bindings, parity control and the Sodium and Iris guard. |
 | `com.aryston.helion.integration.vanilla` | [integration.vanilla.md](codemap/integration.vanilla.md) | 37 | Bridges to vanilla frame, terrain, entity, shadow caster and dynamic light sources. |
 | `com.aryston.helion.mixin` | [mixin.md](codemap/mixin.md) | 18 | Mixins and accessors on vanilla renderers and, for ray tracing, on the renderpearl Vulkan backend. |
 | `com.aryston.helion.render.atmosphere` | [render.atmosphere.md](codemap/render.atmosphere.md) | 15 | Physical sky, atmosphere spectrum, sky light and scene fog. |
@@ -91,7 +91,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | `com.aryston.helion.render.shadow` | [render.shadow.md](codemap/render.shadow.md) | 11 | Shadow cascades, cascade cache, shadow light, casters and pipelines. |
 | `com.aryston.helion.render.water` | [render.water.md](codemap/render.water.md) | 6 | Water surface target, wave normals and the reflection composite. |
 | `com.aryston.helion.render.voxel` | [render.voxel.md](codemap/render.voxel.md) | 26 | Voxel lighting: block volume around the camera, light grid, traced direct block light and the voxel slice view. |
-| `com.aryston.helion.render.rtx` | [render.rtx.md](codemap/render.rtx.md) | 33 | Hardware ray tracing: optional ray query features, VMA device address buffers, per-section bottom levels and a per-frame top level from the real block meshes, raw compute passes, the sun shadow validation view and the RTX spike. |
+| `com.aryston.helion.render.rtx` | [render.rtx.md](codemap/render.rtx.md) | 34 | Hardware ray tracing: optional ray query features, VMA device address buffers, per-section bottom levels and a per-frame top level from the real block meshes, raw compute passes, the sun shadow validation view and the RTX spike. |
 | `com.aryston.helion.render.temporal` | [render.temporal.md](codemap/render.temporal.md) | 11 | Temporal anti-aliasing, jitter, history, previous view and render scale. |
 
 ## Other Files

@@ -6,7 +6,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### WaterSurfaceStage
 - Path: `src/main/java/com/aryston/helion/render/water/WaterSurfaceStage.java`
-- Role: Pass `water_surface` after the solid features, only with `helion.rayTracing` and terrain that supports it: draws the translucent terrain layer again into `helion:water_surface` (RGBA16_FLOAT color cleared to zero plus its own depth), with the opaque scene depth as a sampler, so it holds the nearest translucent surface in front of the opaque scene. Water pixels get the octahedral normal (animated waves on flat surfaces), the thickness to the opaque surface behind and the sky light; other translucent blocks write zero. Publishes the target in `WaterResults`.
+- Role: Pass `water_surface` after the solid features, only when ray tracing and water reflections are on and the terrain supports it: draws the translucent terrain layer again into `helion:water_surface` (RGBA16_FLOAT color cleared to zero plus its own depth), with the opaque scene depth as a sampler, so it holds the nearest translucent surface in front of the opaque scene. Water pixels get the octahedral normal (animated waves on flat surfaces), the thickness to the opaque surface behind and the sky light; other translucent blocks write zero. Publishes the target in `WaterResults`.
 - Depends on: `TerrainSource`, `WaterResources`, `WaterPipelines`, `WaterResults`.
 
 #### WaterReflectionStage

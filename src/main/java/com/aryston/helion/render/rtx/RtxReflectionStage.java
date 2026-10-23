@@ -41,7 +41,7 @@ public final class RtxReflectionStage implements RenderStage {
 
     @Override
     public boolean isActive(FrameContext frame) {
-        if (!RayTracing.ENABLED || frame.water().surface().isEmpty() || !resources.available() || !resources.reflectionAvailable()) {
+        if (!frame.settings().rayTracing().reflectsWater() || frame.water().surface().isEmpty() || !resources.available() || !resources.reflectionAvailable()) {
             return false;
         }
         anchor = resources.scene().anchor();

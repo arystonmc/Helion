@@ -53,7 +53,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### RtxSectionCapture
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/RtxSectionCapture.java`
-- Role: With `helion.rayTracing`, copies the quad positions of the solid and cutout layers of a compiled section (vanilla `Position` floats or Aervium's compact `PositionLight`, 1/2048 block steps from -8) into a `RtxSectionUpdate` on the compile worker when the section is near the camera, reports reset sections, and once per frame passes the scene's recompile requests to `LevelExtractor.setSectionDirty`. Warns once and skips terrain in an unknown vertex format. Next to the positions it packs the surface attributes of every vertex: `UV0`, `Color` and `UV2` of the vanilla block format, or `PackedUV0`, `Color` and the light in `PositionLight.w` of the compact format.
+- Role: When ray tracing was requested at startup, copies the quad positions of the solid and cutout layers of a compiled section (vanilla `Position` floats or Aervium's compact `PositionLight`, 1/2048 block steps from -8) into a `RtxSectionUpdate` on the compile worker when the section is near the camera, reports reset sections, and once per frame passes the scene's recompile requests to `LevelExtractor.setSectionDirty`. Warns once and skips terrain in an unknown vertex format. Next to the positions it packs the surface attributes of every vertex: `UV0`, `Color` and `UV2` of the vanilla block format, or `PackedUV0`, `Color` and the light in `PositionLight.w` of the compact format.
 
 #### VanillaVoxelOccluders
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaVoxelOccluders.java`

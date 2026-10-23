@@ -3,7 +3,6 @@ package com.aryston.helion.render.water;
 import com.aryston.helion.render.geometry.TerrainSource;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
-import com.aryston.helion.render.rtx.RayTracing;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
@@ -35,7 +34,7 @@ public final class WaterSurfaceStage implements RenderStage {
 
     @Override
     public boolean isActive(FrameContext frame) {
-        return RayTracing.ENABLED
+        return frame.settings().rayTracing().reflectsWater()
             && frame.scene().colorFormat() == WaterPipelines.SCENE_COLOR_FORMAT
             && terrain.supportsWaterSurface();
     }

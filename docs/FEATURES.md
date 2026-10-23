@@ -198,6 +198,16 @@ Torches, lanterns and every other glowing block light the world in their own col
 - Settings: Off or Shader, and Low, Medium or High quality on the Lighting page; Shader at Medium in the Experimental preset, Off in every other preset and by default, and Off does no work at all
 - Since: Unreleased
 
+### Ray Tracing (Experimental)
+Uses the ray tracing hardware of RTX and similar graphics cards for what shaders cannot do well.
+
+- Water reflects the blocks around it, the sky, the sun and the moon, with gentle animated waves
+- Deep water turns dark blue-green so reflections stand out, while you still see the bottom of shallow water
+- Reflections come from the blocks within about 64 blocks of you; farther away the sky is reflected
+- Needs a graphics card with hardware ray tracing; on other cards it stays off and nothing changes
+- Settings: on or off (takes effect after restarting the game), and water reflections on or off; on in the Experimental preset, off otherwise
+- Since: Unreleased
+
 ### Sun and Moon Shadows (Experimental)
 Blocks cast real shadows that move with the sun through the day.
 

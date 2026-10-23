@@ -6,7 +6,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### HelionConfig
 - Path: `src/main/java/com/aryston/helion/config/HelionConfig.java`
-- Role: Client config spec: `ENABLED` (render core on at startup), `DEBUG_MODE` (off by default), the `ambientOcclusion` section (enabled, algorithm, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, the `bloom` subsection with enabled, intensity, threshold, debugView, and the `sharpening` subsection with enabled, strength), the `geometryBuffer` section (enabled, view) the `lighting` section (enabled, blockLightIntensity, skyLightIntensity, lightOnlyView), the `temporalAntiAliasing` section (enabled), the `physicalSky` section (enabled), the `shadows` section (enabled, quality) the `dynamicLights` section (enabled, on by default) and the `voxelLighting` section (mode, `OFF` by default). `renderSettings()` turns the config into a `RenderSettings` snapshot. The values and range limits are package visible for `HelionOptions`.
+- Role: Client config spec: `ENABLED` (render core on at startup), `DEBUG_MODE` (off by default), the `ambientOcclusion` section (enabled, algorithm, quality, strength, radius, debugView) and the `image` section (toneMapper, exposure, dither, the `bloom` subsection with enabled, intensity, threshold, debugView, and the `sharpening` subsection with enabled, strength), the `geometryBuffer` section (enabled, view) the `lighting` section (enabled, blockLightIntensity, skyLightIntensity, lightOnlyView), the `temporalAntiAliasing` section (enabled), the `physicalSky` section (enabled), the `shadows` section (enabled, quality) the `dynamicLights` section (enabled, on by default) and the `voxelLighting` section (mode, `OFF` by default). `renderSettings()` turns the config into a `RenderSettings` snapshot. The values and range limits are package visible for `HelionOptions`. The `rayTracing` section holds `enabled` (needs a game restart, because the device features are chosen at startup) and `waterReflections`.
 - Depends on: nothing inside the mod.
 
 #### HelionConfigScreen
@@ -17,11 +17,11 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### HelionOptions
 - Path: `src/main/java/com/aryston/helion/config/HelionOptions.java`
-- Role: One Arkea `ConfigOption` per `HelionConfig` value with icon, short description, the existing config tooltip, BETA tag for experimental features, cost pips, before and after previews, and requirements (shadows need HDR lighting and the physical sky, HDR lighting needs the geometry buffer, every effect needs the render core).
+- Role: One Arkea `ConfigOption` per `HelionConfig` value with icon, short description, the existing config tooltip, BETA tag for experimental features, cost pips, before and after previews, and requirements (shadows need HDR lighting and the physical sky, HDR lighting needs the geometry buffer, every effect needs the render core). Ray tracing (cost 2, BETA, restart marker from the spec) and water reflections (requires ray tracing) sit in their own section on the lighting page.
 
 #### HelionPresets
 - Path: `src/main/java/com/aryston/helion/config/HelionPresets.java`
-- Role: Vanilla, Balanced, Quality and Experimental presets that set the effect switches and quality levels together. Every preset also sets edge smoothing (Quality only), automatic exposure (Experimental only) dynamic lights (all but Vanilla) and voxel lighting (`OFF` in every preset while it is in development); Vanilla also turns motion blur and depth of field off, the other presets leave those two as the player set them.
+- Role: Vanilla, Balanced, Quality and Experimental presets that set the effect switches and quality levels together. Every preset also sets edge smoothing (Quality only), automatic exposure (Experimental only) dynamic lights (all but Vanilla) and voxel lighting (`OFF` in every preset while it is in development); Vanilla also turns motion blur and depth of field off, the other presets leave those two as the player set them. Ray tracing is on only in Experimental; water reflections stay on in every preset.
 
 #### HelionPresetSettings
 - Path: `src/main/java/com/aryston/helion/config/HelionPresetSettings.java`

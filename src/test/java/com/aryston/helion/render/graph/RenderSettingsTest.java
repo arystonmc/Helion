@@ -13,6 +13,7 @@ import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.lighting.DeferredLightingSettings;
 import com.aryston.helion.render.lighting.DynamicLightSettings;
 import com.aryston.helion.render.post.ImageSettings;
+import com.aryston.helion.render.rtx.RayTracingSettings;
 import com.aryston.helion.render.shadow.ShadowQuality;
 import com.aryston.helion.render.shadow.ShadowSettings;
 import com.aryston.helion.render.temporal.RenderScale;
@@ -34,7 +35,8 @@ class RenderSettingsTest {
         new ShadowSettings(true, ShadowQuality.HIGH),
         new DynamicLightSettings(true),
         new CloudSettings(true, CloudQuality.HIGH),
-        new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.HIGH)
+        new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.HIGH),
+        new RayTracingSettings(true, true)
     );
 
     @Test
@@ -51,6 +53,7 @@ class RenderSettingsTest {
         assertFalse(foundation.dynamicLights().enabled());
         assertFalse(foundation.clouds().enabled());
         assertFalse(foundation.voxels().enabled());
+        assertFalse(foundation.rayTracing().enabled());
     }
 
     @Test

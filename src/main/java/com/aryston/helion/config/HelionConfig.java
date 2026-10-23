@@ -23,6 +23,8 @@ import com.aryston.helion.render.shadow.ShadowQuality;
 import com.aryston.helion.render.shadow.ShadowSettings;
 import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalSettings;
+import com.aryston.helion.render.rtx.RayTracing;
+import com.aryston.helion.render.rtx.RayTracingSettings;
 import com.aryston.helion.render.voxel.VoxelLightingMode;
 import com.aryston.helion.render.voxel.VoxelLightingQuality;
 import com.aryston.helion.render.voxel.VoxelLightingSettings;
@@ -90,6 +92,8 @@ public final class HelionConfig {
     static final ModConfigSpec.BooleanValue DYNAMIC_LIGHTS_ENABLED;
     static final ModConfigSpec.EnumValue<VoxelLightingMode> VOXEL_LIGHTING_MODE;
     static final ModConfigSpec.EnumValue<VoxelLightingQuality> VOXEL_LIGHTING_QUALITY;
+    static final ModConfigSpec.BooleanValue RAY_TRACING_ENABLED;
+    static final ModConfigSpec.BooleanValue WATER_REFLECTIONS;
     static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
     static final ModConfigSpec.EnumValue<RenderScale> RENDER_SCALE;
     static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
@@ -223,6 +227,16 @@ public final class HelionConfig {
             .defineEnum("quality", VoxelLightingQuality.MEDIUM);
         BUILDER.pop();
 
+        BUILDER.translation("helion.configuration.rayTracing").push("rayTracing");
+        RAY_TRACING_ENABLED = BUILDER
+            .translation("helion.configuration.rayTracing.enabled")
+            .gameRestart()
+            .define("enabled", false);
+        WATER_REFLECTIONS = BUILDER
+            .translation("helion.configuration.rayTracing.waterReflections")
+            .define("waterReflections", true);
+        BUILDER.pop();
+
         BUILDER.translation("helion.configuration.temporalAntiAliasing").push("temporalAntiAliasing");
         TEMPORAL_ENABLED = BUILDER
             .translation("helion.configuration.temporalAntiAliasing.enabled")
@@ -282,7 +296,8 @@ public final class HelionConfig {
             new ShadowSettings(SHADOWS_ENABLED.getAsBoolean(), SHADOW_QUALITY.get()),
             new DynamicLightSettings(DYNAMIC_LIGHTS_ENABLED.getAsBoolean()),
             new CloudSettings(CLOUDS_ENABLED.getAsBoolean(), CLOUD_QUALITY.get()),
-            new VoxelLightingSettings(VOXEL_LIGHTING_MODE.get(), VOXEL_LIGHTING_QUALITY.get())
+            new VoxelLightingSettings(VOXEL_LIGHTING_MODE.get(), VOXEL_LIGHTING_QUALITY.get()),
+            new RayTracingSettings(RAY_TRACING_ENABLED.getAsBoolean() || RayTracing.forced(), WATER_REFLECTIONS.getAsBoolean())
         );
     }
 

@@ -7,6 +7,7 @@ import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
 import com.aryston.helion.render.lighting.DeferredLightingSettings;
 import com.aryston.helion.render.lighting.DynamicLightSettings;
 import com.aryston.helion.render.post.ImageSettings;
+import com.aryston.helion.render.rtx.RayTracingSettings;
 import com.aryston.helion.render.shadow.ShadowSettings;
 import com.aryston.helion.render.temporal.TemporalSettings;
 import com.aryston.helion.render.voxel.VoxelLightingSettings;
@@ -21,7 +22,8 @@ public record RenderSettings(
     ShadowSettings shadows,
     DynamicLightSettings dynamicLights,
     CloudSettings clouds,
-    VoxelLightingSettings voxels
+    VoxelLightingSettings voxels,
+    RayTracingSettings rayTracing
 ) {
     public static final RenderSettings OFF = new RenderSettings(
         AmbientOcclusionSettings.DISABLED,
@@ -33,7 +35,8 @@ public record RenderSettings(
         ShadowSettings.DISABLED,
         DynamicLightSettings.DISABLED,
         CloudSettings.DISABLED,
-        VoxelLightingSettings.DISABLED
+        VoxelLightingSettings.DISABLED,
+        RayTracingSettings.DISABLED
     );
 
     public RenderSettings screenOnly() {
@@ -47,7 +50,8 @@ public record RenderSettings(
             ShadowSettings.DISABLED,
             DynamicLightSettings.DISABLED,
             CloudSettings.DISABLED,
-            VoxelLightingSettings.DISABLED
+            VoxelLightingSettings.DISABLED,
+            RayTracingSettings.DISABLED
         );
     }
 
@@ -62,7 +66,8 @@ public record RenderSettings(
             ShadowSettings.DISABLED,
             DynamicLightSettings.DISABLED,
             CloudSettings.DISABLED,
-            VoxelLightingSettings.DISABLED
+            VoxelLightingSettings.DISABLED,
+            RayTracingSettings.DISABLED
         );
     }
 }

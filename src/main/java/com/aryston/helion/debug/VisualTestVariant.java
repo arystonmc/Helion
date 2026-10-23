@@ -11,6 +11,7 @@ import com.aryston.helion.render.lighting.DeferredLightingSettings;
 import com.aryston.helion.render.lighting.DynamicLightSettings;
 import com.aryston.helion.render.post.BloomSettings;
 import com.aryston.helion.render.post.ImageSettings;
+import com.aryston.helion.render.rtx.RayTracingSettings;
 import com.aryston.helion.render.post.MotionBlurSettings;
 import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.post.ToneMapper;
@@ -72,7 +73,8 @@ enum VisualTestVariant {
                 showsShadows() ? new ShadowSettings(true, ShadowQuality.MEDIUM) : ShadowSettings.DISABLED,
                 DynamicLightSettings.DISABLED,
                 showsShadows() ? VOLUMETRIC_CLOUDS : CloudSettings.DISABLED,
-                voxelLighting()
+                voxelLighting(),
+                settings.rayTracing()
             );
         }
         if (this == TEMPORAL) {
@@ -86,7 +88,8 @@ enum VisualTestVariant {
                 ShadowSettings.DISABLED,
                 DynamicLightSettings.DISABLED,
                 CloudSettings.DISABLED,
-                VoxelLightingSettings.DISABLED
+                VoxelLightingSettings.DISABLED,
+                RayTracingSettings.DISABLED
             );
         }
         if (this == PHYSICAL_SKY) {
@@ -100,7 +103,8 @@ enum VisualTestVariant {
                 ShadowSettings.DISABLED,
                 DynamicLightSettings.DISABLED,
                 VOLUMETRIC_CLOUDS,
-                VoxelLightingSettings.DISABLED
+                VoxelLightingSettings.DISABLED,
+                RayTracingSettings.DISABLED
             );
         }
         BloomSettings bloom = new BloomSettings(
@@ -119,7 +123,8 @@ enum VisualTestVariant {
             settings.shadows(),
             settings.dynamicLights(),
             settings.clouds(),
-            settings.voxels()
+            settings.voxels(),
+            settings.rayTracing()
         );
     }
 

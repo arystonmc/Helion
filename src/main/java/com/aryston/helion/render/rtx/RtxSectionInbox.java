@@ -30,6 +30,12 @@ public final class RtxSectionInbox {
         return taken;
     }
 
+    void clear() {
+        center = null;
+        updates.clear();
+        recompileRequests.clear();
+    }
+
     void moveTo(RtxSectionPos moved) {
         center = moved;
     }

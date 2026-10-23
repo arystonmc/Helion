@@ -1,5 +1,6 @@
 package com.aryston.helion.mixin;
 
+import com.aryston.helion.integration.RayTracingStartup;
 import com.aryston.helion.render.rtx.RayTracing;
 import com.aryston.helion.render.rtx.RtxFeature;
 import com.mojang.renderpearl.backend.vulkan.VulkanFeatureSets;
@@ -14,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 abstract class VulkanFeatureSetsMixin {
     @Inject(method = "optionalFeatureSets", at = @At("RETURN"))
     private static void helion$requestRayQuery(CallbackInfoReturnable<Set<FeatureSet>> callback) {
+        RayTracingStartup.ensureRequested();
         if (RayTracing.deviceRequested()) {
             callback.getReturnValue().add(RtxFeature.FEATURE_SET);
         }

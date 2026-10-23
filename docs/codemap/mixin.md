@@ -58,7 +58,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VulkanFeatureSetsMixin
 - Path: `src/main/java/com/aryston/helion/mixin/VulkanFeatureSetsMixin.java`
-- Role: Adds `RtxFeature.FEATURE_SET` to `VulkanFeatureSets.optionalFeatureSets()` when `helion.rtxSpike` is set, so renderpearl enables ray queries on devices that support them.
+- Role: Adds `RtxFeature.FEATURE_SET` to `VulkanFeatureSets.optionalFeatureSets()` when ray tracing was asked for at startup (`RayTracingStartup`, the setting or `helion.rayTracing`) or `helion.rtxSpike` is set, so renderpearl enables ray queries on devices that support them.
 - Notes: The device is created by renderpearl before any mod event; the optional feature set list is the only way to add extensions.
 
 #### VulkanConstMixin

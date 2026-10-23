@@ -4,7 +4,7 @@ Part of the [Helion architecture](../ARCHITECTURE.md).
 
 ## Goal
 
-An optional quality layer for cards with hardware ray tracing, on top of voxel lighting, which stays the base for every card (owner decision of 2026-10-22, see the RTX spike in [voxel-lighting.md](voxel-lighting.md)). Users: reflections on water (first version), later glass, shadows of thin shapes and entities, bounced light. Everything is behind `-Dhelion.rayTracing=true`; `-Dhelion.rayTracing.view=true` draws the validation view. Without the property nothing of it loads and the device is created as before.
+An optional quality layer for cards with hardware ray tracing, on top of voxel lighting, which stays the base for every card (owner decision of 2026-10-22, see the RTX spike in [voxel-lighting.md](voxel-lighting.md)). Users: reflections on water (first version), later glass, shadows of thin shapes and entities, bounced light. The experimental setting `rayTracing.enabled` (Lighting page, on in the Experimental preset) turns it on after a restart: the device is created before NeoForge loads the client config, so `RayTracingStartup` reads that line from `helion-client.toml` when the Vulkan mixins first ask, and `-Dhelion.rayTracing=true` forces it for tests. Turning it off in game releases the scene at once (`RayTracingResources.suspend`); turning it on again rebuilds it if the device was created with ray tracing. `rayTracing.waterReflections` switches the water reflections without a restart. `-Dhelion.rayTracing.view=true` runs and draws the sun shadow validation view. With the setting off and no property nothing of it loads and the device is created as before.
 
 ## Device
 
@@ -23,7 +23,7 @@ An optional quality layer for cards with hardware ray tracing, on top of voxel l
 
 ## Validation View
 
-`RtxSunShadowStage` (`rt_sun_shadow`, after the shadow stage while it has a sun or moon) traces every half resolution terrain pixel inside the scene toward the light with `rayQueryEXT` (terminate on first hit, opaque) and writes lit or blocked into a mask; `rt_sun_shadow_view` paints blocked pixels dark blue over the output. Entities are not in the scene, so they are traced but cast nothing.
+`RtxSunShadowStage` (`rt_sun_shadow`, only with `helion.rayTracing.view`, after the shadow stage while it has a sun or moon) traces every half resolution terrain pixel inside the scene toward the light with `rayQueryEXT` (terminate on first hit, opaque) and writes lit or blocked into a mask; `rt_sun_shadow_view` paints blocked pixels dark blue over the output. Entities are not in the scene, so they are traced but cast nothing.
 
 ## Water Reflections
 
@@ -52,6 +52,6 @@ Water reflections (visual test `water_noon`, `water_sunset`, `water_night`, vari
 
 ## Next
 
-1. Water: a settings switch and preset entry, screen space reflections for cards without ray tracing and for water beyond the section scene, refraction of the bottom, glass and ice reflections, reflections seen from under water, sun shadow rays at the hit.
+1. Water: screen space reflections for cards without ray tracing and for water beyond the section scene, refraction of the bottom, glass and ice reflections, reflections seen from under water, sun shadow rays at the hit.
 2. Cutout alpha testing, then entities as their own bottom levels (boxes first).
 3. Compaction of the bottom levels and a radius chosen by memory, and a settings switch (with a preset entry, lesson L-117) once a visible feature uses the scene.

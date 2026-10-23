@@ -27,7 +27,11 @@ public final class RtxSceneStage implements RenderStage {
 
     @Override
     public boolean isActive(FrameContext frame) {
-        return RayTracing.ENABLED && resources.available();
+        if (!frame.settings().rayTracing().active()) {
+            resources.suspend();
+            return false;
+        }
+        return resources.available();
     }
 
     @Override

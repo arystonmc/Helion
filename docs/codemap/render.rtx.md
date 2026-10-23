@@ -4,11 +4,11 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 ### `com.aryston.helion.render.rtx`
 
-Hardware ray tracing on Minecraft's Vulkan device: the ray tracing foundation (`-Dhelion.rayTracing=true`, see `docs/architecture/ray-tracing.md`) and the RTX feasibility spike (`-Dhelion.rtxSpike=true`, see `docs/architecture/voxel-lighting.md`). Without either property no class but the switches loads, the device is created as before and every stage returns in `isActive`. This is the only Helion code that uses renderpearl backend types (`VulkanDevice`, `VulkanCommandEncoder`, `VulkanGpuTextureView`) and raw Vulkan, the exception to invariant 2.
+Hardware ray tracing on Minecraft's Vulkan device: ray tracing with water reflections (experimental setting `rayTracing.enabled`, or `-Dhelion.rayTracing=true`, see `docs/architecture/ray-tracing.md`) and the RTX feasibility spike (`-Dhelion.rtxSpike=true`, see `docs/architecture/voxel-lighting.md`). With the setting off and neither property set, no class but the switches loads, the device is created as before and every stage returns in `isActive`. This is the only Helion code that uses renderpearl backend types (`VulkanDevice`, `VulkanCommandEncoder`, `VulkanGpuTextureView`) and raw Vulkan, the exception to invariant 2.
 
-#### RayTracing, RtxSpike
-- Path: `src/main/java/com/aryston/helion/render/rtx/RayTracing.java`, `src/main/java/com/aryston/helion/render/rtx/RtxSpike.java`
-- Role: The switches: `RayTracing.ENABLED` (`helion.rayTracing`) and `VIEW` (`helion.rayTracing.view`, draws the traced sun shadow), `RtxSpike.ENABLED` (`helion.rtxSpike`) and `VIEW` (`helion.rtxSpike.view`), `RayTracing.deviceRequested()` when either asks for the ray query device features, and the extra texture usage bit `TEXTURE_USAGE_STORAGE` that `VulkanConstMixin` turns into `VK_IMAGE_USAGE_STORAGE_BIT`.
+#### RayTracing, RayTracingSettings, RtxSpike
+- Path: `src/main/java/com/aryston/helion/render/rtx/RayTracing.java`, `src/main/java/com/aryston/helion/render/rtx/RayTracingSettings.java`, `src/main/java/com/aryston/helion/render/rtx/RtxSpike.java`
+- Role: The switches: `RayTracing.requested()` (the `rayTracing.enabled` setting read at startup by `RayTracingStartup`, or forced by `helion.rayTracing`), `forced()`, `VIEW` (`helion.rayTracing.view`, runs and draws the traced sun shadow), the per-frame `RayTracingSettings` (`active()` when the setting is on and the device was requested, `reflectsWater()`), `RtxSpike.ENABLED` (`helion.rtxSpike`) and `VIEW` (`helion.rtxSpike.view`), `RayTracing.deviceRequested()` when either asks for the ray query device features, and the extra texture usage bit `TEXTURE_USAGE_STORAGE` that `VulkanConstMixin` turns into `VK_IMAGE_USAGE_STORAGE_BIT`.
 
 #### RtxFeature
 - Path: `src/main/java/com/aryston/helion/render/rtx/RtxFeature.java`
@@ -49,7 +49,7 @@ Hardware ray tracing on Minecraft's Vulkan device: the ray tracing foundation (`
 
 #### RayTracingResources, RtxSunShadowStage
 - Path: `src/main/java/com/aryston/helion/render/rtx/RayTracingResources.java`, `src/main/java/com/aryston/helion/render/rtx/RtxSunShadowStage.java`
-- Role: Owned by `HelionRenderCore`. Opens the device, the section scene and the sun shadow pipeline on first use (logs once and stays off when the device has no ray queries) and logs the scene size, CPU and GPU times when the scene first completes and every 600 frames as `Helion ray tracing`. The validation pass `rt_sun_shadow` (after the shadow stage, while it has a light) traces every half resolution pixel within the scene toward the sun or moon with `rtx/sun_shadow.csh` and writes lit or blocked into the mask. It also creates the reflection pipeline (`rtx/reflection.csh`; when it does not compile only reflections stay off), the full resolution reflection image and its push constants.
+- Role: Owned by `HelionRenderCore`. Opens the device, the section scene and the sun shadow pipeline on first use (logs once and stays off when the device has no ray queries) and logs the scene size, CPU and GPU times when the scene first completes and every 600 frames as `Helion ray tracing`. The validation pass `rt_sun_shadow` (after the shadow stage, while it has a light) traces every half resolution pixel within the scene toward the sun or moon with `rtx/sun_shadow.csh` and writes lit or blocked into the mask. It also creates the reflection pipeline (`rtx/reflection.csh`; when it does not compile only reflections stay off), the full resolution reflection image and its push constants. `suspend()` releases the scene and images when the setting is turned off during a session (`RtxSceneStage` calls it every inactive frame) and the next active frame builds a new scene; the device features stay.
 
 #### RtxReflectionStage
 - Path: `src/main/java/com/aryston/helion/render/rtx/RtxReflectionStage.java`

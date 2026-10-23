@@ -1,5 +1,6 @@
 package com.aryston.helion.mixin;
 
+import com.aryston.helion.integration.RayTracingStartup;
 import com.aryston.helion.render.rtx.RayTracing;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.renderpearl.backend.vulkan.VulkanBackend;
@@ -17,6 +18,7 @@ abstract class VulkanBackendMixin {
         at = @At(value = "INVOKE", target = "Lorg/lwjgl/util/vma/Vma;vmaCreateAllocator(Lorg/lwjgl/util/vma/VmaAllocatorCreateInfo;Lorg/lwjgl/PointerBuffer;)I")
     )
     private static VmaAllocatorCreateInfo helion$allowDeviceAddresses(VmaAllocatorCreateInfo info, @Local(argsOnly = true) VkDevice device) {
+        RayTracingStartup.ensureRequested();
         if (RayTracing.deviceRequested() && device.getCapabilities().VK_KHR_acceleration_structure) {
             info.flags(info.flags() | Vma.VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT);
         }

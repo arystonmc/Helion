@@ -47,7 +47,7 @@ public final class RtxSectionCapture {
     }
 
     public static void captured(SectionPos position, SectionCompiler.Results results) {
-        if (!RayTracing.ENABLED) {
+        if (!RayTracing.requested()) {
             return;
         }
         RtxSectionInbox inbox = HelionRenderCore.get().rayTracing().inbox();
@@ -77,14 +77,14 @@ public final class RtxSectionCapture {
     }
 
     public static void removed(long sectionNode) {
-        if (RayTracing.ENABLED) {
+        if (RayTracing.requested()) {
             HelionRenderCore.get().rayTracing().inbox()
                 .offer(RtxSectionUpdate.removed(SectionPos.x(sectionNode), SectionPos.y(sectionNode), SectionPos.z(sectionNode)));
         }
     }
 
     static void requestRecompiles() {
-        if (!RayTracing.ENABLED) {
+        if (!RayTracing.requested()) {
             return;
         }
         for (RtxSectionPos request : HelionRenderCore.get().rayTracing().inbox().takeRecompileRequests()) {

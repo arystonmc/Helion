@@ -42,7 +42,7 @@ public final class RtxSunShadowStage implements RenderStage {
 
     @Override
     public boolean isActive(FrameContext frame) {
-        if (!RayTracing.ENABLED || frame.geometry().targets().isEmpty() || !resources.available()) {
+        if (!RayTracing.VIEW || !frame.settings().rayTracing().active() || frame.geometry().targets().isEmpty() || !resources.available()) {
             return false;
         }
         Optional<ShadowResults.Shadows> shadows = frame.shadows().shadows();
