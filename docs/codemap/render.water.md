@@ -6,17 +6,22 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### WaterSurfaceStage
 - Path: `src/main/java/com/aryston/helion/render/water/WaterSurfaceStage.java`
-- Role: Pass `water_surface` after the solid features, only when ray tracing and water reflections are on and the terrain supports it: draws the translucent terrain layer again into `helion:water_surface` (RGBA16_FLOAT color cleared to zero plus its own depth), with the opaque scene depth as a sampler, so it holds the nearest translucent surface in front of the opaque scene. Water pixels get the octahedral normal (animated waves on flat surfaces), the thickness to the opaque surface behind and the sky light; other translucent blocks write zero. Publishes the target in `WaterResults`.
+- Role: Pass `water_surface` after the solid features, only when ray traced water reflections or screen space reflections are on and the terrain supports it: draws the translucent terrain layer again into `helion:water_surface` (RGBA16_FLOAT color cleared to zero plus its own depth), with the opaque scene depth as a sampler, so it holds the nearest translucent surface in front of the opaque scene. Water pixels get the octahedral normal (animated waves on flat surfaces), the thickness to the opaque surface behind and the sky light; other translucent blocks write zero. Publishes the target in `WaterResults`.
 - Depends on: `TerrainSource`, `WaterResources`, `WaterPipelines`, `WaterResults`.
+
+#### ScreenReflectionStage, ReflectionSettings
+- Path: `src/main/java/com/aryston/helion/render/water/ScreenReflectionStage.java`, `src/main/java/com/aryston/helion/render/water/ReflectionSettings.java`
+- Role: Screen space reflections (`reflections.screenSpace`, on in the Experimental preset). Pass `ssr` after the water surface: for every flat water pixel marches the reflected view ray in camera relative world space (48 growing steps up to about 190 blocks, 5 refinement steps) against the depth of the lit opaque scene, and writes the scene color at the hit with an edge fade as alpha into `helion:screen_reflection` (RGBA16_FLOAT, full resolution). Mobs and players are in the opaque scene, so they show in the water when they are on screen. Publishes the target in `WaterResults`.
+- Depends on: `WaterResources`, `WaterPipelines`, `WaterResults`, `FullscreenPass`.
 
 #### WaterReflectionStage
 - Path: `src/main/java/com/aryston/helion/render/water/WaterReflectionStage.java`
-- Role: When the water surface and traced reflections exist, publishes a `SceneReflectionPass` that `TransparentGeometryStage` draws over the scene after the translucent geometry: the reflection (or the physical sky in the reflected direction with sun and moon, or the vanilla fog color) weighted by Schlick Fresnel, over water darkened by its thickness toward a scattering color lit by the sky.
+- Role: When the water surface and traced or screen space reflections exist, publishes a `SceneReflectionPass` that `TransparentGeometryStage` draws over the scene after the translucent geometry: the screen space reflection where it hit, else the traced reflection (or the physical sky in the reflected direction with sun and moon, or the vanilla fog color) weighted by Schlick Fresnel, over water darkened by its thickness toward a scattering color lit by the sky.
 - Depends on: `WaterResources`, `WaterPipelines`, `SceneSkyColor`, `FullscreenPass`.
 
 #### WaterPipelines
 - Path: `src/main/java/com/aryston/helion/render/water/WaterPipelines.java`
-- Role: Water formats, uniform and sampler names, and the two composite pipelines (`water/reflection` with the vanilla fog and `water/reflection_physical_sky` with the sky color bindings), blended with premultiplied alpha.
+- Role: Water formats, uniform and sampler names, the screen space reflection pipeline and the two composite pipelines (`water/reflection` with the vanilla fog and `water/reflection_physical_sky` with the sky color bindings), blended with premultiplied alpha.
 - Depends on: `HelionPipelines`, `PhysicalSkyPipelines`.
 
 #### WaterResources

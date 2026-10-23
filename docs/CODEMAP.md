@@ -22,7 +22,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | Bloom threshold in daylight and caves | `AmbientLightTracker`, `ImageResources` |
 | Effect settings per frame | `RenderSettings`, `HelionConfig.renderSettings` |
 | Geometry buffer (normals, light, albedo of terrain) | `OpaqueGeometryStage`, `VanillaGeometryPipelines`, `GeometryBufferPipelines`, `shaders/terrain/`, `shaders/geometry/` |
-| Water surface and reflections | `WaterSurfaceStage`, `WaterReflectionStage`, `RtxReflectionStage`, `VanillaWaterPipelines`, `shaders/water/`, `shaders/rtx/reflection.csh` |
+| Water surface and reflections | `WaterSurfaceStage`, `ScreenReflectionStage`, `WaterReflectionStage`, `RtxReflectionStage`, `VanillaWaterPipelines`, `shaders/water/`, `shaders/rtx/reflection.csh` |
 | Mobs, players and items in the geometry buffer | `EntityGeometryStage`, `EntityGeometryPipelines`, `EntityGeometryDraws`, `PreparedRenderTypeMixin`, `FeatureGroupMixin`, `shaders/entity/` |
 | Deferred terrain lighting in HDR (block and sky light) | `DeferredLightingStage`, `DeferredLightingResources`, `LightEnvironment`, `shaders/lighting/`, `shaders/include/helion_lighting.glsl` |
 | Temporal anti-aliasing: jitter, history, reprojection | `TemporalStage`, `TemporalResources`, `JitterSequence`, `PreviousView`, `GameRendererMixin`, `shaders/temporal/` |
@@ -89,7 +89,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | `com.aryston.helion.render.scene` | [render.scene.md](codemap/render.scene.md) | 2 | Scene snapshot and clear stage. |
 | `com.aryston.helion.render.shader` | [render.shader.md](codemap/render.shader.md) | 2 | Shared pipelines and the fullscreen pass. |
 | `com.aryston.helion.render.shadow` | [render.shadow.md](codemap/render.shadow.md) | 12 | Shadow cascades, cascade cache, shadow light, casters and pipelines. |
-| `com.aryston.helion.render.water` | [render.water.md](codemap/render.water.md) | 6 | Water surface target, wave normals and the reflection composite. |
+| `com.aryston.helion.render.water` | [render.water.md](codemap/render.water.md) | 8 | Water surface target, wave normals, screen space reflections and the reflection composite. |
 | `com.aryston.helion.render.voxel` | [render.voxel.md](codemap/render.voxel.md) | 28 | Voxel lighting: block volume around the camera, light grid, traced direct block light and the voxel slice view. |
 | `com.aryston.helion.render.rtx` | [render.rtx.md](codemap/render.rtx.md) | 36 | Hardware ray tracing: optional ray query features, VMA device address buffers, per-section bottom levels and a per-frame top level from the real block meshes, raw compute passes, the sun shadow validation view and the RTX spike. |
 | `com.aryston.helion.render.temporal` | [render.temporal.md](codemap/render.temporal.md) | 11 | Temporal anti-aliasing, jitter, history, previous view and render scale. |

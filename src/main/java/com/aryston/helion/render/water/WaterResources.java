@@ -28,11 +28,22 @@ public final class WaterResources {
     private static final int REFLECTION_SIZE = new Std140SizeCalculator()
         .putMat4f()
         .putFloat()
+        .putFloat()
+        .putFloat()
         .get();
+    private static final String SCREEN_LABEL = "Helion Screen Reflection Settings";
+    private static final int SCREEN_SIZE = new Std140SizeCalculator()
+        .putMat4f()
+        .putMat4f()
+        .get();
+    private static final float PRESENT = 1.0F;
+    private static final float ABSENT = 0.0F;
 
     private final GpuResources resources;
     private @Nullable UniformRing surfaceUniforms;
     private @Nullable UniformRing reflectionUniforms;
+    private @Nullable UniformRing screenUniforms;
+    private boolean missingScreenPipelineReported;
     private boolean missingPipelinesReported;
 
     public WaterResources(GpuResources resources) {
@@ -58,13 +69,39 @@ public final class WaterResources {
             .putFloat(WAVE_STRENGTH));
     }
 
-    GpuBuffer reflectionUniforms(HelionCamera camera) {
+    Optional<CompiledRenderPipeline> screenReflectionProgram() {
+        Optional<CompiledRenderPipeline> compiled = HelionPipelines.compiled(WaterPipelines.SCREEN_REFLECTION);
+        if (compiled.isEmpty() && !missingScreenPipelineReported) {
+            missingScreenPipelineReported = true;
+            LOGGER.warn("Helion screen space reflections are skipped because their shader could not be compiled");
+        }
+        return compiled;
+    }
+
+    GpuBuffer reflectionUniforms(HelionCamera camera, boolean traced, boolean screen) {
         if (reflectionUniforms == null) {
             reflectionUniforms = new UniformRing(REFLECTION_LABEL, REFLECTION_SIZE, resources);
         }
         return reflectionUniforms.write(builder -> builder
             .putMat4f(camera.levelViewProjection().invert())
-            .putFloat(REFLECTION_STRENGTH));
+            .putFloat(REFLECTION_STRENGTH)
+            .putFloat(traced ? PRESENT : ABSENT)
+            .putFloat(screen ? PRESENT : ABSENT));
+    }
+
+    GpuBuffer screenUniforms(HelionCamera camera) {
+        if (screenUniforms == null) {
+            screenUniforms = new UniformRing(SCREEN_LABEL, SCREEN_SIZE, resources);
+        }
+        return screenUniforms.write(builder -> builder
+            .putMat4f(camera.levelViewProjection())
+            .putMat4f(camera.levelViewProjection().invert()));
+    }
+
+    void finishScreen() {
+        if (screenUniforms != null) {
+            screenUniforms.rotate();
+        }
     }
 
     void finishSurface() {
@@ -86,7 +123,11 @@ public final class WaterResources {
         if (reflectionUniforms != null) {
             reflectionUniforms.close();
         }
+        if (screenUniforms != null) {
+            screenUniforms.close();
+        }
         surfaceUniforms = null;
         reflectionUniforms = null;
+        screenUniforms = null;
     }
 }

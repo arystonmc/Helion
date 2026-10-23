@@ -22,6 +22,7 @@ import com.aryston.helion.render.temporal.TemporalSettings;
 import com.aryston.helion.render.voxel.VoxelLightingMode;
 import com.aryston.helion.render.voxel.VoxelLightingQuality;
 import com.aryston.helion.render.voxel.VoxelLightingSettings;
+import com.aryston.helion.render.water.ReflectionSettings;
 import java.util.Locale;
 
 enum VisualTestVariant {
@@ -39,6 +40,8 @@ enum VisualTestVariant {
     VOXEL_LIGHT(true, ToneMapper.NEUTRAL, false),
     VOXEL_LIGHT_LOW(true, ToneMapper.NEUTRAL, false),
     VOXEL_BOUNCE_OFF(true, ToneMapper.NEUTRAL, false),
+    SCREEN_REFLECTIONS(true, ToneMapper.NEUTRAL, false),
+    HYBRID_REFLECTIONS(true, ToneMapper.NEUTRAL, false),
     PARITY(true, ToneMapper.NEUTRAL, false);
 
     private static final CloudSettings VOLUMETRIC_CLOUDS = new CloudSettings(true, CloudQuality.MEDIUM);
@@ -75,7 +78,8 @@ enum VisualTestVariant {
                 DynamicLightSettings.DISABLED,
                 showsShadows() ? VOLUMETRIC_CLOUDS : CloudSettings.DISABLED,
                 voxelLighting(),
-                settings.rayTracing()
+                this == SCREEN_REFLECTIONS ? RayTracingSettings.DISABLED : settings.rayTracing(),
+                reflections(settings)
             );
         }
         if (this == TEMPORAL) {
@@ -90,7 +94,8 @@ enum VisualTestVariant {
                 DynamicLightSettings.DISABLED,
                 CloudSettings.DISABLED,
                 VoxelLightingSettings.DISABLED,
-                RayTracingSettings.DISABLED
+                RayTracingSettings.DISABLED,
+                ReflectionSettings.DISABLED
             );
         }
         if (this == PHYSICAL_SKY) {
@@ -105,7 +110,8 @@ enum VisualTestVariant {
                 DynamicLightSettings.DISABLED,
                 VOLUMETRIC_CLOUDS,
                 VoxelLightingSettings.DISABLED,
-                RayTracingSettings.DISABLED
+                RayTracingSettings.DISABLED,
+                ReflectionSettings.DISABLED
             );
         }
         BloomSettings bloom = new BloomSettings(
@@ -125,7 +131,8 @@ enum VisualTestVariant {
             settings.dynamicLights(),
             settings.clouds(),
             settings.voxels(),
-            settings.rayTracing()
+            settings.rayTracing(),
+            settings.reflections()
         );
     }
 
@@ -146,8 +153,12 @@ enum VisualTestVariant {
         return VoxelLightingSettings.DISABLED;
     }
 
+    private ReflectionSettings reflections(RenderSettings settings) {
+        return this == SCREEN_REFLECTIONS || this == HYBRID_REFLECTIONS ? new ReflectionSettings(true) : settings.reflections();
+    }
+
     private boolean showsShadows() {
-        return this == SHADOWS || this == SHADOW_LIGHT;
+        return this == SHADOWS || this == SHADOW_LIGHT || this == SCREEN_REFLECTIONS || this == HYBRID_REFLECTIONS;
     }
 
     boolean comparesWithVanilla() {
