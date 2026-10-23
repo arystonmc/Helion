@@ -1,6 +1,7 @@
 package com.aryston.helion.integration.vanilla;
 
 import com.aryston.helion.render.geometry.GlossyCells;
+import com.mojang.logging.LogUtils;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.util.List;
 import net.minecraft.client.renderer.texture.TextureAtlas;
@@ -8,6 +9,7 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
 
 final class VanillaGlossyCells {
     private static final int BASE_LEVEL = 0;
@@ -17,6 +19,8 @@ final class VanillaGlossyCells {
     private static final List<String> GLOSSY_PARTS = List.of("quartz", "prismarine", "glass");
     private static final List<String> GLOSSY_SUFFIXES = List.of("glazed_terracotta", "ice", "smooth_stone");
     private static final String ORE = "ore";
+
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     private static @Nullable GlossyCells cached;
 
@@ -34,12 +38,27 @@ final class VanillaGlossyCells {
         byte[] cells = new byte[width * height];
         for (Identifier block : BuiltInRegistries.BLOCK.keySet()) {
             if (glossy(block.getPath())) {
-                FACE_SUFFIXES.forEach(suffix -> mark(atlas, block.withPath(TEXTURE_FOLDER + block.getPath() + suffix), cells, width));
+                FACE_SUFFIXES.forEach(suffix -> mark(atlas, block.withPath(TEXTURE_FOLDER + block.getPath() + suffix), cells, width, height));
             }
         }
         GlossyCells built = new GlossyCells(view, width, height, cells);
+        LOGGER.info("Helion glossy mask: {} of {} block atlas cells", count(cells), cells.length);
         cached = built;
         return built;
+    }
+
+    private static int count(byte[] cells) {
+        int marked = 0;
+        for (byte cell : cells) {
+            if (cell == GlossyCells.GLOSSY) {
+                marked++;
+            }
+        }
+        return marked;
+    }
+
+    private static int cell(float coordinate, int cells) {
+        return Math.clamp(Math.round(coordinate * cells), 0, cells - 1);
     }
 
     private static boolean glossy(String path) {
@@ -51,15 +70,15 @@ final class VanillaGlossyCells {
             || GLOSSY_SUFFIXES.stream().anyMatch(path::endsWith);
     }
 
-    private static void mark(TextureAtlas atlas, Identifier texture, byte[] cells, int width) {
+    private static void mark(TextureAtlas atlas, Identifier texture, byte[] cells, int width, int height) {
         TextureAtlasSprite sprite = atlas.getSprite(texture);
         if (sprite == atlas.missingSprite()) {
             return;
         }
-        int firstX = sprite.getX() / GlossyCells.CELL_SIZE;
-        int firstY = sprite.getY() / GlossyCells.CELL_SIZE;
-        int lastX = (sprite.getX() + sprite.contents().width() - 1) / GlossyCells.CELL_SIZE;
-        int lastY = (sprite.getY() + sprite.contents().height() - 1) / GlossyCells.CELL_SIZE;
+        int firstX = cell(sprite.getU0(), width);
+        int firstY = cell(sprite.getV0(), height);
+        int lastX = Math.max(firstX, cell(sprite.getU1(), width) - 1);
+        int lastY = Math.max(firstY, cell(sprite.getV1(), height) - 1);
         for (int y = firstY; y <= lastY; y++) {
             for (int x = firstX; x <= lastX; x++) {
                 cells[y * width + x] = GlossyCells.GLOSSY;

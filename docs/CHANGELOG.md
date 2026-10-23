@@ -33,6 +33,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental voxel lighting: several lights right behind a wall no longer shine through it
 - Experimental voxel lighting: bounced light no longer makes rooms next to bright lights brighter than vanilla
 - Experimental voxel lighting: High quality costs about a third more than Medium instead of three to four times as much
+- Plain glass and polished blocks really reflect now, with a soft sky sheen when nothing else is reflected
 
 ## [1.0] - 2026-10-21
 
