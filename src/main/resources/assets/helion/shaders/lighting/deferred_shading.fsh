@@ -28,7 +28,7 @@ const float HELION_DISPLAY_LIGHT_LIMIT = 1.0;
 
 #ifdef HELION_VOXEL_LIGHT
 const float HELION_VOXEL_VANILLA_FLOOR = 0.3;
-const float HELION_BOUNCE_OVER_DIRECT = 0.2;
+const float HELION_BOUNCE_OVER_DIRECT = 0.1;
 
 struct HelionVoxelBlock {
     vec3 unshadowed;

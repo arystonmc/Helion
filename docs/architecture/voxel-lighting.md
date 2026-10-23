@@ -4,7 +4,7 @@ Part of the [Helion architecture](../ARCHITECTURE.md).
 
 ## Voxel Lighting
 
-Experimental, off by default (`voxelLighting.mode`: `OFF` or `SHADER`; an RTX layer comes later, see the spike below; `voxelLighting.quality` Low, Medium, High). `SHADER` at Medium is in the Experimental preset, every other preset sets `OFF`. Needs HDR lighting. Block light is traced through a block volume around the camera instead of taken from the vanilla light level, so it takes the color of its source and solid blocks cast shadows. Held and entity lights (Phase 3) and bounced light (Phase 5) use the same volume; reflections come later. With `OFF` no texture exists, nothing is read and the change hooks return after one volatile read.
+Experimental, off by default (`voxelLighting.mode`: `OFF` or `SHADER`; an RTX layer comes later, see the [RTX feasibility spike](voxel-lighting-rtx-spike.md); `voxelLighting.quality` Low, Medium, High). `SHADER` at Medium is in the Experimental preset, every other preset sets `OFF`. Needs HDR lighting. Block light is traced through a block volume around the camera instead of taken from the vanilla light level, so it takes the color of its source and solid blocks cast shadows. Held and entity lights (Phase 3) and bounced light (Phase 5) use the same volume; reflections come later. With `OFF` no texture exists, nothing is read and the change hooks return after one volatile read.
 
 ## Renderpearl API Findings (Minecraft 26.3)
 
@@ -46,7 +46,7 @@ Checked in the extracted `minecraft-patched-26.3.0.51-beta-sources.jar` (renderp
 
 1. `voxel_light` runs right after the shadow stage and `voxel_probes`, at half resolution (Low, Medium) or full (High). Per terrain pixel it takes the point half a block in front of the surface, the block vanilla reads the light of.
 2. Every light of its grid cell gives `level - taxicab distance`, the vanilla falloff of one level per block, and the vanilla level brightness curve (`helion_light_level.glsl`) times the light color. The dynamic lights of the frame (`DynamicLightTracker`: held, dropped and burning sources, at most 16, in the color of their block from `colors.json`) join them with `level - distance`, the falloff the dynamic terrain light uses.
-3. The brightest is traced first (3D grid walk, coarse level first) toward the face of the light block that faces the pixel and has no light-blocking neighbor, so a lava pool in the floor lights the floor. A dynamic light is traced straight to its point. Every ray is also tested against the boxes of up to 8 living entities within 24 blocks (every box is tested by every traced ray: 32 boxes took the pass from 0.17 to 0.29 ms at Medium, 8 boxes cost 0.18 ms; lesson L-152) (`VanillaVoxelOccluders`, interpolated, without the camera entity in first person and invisible or spectating entities); a box that holds the light end is skipped, so a mob does not shadow its own torch. If it is blocked the next brightest is traced, up to 3 (Low), 6 (Medium) or 12 (High) lights; when the first visible light is found the remaining dimmer lights do not matter, and when every traced light is blocked the untraced ones count as blocked too, so a cluster of lights behind a wall cannot shine through it. Like vanilla, the brightest visible light sets the level; the color is the blend of all lights by their share.
+3. The brightest is traced first (3D grid walk, coarse level first) toward the face of the light block that faces the pixel and has no light-blocking neighbor, so a lava pool in the floor lights the floor. A dynamic light is traced straight to its point. Every ray is also tested against the boxes of up to 8 living entities within 24 blocks (every box is tested by every traced ray: 32 boxes took the pass from 0.17 to 0.29 ms at Medium, 8 boxes cost 0.18 ms; lesson L-152) (`VanillaVoxelOccluders`, interpolated, without the camera entity in first person and invisible or spectating entities); a box that holds the light end is skipped, so a mob does not shadow its own torch. If it is blocked the next brightest is traced, up to 3 (Low), 6 (Medium) or 8 (High) lights; when the first visible light is found the remaining dimmer lights do not matter, and when every traced light is blocked the untraced ones count as blocked too, so a cluster of lights behind a wall cannot shine through it. Like vanilla, the brightest visible light sets the level; the color is the blend of all lights by their share.
 4. It writes the unshadowed colored light and the visible share (RGBA16_FLOAT) and a confidence (R8): 0 for unknown slots, fading to 0 over the last 16 blocks before the volume edge.
 5. `deferred_shading` with `HELION_VOXEL_LIGHT` samples both bilinearly and replaces the vanilla block term by `max(max(traced, bounced) + 20 % of bounced, floor)` mixed with vanilla by the confidence. The floor is 30 % of vanilla with bounced light off and 0 with it on: it stood in for light around corners, which the bounce now carries (the alpha of the bounce target scales it, so the floor needs no extra pipeline variant). The shadow is applied after the vanilla brightness curve and the display clamp, as the ratio of the displayed light with and without the blocked share (lessons L-030, L-146), so it hardly matters at noon.
 6. Fixed leak (2026-10-23): untraced lights used to count as visible, so with 3 or more lights right behind a one block wall the wall face in the dark room lit up. Scene `wall_leak` (two closed rooms, 4 lights against the 1 block wall, camera in the dark room): luminance 44.5 before, 2.1 after (vanilla 4.1); with bounced light 206 before, 2.1 after. Cost: `voxel_light` 0.07 to 0.14 ms in fully shadowed rooms without bounce (0.08 ms in the open night scene), 0.16 to 0.19 ms with bounce; `voxel_probes` 0.25 to 0.29 ms.
@@ -60,7 +60,7 @@ Setting `voxelLighting.bounce` (Bounced Light, on by default and in every preset
 2. Probes: 32 x 32 x 32, one per 4 x 4 x 4 cell of the volume, stored as L1 spherical harmonics per color channel plus a placement in four RGBA16_FLOAT 256 x 128 targets, two sets (current and previous, 2 MiB). `voxel_probes` places each probe at the block 2, 2, 2 of its cell, or, when that block stops light, at the free block of the cell nearest to it (none free: the probe is off). Corridors narrower than the probe spacing therefore always hold probes.
 3. Per frame each probe traces 4 (Low), 8 (Medium) or 16 (High) Fibonacci rays, rotated randomly per frame, up to 24 blocks through the volume. A hit is lit by the block lights of its light grid cell (shadow rays to the brightest and, when it is blocked, the next one; if both are blocked the hit gets no direct light) plus the bounced light of the probe that owns the hit cell in the previous set (one visibility ray, capped at 1), times the block's map color. Hits feed the harmonics; the result is blended with the previous set (90 % history, shifted when the volume moves), so light keeps bouncing over frames.
 4. Gather: `voxel_light` takes the 8 probes around the pixel (trilinear weights times a facing term), drops probes that are off or not visible from the surface (one grid walk each, so no light leaks through walls), evaluates the harmonics with the pixel normal and writes `4.2 x` the result into the bounce target. The gain makes up for the single scattering and the low map colors: vanilla light floods around corners at one level per block.
-5. Deferred shading adds bounced light only up to the vanilla brightness of the pixel: the fill is the bounce scaled to at most the luminance gap between vanilla and the direct light, plus 20 % of the bounce for color. Directly lit surfaces keep their vanilla brightness, shaded sides, ceilings and corners fill in, and a small room next to bright lights cannot be flooded past vanilla (gain 4.2 alone gave 3 to 5 times vanilla there). Final numbers (2026-10-23, after the leak fix and tinting): hidden corner floor 99 % of vanilla, whole frame 82 %; open night scene 90 %; noon identical.
+5. Deferred shading adds bounced light only up to the vanilla brightness of the pixel: the fill is the bounce scaled to at most the luminance gap between vanilla and the direct light, plus 10 % of the bounce for color (20 % made the grass next to a torch 27 % brighter than vanilla). Directly lit surfaces keep their vanilla brightness, shaded sides, ceilings and corners fill in, and a small room next to bright lights cannot be flooded past vanilla (gain 4.2 alone gave 3 to 5 times vanilla there). Final numbers (2026-10-23, after the leak fix and tinting): hidden corner floor 99 % of vanilla, whole frame 82 %; open night scene 90 %; noon identical.
 6. `include/helion_voxel_probe.glsl` holds the probe layout and harmonics, `include/helion_voxel_probe_gather.glsl` the gather (8 probes) and the nearest probe lookup used for the second bounce.
 
 ### Measured, Phase 5 (RTX 4050 Laptop, 1080p, visual test world, 2026-10-23)
@@ -78,7 +78,19 @@ One run per change with `helion.visualTest.scenes=cave_corner+night_showcase+day
 
 - The first version added almost nothing: probes sat in walls or on block corners, one bounce of stone (map color 0.44) stayed below the 30 % floor. Placement, the second bounce and the gain fixed it. A second bounce through all 8 probes cost 0.6 ms; the nearest probe gives the same look for 0.27 ms.
 - Gain 3.5 gave 65 % of vanilla in the hidden leg, 5.0 gave 114 to 155 % (the display curve is not linear); 4.2 is the setting.
-- Not measured: Low and High quality, a savanna world (foliage and grass map colors tint bounced light like their blocks).
+- Quality check (2026-10-23, after the leak fix, tinting and the vanilla cap; one run, scenes `cave_corner`, `night_showcase`, `savanna_room`, `wall_leak`):
+
+| Value | Low | Medium | High |
+|---|---|---|---|
+| Hidden corner floor near / middle, against vanilla | 89 % / 108 % | 95 % / 99 % | 96 % / 98 % |
+| Open night scene, whole frame | 89 % | 88 % | 89 % |
+| Savanna room middle floor (bounce off 90 %) | - | 105 % | 106 % |
+| Dark room behind the wall (vanilla 4.1) | - | 2.1 | 2.1 |
+| `voxel_probes` GPU | 0.15 to 0.16 ms | 0.25 to 0.29 ms | 0.45 to 0.53 ms |
+| `voxel_light` GPU | 0.09 to 0.16 ms | 0.09 to 0.21 ms | 0.28 to 0.73 ms |
+
+- High runs at full resolution and gathers 8 visibility-tested probes per pixel, so it costs three to four times Medium in closed rooms; capping its light traces from 12 to 8 did not change that.
+- Savanna (`savanna_room`, made with `/fillbiome`): grass and leaves keep their olive savanna tint with bounce on and off; bounced light uses the block map color, which is not biome tinted, but next to the warm torch color the difference does not show.
 
 ## Tinted Light
 
@@ -87,39 +99,6 @@ Stained glass and stained glass panes (`StainedGlassBlock`, `StainedGlassPaneBlo
 ## Voxel Slice View
 
 `geometryBuffer.view = VOXEL_SLICE` (Advanced page, needs the geometry buffer) runs `VoxelSliceStage` as the last stage: a square of 90 % of the screen height shows the volume at the camera's block height from above, north up, one block per cell: dark empty, grey opaque, green partial, blue translucent, yellow light sources, purple section borders, red the camera column. Its GPU time is listed as `voxel_slice`.
-
-## RTX Feasibility Spike (2026-10-22)
-
-Question: can Helion run hardware ray queries on Minecraft's Vulkan device, and are they at least 30 % faster than the grid walk, or sharper or longer reaching at the same cost? Code in `render.rtx` (see its code map), only with `-Dhelion.rtxSpike=true` (`helion.rtxSpike.view=true` draws the mask); without the property no class of it loads and the device is created as before.
-
-How it works:
-
-1. `VulkanFeatureSetsMixin` adds an optional renderpearl feature set with `VK_KHR_acceleration_structure`, `VK_KHR_ray_query`, `VK_KHR_deferred_host_operations`, `bufferDeviceAddress`, `accelerationStructure` and `rayQuery`. Renderpearl enables it only when the device supports all of it; otherwise the spike logs once and stays off.
-2. Memory: every acceleration structure, scratch, box, instance and counter buffer has its own `vkAllocateMemory` with `VkMemoryAllocateFlagsInfo` `DEVICE_ADDRESS`, released through `GpuResources` (fenced). Renderpearl's VMA is unchanged.
-3. Geometry: `VoxelVolume` hands every read brick to a `VoxelBrickSink`; the spike keeps a CPU copy and lists the light-blocking blocks of the 3 x 3 chunks around the camera (full 128-block volume height) that have a face to a non-blocking block, as unit AABBs in one bottom level structure (opaque, prefer fast trace) with one identity instance in one top level structure. It rebuilds when the area moves or one of its sections changes, at most every 10 frames.
-4. Trace: a raw Vulkan compute pipeline (`rtx/shadow_mask.csh`, compiled by shaderc for Vulkan 1.2 and SPIR-V 1.5, push descriptors, 128 bytes of push constants) is recorded into renderpearl's command buffer inside a frame graph pass without culling, outside any render pass, with renderpearl's full memory barrier before and after the builds and the dispatch. Per half resolution pixel it picks the brightest light of the grid cell exactly like `voxel_light` and its open light face, then traces it with `rayQueryEXT` (AABB candidates confirmed with an exact box test against the box buffer) or with the same grid walk as `voxel_light` (shared through `helion_voxel_trace.glsl`). The mode rotates per frame: ray query only, grid walk only, both; each is timed on its own. Pixels whose surface or light lies outside the 3 x 3 area are skipped by both tracers.
-5. The mask is a renderpearl RGBA8 texture with the storage usage added by `VulkanConstMixin` (renderpearl keeps every image in `GENERAL` layout, so no layout change is needed): red lit by ray query, green lit by the grid walk.
-
-Measured on the RTX 4050 Laptop, 1080p, one visual test run (`night_showcase` and `day_showcase`, variants `voxel_light` and `voxel_light_low`, driver 616.92):
-
-| Value | Day | Night |
-|---|---|---|
-| Ray query trace (`rtx_ray_query`) | 0.090 to 0.101 ms | 0.107 to 0.109 ms |
-| Grid walk trace, same compute pass (`rtx_grid_walk`) | 0.094 to 0.106 ms | 0.113 to 0.115 ms |
-| Both in one pass (`rtx_compare`) | 0.105 to 0.119 ms | 0.128 to 0.130 ms |
-| `voxel_light` fragment pass, Medium (2 lights, whole volume) | 0.152 to 0.156 ms | 0.170 to 0.171 ms |
-| Bottom level build (`rtx_blas`, 18404 boxes) | 0.20 ms GPU | 0.23 ms GPU |
-| Top level build (`rtx_tlas`) | 0.06 to 0.07 ms GPU | 0.07 ms GPU |
-| Box gathering on the render thread | 5 to 8 ms CPU | 7 ms CPU |
-| Buffer and structure creation | 2 to 7 ms CPU (25 ms the first time) | 2 to 4 ms CPU |
-| Memory of one scene | 2.4 MiB | 2.4 MiB |
-| Mask pixels where the tracers disagree | 0 to 4 of 518400 | 4 to 6 of 518400 |
-
-- Yes, it runs: the device enabled the feature set, the pipeline compiled and every frame traced without a validation or Helion error, and a card without ray queries keeps starting as before because the set is optional.
-- Ray query is only about 5 % faster than the grid walk in the same pass, because shadow rays of block light are short (at most 15 blocks, mostly through the coarse level) and the pass time is mostly the shared work: depth, normal, light grid and light face lookups. Both give the same hard shadows (the few differing pixels are lava and flame pixels at box edges).
-- The scene costs a rebuild whenever a block in the area changes: 0.27 ms of GPU and 7 to 15 ms of render thread CPU in this spike; an incremental build would need per-section bottom level structures and a worker thread.
-- Result for direct block light: the 30 % criterion is missed and the image is the same, so the voxel grid walk stays the tracer for block light, also on RTX cards.
-- Decision of the owner (2026-10-22): Helion is a graphics engine, not a shader pack, so RTX becomes an optional quality layer on cards that support it, with the voxel volume as the base for every card. The voxel volume cannot carry textured or distant reflections (one class byte per block, 128 blocks) or thin shapes (fences, leaves, mobs). Order: Phase 3 dynamic lights on the voxel volume; then the RTX foundation (bottom level structures per chunk section built from the real block meshes, including Aervium's compact vertices, on a worker thread); then RTX reflections together with the water update; then RTX shadows of thin shapes and entities; then bounced light (Phase 5) with RTX where available and the voxel volume elsewhere. The spike code stays as the start of the foundation; the foundation itself is in [ray-tracing.md](ray-tracing.md).
 
 ## Measured, Phase 2 (RTX 4050 Laptop, 1080p, visual test world, 2026-10-22)
 

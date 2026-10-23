@@ -39,6 +39,7 @@ enum VisualTestVariant {
     SHADOW_LIGHT(true, ToneMapper.NEUTRAL, false),
     VOXEL_LIGHT(true, ToneMapper.NEUTRAL, false),
     VOXEL_LIGHT_LOW(true, ToneMapper.NEUTRAL, false),
+    VOXEL_LIGHT_HIGH(true, ToneMapper.NEUTRAL, false),
     VOXEL_BOUNCE_OFF(true, ToneMapper.NEUTRAL, false),
     SCREEN_REFLECTIONS(true, ToneMapper.NEUTRAL, false),
     HYBRID_REFLECTIONS(true, ToneMapper.NEUTRAL, false),
@@ -137,7 +138,7 @@ enum VisualTestVariant {
     }
 
     private boolean showsDeferredLighting() {
-        return this == LIGHTING || this == LIGHT_ONLY || this == VOXEL_LIGHT || this == VOXEL_LIGHT_LOW || this == VOXEL_BOUNCE_OFF || showsShadows();
+        return this == LIGHTING || this == LIGHT_ONLY || this == VOXEL_LIGHT || this == VOXEL_LIGHT_LOW || this == VOXEL_LIGHT_HIGH || this == VOXEL_BOUNCE_OFF || showsShadows();
     }
 
     private VoxelLightingSettings voxelLighting() {
@@ -146,6 +147,9 @@ enum VisualTestVariant {
         }
         if (this == VOXEL_LIGHT_LOW) {
             return new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.LOW, true);
+        }
+        if (this == VOXEL_LIGHT_HIGH) {
+            return new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.HIGH, true);
         }
         if (this == VOXEL_BOUNCE_OFF) {
             return new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.MEDIUM, false);
