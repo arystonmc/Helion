@@ -62,5 +62,17 @@ Entities (same scenes, about 2,900 entity quads in view across the whole render 
 ## Next
 
 1. Water: refraction of the bottom, glass and ice reflections, reflections seen from under water, sun shadow rays at the hit.
-2. Entities in reflections (their textures are not in the block atlas), entities only within the section scene, alpha tested entity cutouts.
+2. Entities in reflections (their textures are not in the block atlas), entities only within the section scene, alpha tested entity cutouts. Screen space reflections already show mobs that are on screen; the ray traced path is planned below.
 3. Compaction of the bottom levels and a radius chosen by memory, and a settings switch (with a preset entry, lesson L-117) once a visible feature uses the scene.
+
+## Plan: Mobs in Ray Traced Reflections (not started, 2026-10-23)
+
+Estimated one to two sessions; skipped for now because screen space reflections cover mobs on screen. Steps:
+
+1. Device: add `descriptorIndexing` features (`runtimeDescriptorArray`, `descriptorBindingPartiallyBound`, `descriptorBindingVariableDescriptorCount`, `shaderSampledImageArrayNonUniformIndexing`, all core in Vulkan 1.2) to the optional ray tracing feature set; without them mobs stay out of reflections as today.
+2. Capture: `EntityGeometryDraws.drawn` also records the draw's `Sampler0` texture view and its vertex format (stride and the offsets of color, UV0 and UV2), and whether the pipeline alpha tests. `RtxEntityDraws` gives every distinct texture a slot (at most 64 per frame; further draws keep shadows but are left out of reflections with a once-per-session note).
+3. Hit table: per entity geometry a 32-byte record (vertex buffer device address, index buffer address and type, base vertex, stride, attribute offsets, texture slot, cutout flag) in a device address storage buffer next to the bottom level, rebuilt with the entity scene.
+4. Descriptors: the reflection pipeline gets a second, non-push descriptor set with a variable-count combined image sampler array, written each frame from the slots (`VkWriteDescriptorSet` from the renderpearl views' `VkImageView`s, nearest sampler like vanilla entities).
+5. Shader: `rtx/reflection.csh` traces mask 1 and 2; an entity candidate is alpha tested like cutout terrain, a committed entity hit interpolates UV0, color and UV2 from the hit table, samples `entityTextures[nonuniformEXT(slot)]` times the vertex color times the lightmap, the same shading as block hits.
+6. Missing even then: armor glint, emissive layers (eyes), the hurt overlay and translucent entities, which are not in the entity geometry pass.
+7. Test: a visual test scene with a cow at the pool edge, variant `shadows` with ray tracing, compared with `screen_reflections`; measure `rt_reflection` and the descriptor update time.
