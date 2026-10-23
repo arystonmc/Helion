@@ -48,6 +48,7 @@ public final class WaterResources {
 
     private final GpuResources resources;
     private final RainWetness rainWetness = new RainWetness();
+    private final WaterWaves waves;
     private @Nullable UniformRing surfaceUniforms;
     private @Nullable UniformRing reflectionUniforms;
     private @Nullable UniformRing screenUniforms;
@@ -56,6 +57,7 @@ public final class WaterResources {
 
     public WaterResources(GpuResources resources) {
         this.resources = resources;
+        this.waves = new WaterWaves(resources);
     }
 
     Optional<CompiledRenderPipeline> reflectionProgram(boolean physicalSky) {
@@ -67,15 +69,19 @@ public final class WaterResources {
         return compiled;
     }
 
-    GpuBuffer surfaceUniforms(TerrainTextures textures, Wetness wetness) {
+    GpuBuffer surfaceUniforms(TerrainTextures textures, Wetness wetness, boolean dynamicWaves) {
         if (surfaceUniforms == null) {
             surfaceUniforms = new UniformRing(SURFACE_LABEL, SURFACE_SIZE, resources);
         }
         return surfaceUniforms.write(builder -> builder
             .putVec4(textures.waterStill())
             .putVec4(textures.waterFlow())
-            .putVec4(wetness.rain(), wetness.seconds(), ABSENT, ABSENT)
+            .putVec4(wetness.rain(), wetness.seconds(), dynamicWaves ? PRESENT : ABSENT, ABSENT)
             .putFloat(WAVE_STRENGTH));
+    }
+
+    WaterWaves waves() {
+        return waves;
     }
 
     public RainWetness rainWetness() {
@@ -139,6 +145,7 @@ public final class WaterResources {
     }
 
     public void close() {
+        waves.close();
         if (surfaceUniforms != null) {
             surfaceUniforms.close();
         }

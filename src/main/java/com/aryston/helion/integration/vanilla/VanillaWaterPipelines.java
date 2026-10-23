@@ -72,6 +72,7 @@ public final class VanillaWaterPipelines {
                 .withUniform(WaterPipelines.SURFACE_UNIFORM, UniformType.UNIFORM_BUFFER)
                 .withUniform(WaterPipelines.SCENE_DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .withUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform(WaterPipelines.WAVE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .build());
     }
 }

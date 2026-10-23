@@ -21,6 +21,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final float SAVANNA_PITCH = 30.0F;
     private static final float POOL_PITCH = 8.0F;
     private static final float SHOWCASE_PITCH = 25.0F;
+    private static final float RAIN_POOL_PITCH = 35.0F;
     private static final boolean RAIN = true;
     private static final boolean CLEAR = false;
 
@@ -48,7 +49,8 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("savanna_room", MIDNIGHT, EAST, SAVANNA_PITCH, VisualTestWorld.SAVANNA_CAMERA),
         new VisualTestScene("rain_yard", NOON, NORTH, SHOWCASE_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),
         new VisualTestScene("rain_yard_low", NOON, NORTH, POOL_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),
-        new VisualTestScene("rain_yard_dusk", SUNSET, NORTH, POOL_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN)
+        new VisualTestScene("rain_yard_dusk", SUNSET, NORTH, POOL_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),
+        new VisualTestScene("rain_pool", NOON, NORTH, RAIN_POOL_PITCH, VisualTestWorld.RAIN_POOL_CAMERA, RAIN)
     );
 
     VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPos cameraOffset) {

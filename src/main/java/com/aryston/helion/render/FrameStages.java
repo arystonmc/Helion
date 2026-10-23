@@ -38,6 +38,7 @@ import com.aryston.helion.render.water.RainWetnessStage;
 import com.aryston.helion.render.water.ScreenReflectionStage;
 import com.aryston.helion.render.water.WaterReflectionStage;
 import com.aryston.helion.render.water.WaterSurfaceStage;
+import com.aryston.helion.render.water.WaterWaveStage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,6 +80,7 @@ public final class FrameStages {
             new DeferredLightingStage(core.lighting()),
             new AmbientOcclusionStage(core.ambientOcclusion()),
             new SolidFeatureStage(sources.terrain(), sources.entities()),
+            new WaterWaveStage(sources.waves(), core.water()),
             new WaterSurfaceStage(sources.terrain(), core.water(), core.glossy()),
             new ScreenReflectionStage(core.water()),
             new RtxReflectionStage(core.rayTracing(), sources.terrain()),

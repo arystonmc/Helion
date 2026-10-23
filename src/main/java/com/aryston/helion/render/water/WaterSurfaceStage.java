@@ -69,9 +69,11 @@ public final class WaterSurfaceStage implements RenderStage {
         frame.water().publishTint(tint);
         refraction.ifPresent(frame.water()::publishRefraction);
         Wetness wetness = frame.water().wetness().orElse(Wetness.DRY);
+        Optional<ResourceHandle<RenderTarget>> waves = frame.water().waves();
+        waves.ifPresent(pass::reads);
         pass.executes(frame.graph().timed(NAME, () -> {
             refraction.ifPresent(copy -> copyScene(scene.get(), copy.get()));
-            render(scene.get(), surface.get(), tint.get(), wetness);
+            render(scene.get(), surface.get(), tint.get(), wetness, waves.map(ResourceHandle::get));
         }));
     }
 
@@ -86,7 +88,7 @@ public final class WaterSurfaceStage implements RenderStage {
         );
     }
 
-    private void render(RenderTarget scene, RenderTarget surface, RenderTarget tint, Wetness wetness) {
+    private void render(RenderTarget scene, RenderTarget surface, RenderTarget tint, Wetness wetness, Optional<RenderTarget> waves) {
         GpuTextureView mask = glossy.update(terrain.glossyCells());
         RenderPassDescriptor descriptor = RenderPassDescriptor.builder(() -> PASS_LABEL)
             .withColorAttachment(Objects.requireNonNull(surface.getColorTextureView()))
@@ -95,7 +97,9 @@ public final class WaterSurfaceStage implements RenderStage {
             .build();
         try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor)) {
             RenderSystem.bindDefaultUniforms(pass);
-            pass.setUniform(WaterPipelines.SURFACE_UNIFORM, resources.surfaceUniforms(terrain.textures(), wetness));
+            pass.setUniform(WaterPipelines.SURFACE_UNIFORM, resources.surfaceUniforms(terrain.textures(), wetness, waves.isPresent()));
+            GpuTextureView waveView = waves.map(RenderTarget::getColorTextureView).orElse(scene.getColorTextureView());
+            pass.setUniform(WaterPipelines.WAVE_SAMPLER, Objects.requireNonNull(waveView), RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR));
             pass.setUniform(
                 WaterPipelines.SCENE_DEPTH_SAMPLER,
                 Objects.requireNonNull(scene.getDepthTextureView()),

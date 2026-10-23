@@ -7,6 +7,7 @@ import com.aryston.helion.render.geometry.TerrainSource;
 import com.aryston.helion.render.geometry.TransparencySource;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.shadow.ShadowCasterSource;
+import com.aryston.helion.render.water.WaveSource;
 import com.aryston.helion.render.water.WeatherSource;
 import java.util.List;
 
@@ -16,6 +17,7 @@ public record FrameSources(
     AtmosphereSource atmosphere,
     CloudSource clouds,
     WeatherSource weather,
+    WaveSource waves,
     TransparencySource transparency,
     ShadowCasterSource shadowCasters,
     List<RenderStage> postEffects

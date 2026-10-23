@@ -14,6 +14,7 @@ import java.util.Optional;
 public final class WaterPipelines {
     public static final GpuFormat SURFACE_FORMAT = GpuFormat.RGBA16_FLOAT;
     public static final GpuFormat TINT_FORMAT = GpuFormat.RGBA8_UNORM;
+    public static final GpuFormat WAVE_FORMAT = GpuFormat.RGBA16_FLOAT;
     public static final GpuFormat SCENE_COLOR_FORMAT = GpuFormat.RGBA8_UNORM;
     public static final String SURFACE_UNIFORM = "HelionWaterSurface";
     public static final String SCENE_DEPTH_SAMPLER = "SceneDepthSampler";
@@ -30,6 +31,8 @@ public final class WaterPipelines {
     public static final String POLISHED_SAMPLER = "PolishedSampler";
     public static final String TINT_SAMPLER = "WaterTintSampler";
     public static final String REFRACTION_SAMPLER = "RefractionSampler";
+    public static final String WAVE_SAMPLER = "WaveSampler";
+    public static final String WAVE_UNIFORM = "HelionWaterWaves";
     private static final int POLISHED_TARGET = 1;
     private static final String FOG = "Fog";
     private static final String REFLECTION_SHADER = "water/reflection";
@@ -50,6 +53,14 @@ public final class WaterPipelines {
         .withShaderDefine(PHYSICAL_SKY_DEFINE)
         .build();
 
+    public static final RenderPipeline WAVE_STEP = HelionPipelines.fullscreen("water/wave_step")
+        .withBindGroupLayout(BindGroupLayout.builder()
+            .withUniform(WAVE_UNIFORM, UniformType.UNIFORM_BUFFER)
+            .withUniform(WAVE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .build())
+        .withColorTargetState(new ColorTargetState(Optional.empty(), WAVE_FORMAT, ColorTargetState.WRITE_ALL))
+        .build();
+
     public static final RenderPipeline POLISHED_COMPOSITE = HelionPipelines.fullscreen("water/polished_composite")
         .withBindGroupLayout(BindGroupLayout.builder()
             .withUniform(POLISHED_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
@@ -61,7 +72,7 @@ public final class WaterPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(REFLECTION, REFLECTION_PHYSICAL_SKY, SCREEN_REFLECTION, SCREEN_REFLECTION_PHYSICAL_SKY, POLISHED_COMPOSITE);
+        return List.of(REFLECTION, REFLECTION_PHYSICAL_SKY, SCREEN_REFLECTION, SCREEN_REFLECTION_PHYSICAL_SKY, POLISHED_COMPOSITE, WAVE_STEP);
     }
 
     private static RenderPipeline.Builder screenReflection(String name, BindGroupLayout.Builder bindings) {

@@ -77,6 +77,9 @@ final class VisualTestWorld {
     private static final Placement SAVANNA_TORCH = new Placement(29, -17, -15, "torch");
     private static final String SAVANNA_BIOME = "minecraft:savanna";
     static final BlockPos RAIN_CAMERA = new BlockPos(12, 0, 4);
+    static final BlockPos RAIN_POOL_CAMERA = new BlockPos(12, 0, -5);
+    private static final BlockPos RAIN_POOL_DROP = new BlockPos(11, 4, -11);
+    private static final String DROPPED_ITEM = " {Item:{id:\"minecraft:cobblestone\",count:1},PickupDelay:32767}";
     private static final Volume RAIN_YARD_AIR = new Volume(new BlockPos(8, 0, -12), new BlockPos(16, 8, 4));
     private static final Volume RAIN_YARD_FLOOR = new Volume(new BlockPos(8, -1, -12), new BlockPos(16, -1, 4));
     private static final Volume RAIN_YARD_BIOME = new Volume(new BlockPos(8, -4, -12), new BlockPos(16, 12, 4));
@@ -88,7 +91,9 @@ final class VisualTestWorld {
         new Fill(new Volume(new BlockPos(11, -1, -4), new BlockPos(13, -1, -2)), "oak_planks"),
         new Fill(new Volume(new BlockPos(12, 3, -10), new BlockPos(15, 3, -8)), "stone_slab"),
         new Fill(new Volume(new BlockPos(12, 0, -11), new BlockPos(12, 2, -11)), "stone_bricks"),
-        new Fill(new Volume(new BlockPos(10, 0, -7), new BlockPos(10, 0, -7)), "lantern")
+        new Fill(new Volume(new BlockPos(10, 0, -7), new BlockPos(10, 0, -7)), "lantern"),
+        new Fill(new Volume(new BlockPos(9, -3, -13), new BlockPos(15, -1, -8)), "stone_bricks"),
+        new Fill(new Volume(new BlockPos(10, -2, -12), new BlockPos(14, -1, -9)), "water")
     );
     private static final Volume TINT_ROOM = new Volume(new BlockPos(14, -17, 0), new BlockPos(24, -15, 3));
     private static final List<Placement> TINT_BLOCKS = List.of(
@@ -170,6 +175,11 @@ final class VisualTestWorld {
 
     static void setTime(IntegratedServer server, int dayTime) {
         run(server, "time set " + dayTime);
+    }
+
+    static void dropIntoRainPool(IntegratedServer server, BlockPos origin) {
+        BlockPos above = origin.offset(RAIN_POOL_DROP);
+        run(server, "summon item " + (above.getX() + BLOCK_CENTER) + " " + above.getY() + " " + (above.getZ() + BLOCK_CENTER) + DROPPED_ITEM);
     }
 
     static void setRain(IntegratedServer server, boolean rain) {

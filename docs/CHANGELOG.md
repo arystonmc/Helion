@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Realistic water reacts: players, mobs, boats and items leave wakes, falling things make splash rings and raindrops ripple the surface
 - Experimental ray tracing: glass and ice reflect the world, reflected places in the shade of the sun are darker, and reflected mobs are shaded and flash red when hurt
 - Realistic water: clear water with depth, refraction of the bottom, biome colors, fine waves and rain ripples instead of the flat water texture
 - Rain wetness: rain darkens and wets the ground, puddles gather on stone, brick and wood, reflect the world and ripple with the drops

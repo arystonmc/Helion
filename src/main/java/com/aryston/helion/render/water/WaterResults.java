@@ -14,6 +14,7 @@ public final class WaterResults {
     private @Nullable Wetness wetness;
     private @Nullable ResourceHandle<RenderTarget> tint;
     private @Nullable ResourceHandle<RenderTarget> refraction;
+    private @Nullable ResourceHandle<RenderTarget> waves;
 
     public Optional<ResourceHandle<RenderTarget>> surface() {
         return Optional.ofNullable(surface);
@@ -49,6 +50,14 @@ public final class WaterResults {
 
     Optional<ResourceHandle<RenderTarget>> refraction() {
         return Optional.ofNullable(refraction);
+    }
+
+    Optional<ResourceHandle<RenderTarget>> waves() {
+        return Optional.ofNullable(waves);
+    }
+
+    void publishWaves(ResourceHandle<RenderTarget> simulated) {
+        waves = simulated;
     }
 
     void publishTint(ResourceHandle<RenderTarget> written) {

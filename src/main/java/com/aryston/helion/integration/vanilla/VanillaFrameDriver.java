@@ -58,6 +58,7 @@ final class VanillaFrameDriver {
     private final ShadowCasterSections shadowCasters = new ShadowCasterSections();
     private final VanillaVoxelSource voxels = new VanillaVoxelSource();
     private final VanillaVoxelOccluders occluders = new VanillaVoxelOccluders();
+    private final VanillaWaveSource waves = new VanillaWaveSource();
     private @Nullable ProjectionMatrixBuffer jitteredProjection;
 
     void render(LevelFrameRequest request, RenderSettings settings) {
@@ -225,6 +226,7 @@ final class VanillaFrameDriver {
             new VanillaAtmosphereSource(request, sky, fog, events),
             new VanillaCloudSource(request),
             new VanillaWeatherSource(),
+            waves,
             new VanillaTransparencySource(request, sections, featureFrame),
             new VanillaShadowCasterSource(request, shadowCasters, featureFrame),
             List.of(new VanillaEntityOutlineEffect(request.level(), targets))

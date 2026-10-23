@@ -34,6 +34,7 @@ public final class VisualTest {
     private static final int SCENE_SETTLE_TICKS = 100;
     private static final int VARIANT_SETTLE_TICKS = 20;
     private static final int RETURN_TICKS = 20;
+    private static final int SPLASH_LEAD_TICKS = 18;
     private static final int SCREENSHOT_DOWNSCALE = 2;
     private static final int FULL_SIZE = 1;
     private static final String SCREENSHOT_PREFIX = "helion_";
@@ -85,6 +86,9 @@ public final class VisualTest {
             holdCamera(player);
         }
         ticksUntilAction--;
+        if (prepared && scene.rain() && ticksUntilAction == SPLASH_LEAD_TICKS) {
+            VisualTestWorld.dropIntoRainPool(server, origin);
+        }
         if (ticksUntilAction > 0) {
             return;
         }
