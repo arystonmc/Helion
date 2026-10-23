@@ -7,7 +7,7 @@
 #include <helion:helion_voxel.glsl>
 #include <helion:helion_voxel_probe.glsl>
 
-const int HELION_MAX_DYNAMIC_LIGHTS = 16;
+const int HELION_VOXEL_DYNAMIC_LIGHTS = 16;
 const int HELION_MAX_OCCLUDERS = 8;
 
 layout(std140) uniform HelionVoxelLight {
@@ -19,7 +19,7 @@ layout(std140) uniform HelionVoxelLight {
 
 layout(std140) uniform HelionVoxelDynamic {
     ivec4 DynamicCounts;
-    vec4 DynamicLights[HELION_MAX_DYNAMIC_LIGHTS * 2];
+    vec4 DynamicLights[HELION_VOXEL_DYNAMIC_LIGHTS * 2];
     vec4 Occluders[HELION_MAX_OCCLUDERS * 2];
 };
 
@@ -131,7 +131,7 @@ void main() {
     float movingWeight = 0.0;
     float otherMovingWeight = 0.0;
     vec3 movingPosition = vec3(0.0);
-    for (int index = 0; index < HELION_MAX_DYNAMIC_LIGHTS; index++) {
+    for (int index = 0; index < HELION_VOXEL_DYNAMIC_LIGHTS; index++) {
         if (index >= DynamicCounts.x) {
             break;
         }
