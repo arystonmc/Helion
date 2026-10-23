@@ -21,6 +21,7 @@ final class VanillaVoxelSource implements VoxelSource {
     private static final int NO_COLOR = 0;
 
     private final VoxelBlockClasses classes = new VoxelBlockClasses();
+    private final VoxelBiomeTints biomeTints = new VoxelBiomeTints();
     private @Nullable ClientLevel level;
     private int generation;
     private int colorVersion = VoxelLightColors.version();
@@ -30,11 +31,13 @@ final class VanillaVoxelSource implements VoxelSource {
         if (current != level) {
             level = current;
             classes.clear();
+            biomeTints.clear();
             generation++;
         }
         if (VoxelLightColors.version() != colorVersion) {
             colorVersion = VoxelLightColors.version();
             classes.clear();
+            biomeTints.clear();
             generation++;
         }
         if (VoxelSectionChanges.takeOverflow()) {
@@ -55,8 +58,9 @@ final class VanillaVoxelSource implements VoxelSource {
 
     @Override
     public void readSection(int sectionX, int sectionY, int sectionZ, ByteBuffer brick, ByteBuffer colors, VoxelLightSink lights) {
+        ClientLevel current = level;
         LevelChunkSection section = section(sectionX, sectionY, sectionZ);
-        if (section == null || section.hasOnlyAir()) {
+        if (current == null || section == null || section.hasOnlyAir()) {
             fill(brick, VoxelClass.EMPTY);
             fillColors(colors);
             return;
@@ -71,7 +75,8 @@ final class VanillaVoxelSource implements VoxelSource {
                     byte voxel = classes.classify(state);
                     int index = VoxelVolumeLayout.brickIndex(x, y, z);
                     brick.put(index, voxel);
-                    colors.putInt(index * VoxelVolumeLayout.COLOR_BYTES_PER_BLOCK, classes.albedo(state));
+                    int albedo = biomeTints.tinted(classes.albedo(state), state, current, originX + x, originY + y, originZ + z);
+                    colors.putInt(index * VoxelVolumeLayout.COLOR_BYTES_PER_BLOCK, albedo);
                     int emission = VoxelBlockClasses.emission(voxel);
                     if (emission > 0) {
                         float[] color = classes.color(state);

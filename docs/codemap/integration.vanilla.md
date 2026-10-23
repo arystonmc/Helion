@@ -161,8 +161,12 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaVoxelSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaVoxelSource.java`
-- Role: `VoxelSource` over the client level, on the render thread: reads the 4096 block states of one chunk section (missing chunks, sections outside the build height and all-air sections become empty bricks) through `VoxelBlockClasses`, reports every block with light emission with its color, drains `VoxelSectionChanges`, and raises the level generation on a new level, reloaded light colors or an overflowed change queue so the volume rebuilds. `use(level, enabled)` also switches the change collection on or off. Owned by `VanillaFrameDriver`.
-- Depends on: `VoxelBlockClasses`, `VoxelSectionChanges`.
+- Role: `VoxelSource` over the client level, on the render thread: reads the 4096 block states of one chunk section (missing chunks, sections outside the build height and all-air sections become empty bricks) through `VoxelBlockClasses` with biome tinted colors from `VoxelBiomeTints`, reports every block with light emission with its color, drains `VoxelSectionChanges`, and raises the level generation on a new level, reloaded light colors or an overflowed change queue so the volume rebuilds. `use(level, enabled)` also switches the change collection on or off. Owned by `VanillaFrameDriver`.
+- Depends on: `VoxelBlockClasses`, `VoxelBiomeTints`, `VoxelSectionChanges`.
+
+#### VoxelBiomeTints
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/VoxelBiomeTints.java`
+- Role: Biome tint of the color atlas entry for blocks with a vanilla tint source on layer 0 (grass, leaves, vines, ferns, sugar cane): the in-world tint color at the block position, scaled to the luminance of the map color, so bounced light off grass and leaves follows the biome. Blocks without a tint source and white tints (water) keep the map color. Caches the tint source per block state.
 
 #### VoxelBlockClasses
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VoxelBlockClasses.java`

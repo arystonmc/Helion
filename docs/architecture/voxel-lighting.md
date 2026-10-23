@@ -56,7 +56,7 @@ Checked in the extracted `minecraft-patched-26.3.0.51-beta-sources.jar` (renderp
 
 Setting `voxelLighting.bounce` (Bounced Light, on by default and in every preset, so it follows the voxel lighting mode: Experimental only). Off: the probe pass does not run, its textures are released and `voxel_light` binds the color atlas in place of the probe samplers.
 
-1. Color atlas: `VanillaVoxelSource` writes the map color of every block (RGBA8, sRGB values used as reflectance, the same space the block light multiplies textures in) into a second 2048 x 1024 atlas with the slots of the class atlas (8 MiB).
+1. Color atlas: `VanillaVoxelSource` writes the map color of every block (RGBA8, sRGB values used as reflectance, the same space the block light multiplies textures in) into a second 2048 x 1024 atlas with the slots of the class atlas (8 MiB). Blocks with a vanilla tint source (grass, leaves, vines) take the biome tint at their position instead, scaled to the luminance of the map color (`VoxelBiomeTints`, since 2026-10-23), so bounced light off savanna grass is olive and off jungle leaves deep green.
 2. Probes: 32 x 32 x 32, one per 4 x 4 x 4 cell of the volume, stored as L1 spherical harmonics per color channel plus a placement in four RGBA16_FLOAT 256 x 128 targets, two sets (current and previous, 2 MiB). `voxel_probes` places each probe at the block 2, 2, 2 of its cell, or, when that block stops light, at the free block of the cell nearest to it (none free: the probe is off). Corridors narrower than the probe spacing therefore always hold probes.
 3. Per frame each probe traces 4 (Low), 8 (Medium) or 16 (High) Fibonacci rays, rotated randomly per frame, up to 24 blocks through the volume. A hit is lit by the block lights of its light grid cell (shadow rays to the brightest and, when it is blocked, the next one; if both are blocked the hit gets no direct light) plus the bounced light of the probe that owns the hit cell in the previous set (one visibility ray, capped at 1), times the block's map color. Hits feed the harmonics; the result is blended with the previous set (90 % history, shifted when the volume moves), so light keeps bouncing over frames.
 4. Gather: `voxel_light` takes the 8 probes around the pixel (trilinear weights times a facing term), drops probes that are off or not visible from the surface (one grid walk each, so no light leaks through walls), evaluates the harmonics with the pixel normal and writes `4.2 x` the result into the bounce target. The gain makes up for the single scattering and the low map colors: vanilla light floods around corners at one level per block.
@@ -102,7 +102,7 @@ The gather moved out of `voxel_light` into its own pass `voxel_bounce` (`VoxelBo
 | `savanna_room` | 0.24 ms | 0.34 ms | 0.63 ms | 0.45 ms (1.30 x) |
 
 Brightness is unchanged within run-to-run spread: the hidden corner floor measured 81 to 99 % of vanilla at Medium over the last runs, because the probes rotate their rays randomly every frame and a screenshot catches one frame of that.
-- Savanna (`savanna_room`, made with `/fillbiome`): grass and leaves keep their olive savanna tint with bounce on and off; bounced light uses the block map color, which is not biome tinted, but next to the warm torch color the difference does not show.
+- Savanna (`savanna_room`, made with `/fillbiome`): grass and leaves keep their olive savanna tint with bounce on and off; bounced light used the block map color, which is not biome tinted; since 2026-10-23 tinted blocks use the biome tint at their position.
 
 ## Tinted Light
 
