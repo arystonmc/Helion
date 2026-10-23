@@ -30,6 +30,7 @@ import com.aryston.helion.render.rtx.RtxShadowTracer;
 import com.aryston.helion.render.scene.ClearStage;
 import com.aryston.helion.render.shadow.ShadowStage;
 import com.aryston.helion.render.temporal.TemporalStage;
+import com.aryston.helion.render.voxel.VoxelBounceStage;
 import com.aryston.helion.render.voxel.VoxelLightStage;
 import com.aryston.helion.render.voxel.VoxelProbeStage;
 import com.aryston.helion.render.voxel.VoxelSliceStage;
@@ -70,6 +71,7 @@ public final class FrameStages {
             new RtxSceneStage(core.rayTracing()),
             new ShadowStage(sources.shadowCasters(), core.shadows(), new RtxShadowTracer(core.rayTracing(), sources.terrain())),
             new VoxelProbeStage(core.voxelLighting()),
+            new VoxelBounceStage(core.voxelLighting()),
             new VoxelLightStage(core.voxelLighting()),
             new RtxShadowStage(core.rtxSpike(), core.voxelLighting()),
             new DeferredLightingStage(core.lighting()),

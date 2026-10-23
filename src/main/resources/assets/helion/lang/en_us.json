@@ -129,7 +129,7 @@
   "helion.configuration.voxelLighting.mode": "Mode",
   "helion.configuration.voxelLighting.mode.tooltip": "OFF keeps the vanilla block light and does no work at all. SHADER traces colored, shadowed block light on any Vulkan graphics card. Needs HDR lighting. The Voxel Slice geometry buffer view shows the block map from above.",
   "helion.configuration.voxelLighting.quality": "Quality",
-  "helion.configuration.voxelLighting.quality.tooltip": "Low traces the strongest light of each pixel at half resolution, Medium the two strongest, High the four strongest at full resolution.",
+  "helion.configuration.voxelLighting.quality.tooltip": "Low traces the strongest light of each pixel at half resolution, Medium the two strongest, High the four strongest, all at half resolution. Bounced light gets 4, 8 or 12 probe rays.",
   "helion.configuration.voxelLighting.bounce": "Bounced Light",
   "helion.configuration.voxelLighting.bounce.tooltip": "Light from torches, lava and other light blocks bounces off walls, floors and ceilings once and takes their color, so it reaches around corners and fills shaded sides softly. Probes every 4 blocks trace a few rays per frame and keep the result over several frames.",
   "helion.configuration.rayTracing": "Ray Tracing (RTX)",
