@@ -40,8 +40,17 @@ float helionDisplayedLight(vec3 light) {
     return helionLuminance(helionSrgbToLinear(helionVanillaBrightness(helionLinearToSrgb(clamped))));
 }
 
-vec3 helionWithBounce(vec3 direct, vec3 bounced, vec3 floorTerm) {
-    return max(max(direct, bounced) + bounced * HELION_BOUNCE_OVER_DIRECT, floorTerm);
+vec3 helionCappedBounce(vec3 bounced, vec3 vanilla) {
+    float bouncedLuminance = helionLuminance(bounced);
+    float cap = helionLuminance(vanilla);
+    return bouncedLuminance > cap ? bounced * (cap / bouncedLuminance) : bounced;
+}
+
+vec3 helionWithBounce(vec3 direct, vec3 bounced, vec3 vanilla, vec3 floorTerm) {
+    float bouncedLuminance = helionLuminance(bounced);
+    float deficit = max(helionLuminance(vanilla) - helionLuminance(direct), 0.0);
+    vec3 fill = bouncedLuminance > HELION_MIN_SKY_LUMINANCE ? bounced * min(deficit / bouncedLuminance, 1.0) : vec3(0.0);
+    return max(direct + fill + bounced * HELION_BOUNCE_OVER_DIRECT, floorTerm);
 }
 
 HelionVoxelBlock helionVoxelBlock(ivec2 pixel, vec4 levels) {
@@ -51,9 +60,9 @@ HelionVoxelBlock helionVoxelBlock(ivec2 pixel, vec4 levels) {
     vec4 bounce = texture(VoxelBounceSampler, texCoord);
     vec3 floorTerm = vanilla * HELION_VOXEL_VANILLA_FLOOR * bounce.a;
     vec3 tracedLight = traced.rgb * BlockFactor;
-    vec3 bounced = bounce.rgb * BlockFactor;
-    vec3 unshadowed = mix(vanilla, helionWithBounce(tracedLight, bounced, floorTerm), trust);
-    vec3 shadowed = mix(vanilla, helionWithBounce(tracedLight * traced.a, bounced, floorTerm), trust);
+    vec3 bounced = helionCappedBounce(bounce.rgb * BlockFactor, vanilla);
+    vec3 unshadowed = mix(vanilla, helionWithBounce(tracedLight, bounced, vanilla, floorTerm), trust);
+    vec3 shadowed = mix(vanilla, helionWithBounce(tracedLight * traced.a, bounced, vanilla, floorTerm), trust);
     vec3 base = helionDeferredBase(pixel, levels);
     float lit = helionDisplayedLight(base + unshadowed * BlockLightIntensity);
     float dimmed = helionDisplayedLight(base + shadowed * BlockLightIntensity);

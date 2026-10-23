@@ -13,6 +13,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental voxel lighting: held and burning lights are colored and cast shadows, and mobs and players cast shadows from lights
 - Experimental screen space reflections: water reflects what is on screen on every graphics card, mobs and players included
 - Ice, stained glass and other see-through blocks reflect their surroundings with the reflection settings
+- Experimental voxel lighting: light through stained glass takes the color of the glass
 - Experimental voxel lighting: bounced light carries torch and lava light around corners and into shaded corners in the color of the walls
 - Mobs, players and items are lit like the blocks around them: colored voxel light, sun shadows and ambient occlusion now reach them
 - Experimental ray tracing for RTX and similar cards: water reflects the world, the sky, the sun and the moon, with waves and darker deep water (in the Experimental preset, takes effect after a restart)
@@ -29,6 +30,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 
 ### Fixed
 - Experimental voxel lighting: several lights right behind a wall no longer shine through it
+- Experimental voxel lighting: bounced light no longer makes rooms next to bright lights brighter than vanilla
 
 ## [1.0] - 2026-10-21
 

@@ -32,6 +32,7 @@ uniform sampler2D PreviousProbePlacementSampler;
 
 #include <helion:helion_voxel_trace.glsl>
 #include <helion:helion_voxel_probe_gather.glsl>
+#include <helion:helion_voxel_tint.glsl>
 
 layout(location = 0) out vec4 probeRed;
 layout(location = 1) out vec4 probeGreen;
@@ -107,11 +108,11 @@ vec3 helionLightTerm(int light, vec3 hitPoint, vec3 faceNormal) {
     return texelFetch(VoxelLightListSampler, ivec2(light, 1), 0).rgb * helionLevelBrightness(level / HELION_LIGHT_LEVELS);
 }
 
-bool helionLightVisible(int light, vec3 hitPoint) {
+vec3 helionLightTint(int light, vec3 hitPoint) {
     bool enclosed;
     bool unknown = false;
     vec3 exit = helionLightExit(texelFetch(VoxelLightListSampler, ivec2(light, 0), 0).xyz, hitPoint, enclosed);
-    return !enclosed && helionTraceVisibility(hitPoint, exit, unknown) > 0.0;
+    return enclosed ? vec3(0.0) : helionTraceTint(hitPoint, exit, unknown);
 }
 
 vec3 helionHitLight(vec3 hitPoint, vec3 faceNormal) {
@@ -137,8 +138,12 @@ vec3 helionHitLight(vec3 hitPoint, vec3 faceNormal) {
                 strongest = light;
             }
         }
-        if (strongest == HELION_NO_LIGHT || helionLightVisible(strongest, hitPoint)) {
+        if (strongest == HELION_NO_LIGHT) {
             return total;
+        }
+        vec3 tint = helionLightTint(strongest, hitPoint);
+        if (helionLuminance(tint) > 0.0) {
+            return total * tint;
         }
         blocked = strongest;
     }

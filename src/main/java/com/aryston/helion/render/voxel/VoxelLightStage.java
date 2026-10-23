@@ -85,6 +85,7 @@ public final class VoxelLightStage implements RenderStage {
                 renderPass.setUniform(VoxelLightPipelines.GEOMETRY_NORMAL_SAMPLER, colorView(geometry.normal()), nearest());
                 renderPass.setUniform(VoxelLightPipelines.VOXEL_SAMPLER, view.texture(), nearest());
                 renderPass.setUniform(VoxelLightPipelines.COARSE_SAMPLER, view.coarse(), nearest());
+                renderPass.setUniform(VoxelLightPipelines.COLOR_SAMPLER, view.colors(), nearest());
                 renderPass.setUniform(VoxelLightPipelines.READY_SAMPLER, view.ready(), nearest());
                 renderPass.setUniform(VoxelLightPipelines.LIGHT_LIST_SAMPLER, view.lights(), nearest());
                 renderPass.setUniform(VoxelLightPipelines.LIGHT_GRID_SAMPLER, view.grid(), nearest());

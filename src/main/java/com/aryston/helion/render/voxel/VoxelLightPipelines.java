@@ -42,6 +42,7 @@ public final class VoxelLightPipelines {
             .withUniform(GEOMETRY_NORMAL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(VOXEL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(COARSE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(COLOR_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(READY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(LIGHT_LIST_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(LIGHT_GRID_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
