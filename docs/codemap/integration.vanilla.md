@@ -34,7 +34,12 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaTerrainSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaTerrainSource.java`
-- Role: `TerrainSource` over vanilla `ChunkSectionsToRender`: fog (the current `SceneFog` buffer, so the physical sky fog reaches terrain), chunk sampler, opaque and translucent layer groups, matching stage events. `renderOpaqueGeometry` draws the solid and cutout layers one by one with the geometry pipelines through `ChunkSectionsToRenderAccessor`; `supportsGeometryBuffer` is false for wireframe terrain or missing shaders. When the frame has dynamic lights it binds their uniform and draws every layer with the dynamic light pipelines (`VanillaDynamicLightPipelines`, or the geometry pipelines with lights), falling back per layer to the vanilla pipelines when a variant is missing; without lights it draws exactly as before. `renderWaterSurface` draws the translucent layer with the water surface pipelines (skipped for wireframe terrain or missing shaders); `textures()` hands the block atlas, the lightmap and the atlas bounds of `block/water_still` and `block/water_flow` to the core.
+- Role: `TerrainSource` over vanilla `ChunkSectionsToRender`: fog (the current `SceneFog` buffer, so the physical sky fog reaches terrain), chunk sampler, opaque and translucent layer groups, matching stage events. `renderOpaqueGeometry` draws the solid and cutout layers one by one with the geometry pipelines through `ChunkSectionsToRenderAccessor`; `supportsGeometryBuffer` is false for wireframe terrain or missing shaders. When the frame has dynamic lights it binds their uniform and draws every layer with the dynamic light pipelines (`VanillaDynamicLightPipelines`, or the geometry pipelines with lights), falling back per layer to the vanilla pipelines when a variant is missing; without lights it draws exactly as before. `renderWaterSurface` draws the translucent layer with the water surface pipelines (skipped for wireframe terrain or missing shaders); `renderWaterSurface` also draws the cutout layer with the glass surface pipelines, so plain glass gets a reflecting surface. `textures()` hands the block atlas, the lightmap and the atlas bounds of `block/water_still` and `block/water_flow` to the core; `glossyCells()` the glossy mask cells of the block atlas from `VanillaGlossyCells`.
+
+#### VanillaGlossyCells
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaGlossyCells.java`
+- Role: Marks the 16 x 16 cells of the block atlas that hold glossy block textures: every registered block whose id starts with `polished_`, contains `quartz`, `prismarine` or `glass`, or ends with `glazed_terracotta`, `ice` or `smooth_stone` (never ores), looked up as `block/<id>` and its `_top`, `_side`, `_bottom` and `_end` sprites. Cached until the atlas texture changes (resource reload).
+- Depends on: `GlossyCells`.
 
 #### VanillaDynamicLightPipelines
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaDynamicLightPipelines.java`
@@ -48,7 +53,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaWaterPipelines
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaWaterPipelines.java`
-- Role: Water surface variants of the vanilla translucent terrain pipelines (direct and multi-draw), copied with `toBuilder()` and switched to `helion:water/surface` with one unblended RGBA16_FLOAT target, the `HelionWaterSurface` uniform and the scene depth sampler. Registered as optional pipelines; warns once when they did not compile.
+- Role: Water surface variants of the vanilla translucent terrain pipelines (direct and multi-draw), copied with `toBuilder()` and switched to `helion:water/surface` with one unblended RGBA16_FLOAT target, the `HelionWaterSurface` uniform, the scene depth sampler and the glossy mask. A second pair from the vanilla cutout terrain pipelines adds the define `HELION_GLOSSY_ONLY`: it skips the alpha test and keeps only glossy mask texels, so the see-through center of plain glass is a surface too. Registered as optional pipelines; warns once when they did not compile.
 - Depends on: `WaterPipelines`, `HelionPipelines`.
 
 #### RtxSectionCapture
@@ -65,7 +70,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaGeometryPipelines
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaGeometryPipelines.java`
-- Role: Geometry buffer terrain pipelines per chunk layer (direct and multi-draw), copied from the vanilla terrain pipelines with `toBuilder()` and switched to `helion:terrain/geometry` with three more color targets. They inherit Aervium's compact terrain vertex format and its `AERVIUM_COMPACT_VERTICES` define with the vanilla pipelines. A second set (`withDynamicLights`) adds the dynamic light uniform and defines. Registered as optional pipelines; warns once when they did not compile or the compact format version is unknown.
+- Role: Geometry buffer terrain pipelines per chunk layer (direct and multi-draw), copied from the vanilla terrain pipelines with `toBuilder()` and switched to `helion:terrain/geometry` with three more color targets and the glossy mask sampler. They inherit Aervium's compact terrain vertex format and its `AERVIUM_COMPACT_VERTICES` define with the vanilla pipelines. A second set (`withDynamicLights`) adds the dynamic light uniform and defines. Registered as optional pipelines; warns once when they did not compile or the compact format version is unknown.
 - Depends on: `GeometryBufferPipelines`, `HelionPipelines`, `CompactTerrainVertices`.
 
 #### VanillaShadowCasterSource

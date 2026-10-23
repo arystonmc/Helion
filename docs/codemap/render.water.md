@@ -6,12 +6,12 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### WaterSurfaceStage
 - Path: `src/main/java/com/aryston/helion/render/water/WaterSurfaceStage.java`
-- Role: Pass `water_surface` after the solid features, only when ray traced water reflections or screen space reflections are on and the terrain supports it: draws the translucent terrain layer again into `helion:water_surface` (RGBA16_FLOAT color cleared to zero plus its own depth), with the opaque scene depth as a sampler, so it holds the nearest translucent surface in front of the opaque scene. Water pixels get the octahedral normal (animated waves on flat surfaces), the thickness to the opaque surface behind and the sky light; other translucent blocks (ice, stained glass) get their face normal, the glossy marker -1 in place of the thickness and the sky light. Publishes the target in `WaterResults`.
-- Depends on: `TerrainSource`, `WaterResources`, `WaterPipelines`, `WaterResults`.
+- Role: Pass `water_surface` after the solid features, only when ray traced water reflections or screen space reflections are on and the terrain supports it (binds the glossy mask for the glass pipelines): draws the translucent terrain layer again into `helion:water_surface` (RGBA16_FLOAT color cleared to zero plus its own depth), with the opaque scene depth as a sampler, so it holds the nearest translucent surface in front of the opaque scene. Water pixels get the octahedral normal (animated waves on flat surfaces), the thickness to the opaque surface behind and the sky light; other translucent blocks (ice, stained glass) get their face normal, the glossy marker -1 in place of the thickness and the sky light. Publishes the target in `WaterResults`.
+- Depends on: `TerrainSource`, `WaterResources`, `WaterPipelines`, `WaterResults`, `GlossyMask`.
 
 #### ScreenReflectionStage, ReflectionSettings
 - Path: `src/main/java/com/aryston/helion/render/water/ScreenReflectionStage.java`, `src/main/java/com/aryston/helion/render/water/ReflectionSettings.java`
-- Role: Screen space reflections (`reflections.screenSpace`, on in the Experimental preset). Pass `ssr` after the water surface: for every flat water pixel and every glossy translucent pixel marches the reflected view ray in camera relative world space (48 growing steps up to about 190 blocks, 5 refinement steps) against the depth of the lit opaque scene, and writes the scene color at the hit with an edge fade as alpha into `helion:screen_reflection` (RGBA16_FLOAT, full resolution). Mobs and players are in the opaque scene, so they show in the water when they are on screen. Publishes the target in `WaterResults`.
+- Role: Screen space reflections (`reflections.screenSpace`, on in the Experimental preset). Pass `ssr` after the water surface: for every flat water pixel and every glossy translucent pixel marches the reflected view ray in camera relative world space (48 growing steps up to about 190 blocks, 5 refinement steps) against the depth of the lit opaque scene, and writes the scene color at the hit with an edge fade as alpha into `helion:screen_reflection` (RGBA16_FLOAT, full resolution). Opaque glossy pixels (light target alpha 0.75, only with the geometry buffer) without a translucent surface in front march from the scene depth along the geometry normal and write the premultiplied reflection (Schlick, F0 0.04, half strength, on-screen hits only) into `helion:polished_reflection`, which pass `ssr_polished` blends over the scene before translucent geometry. Mobs and players are in the opaque scene, so they show in the water when they are on screen. Publishes the target in `WaterResults`.
 - Depends on: `WaterResources`, `WaterPipelines`, `WaterResults`, `FullscreenPass`.
 
 #### WaterReflectionStage
@@ -21,7 +21,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### WaterPipelines
 - Path: `src/main/java/com/aryston/helion/render/water/WaterPipelines.java`
-- Role: Water formats, uniform and sampler names, the screen space reflection pipeline and the two composite pipelines (`water/reflection` with the vanilla fog and `water/reflection_physical_sky` with the sky color bindings), blended with premultiplied alpha.
+- Role: Water formats, uniform and sampler names, the screen space reflection pipeline (two targets), the polished composite and the two water composite pipelines (`water/reflection` with the vanilla fog and `water/reflection_physical_sky` with the sky color bindings), blended with premultiplied alpha.
 - Depends on: `HelionPipelines`, `PhysicalSkyPipelines`.
 
 #### WaterResources

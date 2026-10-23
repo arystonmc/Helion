@@ -4,7 +4,9 @@ import com.aryston.helion.Helion;
 import com.aryston.helion.render.geometry.GeometryBufferPipelines;
 import com.aryston.helion.render.shader.HelionPipelines;
 import com.mojang.logging.LogUtils;
+import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.UniformType;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -80,7 +82,10 @@ public final class VanillaGeometryPipelines {
             .withFragmentShader(SHADER)
             .withColorTargetState(GeometryBufferPipelines.NORMAL_TARGET, GeometryBufferPipelines.target(GeometryBufferPipelines.NORMAL_FORMAT))
             .withColorTargetState(GeometryBufferPipelines.LIGHT_TARGET, GeometryBufferPipelines.target(GeometryBufferPipelines.LIGHT_FORMAT))
-            .withColorTargetState(GeometryBufferPipelines.ALBEDO_TARGET, GeometryBufferPipelines.target(GeometryBufferPipelines.ALBEDO_FORMAT)))
+            .withColorTargetState(GeometryBufferPipelines.ALBEDO_TARGET, GeometryBufferPipelines.target(GeometryBufferPipelines.ALBEDO_FORMAT))
+            .withBindGroupLayout(BindGroupLayout.builder()
+                .withUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .build()))
             .build();
     }
 

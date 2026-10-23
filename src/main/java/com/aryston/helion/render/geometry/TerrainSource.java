@@ -20,4 +20,6 @@ public interface TerrainSource {
     void renderWaterSurface(RenderPass waterPass);
 
     TerrainTextures textures();
+
+    GlossyCells glossyCells();
 }

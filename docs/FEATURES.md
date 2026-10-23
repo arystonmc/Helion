@@ -205,7 +205,8 @@ Water reflects what is on screen on every graphics card, mobs and players includ
 
 - Reflections take the same light, shadows and colors as the world you see
 - Mobs, players and items standing at the water show in it
-- Ice, stained glass and other see-through blocks reflect a little too, more at a glancing angle; where nothing on screen is reflected they show the sky, only as much as daylight reaches them
+- Ice, glass, stained glass and other see-through blocks reflect a little too, more at a glancing angle; where nothing on screen is reflected they show the sky, only as much as daylight reaches them
+- Polished stone, quartz, prismarine, glazed terracotta, smooth stone and packed ice show a faint reflection of what is on screen, strongest when you look along the floor
 - With ray tracing on, what is off screen still comes from ray tracing; without it, the sky is reflected there
 - Settings: Screen Space Reflections on the Lighting page; on in the Experimental preset, off otherwise
 

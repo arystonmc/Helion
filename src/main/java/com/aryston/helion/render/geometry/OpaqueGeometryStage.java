@@ -37,11 +37,13 @@ public final class OpaqueGeometryStage implements RenderStage {
     private final TerrainSource terrain;
     private final EntitySource entities;
     private final AtmosphereSource atmosphere;
+    private final GlossyMask glossy;
 
-    public OpaqueGeometryStage(TerrainSource terrain, EntitySource entities, AtmosphereSource atmosphere) {
+    public OpaqueGeometryStage(TerrainSource terrain, EntitySource entities, AtmosphereSource atmosphere, GlossyMask glossy) {
         this.terrain = terrain;
         this.entities = entities;
         this.atmosphere = atmosphere;
+        this.glossy = glossy;
     }
 
     @Override
@@ -120,6 +122,7 @@ public final class OpaqueGeometryStage implements RenderStage {
     }
 
     private void renderGeometry(RenderTarget target, GeometryBuffer.Targets targets) {
+        GpuTextureView mask = glossy.update(terrain.glossyCells());
         RenderPassDescriptor descriptor = RenderPassDescriptor.builder(() -> GEOMETRY_PASS_LABEL)
             .withColorAttachment(colorView(target))
             .withColorAttachment(colorView(targets.normal().get()), CLEAR)
@@ -129,6 +132,7 @@ public final class OpaqueGeometryStage implements RenderStage {
             .build();
         try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor)) {
             RenderSystem.bindDefaultUniforms(pass);
+            pass.setUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, mask, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
             terrain.renderOpaqueGeometry(pass);
         }
     }

@@ -35,6 +35,7 @@ public final class WaterResources {
     private static final int SCREEN_SIZE = new Std140SizeCalculator()
         .putMat4f()
         .putMat4f()
+        .putVec4()
         .get();
     private static final float PRESENT = 1.0F;
     private static final float ABSENT = 0.0F;
@@ -89,13 +90,18 @@ public final class WaterResources {
             .putFloat(screen ? PRESENT : ABSENT));
     }
 
-    GpuBuffer screenUniforms(HelionCamera camera) {
+    Optional<CompiledRenderPipeline> polishedProgram() {
+        return HelionPipelines.compiled(WaterPipelines.POLISHED_COMPOSITE);
+    }
+
+    GpuBuffer screenUniforms(HelionCamera camera, boolean geometry) {
         if (screenUniforms == null) {
             screenUniforms = new UniformRing(SCREEN_LABEL, SCREEN_SIZE, resources);
         }
         return screenUniforms.write(builder -> builder
             .putMat4f(camera.levelViewProjection())
-            .putMat4f(camera.levelViewProjection().invert()));
+            .putMat4f(camera.levelViewProjection().invert())
+            .putVec4(geometry ? PRESENT : ABSENT, ABSENT, ABSENT, ABSENT));
     }
 
     void finishScreen() {

@@ -1,6 +1,7 @@
 package com.aryston.helion.integration.vanilla;
 
 import com.aryston.helion.Helion;
+import com.aryston.helion.render.geometry.GeometryBufferPipelines;
 import com.aryston.helion.render.shader.HelionPipelines;
 import com.aryston.helion.render.water.WaterPipelines;
 import com.mojang.logging.LogUtils;
@@ -23,13 +24,18 @@ public final class VanillaWaterPipelines {
         surface(RenderPipelines.TRANSLUCENT_TERRAIN, "translucent_terrain"),
         surface(RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW, "translucent_terrain_multidraw")
     );
+    private static final String GLOSSY_ONLY_DEFINE = "HELION_GLOSSY_ONLY";
+    private static final VanillaGeometryPipelines.LayerPipelines GLASS = new VanillaGeometryPipelines.LayerPipelines(
+        glass(RenderPipelines.CUTOUT_TERRAIN, "cutout_glass"),
+        glass(RenderPipelines.CUTOUT_TERRAIN_MULTIDRAW, "cutout_glass_multidraw")
+    );
     private static boolean missingPipelinesReported;
 
     private VanillaWaterPipelines() {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(SURFACE.direct(), SURFACE.multiDraw());
+        return List.of(SURFACE.direct(), SURFACE.multiDraw(), GLASS.direct(), GLASS.multiDraw());
     }
 
     static Optional<VanillaGeometryPipelines.LayerPipelines> surface() {
@@ -41,7 +47,20 @@ public final class VanillaWaterPipelines {
         return compiled ? Optional.of(SURFACE) : Optional.empty();
     }
 
+    static Optional<VanillaGeometryPipelines.LayerPipelines> glass() {
+        boolean compiled = HelionPipelines.compiled(GLASS.direct()).isPresent() && HelionPipelines.compiled(GLASS.multiDraw()).isPresent();
+        return compiled ? Optional.of(GLASS) : Optional.empty();
+    }
+
+    private static RenderPipeline glass(RenderPipeline vanilla, String name) {
+        return builder(vanilla, name).withShaderDefine(GLOSSY_ONLY_DEFINE).build();
+    }
+
     private static RenderPipeline surface(RenderPipeline vanilla, String name) {
+        return builder(vanilla, name).build();
+    }
+
+    private static RenderPipeline.Builder builder(RenderPipeline vanilla, String name) {
         return vanilla.toBuilder()
             .withLocation(Identifier.fromNamespaceAndPath(Helion.MOD_ID, PIPELINE_PREFIX + name))
             .withVertexShader(SHADER)
@@ -50,7 +69,7 @@ public final class VanillaWaterPipelines {
             .withBindGroupLayout(BindGroupLayout.builder()
                 .withUniform(WaterPipelines.SURFACE_UNIFORM, UniformType.UNIFORM_BUFFER)
                 .withUniform(WaterPipelines.SCENE_DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-                .build())
-            .build();
+                .withUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .build());
     }
 }

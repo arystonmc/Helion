@@ -2,6 +2,7 @@ package com.aryston.helion.integration.vanilla;
 
 import com.aryston.helion.mixin.ChunkSectionsToRenderAccessor;
 import com.aryston.helion.mixin.LevelRendererAccessor;
+import com.aryston.helion.render.geometry.GlossyCells;
 import com.aryston.helion.render.geometry.TerrainSource;
 import com.aryston.helion.render.geometry.TerrainTextures;
 import com.aryston.helion.render.lighting.DynamicLightResources;
@@ -103,6 +104,7 @@ final class VanillaTerrainSource implements TerrainSource {
     public void renderWaterSurface(RenderPass waterPass) {
         Profiler.get().push("waterSurface");
         VanillaWaterPipelines.surface().ifPresent(pipelines -> renderLayer(ChunkSectionLayer.TRANSLUCENT, waterPass, pipelines));
+        VanillaWaterPipelines.glass().ifPresent(pipelines -> renderLayer(ChunkSectionLayer.CUTOUT, waterPass, pipelines));
         Profiler.get().pop();
     }
 
@@ -110,6 +112,11 @@ final class VanillaTerrainSource implements TerrainSource {
     public TerrainTextures textures() {
         TextureAtlas atlas = level.helion$atlasManager().getAtlasOrThrow(AtlasIds.BLOCKS);
         return new TerrainTextures(atlas.getTextureView(), level.helion$gameRenderer().lightmap(), bounds(atlas, WATER_STILL), bounds(atlas, WATER_FLOW));
+    }
+
+    @Override
+    public GlossyCells glossyCells() {
+        return VanillaGlossyCells.of(level.helion$atlasManager().getAtlasOrThrow(AtlasIds.BLOCKS));
     }
 
     private static Vector4f bounds(TextureAtlas atlas, Identifier sprite) {

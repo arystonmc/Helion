@@ -2,7 +2,9 @@ package com.aryston.helion.render;
 
 import com.aryston.helion.render.backend.GpuDeviceSummary;
 import com.aryston.helion.render.camera.HelionCamera;
+import com.aryston.helion.render.geometry.GlossyMask;
 import com.aryston.helion.render.graph.GpuTimings;
+import com.aryston.helion.render.geometry.GlossyMask;
 import com.aryston.helion.render.graph.RenderSettings;
 import com.aryston.helion.render.atmosphere.PhysicalSkyResources;
 import com.aryston.helion.render.clouds.CloudResources;
@@ -56,6 +58,7 @@ public final class HelionRenderCore {
     private final RtxSpikeResources rtxSpike = new RtxSpikeResources(resources);
     private final RayTracingResources rayTracing = new RayTracingResources(resources);
     private final WaterResources water = new WaterResources(resources);
+    private final GlossyMask glossy = new GlossyMask(resources);
     private PassiveListener passiveListener = reason -> { };
     private @Nullable GpuDeviceSummary device;
     private @Nullable PassiveReason passiveReason;
@@ -186,6 +189,7 @@ public final class HelionRenderCore {
         rtxSpike.close();
         rayTracing.close();
         water.close();
+        glossy.close();
         sceneTargets.close();
         LOGGER.info("Helion released {} GPU resources on shutdown", released);
     }
@@ -268,6 +272,10 @@ public final class HelionRenderCore {
 
     public WaterResources water() {
         return water;
+    }
+
+    public GlossyMask glossy() {
+        return glossy;
     }
 
     public ShadowResources shadows() {

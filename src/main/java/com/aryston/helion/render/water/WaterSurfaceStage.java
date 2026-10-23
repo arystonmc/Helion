@@ -1,5 +1,7 @@
 package com.aryston.helion.render.water;
 
+import com.aryston.helion.render.geometry.GeometryBufferPipelines;
+import com.aryston.helion.render.geometry.GlossyMask;
 import com.aryston.helion.render.geometry.TerrainSource;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
@@ -11,6 +13,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
 import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.util.Objects;
 import org.joml.Vector4f;
 
@@ -21,10 +24,12 @@ public final class WaterSurfaceStage implements RenderStage {
 
     private final TerrainSource terrain;
     private final WaterResources resources;
+    private final GlossyMask glossy;
 
-    public WaterSurfaceStage(TerrainSource terrain, WaterResources resources) {
+    public WaterSurfaceStage(TerrainSource terrain, WaterResources resources, GlossyMask glossy) {
         this.terrain = terrain;
         this.resources = resources;
+        this.glossy = glossy;
     }
 
     @Override
@@ -55,6 +60,7 @@ public final class WaterSurfaceStage implements RenderStage {
     }
 
     private void render(RenderTarget scene, RenderTarget surface) {
+        GpuTextureView mask = glossy.update(terrain.glossyCells());
         RenderPassDescriptor descriptor = RenderPassDescriptor.builder(() -> PASS_LABEL)
             .withColorAttachment(Objects.requireNonNull(surface.getColorTextureView()))
             .withDepthAttachment(Objects.requireNonNull(surface.getDepthTextureView()))
@@ -67,6 +73,7 @@ public final class WaterSurfaceStage implements RenderStage {
                 Objects.requireNonNull(scene.getDepthTextureView()),
                 RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
             );
+            pass.setUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, mask, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
             terrain.renderWaterSurface(pass);
         }
         resources.finishSurface();
