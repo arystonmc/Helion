@@ -68,7 +68,7 @@ public final class RtxShadowStage implements RenderStage {
         RtxTraceMode mode = resources.nextMode();
         int width = Math.ceilDiv(frame.scene().width(), RESOLUTION_DIVISOR);
         int height = Math.ceilDiv(frame.scene().height(), RESOLUTION_DIVISOR);
-        RtxShadowMask mask = resources.mask(width, height);
+        RtxImage mask = resources.mask(width, height);
         long agreementOffset = resources.agreement().beginSlotFor(mode);
         writeConstants(resources.constants(), camera, view, area, mode);
         GeometryBuffer.Targets geometry = frame.geometry().targets().orElseThrow();

@@ -57,7 +57,7 @@ public final class RtxSunShadowStage implements RenderStage {
         RtxSectionPos center = Objects.requireNonNull(anchor);
         int width = Math.ceilDiv(frame.scene().width(), RESOLUTION_DIVISOR);
         int height = Math.ceilDiv(frame.scene().height(), RESOLUTION_DIVISOR);
-        RtxShadowMask mask = resources.mask(width, height);
+        RtxImage mask = resources.mask(width, height);
         ByteBuffer constants = resources.constants();
         writeConstants(constants, frame.camera(), center, shadowLight.direction());
         GeometryBuffer.Targets geometry = frame.geometry().targets().orElseThrow();

@@ -11,7 +11,7 @@ class RtxShaderSourceTest {
     private static final String SHADER_ROOT = "/assets/helion/shaders/rtx/";
 
     @ParameterizedTest
-    @ValueSource(strings = {"shadow_mask.csh", "sun_shadow.csh"})
+    @ValueSource(strings = {"shadow_mask.csh", "sun_shadow.csh", "reflection.csh"})
     void computeShaderCompilesWithRayQueries(String shader) {
         ByteBuffer spirv = RtxShaderSource.compileCompute(SHADER_ROOT + shader, shader);
         try {

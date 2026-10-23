@@ -20,11 +20,11 @@ public final class RtxMaskViewStage implements RenderStage {
     private final String name;
     private final boolean enabled;
     private final RenderPipeline view;
-    private final Supplier<Optional<RtxShadowMask>> masks;
+    private final Supplier<Optional<RtxImage>> masks;
     private @Nullable CompiledRenderPipeline pipeline;
-    private @Nullable RtxShadowMask mask;
+    private @Nullable RtxImage mask;
 
-    private RtxMaskViewStage(String name, boolean enabled, RenderPipeline view, Supplier<Optional<RtxShadowMask>> masks) {
+    private RtxMaskViewStage(String name, boolean enabled, RenderPipeline view, Supplier<Optional<RtxImage>> masks) {
         this.name = name;
         this.enabled = enabled;
         this.view = view;
@@ -49,7 +49,7 @@ public final class RtxMaskViewStage implements RenderStage {
         if (!enabled || frame.scene().colorFormat() != RtxMaskPipelines.OUTPUT_FORMAT) {
             return false;
         }
-        Optional<RtxShadowMask> current = masks.get();
+        Optional<RtxImage> current = masks.get();
         Optional<CompiledRenderPipeline> compiled = HelionPipelines.compiled(view);
         mask = current.orElse(null);
         pipeline = compiled.orElse(null);
@@ -59,7 +59,7 @@ public final class RtxMaskViewStage implements RenderStage {
     @Override
     public void addTo(FrameContext frame) {
         CompiledRenderPipeline compiled = Objects.requireNonNull(pipeline);
-        RtxShadowMask shown = Objects.requireNonNull(mask);
+        RtxImage shown = Objects.requireNonNull(mask);
         FramePass pass = frame.graph().addPass(name);
         ResourceHandle<RenderTarget> output = pass.readsAndWrites(frame.targets().output());
         frame.targets().updateOutput(output);

@@ -17,6 +17,10 @@ public final class RayTracingResources {
 
     private static final String SUN_SHADOW_SOURCE = "/assets/helion/shaders/rtx/sun_shadow.csh";
     private static final String SUN_SHADOW_NAME = "sun_shadow.csh";
+    private static final String REFLECTION_SOURCE = "/assets/helion/shaders/rtx/reflection.csh";
+    private static final String REFLECTION_NAME = "reflection.csh";
+    private static final String REFLECTION_PIPELINE_LABEL = "Helion Ray Tracing Reflection Pipeline";
+    private static final String REFLECTION_LABEL = "Helion Ray Tracing Reflections";
     private static final String PIPELINE_LABEL = "Helion Ray Tracing Sun Shadow Pipeline";
     private static final String MASK_LABEL = "Helion Ray Tracing Sun Shadow Mask";
     private static final long PIPELINE_BYTES = 0L;
@@ -28,14 +32,26 @@ public final class RayTracingResources {
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     };
+    private static final int[] REFLECTION_DESCRIPTORS = {
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        KHRAccelerationStructure.VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+    };
 
     private final GpuResources resources;
     private final RtxSectionInbox inbox = new RtxSectionInbox();
     private @Nullable RtxDevice device;
     private @Nullable RtxSectionScene scene;
     private @Nullable RtxComputePipeline sunShadow;
-    private @Nullable RtxShadowMask mask;
+    private @Nullable RtxImage mask;
     private @Nullable ByteBuffer constants;
+    private @Nullable RtxComputePipeline reflection;
+    private @Nullable RtxImage reflectionImage;
+    private @Nullable ByteBuffer reflectionConstants;
     private boolean checked;
     private boolean reportedComplete;
     private long frame;
@@ -69,6 +85,34 @@ public final class RayTracingResources {
         return Objects.requireNonNull(sunShadow);
     }
 
+    boolean reflectionAvailable() {
+        return reflection != null;
+    }
+
+    RtxComputePipeline reflectionPipeline() {
+        return Objects.requireNonNull(reflection);
+    }
+
+    ByteBuffer reflectionConstants() {
+        if (reflectionConstants == null) {
+            reflectionConstants = MemoryUtil.memAlloc(SUN_SHADOW_CONSTANT_BYTES);
+        }
+        return reflectionConstants;
+    }
+
+    RtxImage reflection(int width, int height) {
+        RtxImage current = reflectionImage;
+        if (current != null && current.fits(width, height)) {
+            return current;
+        }
+        if (current != null) {
+            current.close(resources);
+        }
+        RtxImage created = RtxImage.create(resources, REFLECTION_LABEL, width, height);
+        reflectionImage = created;
+        return created;
+    }
+
     ByteBuffer constants() {
         if (constants == null) {
             constants = MemoryUtil.memAlloc(SUN_SHADOW_CONSTANT_BYTES);
@@ -76,20 +120,20 @@ public final class RayTracingResources {
         return constants;
     }
 
-    RtxShadowMask mask(int width, int height) {
-        RtxShadowMask current = mask;
+    RtxImage mask(int width, int height) {
+        RtxImage current = mask;
         if (current != null && current.fits(width, height)) {
             return current;
         }
         if (current != null) {
             current.close(resources);
         }
-        RtxShadowMask created = RtxShadowMask.create(resources, MASK_LABEL, width, height);
+        RtxImage created = RtxImage.create(resources, MASK_LABEL, width, height);
         mask = created;
         return created;
     }
 
-    Optional<RtxShadowMask> currentMask() {
+    Optional<RtxImage> currentMask() {
         return Optional.ofNullable(mask);
     }
 
@@ -102,10 +146,10 @@ public final class RayTracingResources {
         reportedComplete |= firstComplete;
         lastLogFrame = frame;
         LOGGER.info(
-            "Helion ray tracing: {} sections built ({} MiB), {} pending, {} in the top level; CPU {} ms; GPU bottom levels {} ms, top level {} ms, sun shadow {} ms",
+            "Helion ray tracing: {} sections built ({} MiB), {} pending, {} in the top level; CPU {} ms; GPU bottom levels {} ms, top level {} ms, sun shadow {} ms, reflections {} ms",
             plan.builtSections(), plan.builtBytes() / BYTES_PER_MIB, plan.pendingSections(), plan.visibleSections(),
             String.format("%.3f", prepareMillis), millis(gpuMillis, RtxSceneStage.BOTTOM_STAGE), millis(gpuMillis, RtxSceneStage.TOP_STAGE),
-            millis(gpuMillis, RtxSunShadowStage.NAME)
+            millis(gpuMillis, RtxSunShadowStage.NAME), millis(gpuMillis, RtxReflectionStage.NAME)
         );
     }
 
@@ -119,9 +163,17 @@ public final class RayTracingResources {
         if (constants != null) {
             MemoryUtil.memFree(constants);
         }
+        if (reflectionImage != null) {
+            reflectionImage.close(resources);
+        }
+        if (reflectionConstants != null) {
+            MemoryUtil.memFree(reflectionConstants);
+        }
         scene = null;
         mask = null;
         constants = null;
+        reflectionImage = null;
+        reflectionConstants = null;
     }
 
     private void open() {
@@ -142,6 +194,13 @@ public final class RayTracingResources {
         device = rtx;
         sunShadow = pipeline;
         scene = new RtxSectionScene(rtx, resources);
+        try {
+            RtxComputePipeline traced = RtxComputePipeline.create(rtx, REFLECTION_SOURCE, REFLECTION_NAME, REFLECTION_DESCRIPTORS, SUN_SHADOW_CONSTANT_BYTES);
+            resources.track(REFLECTION_PIPELINE_LABEL, PIPELINE_BYTES, traced::destroy);
+            reflection = traced;
+        } catch (IllegalStateException exception) {
+            LOGGER.error("Helion ray traced reflections are off: {}", exception.getMessage());
+        }
         LOGGER.info("Helion ray tracing is on: section scene within {} sections of the camera", RtxSectionInbox.RADIUS);
     }
 

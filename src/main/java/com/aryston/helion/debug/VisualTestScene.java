@@ -28,6 +28,9 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch) {
         new VisualTestScene("moon_overhead", MIDNIGHT, NORTH, -88.0F),
         new VisualTestScene("night_showcase", MIDNIGHT, NORTH, 25.0F),
         new VisualTestScene("dawn_sun", DAWN, EAST, -10.0F),
-        new VisualTestScene("dawn_away", DAWN, WEST, -10.0F)
+        new VisualTestScene("dawn_away", DAWN, WEST, -10.0F),
+        new VisualTestScene("water_noon", NOON, NORTH, 15.0F),
+        new VisualTestScene("water_sunset", SUNSET, NORTH, 15.0F),
+        new VisualTestScene("water_night", MIDNIGHT, NORTH, 15.0F)
     );
 }

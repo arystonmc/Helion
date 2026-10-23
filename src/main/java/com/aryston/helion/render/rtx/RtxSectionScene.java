@@ -82,6 +82,10 @@ final class RtxSectionScene {
         topLevel.record(commandBuffer);
     }
 
+    RtxBuffer surfaceTable() {
+        return topLevel.surfaceTable();
+    }
+
     long topLevelHandle() {
         return topLevel.handle();
     }

@@ -110,6 +110,7 @@ public final class PhysicalSkyStage implements RenderStage {
         ));
         atmosphere.useFog(resources.fog().slice());
         addSkyPass(frame, compiled, sky, skyColorInputs);
+        frame.atmosphere().publishSkyColor(new SkyColor(frame, sky, skyColorInputs));
         frame.atmosphere().publishFog(new AerialFog(frame, compiled, sky, skyColorInputs));
     }
 
@@ -264,6 +265,29 @@ public final class PhysicalSkyStage implements RenderStage {
     }
 
     private record SkyView(List<RenderTarget> targets, SkyViewCache cache, float lightHeight, float viewHeight, boolean lookupsWritten) {
+    }
+
+    private final class SkyColor implements SceneSkyColor {
+        private final FrameContext frame;
+        private final SkyEnvironment sky;
+        private final List<LookupInput> inputs;
+
+        private SkyColor(FrameContext frame, SkyEnvironment sky, List<LookupInput> inputs) {
+            this.frame = frame;
+            this.sky = sky;
+            this.inputs = inputs;
+        }
+
+        @Override
+        public void declareReads(FramePass pass) {
+            inputs.forEach(input -> pass.reads(input.target()));
+        }
+
+        @Override
+        public void bind(RenderPass renderPass) {
+            renderPass.setUniform(PhysicalSkyPipelines.SETTINGS, uniforms(sky, frame));
+            PhysicalSkyStage.bind(renderPass, inputs);
+        }
     }
 
     private final class AerialFog implements SceneFogPass {

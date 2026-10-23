@@ -14,4 +14,10 @@ public interface TerrainSource {
     void afterOpaque(RenderPass pass);
 
     void renderTranslucent(RenderPass pass);
+
+    boolean supportsWaterSurface();
+
+    void renderWaterSurface(RenderPass waterPass);
+
+    TerrainTextures textures();
 }

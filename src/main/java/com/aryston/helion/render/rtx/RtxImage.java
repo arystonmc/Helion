@@ -8,7 +8,7 @@ import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.vulkan.VulkanGpuTextureView;
 
-final class RtxShadowMask {
+final class RtxImage {
     private static final GpuFormat FORMAT = GpuFormat.RGBA8_UNORM;
     private static final int USAGE = GpuTexture.USAGE_TEXTURE_BINDING | RtxSpike.TEXTURE_USAGE_STORAGE;
     private static final int SINGLE_LAYER = 1;
@@ -19,21 +19,21 @@ final class RtxShadowMask {
     private final GpuTextureView view;
     private final TrackedResource tracked;
 
-    private RtxShadowMask(int width, int height, GpuTextureView view, TrackedResource tracked) {
+    private RtxImage(int width, int height, GpuTextureView view, TrackedResource tracked) {
         this.width = width;
         this.height = height;
         this.view = view;
         this.tracked = tracked;
     }
 
-    static RtxShadowMask create(GpuResources resources, String label, int width, int height) {
+    static RtxImage create(GpuResources resources, String label, int width, int height) {
         GpuTexture texture = RenderSystem.getDevice().createTexture(label, USAGE, FORMAT, width, height, SINGLE_LAYER, SINGLE_MIP);
         GpuTextureView view = RenderSystem.getDevice().createTextureView(texture);
         TrackedResource tracked = resources.track(label, (long) width * height * FORMAT.blockSize(), () -> {
             view.close();
             texture.close();
         });
-        return new RtxShadowMask(width, height, view, tracked);
+        return new RtxImage(width, height, view, tracked);
     }
 
     boolean fits(int requestedWidth, int requestedHeight) {

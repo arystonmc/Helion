@@ -2,15 +2,16 @@ package com.aryston.helion.render.rtx;
 
 import org.jspecify.annotations.Nullable;
 
-public record RtxSectionUpdate(int sectionX, int sectionY, int sectionZ, float @Nullable [] positions, int quads) {
+public record RtxSectionUpdate(int sectionX, int sectionY, int sectionZ, float @Nullable [] positions, int @Nullable [] surface, int quads) {
+    public static final int SURFACE_INTS_PER_VERTEX = 3;
     private static final int NO_QUADS = 0;
 
-    public static RtxSectionUpdate mesh(int sectionX, int sectionY, int sectionZ, float[] positions, int quads) {
-        return new RtxSectionUpdate(sectionX, sectionY, sectionZ, positions, quads);
+    public static RtxSectionUpdate mesh(int sectionX, int sectionY, int sectionZ, float[] positions, int[] surface, int quads) {
+        return new RtxSectionUpdate(sectionX, sectionY, sectionZ, positions, surface, quads);
     }
 
     public static RtxSectionUpdate removed(int sectionX, int sectionY, int sectionZ) {
-        return new RtxSectionUpdate(sectionX, sectionY, sectionZ, null, NO_QUADS);
+        return new RtxSectionUpdate(sectionX, sectionY, sectionZ, null, null, NO_QUADS);
     }
 
     boolean isRemoval() {

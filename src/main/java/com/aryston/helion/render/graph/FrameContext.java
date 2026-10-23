@@ -8,6 +8,7 @@ import com.aryston.helion.render.shadow.ShadowResults;
 import com.aryston.helion.render.scene.SceneSnapshot;
 import com.aryston.helion.render.temporal.TemporalFrame;
 import com.aryston.helion.render.voxel.VoxelLightResults;
+import com.aryston.helion.render.water.WaterResults;
 
 public record FrameContext(
     RenderGraph graph,
@@ -20,6 +21,7 @@ public record FrameContext(
     AtmosphereResults atmosphere,
     ShadowResults shadows,
     PostResults post,
-    VoxelLightResults voxels
+    VoxelLightResults voxels,
+    WaterResults water
 ) {
 }

@@ -99,7 +99,7 @@ public final class PhysicalSkyPipelines {
             .withColorTargetState(SKY_VIEW_MIE_TARGET, lookupTarget());
     }
 
-    private static BindGroupLayout.Builder skyColorBindings() {
+    public static BindGroupLayout.Builder skyColorBindings() {
         return BindGroupLayout.builder()
             .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
             .withUniform(SUN_SKY_VIEW_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)

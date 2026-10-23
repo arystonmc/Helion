@@ -15,7 +15,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### PhysicalSkyStage
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/PhysicalSkyStage.java`
-- Role: Physical sky in place of `SkyStage`. Writes the constant transmittance and multiple scattering tables once into persistent targets (four spectral targets each, one multiple render target pass per table), redraws the persistent sun and moon sky view tables only when `SkyViewCache` says their light height or the camera altitude changed (two targets each: scattering with its phase and Mie without it), renders the 1 x 1 average horizon color and requests its readback, renders the 3 x 1 sky light target and publishes it as `SkyLight`, hands the fog buffer without distance fog to the source, draws the sky per pixel into the scene with the vanilla sun, moon and stars on top, and publishes the distance fog pass (`SceneFogPass`) for `TransparentGeometryStage`. Inactive when the setting is off, the frame has no sky, the source has no `SkyEnvironment`, the scene color is not RGBA8 or a shader failed to compile.
+- Role: Physical sky in place of `SkyStage`. Writes the constant transmittance and multiple scattering tables once into persistent targets (four spectral targets each, one multiple render target pass per table), redraws the persistent sun and moon sky view tables only when `SkyViewCache` says their light height or the camera altitude changed (two targets each: scattering with its phase and Mie without it), renders the 1 x 1 average horizon color and requests its readback, renders the 3 x 1 sky light target and publishes it as `SkyLight`, hands the fog buffer without distance fog to the source, draws the sky per pixel into the scene with the vanilla sun, moon and stars on top, and publishes the distance fog pass (`SceneFogPass`) for `TransparentGeometryStage`. Inactive when the setting is off, the frame has no sky, the source has no `SkyEnvironment`, the scene color is not RGBA8 or a shader failed to compile. Also publishes a `SceneSkyColor` that binds the sky settings and the sun and moon sky view tables to a later pass that includes `helion_sky_color.glsl`.
 - Depends on: `AtmosphereSource`, `PhysicalSkyResources`, `PhysicalSkyPrograms`, `PhysicalSkyPipelines`, `AtmosphereResults`, `SkyLight`, `SceneFogPass`, `FullscreenPass`.
 
 #### PhysicalSkyResources
@@ -54,9 +54,13 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/AtmosphereFog.java`
 - Role: Copy of the vanilla fog values of a frame: color, environmental, render distance, sky and cloud fog distances.
 
+#### SceneSkyColor
+- Path: `src/main/java/com/aryston/helion/render/atmosphere/SceneSkyColor.java`
+- Role: Declares the sky view tables as reads of a pass and binds them with the sky settings, so a pass outside the atmosphere package can compute the physical sky color in any direction.
+
 #### AtmosphereResults
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/AtmosphereResults.java`
-- Role: Per-frame results of the physical sky for later stages: the `SkyLight` for deferred lighting and the `SceneFogPass` for transparent geometry, both empty without the physical sky, the `SceneCloudPass` that `CloudStage` publishes and the `SceneLightShaftPass` that `LightShaftStage` publishes, both for transparent geometry.
+- Role: Per-frame results of the physical sky for later stages: the `SkyLight` for deferred lighting and the `SceneFogPass` for transparent geometry, both empty without the physical sky, the `SceneCloudPass` that `CloudStage` publishes and the `SceneLightShaftPass` that `LightShaftStage` publishes, both for transparent geometry. With the physical sky it also holds the `SceneSkyColor` for the water reflections.
 
 #### SkyLight
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/SkyLight.java`

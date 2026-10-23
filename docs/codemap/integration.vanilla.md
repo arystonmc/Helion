@@ -34,7 +34,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaTerrainSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaTerrainSource.java`
-- Role: `TerrainSource` over vanilla `ChunkSectionsToRender`: fog (the current `SceneFog` buffer, so the physical sky fog reaches terrain), chunk sampler, opaque and translucent layer groups, matching stage events. `renderOpaqueGeometry` draws the solid and cutout layers one by one with the geometry pipelines through `ChunkSectionsToRenderAccessor`; `supportsGeometryBuffer` is false for wireframe terrain or missing shaders. When the frame has dynamic lights it binds their uniform and draws every layer with the dynamic light pipelines (`VanillaDynamicLightPipelines`, or the geometry pipelines with lights), falling back per layer to the vanilla pipelines when a variant is missing; without lights it draws exactly as before.
+- Role: `TerrainSource` over vanilla `ChunkSectionsToRender`: fog (the current `SceneFog` buffer, so the physical sky fog reaches terrain), chunk sampler, opaque and translucent layer groups, matching stage events. `renderOpaqueGeometry` draws the solid and cutout layers one by one with the geometry pipelines through `ChunkSectionsToRenderAccessor`; `supportsGeometryBuffer` is false for wireframe terrain or missing shaders. When the frame has dynamic lights it binds their uniform and draws every layer with the dynamic light pipelines (`VanillaDynamicLightPipelines`, or the geometry pipelines with lights), falling back per layer to the vanilla pipelines when a variant is missing; without lights it draws exactly as before. `renderWaterSurface` draws the translucent layer with the water surface pipelines (skipped for wireframe terrain or missing shaders); `textures()` hands the block atlas, the lightmap and the atlas bounds of `block/water_still` and `block/water_flow` to the core.
 
 #### VanillaDynamicLightPipelines
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaDynamicLightPipelines.java`
@@ -46,9 +46,14 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Role: Finds the light sources of a frame: every rendered entity within 64 blocks of the camera that burns or holds or is a glowing item (`DynamicLightEmitters`), at its interpolated position, nearest first, collected once per frame (cached by level, game time and partial tick). Each source keeps the light color of its emitting block (`VoxelLightColors`); `voxelLights` hands the nearest 16 in world coordinates to voxel lighting. `lights` hands the nearest `MAX_LIGHTS` to the frame relative to the camera; `brighten` raises an entity's packed light coordinates to the dynamic level at its light probe position (level minus distance), so mobs, items and the first-person hand are lit too. Does nothing while the core is inactive, in screen effects mode or with the setting off.
 - Depends on: `DynamicLightEmitters`, `DynamicLight`, `DynamicLightResources`, `HelionRenderCore`.
 
+#### VanillaWaterPipelines
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaWaterPipelines.java`
+- Role: Water surface variants of the vanilla translucent terrain pipelines (direct and multi-draw), copied with `toBuilder()` and switched to `helion:water/surface` with one unblended RGBA16_FLOAT target, the `HelionWaterSurface` uniform and the scene depth sampler. Registered as optional pipelines; warns once when they did not compile.
+- Depends on: `WaterPipelines`, `HelionPipelines`.
+
 #### RtxSectionCapture
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/RtxSectionCapture.java`
-- Role: With `helion.rayTracing`, copies the quad positions of the solid and cutout layers of a compiled section (vanilla `Position` floats or Aervium's compact `PositionLight`, 1/2048 block steps from -8) into a `RtxSectionUpdate` on the compile worker when the section is near the camera, reports reset sections, and once per frame passes the scene's recompile requests to `LevelExtractor.setSectionDirty`. Warns once and skips terrain in an unknown vertex format.
+- Role: With `helion.rayTracing`, copies the quad positions of the solid and cutout layers of a compiled section (vanilla `Position` floats or Aervium's compact `PositionLight`, 1/2048 block steps from -8) into a `RtxSectionUpdate` on the compile worker when the section is near the camera, reports reset sections, and once per frame passes the scene's recompile requests to `LevelExtractor.setSectionDirty`. Warns once and skips terrain in an unknown vertex format. Next to the positions it packs the surface attributes of every vertex: `UV0`, `Color` and `UV2` of the vanilla block format, or `PackedUV0`, `Color` and the light in `PositionLight.w` of the compact format.
 
 #### VanillaVoxelOccluders
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaVoxelOccluders.java`

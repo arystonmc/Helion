@@ -6,6 +6,7 @@ import com.aryston.helion.render.clouds.SceneCloudPass;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.lightshaft.SceneLightShaftPass;
+import com.aryston.helion.render.water.SceneReflectionPass;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.ResourceHandle;
@@ -48,7 +49,7 @@ public final class TransparentGeometryStage implements RenderStage {
         frame.targets().updateScene(scene);
         frame.targets().declareGeometryAttachments(pass);
         AtmospherePasses atmospherePasses = new AtmospherePasses(
-            frame.atmosphere().fog(), frame.atmosphere().clouds(), frame.atmosphere().lightShafts()
+            frame.water().reflectionPass(), frame.atmosphere().fog(), frame.atmosphere().clouds(), frame.atmosphere().lightShafts()
         );
         atmospherePasses.declareReads(pass);
         boolean orderIndependent = frame.scene().orderIndependentTransparency();
@@ -111,21 +112,24 @@ public final class TransparentGeometryStage implements RenderStage {
     }
 
     private record AtmospherePasses(
+        Optional<SceneReflectionPass> reflection,
         Optional<SceneFogPass> fog,
         Optional<SceneCloudPass> clouds,
         Optional<SceneLightShaftPass> lightShafts
     ) {
         boolean isEmpty() {
-            return fog.isEmpty() && clouds.isEmpty() && lightShafts.isEmpty();
+            return reflection.isEmpty() && fog.isEmpty() && clouds.isEmpty() && lightShafts.isEmpty();
         }
 
         void declareReads(FramePass pass) {
+            reflection.ifPresent(reflectionPass -> reflectionPass.declareReads(pass));
             fog.ifPresent(fogPass -> fogPass.declareReads(pass));
             clouds.ifPresent(cloudPass -> cloudPass.declareReads(pass));
             lightShafts.ifPresent(shaftPass -> shaftPass.declareReads(pass));
         }
 
         void draw(RenderTarget target) {
+            reflection.ifPresent(reflectionPass -> reflectionPass.draw(target));
             fog.ifPresent(fogPass -> fogPass.draw(target));
             clouds.ifPresent(cloudPass -> cloudPass.draw(target));
             lightShafts.ifPresent(shaftPass -> shaftPass.draw(target));

@@ -7,12 +7,17 @@ import org.jspecify.annotations.Nullable;
 
 public final class AtmosphereResults {
     private @Nullable SceneFogPass fog;
+    private @Nullable SceneSkyColor skyColor;
     private @Nullable SkyLight skyLight;
     private @Nullable SceneCloudPass clouds;
     private @Nullable SceneLightShaftPass lightShafts;
 
     public Optional<SceneFogPass> fog() {
         return Optional.ofNullable(fog);
+    }
+
+    public Optional<SceneSkyColor> skyColor() {
+        return Optional.ofNullable(skyColor);
     }
 
     public Optional<SkyLight> skyLight() {
@@ -37,6 +42,10 @@ public final class AtmosphereResults {
 
     void publishSkyLight(SkyLight light) {
         skyLight = light;
+    }
+
+    void publishSkyColor(SceneSkyColor color) {
+        skyColor = color;
     }
 
     void publishFog(SceneFogPass pass) {

@@ -21,13 +21,24 @@ public final class RtxSectionCapture {
     private static final List<ChunkSectionLayer> SOLID_LAYERS = List.of(ChunkSectionLayer.SOLID, ChunkSectionLayer.CUTOUT);
     private static final String POSITION = "Position";
     private static final String COMPACT_POSITION = "PositionLight";
+    private static final String COLOR = "Color";
+    private static final String UV = "UV0";
+    private static final String COMPACT_UV = "PackedUV0";
+    private static final String LIGHT = "UV2";
     private static final int VERTICES_PER_QUAD = 4;
     private static final int FLOATS_PER_VERTEX = 3;
     private static final int COMPACT_MASK = 0xFFFF;
     private static final float COMPACT_STEP = 1.0F / 2048.0F;
     private static final float COMPACT_ORIGIN = 8.0F;
+    private static final float UV_SCALE = 65536.0F;
+    private static final int UV_MAX = 0xFFFF;
+    private static final int BYTE_MASK = 0xFF;
+    private static final int SECOND_SHIFT = 8;
+    private static final int THIRD_SHIFT = 16;
+    private static final int FOURTH_SHIFT = 24;
     private static final int SECOND = 1;
     private static final int THIRD = 2;
+    private static final int FOURTH = 3;
     private static final int UNKNOWN_FORMAT = -1;
     private static final int NO_QUADS = 0;
     private static volatile boolean unknownFormatReported;
@@ -48,19 +59,21 @@ public final class RtxSectionCapture {
             MeshData mesh = results.renderedLayers.get(layer);
             quads += mesh == null ? NO_QUADS : mesh.drawState().vertexCount() / VERTICES_PER_QUAD;
         }
-        float[] positions = new float[quads * VERTICES_PER_QUAD * FLOATS_PER_VERTEX];
+        int vertices = quads * VERTICES_PER_QUAD;
+        float[] positions = new float[vertices * FLOATS_PER_VERTEX];
+        int[] surface = new int[vertices * RtxSectionUpdate.SURFACE_INTS_PER_VERTEX];
         int written = 0;
         for (ChunkSectionLayer layer : SOLID_LAYERS) {
             MeshData mesh = results.renderedLayers.get(layer);
             if (mesh != null) {
-                int copied = decode(mesh, positions, written);
+                int copied = decode(mesh, positions, surface, written);
                 if (copied == UNKNOWN_FORMAT) {
                     return;
                 }
                 written += copied;
             }
         }
-        inbox.offer(RtxSectionUpdate.mesh(position.x(), position.y(), position.z(), positions, quads));
+        inbox.offer(RtxSectionUpdate.mesh(position.x(), position.y(), position.z(), positions, surface, quads));
     }
 
     public static void removed(long sectionNode) {
@@ -79,18 +92,22 @@ public final class RtxSectionCapture {
         }
     }
 
-    private static int decode(MeshData mesh, float[] positions, int offset) {
+    private static int decode(MeshData mesh, float[] positions, int[] surface, int firstVertex) {
         VertexFormat format = mesh.drawState().format();
         int vertices = mesh.drawState().vertexCount() - mesh.drawState().vertexCount() % VERTICES_PER_QUAD;
         int stride = format.getVertexSize();
         ByteBuffer data = mesh.vertexBuffer();
         VertexFormatElement plain = format.getElement(POSITION);
         VertexFormatElement compact = format.getElement(COMPACT_POSITION);
-        if (plain == null && compact == null) {
+        VertexFormatElement color = format.getElement(COLOR);
+        VertexFormatElement uv = format.getElement(plain != null ? UV : COMPACT_UV);
+        VertexFormatElement light = plain != null ? format.getElement(LIGHT) : compact;
+        if ((plain == null && compact == null) || color == null || uv == null || light == null) {
             reportUnknown(format);
             return UNKNOWN_FORMAT;
         }
-        int index = offset;
+        int index = firstVertex * FLOATS_PER_VERTEX;
+        int attribute = firstVertex * RtxSectionUpdate.SURFACE_INTS_PER_VERTEX;
         for (int vertex = 0; vertex < vertices; vertex++) {
             int base = vertex * stride;
             if (plain != null) {
@@ -98,14 +115,32 @@ public final class RtxSectionCapture {
                 positions[index++] = data.getFloat(at);
                 positions[index++] = data.getFloat(at + SECOND * Float.BYTES);
                 positions[index++] = data.getFloat(at + THIRD * Float.BYTES);
+                surface[attribute++] = packUv(data.getFloat(base + uv.offset()), data.getFloat(base + uv.offset() + Float.BYTES));
             } else {
                 int at = base + compact.offset();
                 positions[index++] = compact(data.getShort(at));
                 positions[index++] = compact(data.getShort(at + SECOND * Short.BYTES));
                 positions[index++] = compact(data.getShort(at + THIRD * Short.BYTES));
+                surface[attribute++] = (data.getShort(base + uv.offset()) & COMPACT_MASK)
+                    | (data.getShort(base + uv.offset() + Short.BYTES) & COMPACT_MASK) << THIRD_SHIFT;
             }
+            surface[attribute++] = packBytes(data, base + color.offset());
+            surface[attribute++] = plain != null
+                ? (data.getShort(base + light.offset()) & BYTE_MASK) | (data.getShort(base + light.offset() + Short.BYTES) & BYTE_MASK) << SECOND_SHIFT
+                : data.getShort(base + light.offset() + FOURTH * Short.BYTES) & COMPACT_MASK;
         }
-        return index - offset;
+        return vertices;
+    }
+
+    private static int packUv(float u, float v) {
+        return Math.clamp((int) (u * UV_SCALE), 0, UV_MAX) | Math.clamp((int) (v * UV_SCALE), 0, UV_MAX) << THIRD_SHIFT;
+    }
+
+    private static int packBytes(ByteBuffer data, int at) {
+        return (data.get(at) & BYTE_MASK)
+            | (data.get(at + SECOND) & BYTE_MASK) << SECOND_SHIFT
+            | (data.get(at + THIRD) & BYTE_MASK) << THIRD_SHIFT
+            | (data.get(at + FOURTH) & BYTE_MASK) << FOURTH_SHIFT;
     }
 
     private static float compact(short value) {

@@ -10,7 +10,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### FrameContext
 - Path: `src/main/java/com/aryston/helion/render/graph/FrameContext.java`
-- Role: Everything a stage sees for one frame: graph, targets, camera, scene snapshot, render settings, the geometry buffer, the temporal frame (jittered projection, reprojection), the atmosphere results (sky light and fog pass of the physical sky), the shadow results (shadow mask and light) and the post results that stages hand to each other.
+- Role: Everything a stage sees for one frame: graph, targets, camera, scene snapshot, render settings, the geometry buffer, the temporal frame (jittered projection, reprojection), the atmosphere results (sky light and fog pass of the physical sky), the shadow results (shadow mask and light), the post results and the water results (water surface, traced reflections, reflection pass) that stages hand to each other.
 
 #### FrameTargets
 - Path: `src/main/java/com/aryston/helion/render/graph/FrameTargets.java`

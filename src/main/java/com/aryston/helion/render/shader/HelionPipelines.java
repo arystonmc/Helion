@@ -16,6 +16,7 @@ import com.aryston.helion.render.shadow.ShadowPipelines;
 import com.aryston.helion.render.temporal.TemporalPipelines;
 import com.aryston.helion.render.voxel.VoxelLightPipelines;
 import com.aryston.helion.render.voxel.VoxelSlicePipelines;
+import com.aryston.helion.render.water.WaterPipelines;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
@@ -48,7 +49,8 @@ public final class HelionPipelines {
             GeometryBufferPipelines.all(),
             VoxelSlicePipelines.all(),
             VoxelLightPipelines.all(),
-            RtxMaskPipelines.all()
+            RtxMaskPipelines.all(),
+            WaterPipelines.all()
         ).flatMap(List::stream).toList();
     }
 

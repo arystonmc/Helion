@@ -21,12 +21,16 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### TransparentGeometryStage
 - Path: `src/main/java/com/aryston/helion/render/geometry/TransparentGeometryStage.java`
-- Role: Draws sorted transparency (translucent features, translucent terrain, particles, clouds, weather, world border) or vanilla order independent transparency, then outline, see-through and always-on-top features. Declares the auxiliary OIT and outline targets. When the physical sky published a `SceneFogPass`, draws it after the sorted translucents and before clouds, weather and world border (a separate render pass on each side), or after order independent transparency. When `CloudStage` published a `SceneCloudPass`, draws the volumetric clouds right after the fog, and the light shafts of `LightShaftStage` right after the clouds.
+- Role: Draws sorted transparency (translucent features, translucent terrain, particles, clouds, weather, world border) or vanilla order independent transparency, then outline, see-through and always-on-top features. Declares the auxiliary OIT and outline targets. When the physical sky published a `SceneFogPass`, draws it after the sorted translucents and before clouds, weather and world border (a separate render pass on each side), or after order independent transparency. When `CloudStage` published a `SceneCloudPass`, draws the volumetric clouds right after the fog, and the light shafts of `LightShaftStage` right after the clouds. A `SceneReflectionPass` from `WaterResults` is drawn first among those passes, so fog, clouds and light shafts cover the reflections like the water under them.
 - Depends on: `TerrainSource`, `EntitySource`, `AtmosphereSource`, `TransparencySource`, `SceneFogPass`, `SceneCloudPass`, `SceneLightShaftPass`.
 
 #### TerrainSource
 - Path: `src/main/java/com/aryston/helion/render/geometry/TerrainSource.java`
-- Role: Contract for drawing chunk geometry: `prepareFrame`, `supportsGeometryBuffer`, `renderOpaque` (vanilla path with the after-opaque event), `renderOpaqueGeometry` (geometry buffer path), `afterOpaque`, `renderTranslucent`.
+- Role: Contract for drawing chunk geometry: `prepareFrame`, `supportsGeometryBuffer`, `renderOpaque` (vanilla path with the after-opaque event), `renderOpaqueGeometry` (geometry buffer path), `afterOpaque`, `renderTranslucent`, `supportsWaterSurface` and `renderWaterSurface` (translucent layer into the water surface target), `textures()`.
+
+#### TerrainTextures
+- Path: `src/main/java/com/aryston/helion/render/geometry/TerrainTextures.java`
+- Role: The block atlas, the lightmap and the atlas bounds of the still and flowing water sprites, for the water surface and the traced reflections.
 
 #### GeometryBuffer
 - Path: `src/main/java/com/aryston/helion/render/geometry/GeometryBuffer.java`

@@ -11,6 +11,7 @@ import com.aryston.helion.integration.vanilla.LevelRenderHook;
 import com.aryston.helion.integration.vanilla.VanillaDynamicLightPipelines;
 import com.aryston.helion.integration.vanilla.VanillaGeometryPipelines;
 import com.aryston.helion.integration.vanilla.VanillaShadowPipelines;
+import com.aryston.helion.integration.vanilla.VanillaWaterPipelines;
 import com.aryston.helion.integration.vanilla.VoxelLightColors;
 import com.aryston.helion.render.HelionRenderCore;
 import com.aryston.helion.render.PassiveReason;
@@ -82,6 +83,7 @@ public final class ClientEvents {
         HelionPipelines.all().forEach(event::registerOptionalPipeline);
         VanillaGeometryPipelines.all().forEach(event::registerOptionalPipeline);
         EntityGeometryPipelines.all().forEach(event::registerOptionalPipeline);
+        VanillaWaterPipelines.all().forEach(event::registerOptionalPipeline);
         VanillaShadowPipelines.all().forEach(event::registerOptionalPipeline);
         VanillaDynamicLightPipelines.all().forEach(event::registerOptionalPipeline);
     }

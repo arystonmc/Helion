@@ -47,7 +47,7 @@ public final class RtxSpikeResources {
     private @Nullable RtxDevice device;
     private @Nullable RtxComputePipeline pipeline;
     private @Nullable RtxAgreement agreement;
-    private @Nullable RtxShadowMask mask;
+    private @Nullable RtxImage mask;
     private @Nullable RtxScene scene;
     private @Nullable TrackedResource trackedScene;
     private @Nullable ByteBuffer constants;
@@ -106,20 +106,20 @@ public final class RtxSpikeResources {
         return constants;
     }
 
-    RtxShadowMask mask(int width, int height) {
-        RtxShadowMask current = mask;
+    RtxImage mask(int width, int height) {
+        RtxImage current = mask;
         if (current != null && current.fits(width, height)) {
             return current;
         }
         if (current != null) {
             current.close(resources);
         }
-        RtxShadowMask created = RtxShadowMask.create(resources, MASK_LABEL, width, height);
+        RtxImage created = RtxImage.create(resources, MASK_LABEL, width, height);
         mask = created;
         return created;
     }
 
-    Optional<RtxShadowMask> currentMask() {
+    Optional<RtxImage> currentMask() {
         return Optional.ofNullable(mask);
     }
 

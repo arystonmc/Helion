@@ -24,6 +24,7 @@ import com.aryston.helion.render.rtx.RtxSpike;
 import com.aryston.helion.render.rtx.RtxSpikeResources;
 import com.aryston.helion.render.scene.SceneSnapshot;
 import com.aryston.helion.render.voxel.VoxelLightingResources;
+import com.aryston.helion.render.water.WaterResources;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.logging.LogUtils;
@@ -54,6 +55,7 @@ public final class HelionRenderCore {
     private final VoxelLightingResources voxelLighting = new VoxelLightingResources(resources);
     private final RtxSpikeResources rtxSpike = new RtxSpikeResources(resources);
     private final RayTracingResources rayTracing = new RayTracingResources(resources);
+    private final WaterResources water = new WaterResources(resources);
     private PassiveListener passiveListener = reason -> { };
     private @Nullable GpuDeviceSummary device;
     private @Nullable PassiveReason passiveReason;
@@ -183,6 +185,7 @@ public final class HelionRenderCore {
         voxelLighting.close();
         rtxSpike.close();
         rayTracing.close();
+        water.close();
         sceneTargets.close();
         LOGGER.info("Helion released {} GPU resources on shutdown", released);
     }
@@ -261,6 +264,10 @@ public final class HelionRenderCore {
 
     public RayTracingResources rayTracing() {
         return rayTracing;
+    }
+
+    public WaterResources water() {
+        return water;
     }
 
     public ShadowResources shadows() {

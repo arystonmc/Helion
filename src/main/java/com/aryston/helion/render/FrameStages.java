@@ -23,6 +23,7 @@ import com.aryston.helion.render.post.PostProcessingStage;
 import com.aryston.helion.render.post.PresentStage;
 import com.aryston.helion.render.post.SharpeningStage;
 import com.aryston.helion.render.rtx.RtxMaskViewStage;
+import com.aryston.helion.render.rtx.RtxReflectionStage;
 import com.aryston.helion.render.rtx.RtxSceneStage;
 import com.aryston.helion.render.rtx.RtxShadowStage;
 import com.aryston.helion.render.rtx.RtxSunShadowStage;
@@ -31,6 +32,8 @@ import com.aryston.helion.render.shadow.ShadowStage;
 import com.aryston.helion.render.temporal.TemporalStage;
 import com.aryston.helion.render.voxel.VoxelLightStage;
 import com.aryston.helion.render.voxel.VoxelSliceStage;
+import com.aryston.helion.render.water.WaterReflectionStage;
+import com.aryston.helion.render.water.WaterSurfaceStage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,6 +73,9 @@ public final class FrameStages {
             new DeferredLightingStage(core.lighting()),
             new AmbientOcclusionStage(core.ambientOcclusion()),
             new SolidFeatureStage(sources.terrain(), sources.entities()),
+            new WaterSurfaceStage(sources.terrain(), core.water()),
+            new RtxReflectionStage(core.rayTracing(), sources.terrain()),
+            new WaterReflectionStage(core.water()),
             new CloudStage(sources.clouds(), core.clouds()),
             new LightShaftStage(core.lightShafts()),
             new TransparentGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere(), sources.transparency()),
