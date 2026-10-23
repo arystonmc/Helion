@@ -66,11 +66,12 @@ void main() {
     fragColor = vec4(0.0);
     ivec2 pixel = ivec2(gl_FragCoord.xy);
     vec4 surface = texelFetch(WaterSurfaceSampler, pixel, 0);
-    if (!helionIsWater(surface)) {
+    bool water = helionIsWater(surface);
+    if (!water && !helionIsGlossy(surface)) {
         return;
     }
     vec3 normal = helionDecodeOctahedral(surface.xy);
-    if (normal.y < HELION_MIN_FACING) {
+    if (water && normal.y < HELION_MIN_FACING) {
         return;
     }
     vec2 screen = (vec2(pixel) + 0.5) / vec2(textureSize(WaterDepthSampler, 0));

@@ -3,6 +3,8 @@
 
 const float HELION_WATER_MIN_THICKNESS = 1.0e-3;
 const float HELION_WATER_MAX_THICKNESS = 64.0;
+const float HELION_GLOSSY_MARKER = -1.0;
+const float HELION_GLOSSY_THRESHOLD = -0.5;
 
 vec2 helionSignNotZero(vec2 value) {
     return vec2(value.x >= 0.0 ? 1.0 : -1.0, value.y >= 0.0 ? 1.0 : -1.0);
@@ -23,6 +25,10 @@ vec3 helionDecodeOctahedral(vec2 encoded) {
 
 bool helionIsWater(vec4 surface) {
     return surface.z >= HELION_WATER_MIN_THICKNESS;
+}
+
+bool helionIsGlossy(vec4 surface) {
+    return surface.z < HELION_GLOSSY_THRESHOLD;
 }
 
 #endif

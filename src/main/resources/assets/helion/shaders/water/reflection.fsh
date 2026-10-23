@@ -26,6 +26,7 @@ layout(location = 0) in vec2 texCoord;
 layout(location = 0) out vec4 fragColor;
 
 const float HELION_WATER_F0 = 0.02;
+const float HELION_GLOSSY_F0 = 0.04;
 const float HELION_FRESNEL_POWER = 5.0;
 const float HELION_MIN_FACING = 0.05;
 const float HELION_WATER_ABSORPTION = 0.15;
@@ -52,11 +53,12 @@ vec3 helionWaterAmbient() {
 void main() {
     ivec2 pixel = ivec2(gl_FragCoord.xy);
     vec4 surface = texelFetch(WaterSurfaceSampler, pixel, 0);
-    if (!helionIsWater(surface)) {
+    bool water = helionIsWater(surface);
+    if (!water && !helionIsGlossy(surface)) {
         discard;
     }
     vec3 normal = helionDecodeOctahedral(surface.xy);
-    if (normal.y < HELION_MIN_FACING) {
+    if (water && normal.y < HELION_MIN_FACING) {
         discard;
     }
     float depth = texelFetch(WaterDepthSampler, pixel, 0).r;
@@ -65,11 +67,17 @@ void main() {
     vec3 view = normalize(world.xyz / world.w);
     vec3 reflected = reflect(view, normal);
     float facing = clamp(dot(-view, normal), 0.0, 1.0);
-    float fresnel = (HELION_WATER_F0 + (1.0 - HELION_WATER_F0) * pow(1.0 - facing, HELION_FRESNEL_POWER)) * ReflectionStrength;
-    vec4 traced = TracedReflections > HELION_PRESENT ? texelFetch(ReflectionSampler, pixel, 0) : vec4(0.0);
-    vec3 fallback = traced.a > HELION_GEOMETRY_PRESENT_THRESHOLD ? traced.rgb : helionReflectedSky(reflected);
+    float baseReflectance = water ? HELION_WATER_F0 : HELION_GLOSSY_F0;
+    float fresnel = (baseReflectance + (1.0 - baseReflectance) * pow(1.0 - facing, HELION_FRESNEL_POWER)) * ReflectionStrength;
+    vec4 traced = water && TracedReflections > HELION_PRESENT ? texelFetch(ReflectionSampler, pixel, 0) : vec4(0.0);
+    vec3 sky = helionReflectedSky(reflected) * (water ? 1.0 : surface.w * surface.w);
+    vec3 fallback = traced.a > HELION_GEOMETRY_PRESENT_THRESHOLD ? traced.rgb : sky;
     vec4 screenHit = ScreenReflections > HELION_PRESENT ? texelFetch(ScreenReflectionSampler, pixel, 0) : vec4(0.0);
     vec3 reflection = mix(fallback, screenHit.rgb, screenHit.a);
+    if (!water) {
+        fragColor = vec4(reflection * fresnel, fresnel);
+        return;
+    }
     float transmitted = exp(-surface.z * HELION_WATER_ABSORPTION);
     vec3 scattered = HELION_WATER_SCATTER * helionWaterAmbient() * surface.w * surface.w;
     float kept = transmitted * (1.0 - fresnel);
