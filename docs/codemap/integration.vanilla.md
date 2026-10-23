@@ -161,12 +161,12 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaVoxelSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaVoxelSource.java`
-- Role: `VoxelSource` over the client level, on the render thread: reads the 4096 block states of one chunk section (missing chunks, sections outside the build height and all-air sections become empty bricks) through `VoxelBlockClasses`, reports every block with light emission with its color, drains `VoxelSectionChanges`, and raises the level generation on a new level, reloaded light colors or an overflowed change queue so the volume rebuilds. `use(level, enabled)` also switches the change collection on or off. Owned by `VanillaFrameDriver`.
+- Role: `VoxelSource` over the client level, on the render thread: reads the 4096 block states of one chunk section (missing chunks, sections outside the build height and all-air sections become empty bricks) through `VoxelBlockClasses`, with the block position for biome tinted colors, reports every block with light emission with its color, drains `VoxelSectionChanges`, and raises the level generation on a new level, reloaded light colors or an overflowed change queue so the volume rebuilds. `use(level, enabled)` also switches the change collection on or off. Owned by `VanillaFrameDriver`.
 - Depends on: `VoxelBlockClasses`, `VoxelSectionChanges`.
 
 #### VoxelBlockClasses
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VoxelBlockClasses.java`
-- Role: Cached `VoxelClass` byte and light color per block state: air and invisible blocks empty, solid render blocks and blocks with full light dampening opaque, water and blocks whose model has translucent material translucent, everything else partial, with the light emission in the high bits; stained glass and panes also get `TINTS_LIGHT` and their dye color, brightest channel scaled to 1, in place of the map color.
+- Role: Cached `VoxelClass` byte and light color per block state: air and invisible blocks empty, solid render blocks and blocks with full light dampening opaque, water and blocks whose model has translucent material translucent, everything else partial, with the light emission in the high bits; stained glass and panes also get `TINTS_LIGHT` and their dye color, brightest channel scaled to 1, in place of the map color. `albedo(state, voxel, level, pos)` gives opaque blocks with a vanilla tint source (grass blocks) their biome tint at the position, scaled so the tint without a level keeps the luminance of the map color; everything else uses the cached per state color.
 
 #### VoxelSectionChanges
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VoxelSectionChanges.java`
