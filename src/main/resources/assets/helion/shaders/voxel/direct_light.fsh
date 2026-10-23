@@ -44,7 +44,8 @@ layout(location = 0) out vec4 lightColor;
 layout(location = 1) out vec4 confidence;
 layout(location = 2) out vec4 bounce;
 
-const int HELION_MAX_TRACED_LIGHTS = 4;
+const int HELION_BLOCKED_RETRIES = 3;
+const int HELION_MAX_TRACE_ATTEMPTS = 12;
 const float HELION_EDGE_FADE_BLOCKS = 16.0;
 const float HELION_UNLIT = 1.0e-5;
 const float HELION_BOUNCE_GAIN = 4.2;
@@ -103,7 +104,7 @@ void main() {
         return;
     }
     ivec3 cell = helionLightCell(block);
-    int traced = min(Trace.x, HELION_MAX_TRACED_LIGHTS);
+    int traced = min(Trace.x * HELION_BLOCKED_RETRIES, HELION_MAX_TRACE_ATTEMPTS);
     float weights[HELION_LIGHTS_PER_CELL];
     vec3 positions[HELION_LIGHTS_PER_CELL];
     int count = 0;
@@ -153,7 +154,8 @@ void main() {
         }
     }
     bool unknown = false;
-    for (int attempt = 0; attempt < HELION_MAX_TRACED_LIGHTS; attempt++) {
+    bool settled = false;
+    for (int attempt = 0; attempt < HELION_MAX_TRACE_ATTEMPTS; attempt++) {
         if (attempt >= traced) {
             break;
         }
@@ -166,21 +168,31 @@ void main() {
         float pickWeight = pick == HELION_NO_LIGHT ? 0.0 : weights[pick];
         if (movingWeight > pickWeight) {
             if (helionTraceVisibility(surface, movingPosition, unknown) > 0.0 && !helionOccluded(surface, movingPosition)) {
+                settled = true;
                 break;
             }
             movingWeight = 0.0;
             continue;
         }
         if (pick == HELION_NO_LIGHT) {
+            settled = true;
             break;
         }
         bool enclosed;
         vec3 exit = helionLightExit(positions[pick], surface, enclosed);
         bool visible = !enclosed && helionTraceVisibility(surface, exit, unknown) > 0.0 && !helionOccluded(surface, exit);
         if (visible) {
+            settled = true;
             break;
         }
         weights[pick] = 0.0;
+    }
+    if (!settled) {
+        movingWeight = 0.0;
+        otherMovingWeight = 0.0;
+        for (int slot = 0; slot < HELION_LIGHTS_PER_CELL; slot++) {
+            weights[slot] = 0.0;
+        }
     }
     float visibleStrongest = max(movingWeight, otherMovingWeight);
     for (int slot = 0; slot < HELION_LIGHTS_PER_CELL; slot++) {

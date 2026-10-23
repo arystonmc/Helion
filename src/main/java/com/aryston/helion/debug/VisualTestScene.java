@@ -16,6 +16,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final float EAST = -90.0F;
     private static final float WEST = 90.0F;
     private static final float CAVE_PITCH = 12.0F;
+    private static final float WALL_PITCH = 5.0F;
 
     static final List<VisualTestScene> ALL = List.of(
         new VisualTestScene("day_sky", NOON, NORTH, -35.0F, BlockPos.ZERO),
@@ -34,6 +35,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("water_noon", NOON, NORTH, 15.0F, BlockPos.ZERO),
         new VisualTestScene("water_sunset", SUNSET, NORTH, 15.0F, BlockPos.ZERO),
         new VisualTestScene("water_night", MIDNIGHT, NORTH, 15.0F, BlockPos.ZERO),
-        new VisualTestScene("cave_corner", MIDNIGHT, NORTH, CAVE_PITCH, VisualTestWorld.CAVE_CAMERA)
+        new VisualTestScene("cave_corner", MIDNIGHT, NORTH, CAVE_PITCH, VisualTestWorld.CAVE_CAMERA),
+        new VisualTestScene("wall_leak", MIDNIGHT, EAST, WALL_PITCH, VisualTestWorld.WALL_CAMERA)
     );
 }

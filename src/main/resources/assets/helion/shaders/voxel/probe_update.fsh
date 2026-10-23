@@ -45,6 +45,7 @@ const float HELION_TAU = 6.28318531;
 const float HELION_SPHERE = 4.0 * 3.14159265;
 const float HELION_HAS_HISTORY = 0.5;
 const float HELION_HIT_OFFSET = 0.5;
+const int HELION_HIT_TRACES = 2;
 const int HELION_PROBE_CELL = 4;
 const int HELION_PROBE_CELL_BLOCKS = 64;
 const int HELION_PREFERRED_BLOCK = 2;
@@ -96,42 +97,52 @@ HelionProbeHit helionProbeRay(vec3 from, vec3 direction) {
     return HelionProbeHit(false, cell, before);
 }
 
-vec3 helionHitLight(vec3 hitPoint, vec3 faceNormal) {
-    ivec3 lightCell = helionLightCell(ivec3(floor(hitPoint)));
-    vec3 total = vec3(0.0);
-    float strongest = 0.0;
-    vec3 strongestPosition = hitPoint;
-    vec3 strongestTerm = vec3(0.0);
-    for (int slot = 0; slot < HELION_LIGHTS_PER_CELL; slot++) {
-        int light = helionGridLight(lightCell, slot);
-        if (light == HELION_NO_LIGHT) {
-            break;
-        }
-        vec4 source = texelFetch(VoxelLightListSampler, ivec2(light, 0), 0);
-        vec3 offset = abs(hitPoint - source.xyz);
-        float level = source.w - (offset.x + offset.y + offset.z);
-        if (level <= 0.0 || dot(source.xyz - hitPoint, faceNormal) <= 0.0) {
-            continue;
-        }
-        vec3 term = texelFetch(VoxelLightListSampler, ivec2(light, 1), 0).rgb * helionLevelBrightness(level / HELION_LIGHT_LEVELS);
-        total += term;
-        float weight = helionLuminance(term);
-        if (weight > strongest) {
-            strongest = weight;
-            strongestPosition = source.xyz;
-            strongestTerm = term;
-        }
+vec3 helionLightTerm(int light, vec3 hitPoint, vec3 faceNormal) {
+    vec4 source = texelFetch(VoxelLightListSampler, ivec2(light, 0), 0);
+    vec3 offset = abs(hitPoint - source.xyz);
+    float level = source.w - (offset.x + offset.y + offset.z);
+    if (level <= 0.0 || dot(source.xyz - hitPoint, faceNormal) <= 0.0) {
+        return vec3(0.0);
     }
-    if (strongest <= 0.0) {
-        return total;
-    }
+    return texelFetch(VoxelLightListSampler, ivec2(light, 1), 0).rgb * helionLevelBrightness(level / HELION_LIGHT_LEVELS);
+}
+
+bool helionLightVisible(int light, vec3 hitPoint) {
     bool enclosed;
     bool unknown = false;
-    vec3 exit = helionLightExit(strongestPosition, hitPoint, enclosed);
-    if (enclosed || helionTraceVisibility(hitPoint, exit, unknown) <= 0.0) {
-        total -= strongestTerm;
+    vec3 exit = helionLightExit(texelFetch(VoxelLightListSampler, ivec2(light, 0), 0).xyz, hitPoint, enclosed);
+    return !enclosed && helionTraceVisibility(hitPoint, exit, unknown) > 0.0;
+}
+
+vec3 helionHitLight(vec3 hitPoint, vec3 faceNormal) {
+    ivec3 lightCell = helionLightCell(ivec3(floor(hitPoint)));
+    int blocked = HELION_NO_LIGHT;
+    for (int attempt = 0; attempt < HELION_HIT_TRACES; attempt++) {
+        vec3 total = vec3(0.0);
+        float best = 0.0;
+        int strongest = HELION_NO_LIGHT;
+        for (int slot = 0; slot < HELION_LIGHTS_PER_CELL; slot++) {
+            int light = helionGridLight(lightCell, slot);
+            if (light == HELION_NO_LIGHT) {
+                break;
+            }
+            if (light == blocked) {
+                continue;
+            }
+            vec3 term = helionLightTerm(light, hitPoint, faceNormal);
+            total += term;
+            float weight = helionLuminance(term);
+            if (weight > best) {
+                best = weight;
+                strongest = light;
+            }
+        }
+        if (strongest == HELION_NO_LIGHT || helionLightVisible(strongest, hitPoint)) {
+            return total;
+        }
+        blocked = strongest;
     }
-    return total;
+    return vec3(0.0);
 }
 
 vec4 helionPlacement(vec3 block) {
