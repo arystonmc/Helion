@@ -11,6 +11,7 @@ import com.aryston.helion.render.rtx.RayTracingSettings;
 import com.aryston.helion.render.shadow.ShadowSettings;
 import com.aryston.helion.render.temporal.TemporalSettings;
 import com.aryston.helion.render.voxel.VoxelLightingSettings;
+import com.aryston.helion.render.water.ReflectionSettings;
 
 public record RenderSettings(
     AmbientOcclusionSettings ambientOcclusion,
@@ -23,7 +24,8 @@ public record RenderSettings(
     DynamicLightSettings dynamicLights,
     CloudSettings clouds,
     VoxelLightingSettings voxels,
-    RayTracingSettings rayTracing
+    RayTracingSettings rayTracing,
+    ReflectionSettings reflections
 ) {
     public static final RenderSettings OFF = new RenderSettings(
         AmbientOcclusionSettings.DISABLED,
@@ -36,7 +38,8 @@ public record RenderSettings(
         DynamicLightSettings.DISABLED,
         CloudSettings.DISABLED,
         VoxelLightingSettings.DISABLED,
-        RayTracingSettings.DISABLED
+        RayTracingSettings.DISABLED,
+        ReflectionSettings.DISABLED
     );
 
     public RenderSettings screenOnly() {
@@ -51,7 +54,8 @@ public record RenderSettings(
             DynamicLightSettings.DISABLED,
             CloudSettings.DISABLED,
             VoxelLightingSettings.DISABLED,
-            RayTracingSettings.DISABLED
+            RayTracingSettings.DISABLED,
+            ReflectionSettings.DISABLED
         );
     }
 
@@ -67,7 +71,8 @@ public record RenderSettings(
             DynamicLightSettings.DISABLED,
             CloudSettings.DISABLED,
             VoxelLightingSettings.DISABLED,
-            RayTracingSettings.DISABLED
+            RayTracingSettings.DISABLED,
+            ReflectionSettings.DISABLED
         );
     }
 }

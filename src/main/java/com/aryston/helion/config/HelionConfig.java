@@ -28,6 +28,7 @@ import com.aryston.helion.render.rtx.RayTracingSettings;
 import com.aryston.helion.render.voxel.VoxelLightingMode;
 import com.aryston.helion.render.voxel.VoxelLightingQuality;
 import com.aryston.helion.render.voxel.VoxelLightingSettings;
+import com.aryston.helion.render.water.ReflectionSettings;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class HelionConfig {
@@ -96,6 +97,7 @@ public final class HelionConfig {
     static final ModConfigSpec.BooleanValue RAY_TRACING_ENABLED;
     static final ModConfigSpec.BooleanValue WATER_REFLECTIONS;
     static final ModConfigSpec.BooleanValue RAY_TRACED_SHADOWS;
+    static final ModConfigSpec.BooleanValue SCREEN_REFLECTIONS;
     static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
     static final ModConfigSpec.EnumValue<RenderScale> RENDER_SCALE;
     static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
@@ -245,6 +247,12 @@ public final class HelionConfig {
             .define("shadows", true);
         BUILDER.pop();
 
+        BUILDER.translation("helion.configuration.reflections").push("reflections");
+        SCREEN_REFLECTIONS = BUILDER
+            .translation("helion.configuration.reflections.screenSpace")
+            .define("screenSpace", false);
+        BUILDER.pop();
+
         BUILDER.translation("helion.configuration.temporalAntiAliasing").push("temporalAntiAliasing");
         TEMPORAL_ENABLED = BUILDER
             .translation("helion.configuration.temporalAntiAliasing.enabled")
@@ -305,7 +313,8 @@ public final class HelionConfig {
             new DynamicLightSettings(DYNAMIC_LIGHTS_ENABLED.getAsBoolean()),
             new CloudSettings(CLOUDS_ENABLED.getAsBoolean(), CLOUD_QUALITY.get()),
             new VoxelLightingSettings(VOXEL_LIGHTING_MODE.get(), VOXEL_LIGHTING_QUALITY.get(), VOXEL_BOUNCE.getAsBoolean()),
-            new RayTracingSettings(RAY_TRACING_ENABLED.getAsBoolean() || RayTracing.forced(), WATER_REFLECTIONS.getAsBoolean(), RAY_TRACED_SHADOWS.getAsBoolean())
+            new RayTracingSettings(RAY_TRACING_ENABLED.getAsBoolean() || RayTracing.forced(), WATER_REFLECTIONS.getAsBoolean(), RAY_TRACED_SHADOWS.getAsBoolean()),
+            new ReflectionSettings(SCREEN_REFLECTIONS.getAsBoolean())
         );
     }
 

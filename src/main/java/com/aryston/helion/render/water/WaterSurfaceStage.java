@@ -34,7 +34,7 @@ public final class WaterSurfaceStage implements RenderStage {
 
     @Override
     public boolean isActive(FrameContext frame) {
-        return frame.settings().rayTracing().reflectsWater()
+        return (frame.settings().rayTracing().reflectsWater() || frame.settings().reflections().screenSpace())
             && frame.scene().colorFormat() == WaterPipelines.SCENE_COLOR_FORMAT
             && terrain.supportsWaterSurface();
     }

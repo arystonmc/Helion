@@ -21,6 +21,7 @@ import com.aryston.helion.render.temporal.TemporalSettings;
 import com.aryston.helion.render.voxel.VoxelLightingMode;
 import com.aryston.helion.render.voxel.VoxelLightingQuality;
 import com.aryston.helion.render.voxel.VoxelLightingSettings;
+import com.aryston.helion.render.water.ReflectionSettings;
 import org.junit.jupiter.api.Test;
 
 class RenderSettingsTest {
@@ -36,7 +37,8 @@ class RenderSettingsTest {
         new DynamicLightSettings(true),
         new CloudSettings(true, CloudQuality.HIGH),
         new VoxelLightingSettings(VoxelLightingMode.SHADER, VoxelLightingQuality.HIGH, true),
-        new RayTracingSettings(true, true, true)
+        new RayTracingSettings(true, true, true),
+        new ReflectionSettings(true)
     );
 
     @Test
@@ -54,6 +56,7 @@ class RenderSettingsTest {
         assertFalse(foundation.clouds().enabled());
         assertFalse(foundation.voxels().enabled());
         assertFalse(foundation.rayTracing().enabled());
+        assertFalse(foundation.reflections().screenSpace());
     }
 
     @Test

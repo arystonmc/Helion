@@ -33,6 +33,7 @@ Entities: while ray traced shadows run, every draw of the entity geometry pass (
 2. `RtxReflectionStage` (`rt_reflection`) traces one ray per water pixel inside the section scene from the surface along the reflected view ray, up to 96 blocks. A hit is shaded like vanilla terrain: atlas texel times vertex color times the lightmap at the interpolated light coordinates. Rays from outside the scene count as misses.
 3. `WaterReflectionStage` publishes the composite that `TransparentGeometryStage` draws after the translucent geometry and before fog, clouds and light shafts. It mixes the reflection, or on a miss the physical sky with sun and moon in the reflected direction (vanilla fog color without the physical sky), by Schlick Fresnel with F0 0.02, and darkens the water under it by its thickness (absorption 0.15 per block) toward a scattering color lit by the sky above, scaled by the square of the sky light. One premultiplied blend does both: the scene keeps `exp(-0.15 d) (1 - F)`.
 4. Underwater views, side faces and steep normals (normal y below 0.05) get no reflection yet.
+5. Screen space reflections (`ssr`, own setting, every card) go first: where the screen space ray hit, its color replaces the traced one, so mobs and players on screen and the full world lighting show in the water; the traced reflection fills what is off screen or hidden. Measured in `water_noon`, `water_sunset`, `water_night` (427 x 240 window): `ssr` 0.05 to 0.06 ms, `rt_reflection` 0.02 to 0.03 ms; reflected glowstone and sea lantern sit at the same place in both.
 
 ## Measured (RTX 4050 Laptop, 1080p, visual test world, 2026-10-23)
 
@@ -58,6 +59,6 @@ Entities (same scenes, about 2,900 entity quads in view across the whole render 
 
 ## Next
 
-1. Water: screen space reflections for cards without ray tracing and for water beyond the section scene, refraction of the bottom, glass and ice reflections, reflections seen from under water, sun shadow rays at the hit.
+1. Water: refraction of the bottom, glass and ice reflections, reflections seen from under water, sun shadow rays at the hit.
 2. Entities in reflections (their textures are not in the block atlas), entities only within the section scene, alpha tested entity cutouts.
 3. Compaction of the bottom levels and a radius chosen by memory, and a settings switch (with a preset entry, lesson L-117) once a visible feature uses the scene.

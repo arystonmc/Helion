@@ -34,7 +34,7 @@ public final class WaterReflectionStage implements RenderStage {
 
     @Override
     public boolean isActive(FrameContext frame) {
-        if (frame.water().surface().isEmpty() || frame.water().reflections().isEmpty()) {
+        if (frame.water().surface().isEmpty() || frame.water().reflections().isEmpty() && frame.water().screenReflections().isEmpty()) {
             return false;
         }
         program = resources.reflectionProgram(frame.atmosphere().skyColor().isPresent()).orElse(null);
@@ -47,7 +47,8 @@ public final class WaterReflectionStage implements RenderStage {
             frame,
             Objects.requireNonNull(program),
             frame.water().surface().orElseThrow(),
-            frame.water().reflections().orElseThrow(),
+            frame.water().reflections(),
+            frame.water().screenReflections(),
             frame.atmosphere().skyColor()
         ));
     }
@@ -56,26 +57,30 @@ public final class WaterReflectionStage implements RenderStage {
         private final FrameContext frame;
         private final CompiledRenderPipeline pipeline;
         private final ResourceHandle<RenderTarget> surface;
-        private final GpuTextureView reflections;
+        private final Optional<GpuTextureView> reflections;
+        private final Optional<ResourceHandle<RenderTarget>> screenReflections;
         private final Optional<SceneSkyColor> sky;
 
         private Composite(
             FrameContext frame,
             CompiledRenderPipeline pipeline,
             ResourceHandle<RenderTarget> surface,
-            GpuTextureView reflections,
+            Optional<GpuTextureView> reflections,
+            Optional<ResourceHandle<RenderTarget>> screenReflections,
             Optional<SceneSkyColor> sky
         ) {
             this.frame = frame;
             this.pipeline = pipeline;
             this.surface = surface;
             this.reflections = reflections;
+            this.screenReflections = screenReflections;
             this.sky = sky;
         }
 
         @Override
         public void declareReads(FramePass pass) {
             pass.reads(surface);
+            screenReflections.ifPresent(pass::reads);
             sky.ifPresent(color -> color.declareReads(pass));
         }
 
@@ -86,10 +91,13 @@ public final class WaterReflectionStage implements RenderStage {
             FullscreenPass.draw(PASS_LABEL, scene, pipeline, renderPass -> {
                 RenderSystem.bindDefaultUniforms(renderPass);
                 sky.ifPresent(color -> color.bind(renderPass));
-                renderPass.setUniform(WaterPipelines.REFLECTION_UNIFORM, resources.reflectionUniforms(frame.camera()));
+                renderPass.setUniform(WaterPipelines.REFLECTION_UNIFORM, resources.reflectionUniforms(frame.camera(), reflections.isPresent(), screenReflections.isPresent()));
                 renderPass.setUniform(WaterPipelines.SURFACE_SAMPLER, Objects.requireNonNull(water.getColorTextureView()), nearest);
                 renderPass.setUniform(WaterPipelines.DEPTH_SAMPLER, Objects.requireNonNull(water.getDepthTextureView()), nearest);
-                renderPass.setUniform(WaterPipelines.REFLECTION_SAMPLER, reflections, nearest);
+                GpuTextureView standIn = Objects.requireNonNull(water.getColorTextureView());
+                renderPass.setUniform(WaterPipelines.REFLECTION_SAMPLER, reflections.orElse(standIn), nearest);
+                GpuTextureView screen = screenReflections.map(handle -> Objects.requireNonNull(handle.get().getColorTextureView())).orElse(standIn);
+                renderPass.setUniform(WaterPipelines.SCREEN_REFLECTION_SAMPLER, screen, nearest);
             });
             resources.finishReflection();
         }

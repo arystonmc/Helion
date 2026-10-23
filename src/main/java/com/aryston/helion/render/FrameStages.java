@@ -33,6 +33,7 @@ import com.aryston.helion.render.temporal.TemporalStage;
 import com.aryston.helion.render.voxel.VoxelLightStage;
 import com.aryston.helion.render.voxel.VoxelProbeStage;
 import com.aryston.helion.render.voxel.VoxelSliceStage;
+import com.aryston.helion.render.water.ScreenReflectionStage;
 import com.aryston.helion.render.water.WaterReflectionStage;
 import com.aryston.helion.render.water.WaterSurfaceStage;
 import java.util.ArrayList;
@@ -75,6 +76,7 @@ public final class FrameStages {
             new AmbientOcclusionStage(core.ambientOcclusion()),
             new SolidFeatureStage(sources.terrain(), sources.entities()),
             new WaterSurfaceStage(sources.terrain(), core.water()),
+            new ScreenReflectionStage(core.water()),
             new RtxReflectionStage(core.rayTracing(), sources.terrain()),
             new WaterReflectionStage(core.water()),
             new CloudStage(sources.clouds(), core.clouds()),

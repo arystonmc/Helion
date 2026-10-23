@@ -199,6 +199,14 @@ Torches, lanterns and every other glowing block light the world in their own col
 - Settings: Off or Shader, Low, Medium or High quality, and Bounced Light on the Lighting page; Shader at Medium in the Experimental preset, Off in every other preset and by default, and Off does no work at all
 - Since: Unreleased
 
+### Screen Space Reflections (Experimental)
+Water reflects what is on screen on every graphics card, mobs and players included.
+
+- Reflections take the same light, shadows and colors as the world you see
+- Mobs, players and items standing at the water show in it
+- With ray tracing on, what is off screen still comes from ray tracing; without it, the sky is reflected there
+- Settings: Screen Space Reflections on the Lighting page; on in the Experimental preset, off otherwise
+
 ### Ray Tracing (Experimental)
 Uses the ray tracing hardware of RTX and similar graphics cards for what shaders cannot do well.
 

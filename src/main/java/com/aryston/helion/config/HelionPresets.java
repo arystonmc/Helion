@@ -51,7 +51,8 @@ final class HelionPresets {
                 .set(options.voxelBounce, true)
                 .set(options.rayTracing, preset == experimental)
                 .set(options.waterReflections, true)
-                .set(options.rayTracedShadows, true);
+                .set(options.rayTracedShadows, true)
+                .set(options.screenReflections, preset == experimental);
         }
         return List.of(vanilla, balanced, quality, experimental);
     }
