@@ -20,6 +20,7 @@ layout(location = 1) out vec3 cameraRelativePosition;
 layout(location = 2) out vec2 wavePosition;
 layout(location = 3) out float vertexAlpha;
 layout(location = 4) out float skyLight;
+layout(location = 5) out vec3 vertexTint;
 
 const int HELION_WAVE_WRAP = 1023;
 
@@ -31,5 +32,6 @@ void main() {
     cameraRelativePosition = pos;
     wavePosition = vec2(ChunkPosition.xz & HELION_WAVE_WRAP) + local.xz;
     vertexAlpha = Color.a;
+    vertexTint = Color.rgb;
     skyLight = clamp(float(helion_vertex_light().y) / HELION_MAX_LIGHT_COORDINATE, 0.0, 1.0);
 }

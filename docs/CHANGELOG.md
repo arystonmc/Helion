@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Realistic water: clear water with depth, refraction of the bottom, biome colors, fine waves and rain ripples instead of the flat water texture
 - Rain wetness: rain darkens and wets the ground, puddles gather on stone, brick and wood, reflect the world and ripple with the drops
 - Experimental volumetric clouds lit by the physical sky, with Low, Medium and High quality
 - Light shafts: rays of sunlight and moonlight through clouds, leaves and gaps between blocks, with the physical sky

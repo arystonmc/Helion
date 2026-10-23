@@ -53,7 +53,8 @@ final class HelionPresets {
                 .set(options.waterReflections, true)
                 .set(options.rayTracedShadows, true)
                 .set(options.screenReflections, preset == experimental)
-                .set(options.rainWetness, preset != vanilla);
+                .set(options.rainWetness, preset != vanilla)
+                .set(options.realisticWater, preset != vanilla);
         }
         return List.of(vanilla, balanced, quality, experimental);
     }

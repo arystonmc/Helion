@@ -13,6 +13,7 @@ import java.util.Optional;
 
 public final class WaterPipelines {
     public static final GpuFormat SURFACE_FORMAT = GpuFormat.RGBA16_FLOAT;
+    public static final GpuFormat TINT_FORMAT = GpuFormat.RGBA8_UNORM;
     public static final GpuFormat SCENE_COLOR_FORMAT = GpuFormat.RGBA8_UNORM;
     public static final String SURFACE_UNIFORM = "HelionWaterSurface";
     public static final String SCENE_DEPTH_SAMPLER = "SceneDepthSampler";
@@ -27,6 +28,8 @@ public final class WaterPipelines {
     public static final String GEOMETRY_NORMAL_SAMPLER = "GeometryNormalSampler";
     public static final String GEOMETRY_LIGHT_SAMPLER = "GeometryLightSampler";
     public static final String POLISHED_SAMPLER = "PolishedSampler";
+    public static final String TINT_SAMPLER = "WaterTintSampler";
+    public static final String REFRACTION_SAMPLER = "RefractionSampler";
     private static final int POLISHED_TARGET = 1;
     private static final String FOG = "Fog";
     private static final String REFLECTION_SHADER = "water/reflection";
@@ -84,6 +87,8 @@ public final class WaterPipelines {
                 .withUniform(DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .withUniform(REFLECTION_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .withUniform(SCREEN_REFLECTION_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform(TINT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform(REFRACTION_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .build())
             .withColorTargetState(new ColorTargetState(Optional.of(BlendFunction.TRANSLUCENT_PREMULTIPLIED_ALPHA), SCENE_COLOR_FORMAT, ColorTargetState.WRITE_COLOR));
     }

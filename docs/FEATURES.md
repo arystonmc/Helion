@@ -210,6 +210,16 @@ Water reflects what is on screen on every graphics card, mobs and players includ
 - With ray tracing on, what is off screen still comes from ray tracing; without it, the sky is reflected there
 - Settings: Screen Space Reflections on the Lighting page; on in the Experimental preset, off otherwise
 
+### Realistic Water
+Water looks like water instead of a flat blue texture.
+
+- Clear water: the bottom of shallow water shows through, bent by the waves; deeper water turns dark blue-green
+- The color follows the biome: blue oceans, green swamps, the same colors vanilla gives the water
+- Gentle waves with fine ripples, and rings where raindrops hit the water
+- Reflects the sky (with the sun and the moon under the physical sky); with screen space reflections or ray tracing also the world and mobs
+- Works on every graphics card; looking up from under water keeps the vanilla look
+- Settings: Realistic Water on or off on the Lighting page, on in every preset but Vanilla
+
 ### Rain Wetness
 Rain makes the world wet instead of only falling past it.
 

@@ -99,6 +99,7 @@ public final class HelionConfig {
     static final ModConfigSpec.BooleanValue RAY_TRACED_SHADOWS;
     static final ModConfigSpec.BooleanValue SCREEN_REFLECTIONS;
     static final ModConfigSpec.BooleanValue RAIN_WETNESS;
+    static final ModConfigSpec.BooleanValue REALISTIC_WATER;
     static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
     static final ModConfigSpec.EnumValue<RenderScale> RENDER_SCALE;
     static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
@@ -255,6 +256,9 @@ public final class HelionConfig {
         RAIN_WETNESS = BUILDER
             .translation("helion.configuration.reflections.rainWetness")
             .define("rainWetness", true);
+        REALISTIC_WATER = BUILDER
+            .translation("helion.configuration.reflections.realisticWater")
+            .define("realisticWater", true);
         BUILDER.pop();
 
         BUILDER.translation("helion.configuration.temporalAntiAliasing").push("temporalAntiAliasing");
@@ -318,7 +322,7 @@ public final class HelionConfig {
             new CloudSettings(CLOUDS_ENABLED.getAsBoolean(), CLOUD_QUALITY.get()),
             new VoxelLightingSettings(VOXEL_LIGHTING_MODE.get(), VOXEL_LIGHTING_QUALITY.get(), VOXEL_BOUNCE.getAsBoolean()),
             new RayTracingSettings(RAY_TRACING_ENABLED.getAsBoolean() || RayTracing.forced(), WATER_REFLECTIONS.getAsBoolean(), RAY_TRACED_SHADOWS.getAsBoolean()),
-            new ReflectionSettings(SCREEN_REFLECTIONS.getAsBoolean(), RAIN_WETNESS.getAsBoolean())
+            new ReflectionSettings(SCREEN_REFLECTIONS.getAsBoolean(), RAIN_WETNESS.getAsBoolean(), REALISTIC_WATER.getAsBoolean())
         );
     }
 

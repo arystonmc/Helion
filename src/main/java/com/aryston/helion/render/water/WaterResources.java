@@ -24,10 +24,12 @@ public final class WaterResources {
     private static final int SURFACE_SIZE = new Std140SizeCalculator()
         .putVec4()
         .putVec4()
+        .putVec4()
         .putFloat()
         .get();
     private static final int REFLECTION_SIZE = new Std140SizeCalculator()
         .putMat4f()
+        .putFloat()
         .putFloat()
         .putFloat()
         .putFloat()
@@ -65,13 +67,14 @@ public final class WaterResources {
         return compiled;
     }
 
-    GpuBuffer surfaceUniforms(TerrainTextures textures) {
+    GpuBuffer surfaceUniforms(TerrainTextures textures, Wetness wetness) {
         if (surfaceUniforms == null) {
             surfaceUniforms = new UniformRing(SURFACE_LABEL, SURFACE_SIZE, resources);
         }
         return surfaceUniforms.write(builder -> builder
             .putVec4(textures.waterStill())
             .putVec4(textures.waterFlow())
+            .putVec4(wetness.rain(), wetness.seconds(), ABSENT, ABSENT)
             .putFloat(WAVE_STRENGTH));
     }
 
@@ -88,7 +91,7 @@ public final class WaterResources {
         return compiled;
     }
 
-    GpuBuffer reflectionUniforms(HelionCamera camera, boolean traced, boolean screen) {
+    GpuBuffer reflectionUniforms(HelionCamera camera, boolean traced, boolean screen, boolean realistic) {
         if (reflectionUniforms == null) {
             reflectionUniforms = new UniformRing(REFLECTION_LABEL, REFLECTION_SIZE, resources);
         }
@@ -96,7 +99,8 @@ public final class WaterResources {
             .putMat4f(camera.levelViewProjection().invert())
             .putFloat(REFLECTION_STRENGTH)
             .putFloat(traced ? PRESENT : ABSENT)
-            .putFloat(screen ? PRESENT : ABSENT));
+            .putFloat(screen ? PRESENT : ABSENT)
+            .putFloat(realistic ? PRESENT : ABSENT));
     }
 
     Optional<CompiledRenderPipeline> polishedProgram() {

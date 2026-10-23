@@ -58,7 +58,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaWaterPipelines
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaWaterPipelines.java`
-- Role: Water surface variants of the vanilla translucent terrain pipelines (direct and multi-draw), copied with `toBuilder()` and switched to `helion:water/surface` with one unblended RGBA16_FLOAT target, the `HelionWaterSurface` uniform, the scene depth sampler and the glossy mask. A second pair from the vanilla cutout terrain pipelines adds the define `HELION_GLOSSY_ONLY`: it skips the alpha test and keeps only glossy mask texels, so the see-through center of plain glass is a surface too. Registered as optional pipelines; warns once when they did not compile.
+- Role: Water surface variants of the vanilla translucent terrain pipelines (direct and multi-draw), copied with `toBuilder()` and switched to `helion:water/surface` with one unblended RGBA16_FLOAT target, the `HelionWaterSurface` uniform, the scene depth sampler and the glossy mask. A second pair from the vanilla cutout terrain pipelines adds the define `HELION_GLOSSY_ONLY`: it skips the alpha test and keeps only glossy mask texels, so the see-through center of plain glass is a surface too. Registered as optional pipelines; warns once when they did not compile. Since 2026-10-24 every surface pipeline has a second target, the water tint (RGBA8). Every surface pipeline has a second color target, the water tint (RGBA8).
 - Depends on: `WaterPipelines`, `HelionPipelines`.
 
 #### RtxSectionCapture

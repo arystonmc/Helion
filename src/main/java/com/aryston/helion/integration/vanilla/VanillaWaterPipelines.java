@@ -20,6 +20,7 @@ public final class VanillaWaterPipelines {
     private static final String PIPELINE_PREFIX = "pipeline/water_surface/";
     private static final Identifier SHADER = Identifier.fromNamespaceAndPath(Helion.MOD_ID, "water/surface");
     private static final int SURFACE_TARGET = 0;
+    private static final int TINT_TARGET = 1;
     private static final VanillaGeometryPipelines.LayerPipelines SURFACE = new VanillaGeometryPipelines.LayerPipelines(
         surface(RenderPipelines.TRANSLUCENT_TERRAIN, "translucent_terrain"),
         surface(RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW, "translucent_terrain_multidraw")
@@ -66,6 +67,7 @@ public final class VanillaWaterPipelines {
             .withVertexShader(SHADER)
             .withFragmentShader(SHADER)
             .withColorTargetState(SURFACE_TARGET, new ColorTargetState(Optional.empty(), WaterPipelines.SURFACE_FORMAT, ColorTargetState.WRITE_ALL))
+            .withColorTargetState(TINT_TARGET, new ColorTargetState(Optional.empty(), WaterPipelines.TINT_FORMAT, ColorTargetState.WRITE_ALL))
             .withBindGroupLayout(BindGroupLayout.builder()
                 .withUniform(WaterPipelines.SURFACE_UNIFORM, UniformType.UNIFORM_BUFFER)
                 .withUniform(WaterPipelines.SCENE_DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)

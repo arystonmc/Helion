@@ -34,7 +34,8 @@ public final class WaterReflectionStage implements RenderStage {
 
     @Override
     public boolean isActive(FrameContext frame) {
-        if (frame.water().surface().isEmpty() || frame.water().reflections().isEmpty() && frame.water().screenReflections().isEmpty()) {
+        boolean realistic = frame.water().refraction().isPresent();
+        if (frame.water().surface().isEmpty() || frame.water().reflections().isEmpty() && frame.water().screenReflections().isEmpty() && !realistic) {
             return false;
         }
         program = resources.reflectionProgram(frame.atmosphere().skyColor().isPresent()).orElse(null);
@@ -49,6 +50,8 @@ public final class WaterReflectionStage implements RenderStage {
             frame.water().surface().orElseThrow(),
             frame.water().reflections(),
             frame.water().screenReflections(),
+            frame.water().tint(),
+            frame.water().refraction(),
             frame.atmosphere().skyColor()
         ));
     }
@@ -59,6 +62,8 @@ public final class WaterReflectionStage implements RenderStage {
         private final ResourceHandle<RenderTarget> surface;
         private final Optional<GpuTextureView> reflections;
         private final Optional<ResourceHandle<RenderTarget>> screenReflections;
+        private final Optional<ResourceHandle<RenderTarget>> tint;
+        private final Optional<ResourceHandle<RenderTarget>> refraction;
         private final Optional<SceneSkyColor> sky;
 
         private Composite(
@@ -67,6 +72,8 @@ public final class WaterReflectionStage implements RenderStage {
             ResourceHandle<RenderTarget> surface,
             Optional<GpuTextureView> reflections,
             Optional<ResourceHandle<RenderTarget>> screenReflections,
+            Optional<ResourceHandle<RenderTarget>> tint,
+            Optional<ResourceHandle<RenderTarget>> refraction,
             Optional<SceneSkyColor> sky
         ) {
             this.frame = frame;
@@ -74,6 +81,8 @@ public final class WaterReflectionStage implements RenderStage {
             this.surface = surface;
             this.reflections = reflections;
             this.screenReflections = screenReflections;
+            this.tint = tint;
+            this.refraction = refraction;
             this.sky = sky;
         }
 
@@ -81,6 +90,8 @@ public final class WaterReflectionStage implements RenderStage {
         public void declareReads(FramePass pass) {
             pass.reads(surface);
             screenReflections.ifPresent(pass::reads);
+            tint.ifPresent(pass::reads);
+            refraction.ifPresent(pass::reads);
             sky.ifPresent(color -> color.declareReads(pass));
         }
 
@@ -91,15 +102,25 @@ public final class WaterReflectionStage implements RenderStage {
             FullscreenPass.draw(PASS_LABEL, scene, pipeline, renderPass -> {
                 RenderSystem.bindDefaultUniforms(renderPass);
                 sky.ifPresent(color -> color.bind(renderPass));
-                renderPass.setUniform(WaterPipelines.REFLECTION_UNIFORM, resources.reflectionUniforms(frame.camera(), reflections.isPresent(), screenReflections.isPresent()));
+                renderPass.setUniform(WaterPipelines.REFLECTION_UNIFORM, resources.reflectionUniforms(frame.camera(), reflections.isPresent(), screenReflections.isPresent(), refraction.isPresent()));
                 renderPass.setUniform(WaterPipelines.SURFACE_SAMPLER, Objects.requireNonNull(water.getColorTextureView()), nearest);
                 renderPass.setUniform(WaterPipelines.DEPTH_SAMPLER, Objects.requireNonNull(water.getDepthTextureView()), nearest);
                 GpuTextureView standIn = Objects.requireNonNull(water.getColorTextureView());
                 renderPass.setUniform(WaterPipelines.REFLECTION_SAMPLER, reflections.orElse(standIn), nearest);
                 GpuTextureView screen = screenReflections.map(handle -> Objects.requireNonNull(handle.get().getColorTextureView())).orElse(standIn);
                 renderPass.setUniform(WaterPipelines.SCREEN_REFLECTION_SAMPLER, screen, nearest);
+                renderPass.setUniform(WaterPipelines.TINT_SAMPLER, tint.map(WaterReflectionStage::colorView).orElse(standIn), nearest);
+                renderPass.setUniform(WaterPipelines.REFRACTION_SAMPLER, refraction.map(WaterReflectionStage::colorView).orElse(standIn), linear());
             });
             resources.finishReflection();
         }
+    }
+
+    private static GpuTextureView colorView(ResourceHandle<RenderTarget> handle) {
+        return Objects.requireNonNull(handle.get().getColorTextureView());
+    }
+
+    private static GpuSampler linear() {
+        return RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
     }
 }
