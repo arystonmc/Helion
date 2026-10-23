@@ -6,16 +6,24 @@ import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.pipeline.IndexType;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.api.vertex.VertexFormat;
 import com.mojang.renderpearl.api.vertex.VertexFormatElement;
+import java.util.List;
+import java.util.Optional;
 import net.minecraft.client.renderer.StagedVertexBuffer;
 import net.minecraft.client.renderer.feature.FeatureRenderer;
 import net.minecraft.client.renderer.feature.RenderTypeFeatureRenderer;
+import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 import org.jspecify.annotations.Nullable;
 
 public final class EntityGeometryDraws {
     private static final int VERTEX_BINDING = 0;
     private static final String POSITION = "Position";
+    private static final String COLOR = "Color";
+    private static final String UV0 = "UV0";
+    private static final String UV2 = "UV2";
+    private static final String TEXTURE = "Sampler0";
     private static final int QUAD_INDICES = 6;
     private static final int QUAD_VERTICES = 4;
     private static Mode mode = Mode.ALL;
@@ -44,7 +52,7 @@ public final class EntityGeometryDraws {
         };
     }
 
-    public static void drawn(StagedVertexBuffer.ExecuteInfo info, RenderPipeline pipeline) {
+    public static void drawn(StagedVertexBuffer.ExecuteInfo info, RenderPipeline pipeline, List<PreparedRenderType.Texture> textures) {
         if (mode != Mode.GEOMETRY_ONLY || (info.topology() != PrimitiveTopology.QUADS && info.topology() != PrimitiveTopology.TRIANGLES)) {
             return;
         }
@@ -59,8 +67,20 @@ public final class EntityGeometryDraws {
             : info.topology() == PrimitiveTopology.QUADS ? info.indexCount() / QUAD_INDICES * QUAD_VERTICES : info.indexCount();
         draws.add(
             info.vertexBuffer(), info.indexBuffer(), info.indexType() == IndexType.SHORT, format.getVertexSize(), position.offset(),
-            info.baseVertex(), info.firstIndex(), info.indexCount(), usedVertices
+            info.baseVertex(), info.firstIndex(), info.indexCount(), usedVertices, surface(format, textures)
         );
+    }
+
+    private static RtxEntityDraws.Surface surface(VertexFormat format, List<PreparedRenderType.Texture> textures) {
+        VertexFormatElement color = format.getElement(COLOR);
+        VertexFormatElement uv = format.getElement(UV0);
+        VertexFormatElement light = format.getElement(UV2);
+        Optional<GpuTextureView> texture = textures.stream().filter(bound -> bound.name().equals(TEXTURE)).map(PreparedRenderType.Texture::textureView).findFirst();
+        if (color == null || color.format() != GpuFormat.RGBA8_UNORM || uv == null || uv.format() != GpuFormat.RG32_FLOAT || texture.isEmpty()) {
+            return RtxEntityDraws.Surface.NONE;
+        }
+        int lightOffset = light != null && light.format() == GpuFormat.RG16_SINT ? light.offset() : RtxEntityDraws.Surface.NO_LIGHT;
+        return new RtxEntityDraws.Surface(texture.get(), color.offset(), uv.offset(), lightOffset);
     }
 
     public static RenderPipeline substitute(RenderPipeline pipeline) {

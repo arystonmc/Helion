@@ -41,7 +41,7 @@ const float HELION_RT_HALF = 0.5;
 const float HELION_RT_WITH_ENTITIES = 1.0;
 const float HELION_RT_WITHOUT_ENTITIES = 0.5;
 const int HELION_RT_VERTICAL_AXIS = 1;
-const uint HELION_RT_ALL_INSTANCES = 0xFFu;
+const uint HELION_RT_SHADOW_INSTANCES = 0x03u;
 const vec4 HELION_RT_UNTRACED = vec4(1.0, 0.0, 0.0, 1.0);
 const vec3 HELION_RT_UP = vec3(0.0, 1.0, 0.0);
 const vec3 HELION_RT_EAST = vec3(1.0, 0.0, 0.0);
@@ -108,7 +108,7 @@ void main() {
         float reachable = min(exit.x, LightDirection.w);
         rayQueryEXT query;
         rayQueryInitializeEXT(
-            query, Scene, gl_RayFlagsTerminateOnFirstHitEXT, HELION_RT_ALL_INSTANCES, origin, HELION_RT_RAY_START, direction, reachable
+            query, Scene, gl_RayFlagsTerminateOnFirstHitEXT, HELION_RT_SHADOW_INSTANCES, origin, HELION_RT_RAY_START, direction, reachable
         );
         helionTraceCutout(query);
         if (rayQueryGetIntersectionTypeEXT(query, true) != gl_RayQueryCommittedIntersectionNoneEXT) {

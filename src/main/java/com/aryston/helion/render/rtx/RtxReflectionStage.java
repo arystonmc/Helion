@@ -12,6 +12,7 @@ import com.mojang.blaze3d.resource.ResourceHandle;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.vulkan.VulkanGpuTextureView;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.joml.Vector3dc;
@@ -66,7 +67,7 @@ public final class RtxReflectionStage implements RenderStage {
         pass.executes(frame.graph().timed(NAME, () -> {
             device.memoryBarrier();
             RenderTarget water = surface.get();
-            List<RtxBinding> bindings = List.of(
+            List<RtxBinding> bindings = new ArrayList<>(List.of(
                 new RtxBinding.StorageImage(image.vkImageView()),
                 new RtxBinding.Scene(topLevel),
                 new RtxBinding.Sampled(handle(Objects.requireNonNull(water.getDepthTextureView()))),
@@ -74,11 +75,22 @@ public final class RtxReflectionStage implements RenderStage {
                 new RtxBinding.Sampled(handle(textures.atlas())),
                 new RtxBinding.Sampled(handle(textures.lightmap())),
                 new RtxBinding.StorageBuffer(table.buffer(), WHOLE_BUFFER, table.size())
-            );
+            ));
+            if (device.entityTextures()) {
+                bindings.addAll(entityBindings(scene.entitySurfaces(), handle(textures.atlas())));
+            }
             resources.reflectionPipeline().dispatch(device.commandBuffer(), bindings, constants, image.width(), image.height());
             device.memoryBarrier();
         }));
         frame.water().publishReflections(image.view());
+    }
+
+    private static List<RtxBinding> entityBindings(RtxEntitySurfaces entities, long fallbackView) {
+        RtxBuffer entityTable = entities.table();
+        return List.of(
+            new RtxBinding.SampledArray(entities.views(fallbackView)),
+            new RtxBinding.StorageBuffer(entityTable.buffer(), WHOLE_BUFFER, entityTable.size())
+        );
     }
 
     private static long handle(GpuTextureView view) {

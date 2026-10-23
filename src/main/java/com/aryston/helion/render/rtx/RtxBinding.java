@@ -4,7 +4,13 @@ import org.lwjgl.vulkan.KHRAccelerationStructure;
 import org.lwjgl.vulkan.VK10;
 
 sealed interface RtxBinding {
+    int SINGLE = 1;
+
     int descriptorType();
+
+    default int count() {
+        return SINGLE;
+    }
 
     record StorageImage(long imageView) implements RtxBinding {
         @Override
@@ -31,6 +37,18 @@ sealed interface RtxBinding {
         @Override
         public int descriptorType() {
             return VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        }
+    }
+
+    record SampledArray(long[] imageViews) implements RtxBinding {
+        @Override
+        public int descriptorType() {
+            return VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        }
+
+        @Override
+        public int count() {
+            return imageViews.length;
         }
     }
 }

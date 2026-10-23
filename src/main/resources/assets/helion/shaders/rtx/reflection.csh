@@ -2,6 +2,9 @@
 #extension GL_EXT_ray_query : require
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_buffer_reference_uvec2 : require
+#ifdef HELION_RT_ENTITIES
+#extension GL_EXT_nonuniform_qualifier : require
+#endif
 
 #include <helion:helion_water.glsl>
 
@@ -16,6 +19,13 @@ layout(set = 0, binding = 5) uniform sampler2D LightmapSampler;
 layout(set = 0, binding = 6, std430) readonly buffer HelionSurfaceTable {
     uvec4 Sections[];
 };
+#ifdef HELION_RT_ENTITIES
+const int HELION_RT_ENTITY_TEXTURES = 16;
+layout(set = 0, binding = 7) uniform sampler2D EntityTextures[HELION_RT_ENTITY_TEXTURES];
+layout(set = 0, binding = 8, std430) readonly buffer HelionEntityTable {
+    uvec4 Entities[];
+};
+#endif
 
 layout(push_constant) uniform HelionRayReflection {
     mat4 InverseViewProjection;
@@ -24,21 +34,59 @@ layout(push_constant) uniform HelionRayReflection {
 };
 
 #include <helion:helion_rt_surface.glsl>
+#ifdef HELION_RT_ENTITIES
+#include <helion:helion_rt_entity.glsl>
+#endif
 
 const float HELION_RT_SKY_DEPTH = 0.0;
 const float HELION_RT_NORMAL_OFFSET = 0.02;
 const float HELION_RT_RAY_START = 1.0e-3;
 const float HELION_RT_SECTION_SIZE = 16.0;
 const uint HELION_RT_SECTION_INSTANCES = 0x01u;
+const uint HELION_RT_ENTITY_INSTANCES = 0x04u;
 const float HELION_RT_LIGHTMAP_SCALE = 1.0 / 256.0;
 const float HELION_RT_LIGHTMAP_TEXEL = 0.5 / 16.0;
 const vec4 HELION_RT_MISS = vec4(0.0);
 
-vec4 helionHitColor(rayQueryEXT query) {
-    HelionSurfacePoint point = helionCommittedPoint(query);
-    vec3 albedo = textureLod(AtlasSampler, point.uv, 0.0).rgb * point.tint.rgb;
-    vec2 lightmapUv = clamp(point.light * HELION_RT_LIGHTMAP_SCALE + HELION_RT_LIGHTMAP_TEXEL, vec2(HELION_RT_LIGHTMAP_TEXEL), vec2(1.0 - HELION_RT_LIGHTMAP_TEXEL));
+vec4 helionLitColor(vec3 albedo, vec2 light) {
+    vec2 lightmapUv = clamp(light * HELION_RT_LIGHTMAP_SCALE + HELION_RT_LIGHTMAP_TEXEL, vec2(HELION_RT_LIGHTMAP_TEXEL), vec2(1.0 - HELION_RT_LIGHTMAP_TEXEL));
     return vec4(albedo * textureLod(LightmapSampler, lightmapUv, 0.0).rgb, 1.0);
+}
+
+vec4 helionHitColor(rayQueryEXT query) {
+#ifdef HELION_RT_ENTITIES
+    if (helionIsEntity(rayQueryGetIntersectionInstanceCustomIndexEXT(query, true))) {
+        HelionEntityPoint entity = helionEntityCommittedPoint(query);
+        return helionLitColor(entity.color.rgb, entity.light);
+    }
+#endif
+    HelionSurfacePoint point = helionCommittedPoint(query);
+    return helionLitColor(textureLod(AtlasSampler, point.uv, 0.0).rgb * point.tint.rgb, point.light);
+}
+
+bool helionCandidateHit(rayQueryEXT query) {
+#ifdef HELION_RT_ENTITIES
+    if (helionIsEntity(rayQueryGetIntersectionInstanceCustomIndexEXT(query, false))) {
+        return helionEntityCandidateHit(query);
+    }
+#endif
+    return textureLod(AtlasSampler, helionCandidatePoint(query).uv, 0.0).a >= HELION_RT_CUTOUT_ALPHA;
+}
+
+void helionTraceReflection(rayQueryEXT query) {
+    while (rayQueryProceedEXT(query)) {
+        if (rayQueryGetIntersectionTypeEXT(query, false) == gl_RayQueryCandidateIntersectionTriangleEXT && helionCandidateHit(query)) {
+            rayQueryConfirmIntersectionEXT(query);
+        }
+    }
+}
+
+uint helionReflectedInstances() {
+#ifdef HELION_RT_ENTITIES
+    return HELION_RT_SECTION_INSTANCES | HELION_RT_ENTITY_INSTANCES;
+#else
+    return HELION_RT_SECTION_INSTANCES;
+#endif
 }
 
 void main() {
@@ -65,8 +113,8 @@ void main() {
         return;
     }
     rayQueryEXT query;
-    rayQueryInitializeEXT(query, Scene, gl_RayFlagsNoneEXT, HELION_RT_SECTION_INSTANCES, origin, HELION_RT_RAY_START, direction, Trace.x);
-    helionTraceCutout(query);
+    rayQueryInitializeEXT(query, Scene, gl_RayFlagsNoneEXT, helionReflectedInstances(), origin, HELION_RT_RAY_START, direction, Trace.x);
+    helionTraceReflection(query);
     if (rayQueryGetIntersectionTypeEXT(query, true) == gl_RayQueryCommittedIntersectionNoneEXT) {
         imageStore(Reflection, pixel, HELION_RT_MISS);
         return;

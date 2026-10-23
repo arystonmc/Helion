@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.KHRAccelerationStructure;
@@ -44,6 +45,22 @@ public final class RayTracingResources {
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     };
+    private static final int[] ENTITY_REFLECTION_DESCRIPTORS = {
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        KHRAccelerationStructure.VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+    };
+    private static final int[] ENTITY_REFLECTION_COUNTS = {
+        RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE,
+        RtxEntitySurfaces.TEXTURE_SLOTS, RtxBinding.SINGLE
+    };
+    private static final String ENTITY_REFLECTION_DEFINE = "HELION_RT_ENTITIES";
 
     private final GpuResources resources;
     private final RtxSectionInbox inbox = new RtxSectionInbox();
@@ -225,7 +242,12 @@ public final class RayTracingResources {
         sunShadow = pipeline;
         scene = new RtxSectionScene(rtx, resources);
         try {
-            RtxComputePipeline traced = RtxComputePipeline.create(rtx, REFLECTION_SOURCE, REFLECTION_NAME, REFLECTION_DESCRIPTORS, REFLECTION_CONSTANT_BYTES);
+            RtxComputePipeline traced = rtx.entityTextures()
+                ? RtxComputePipeline.create(
+                    rtx, REFLECTION_SOURCE, REFLECTION_NAME, Set.of(ENTITY_REFLECTION_DEFINE), ENTITY_REFLECTION_DESCRIPTORS, ENTITY_REFLECTION_COUNTS,
+                    REFLECTION_CONSTANT_BYTES
+                )
+                : RtxComputePipeline.create(rtx, REFLECTION_SOURCE, REFLECTION_NAME, REFLECTION_DESCRIPTORS, REFLECTION_CONSTANT_BYTES);
             resources.track(REFLECTION_PIPELINE_LABEL, PIPELINE_BYTES, traced::destroy);
             reflection = traced;
         } catch (IllegalStateException exception) {

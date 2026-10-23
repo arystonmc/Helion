@@ -19,7 +19,7 @@ abstract class PreparedRenderTypeMixin {
             callback.cancel();
             return;
         }
-        EntityGeometryDraws.drawn(info, pipeline);
+        EntityGeometryDraws.drawn(info, pipeline, ((PreparedRenderType) (Object) this).textures());
     }
 
     @ModifyArg(

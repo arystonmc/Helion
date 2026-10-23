@@ -17,11 +17,12 @@ final class RtxShaderSource {
     private static final Pattern INCLUDE = Pattern.compile("^[ \\t]*#include <([a-z0-9_]+):([a-z0-9_./]+)>[ \\t]*$", Pattern.MULTILINE);
     private static final String INCLUDE_PATH = "/assets/%s/shaders/include/%s";
     private static final String ENTRY = "main";
+    private static final String DEFINED = "1";
 
     private RtxShaderSource() {
     }
 
-    static ByteBuffer compileCompute(String resource, String name) {
+    static ByteBuffer compileCompute(String resource, String name, Set<String> defines) {
         String source = expand(read(resource), new HashSet<>());
         long compiler = Shaderc.shaderc_compiler_initialize();
         long options = Shaderc.shaderc_compile_options_initialize();
@@ -29,6 +30,7 @@ final class RtxShaderSource {
             Shaderc.shaderc_compile_options_set_target_env(options, Shaderc.shaderc_target_env_vulkan, Shaderc.shaderc_env_version_vulkan_1_2);
             Shaderc.shaderc_compile_options_set_target_spirv(options, Shaderc.shaderc_spirv_version_1_5);
             Shaderc.shaderc_compile_options_set_optimization_level(options, Shaderc.shaderc_optimization_level_performance);
+            defines.forEach(define -> Shaderc.shaderc_compile_options_add_macro_definition(options, define, DEFINED));
             long result = Shaderc.shaderc_compile_into_spv(compiler, source, Shaderc.shaderc_glsl_compute_shader, name, ENTRY, options);
             try {
                 if (Shaderc.shaderc_result_get_compilation_status(result) != Shaderc.shaderc_compilation_status_success) {

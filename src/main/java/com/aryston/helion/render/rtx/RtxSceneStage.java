@@ -49,8 +49,11 @@ public final class RtxSceneStage implements RenderStage {
             device.memoryBarrier();
             scene.recordBottomLevels(device.commandBuffer(), plan);
         });
-        boolean withEntities = frame.settings().rayTracing().tracesShadows();
+        boolean withEntities = frame.settings().rayTracing().tracesShadows() || reflectsEntities(frame);
         resources.entityDraws().capture(withEntities);
+        if (!withEntities) {
+            scene.clearEntitySurfaces();
+        }
         float translateX = (float) (position.x() - center.originX());
         float translateY = (float) (position.y() - center.originY());
         float translateZ = (float) (position.z() - center.originZ());
@@ -70,6 +73,10 @@ public final class RtxSceneStage implements RenderStage {
             top.run();
         });
         resources.logIfDue(plan, prepareMillis, HelionRenderCore.get().timings().averageMillis());
+    }
+
+    private boolean reflectsEntities(FrameContext frame) {
+        return frame.settings().rayTracing().reflectsWater() && resources.device().entityTextures() && resources.reflectionAvailable();
     }
 
     private static int section(double coordinate) {

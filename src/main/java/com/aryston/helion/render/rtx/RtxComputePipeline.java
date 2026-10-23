@@ -2,7 +2,9 @@ package com.aryston.helion.render.rtx;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.KHRPushDescriptor;
@@ -43,10 +45,18 @@ final class RtxComputePipeline {
     }
 
     static RtxComputePipeline create(RtxDevice rtxDevice, String source, String name, int[] descriptorTypes, int pushConstantBytes) {
+        int[] singles = new int[descriptorTypes.length];
+        Arrays.fill(singles, SINGLE);
+        return create(rtxDevice, source, name, Set.of(), descriptorTypes, singles, pushConstantBytes);
+    }
+
+    static RtxComputePipeline create(
+        RtxDevice rtxDevice, String source, String name, Set<String> defines, int[] descriptorTypes, int[] descriptorCounts, int pushConstantBytes
+    ) {
         VkDevice device = rtxDevice.vkDevice();
-        ByteBuffer spirv = RtxShaderSource.compileCompute(source, name);
+        ByteBuffer spirv = RtxShaderSource.compileCompute(source, name, defines);
         try {
-            long setLayout = createSetLayout(device, descriptorTypes);
+            long setLayout = createSetLayout(device, descriptorTypes, descriptorCounts);
             long pipelineLayout = createPipelineLayout(device, setLayout, pushConstantBytes);
             long module = createModule(device, spirv);
             try {
@@ -80,7 +90,7 @@ final class RtxComputePipeline {
     }
 
     private void describe(VkWriteDescriptorSet write, int binding, RtxBinding bound, MemoryStack stack) {
-        write.sType$Default().dstBinding(binding).descriptorType(bound.descriptorType()).descriptorCount(SINGLE);
+        write.sType$Default().dstBinding(binding).descriptorType(bound.descriptorType());
         switch (bound) {
             case RtxBinding.StorageImage image -> write.pImageInfo(
                 VkDescriptorImageInfo.calloc(SINGLE, stack).imageView(image.imageView()).imageLayout(VK10.VK_IMAGE_LAYOUT_GENERAL)
@@ -95,18 +105,27 @@ final class RtxComputePipeline {
             case RtxBinding.Sampled sampled -> write.pImageInfo(
                 VkDescriptorImageInfo.calloc(SINGLE, stack).sampler(sampler).imageView(sampled.imageView()).imageLayout(VK10.VK_IMAGE_LAYOUT_GENERAL)
             );
+            case RtxBinding.SampledArray array -> write.pImageInfo(sampledArray(array.imageViews(), stack));
         }
-        write.descriptorCount(SINGLE);
+        write.descriptorCount(bound.count());
     }
 
-    private static long createSetLayout(VkDevice device, int[] descriptorTypes) {
+    private VkDescriptorImageInfo.Buffer sampledArray(long[] imageViews, MemoryStack stack) {
+        VkDescriptorImageInfo.Buffer infos = VkDescriptorImageInfo.calloc(imageViews.length, stack);
+        for (int element = 0; element < imageViews.length; element++) {
+            infos.get(element).sampler(sampler).imageView(imageViews[element]).imageLayout(VK10.VK_IMAGE_LAYOUT_GENERAL);
+        }
+        return infos;
+    }
+
+    private static long createSetLayout(VkDevice device, int[] descriptorTypes, int[] descriptorCounts) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkDescriptorSetLayoutBinding.Buffer bindings = VkDescriptorSetLayoutBinding.calloc(descriptorTypes.length, stack);
             for (int binding = 0; binding < descriptorTypes.length; binding++) {
                 bindings.get(binding)
                     .binding(binding)
                     .descriptorType(descriptorTypes[binding])
-                    .descriptorCount(SINGLE)
+                    .descriptorCount(descriptorCounts[binding])
                     .stageFlags(VK10.VK_SHADER_STAGE_COMPUTE_BIT);
             }
             VkDescriptorSetLayoutCreateInfo info = VkDescriptorSetLayoutCreateInfo.calloc(stack)

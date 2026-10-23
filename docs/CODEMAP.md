@@ -70,7 +70,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | `com.aryston.helion.config` | [config.md](codemap/config.md) | 8 | Config spec, presets, settings screen and share codes. |
 | `com.aryston.helion.debug` | [debug.md](codemap/debug.md) | 13 | Debug overlay, GPU profile, visual test and pixel parity tools. |
 | `com.aryston.helion.integration` | [integration.md](codemap/integration.md) | 6 | Event wiring, key bindings, parity control and the Sodium and Iris guard. |
-| `com.aryston.helion.integration.vanilla` | [integration.vanilla.md](codemap/integration.vanilla.md) | 38 | Bridges to vanilla frame, terrain, entity, shadow caster and dynamic light sources. |
+| `com.aryston.helion.integration.vanilla` | [integration.vanilla.md](codemap/integration.vanilla.md) | 39 | Bridges to vanilla frame, terrain, entity, shadow caster and dynamic light sources. |
 | `com.aryston.helion.mixin` | [mixin.md](codemap/mixin.md) | 19 | Mixins and accessors on vanilla renderers and, for ray tracing, on the renderpearl Vulkan backend. |
 | `com.aryston.helion.render.atmosphere` | [render.atmosphere.md](codemap/render.atmosphere.md) | 15 | Physical sky, atmosphere spectrum, sky light and scene fog. |
 | `com.aryston.helion.render.clouds` | [render.clouds.md](codemap/render.clouds.md) | 9 | Volumetric clouds stage, resources, settings and pipelines. |
@@ -91,7 +91,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | `com.aryston.helion.render.shadow` | [render.shadow.md](codemap/render.shadow.md) | 12 | Shadow cascades, cascade cache, shadow light, casters and pipelines. |
 | `com.aryston.helion.render.water` | [render.water.md](codemap/render.water.md) | 8 | Water surface target, wave normals, screen space reflections and the reflection composite. |
 | `com.aryston.helion.render.voxel` | [render.voxel.md](codemap/render.voxel.md) | 29 | Voxel lighting: block volume around the camera, light grid, traced direct block light and the voxel slice view. |
-| `com.aryston.helion.render.rtx` | [render.rtx.md](codemap/render.rtx.md) | 36 | Hardware ray tracing: optional ray query features, VMA device address buffers, per-section bottom levels and a per-frame top level from the real block meshes, raw compute passes, the sun shadow validation view and the RTX spike. |
+| `com.aryston.helion.render.rtx` | [render.rtx.md](codemap/render.rtx.md) | 37 | Hardware ray tracing: optional ray query features, VMA device address buffers, per-section bottom levels and a per-frame top level from the real block meshes, raw compute passes, the sun shadow validation view and the RTX spike. |
 | `com.aryston.helion.render.temporal` | [render.temporal.md](codemap/render.temporal.md) | 11 | Temporal anti-aliasing, jitter, history, previous view and render scale. |
 
 ## Other Files

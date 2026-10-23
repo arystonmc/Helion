@@ -20,6 +20,7 @@ final class RtxEntityScene {
     private final RtxDevice device;
     private final GpuResources resources;
     private final Long2LongOpenHashMap addresses = new Long2LongOpenHashMap();
+    private final RtxEntitySurfaces surfaces;
     private @Nullable RtxAccelerationStructure structure;
     private @Nullable TrackedResource tracked;
     private List<Shape> built = List.of();
@@ -28,13 +29,15 @@ final class RtxEntityScene {
     RtxEntityScene(RtxDevice device, GpuResources resources) {
         this.device = device;
         this.resources = resources;
+        this.surfaces = RtxEntitySurfaces.create(device, resources);
     }
 
     long record(VkCommandBuffer commandBuffer, List<RtxEntityDraws.RtxEntityDraw> draws) {
+        addresses.clear();
+        surfaces.write(draws, this::address);
         if (draws.isEmpty()) {
             return NO_ADDRESS;
         }
-        addresses.clear();
         List<RtxGeometry> geometries = draws.stream().map(this::geometry).toList();
         List<Shape> shapes = geometries.stream().map(Shape::of).toList();
         RtxAccelerationStructure current = structure;
@@ -51,6 +54,19 @@ final class RtxEntityScene {
         updates = update ? updates + 1 : 0;
         built = shapes;
         return current.address();
+    }
+
+    RtxEntitySurfaces surfaces() {
+        return surfaces;
+    }
+
+    void clearSurfaces() {
+        surfaces.write(List.of(), this::address);
+    }
+
+    void close() {
+        release();
+        surfaces.release(resources);
     }
 
     void release() {

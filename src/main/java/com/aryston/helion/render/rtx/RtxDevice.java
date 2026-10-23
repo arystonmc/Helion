@@ -7,6 +7,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.device.GpuDevice;
 import com.mojang.renderpearl.backend.vulkan.VulkanCommandEncoder;
 import com.mojang.renderpearl.backend.vulkan.VulkanDevice;
+import com.mojang.renderpearl.backend.vulkan.init.FeatureSet;
 import java.util.Optional;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VK11;
@@ -19,11 +20,13 @@ final class RtxDevice {
     private final VulkanDevice device;
     private final long scratchAlignment;
     private final long storageOffsetAlignment;
+    private final boolean entityTextures;
 
-    private RtxDevice(VulkanDevice device, long scratchAlignment, long storageOffsetAlignment) {
+    private RtxDevice(VulkanDevice device, long scratchAlignment, long storageOffsetAlignment, boolean entityTextures) {
         this.device = device;
         this.scratchAlignment = scratchAlignment;
         this.storageOffsetAlignment = storageOffsetAlignment;
+        this.entityTextures = entityTextures;
     }
 
     static Optional<RtxDevice> find() {
@@ -31,7 +34,8 @@ final class RtxDevice {
         if (!(device instanceof FrontendGpuDeviceAccessor frontend) || !(frontend.helion$backend() instanceof VulkanDevice vulkan)) {
             return Optional.empty();
         }
-        if (!((VulkanDeviceAccessor) vulkan).helion$enabledFeatures().contains(RtxFeature.FEATURE_SET)) {
+        FeatureSet enabled = ((VulkanDeviceAccessor) vulkan).helion$enabledFeatures();
+        if (!enabled.contains(RtxFeature.FEATURE_SET)) {
             return Optional.empty();
         }
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -40,7 +44,7 @@ final class RtxDevice {
             VkPhysicalDeviceProperties2 properties = VkPhysicalDeviceProperties2.calloc(stack).sType$Default().pNext(acceleration);
             VK11.vkGetPhysicalDeviceProperties2(vkDevice.getPhysicalDevice(), properties);
             long storageAlignment = properties.properties().limits().minStorageBufferOffsetAlignment();
-            return Optional.of(new RtxDevice(vulkan, acceleration.minAccelerationStructureScratchOffsetAlignment(), storageAlignment));
+            return Optional.of(new RtxDevice(vulkan, acceleration.minAccelerationStructureScratchOffsetAlignment(), storageAlignment, enabled.contains(RtxFeature.ENTITY_TEXTURES)));
         }
     }
 
@@ -68,5 +72,9 @@ final class RtxDevice {
 
     long storageOffsetAlignment() {
         return storageOffsetAlignment;
+    }
+
+    boolean entityTextures() {
+        return entityTextures;
     }
 }

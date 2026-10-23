@@ -20,6 +20,9 @@ final class RtxTopLevel {
     private static final int SURFACE_TABLE_USAGE = VK10.VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     static final int SECTION_RAYS = 0x01;
     static final int ENTITY_RAYS = 0x02;
+    static final int ENTITY_REFLECTION_RAYS = 0x04;
+    static final int ENTITY_REFLECTION_INDEX = 0xFFFFFF;
+    private static final int ENTITY_INSTANCES = 2;
     private static final int SURFACE_ENTRY_BYTES = 4 * Integer.BYTES;
     private static final int SOLID_QUADS_OFFSET = Long.BYTES;
     private static final int[] DIAGONAL = {0, 5, 10};
@@ -89,9 +92,16 @@ final class RtxTopLevel {
     }
 
     void appendEntities(long address, float translateX, float translateY, float translateZ) {
-        if (count >= CAPACITY) {
+        if (count + ENTITY_INSTANCES > CAPACITY) {
             return;
         }
+        appendEntityInstance(address, translateX, translateY, translateZ, count, ENTITY_RAYS, KHRAccelerationStructure.VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_KHR);
+        appendEntityInstance(
+            address, translateX, translateY, translateZ, ENTITY_REFLECTION_INDEX, ENTITY_REFLECTION_RAYS, KHRAccelerationStructure.VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_KHR
+        );
+    }
+
+    private void appendEntityInstance(long address, float translateX, float translateY, float translateZ, int customIndex, int mask, int opacity) {
         VkAccelerationStructureInstanceKHR instance = VkAccelerationStructureInstanceKHR.create(instances[frame].mapped() + (long) count * VkAccelerationStructureInstanceKHR.SIZEOF);
         MemoryUtil.memSet(instance.address(), 0, VkAccelerationStructureInstanceKHR.SIZEOF);
         VkTransformMatrixKHR transform = instance.transform();
@@ -101,9 +111,9 @@ final class RtxTopLevel {
         transform.matrix(TRANSLATE_X, translateX);
         transform.matrix(TRANSLATE_Y, translateY);
         transform.matrix(TRANSLATE_Z, translateZ);
-        instance.instanceCustomIndex(count)
-            .mask(ENTITY_RAYS)
-            .flags(KHRAccelerationStructure.VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR)
+        instance.instanceCustomIndex(customIndex)
+            .mask(mask)
+            .flags(KHRAccelerationStructure.VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR | opacity)
             .accelerationStructureReference(address);
         count++;
     }

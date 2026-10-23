@@ -34,7 +34,7 @@ record RtxGeometry(
     }
 
     static RtxGeometry drawn(long positionAddress, int vertexStride, int vertexCount, long indexAddress, int indexType, int primitiveOffset, int firstVertex, int triangleCount) {
-        return new RtxGeometry(Kind.TRIANGLES, positionAddress, indexAddress, vertexCount, triangleCount, true, vertexStride, indexType, primitiveOffset, firstVertex);
+        return new RtxGeometry(Kind.TRIANGLES, positionAddress, indexAddress, vertexCount, triangleCount, false, vertexStride, indexType, primitiveOffset, firstVertex);
     }
 
     static RtxGeometry instances(long address, int count) {

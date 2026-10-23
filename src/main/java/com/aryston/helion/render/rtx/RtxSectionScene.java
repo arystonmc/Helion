@@ -87,6 +87,14 @@ final class RtxSectionScene {
         }
     }
 
+    void clearEntitySurfaces() {
+        entities.clearSurfaces();
+    }
+
+    RtxEntitySurfaces entitySurfaces() {
+        return entities.surfaces();
+    }
+
     void recordTopLevel(VkCommandBuffer commandBuffer) {
         topLevel.record(commandBuffer);
     }
@@ -110,7 +118,7 @@ final class RtxSectionScene {
         known.clear();
         requested.clear();
         indices.close(resources);
-        entities.release();
+        entities.close();
         scratch.close(resources);
         topLevel.release(resources);
         builtBytes = NO_BYTES;

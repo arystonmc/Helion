@@ -114,7 +114,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### EntityGeometryDraws
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/EntityGeometryDraws.java`
-- Role: Render-thread switch for the solid feature phase: in geometry mode only render type features draw, each with its geometry variant, and draws without one are skipped; in remainder mode exactly those skipped draws and the other features (particles, features of other mods) draw. Read by `PreparedRenderTypeMixin` and `FeatureGroupMixin`. `drawn` hands every draw of the geometry pass (quads or triangles with float positions) to `RtxEntityDraws` while ray traced shadows capture entities, with the number of vertices it uses when the draw has the sequential index buffer.
+- Role: Render-thread switch for the solid feature phase: in geometry mode only render type features draw, each with its geometry variant, and draws without one are skipped; in remainder mode exactly those skipped draws and the other features (particles, features of other mods) draw. Read by `PreparedRenderTypeMixin` and `FeatureGroupMixin`. `drawn` hands every draw of the geometry pass (quads or triangles with float positions) to `RtxEntityDraws` while the ray tracing scene captures entities, with its `Sampler0` texture and the offsets of its RGBA8 color, float UV0 and 16-bit light attributes when it has them, with the number of vertices it uses when the draw has the sequential index buffer.
 - Depends on: `EntityGeometryPipelines`.
 
 #### VanillaAtmosphereSource

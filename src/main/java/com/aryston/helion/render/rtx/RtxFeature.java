@@ -29,6 +29,12 @@ public final class RtxFeature {
         )
     );
 
+    public static final FeatureSet ENTITY_TEXTURES = new FeatureSet(
+        "Helion ray traced entity textures",
+        Set.of(),
+        Set.of(new VulkanFeature(VulkanFeatureSets.VK12_FEATURES_STRUCT, "shaderSampledImageArrayNonUniformIndexing"))
+    );
+
     private RtxFeature() {
     }
 }
