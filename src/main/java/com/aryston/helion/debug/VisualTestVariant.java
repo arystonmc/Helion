@@ -43,6 +43,7 @@ enum VisualTestVariant {
     VOXEL_BOUNCE_OFF(true, ToneMapper.NEUTRAL, false),
     SCREEN_REFLECTIONS(true, ToneMapper.NEUTRAL, false),
     HYBRID_REFLECTIONS(true, ToneMapper.NEUTRAL, false),
+    RAY_REFLECTIONS(true, ToneMapper.NEUTRAL, false),
     PARITY(true, ToneMapper.NEUTRAL, false);
 
     private static final CloudSettings VOLUMETRIC_CLOUDS = new CloudSettings(true, CloudQuality.MEDIUM);
@@ -158,11 +159,14 @@ enum VisualTestVariant {
     }
 
     private ReflectionSettings reflections(RenderSettings settings) {
+        if (this == RAY_REFLECTIONS) {
+            return ReflectionSettings.DISABLED;
+        }
         return this == SCREEN_REFLECTIONS || this == HYBRID_REFLECTIONS ? new ReflectionSettings(true) : settings.reflections();
     }
 
     private boolean showsShadows() {
-        return this == SHADOWS || this == SHADOW_LIGHT || this == SCREEN_REFLECTIONS || this == HYBRID_REFLECTIONS;
+        return this == SHADOWS || this == SHADOW_LIGHT || this == SCREEN_REFLECTIONS || this == HYBRID_REFLECTIONS || this == RAY_REFLECTIONS;
     }
 
     boolean comparesWithVanilla() {

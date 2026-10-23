@@ -23,10 +23,12 @@ import org.lwjgl.vulkan.VkWriteDescriptorSetAccelerationStructureKHR;
 
 final class RtxComputePipeline {
     static final int WORKGROUP_SIZE = 8;
+    static final long NO_SET = VK10.VK_NULL_HANDLE;
 
     private static final int SINGLE = 1;
     private static final int NO_OFFSET = 0;
     private static final int FIRST_SET = 0;
+    private static final int BOUND_SET = 1;
 
     private final VkDevice device;
     private final long setLayout;
@@ -43,11 +45,17 @@ final class RtxComputePipeline {
     }
 
     static RtxComputePipeline create(RtxDevice rtxDevice, String source, String name, int[] descriptorTypes, int pushConstantBytes) {
+        return create(rtxDevice, source, name, descriptorTypes, pushConstantBytes, List.of(), NO_SET);
+    }
+
+    static RtxComputePipeline create(
+        RtxDevice rtxDevice, String source, String name, int[] descriptorTypes, int pushConstantBytes, List<String> defines, long boundSetLayout
+    ) {
         VkDevice device = rtxDevice.vkDevice();
-        ByteBuffer spirv = RtxShaderSource.compileCompute(source, name);
+        ByteBuffer spirv = RtxShaderSource.compileCompute(source, name, defines);
         try {
             long setLayout = createSetLayout(device, descriptorTypes);
-            long pipelineLayout = createPipelineLayout(device, setLayout, pushConstantBytes);
+            long pipelineLayout = createPipelineLayout(device, setLayout, boundSetLayout, pushConstantBytes);
             long module = createModule(device, spirv);
             try {
                 return new RtxComputePipeline(device, setLayout, pipelineLayout, createPipeline(device, pipelineLayout, module), createSampler(device));
@@ -60,6 +68,10 @@ final class RtxComputePipeline {
     }
 
     void dispatch(VkCommandBuffer commandBuffer, List<RtxBinding> bindings, ByteBuffer constants, int width, int height) {
+        dispatch(commandBuffer, bindings, NO_SET, constants, width, height);
+    }
+
+    void dispatch(VkCommandBuffer commandBuffer, List<RtxBinding> bindings, long boundSet, ByteBuffer constants, int width, int height) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VK10.vkCmdBindPipeline(commandBuffer, VK10.VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
             VkWriteDescriptorSet.Buffer writes = VkWriteDescriptorSet.calloc(bindings.size(), stack);
@@ -67,6 +79,9 @@ final class RtxComputePipeline {
                 describe(writes.get(binding), binding, bindings.get(binding), stack);
             }
             KHRPushDescriptor.vkCmdPushDescriptorSetKHR(commandBuffer, VK10.VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, FIRST_SET, writes);
+            if (boundSet != NO_SET) {
+                VK10.vkCmdBindDescriptorSets(commandBuffer, VK10.VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, BOUND_SET, stack.longs(boundSet), null);
+            }
             VK10.vkCmdPushConstants(commandBuffer, pipelineLayout, VK10.VK_SHADER_STAGE_COMPUTE_BIT, NO_OFFSET, constants);
             VK10.vkCmdDispatch(commandBuffer, Math.ceilDiv(width, WORKGROUP_SIZE), Math.ceilDiv(height, WORKGROUP_SIZE), SINGLE);
         }
@@ -119,7 +134,7 @@ final class RtxComputePipeline {
         }
     }
 
-    private static long createPipelineLayout(VkDevice device, long setLayout, int pushConstantBytes) {
+    private static long createPipelineLayout(VkDevice device, long setLayout, long boundSetLayout, int pushConstantBytes) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkPushConstantRange.Buffer constants = VkPushConstantRange.calloc(SINGLE, stack)
                 .stageFlags(VK10.VK_SHADER_STAGE_COMPUTE_BIT)
@@ -127,7 +142,7 @@ final class RtxComputePipeline {
                 .size(pushConstantBytes);
             VkPipelineLayoutCreateInfo info = VkPipelineLayoutCreateInfo.calloc(stack)
                 .sType$Default()
-                .pSetLayouts(stack.longs(setLayout))
+                .pSetLayouts(boundSetLayout == NO_SET ? stack.longs(setLayout) : stack.longs(setLayout, boundSetLayout))
                 .pPushConstantRanges(constants);
             LongBuffer handle = stack.mallocLong(1);
             RtxBuffer.check(VK10.vkCreatePipelineLayout(device, info, null, handle), "pipeline layout");
@@ -160,7 +175,7 @@ final class RtxComputePipeline {
         }
     }
 
-    private static long createSampler(VkDevice device) {
+    static long createSampler(VkDevice device) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VkSamplerCreateInfo info = VkSamplerCreateInfo.calloc(stack)
                 .sType$Default()

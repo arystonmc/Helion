@@ -30,13 +30,16 @@ final class RtxEntityScene {
         this.resources = resources;
     }
 
-    long record(VkCommandBuffer commandBuffer, List<RtxEntityDraws.RtxEntityDraw> draws) {
+    long record(VkCommandBuffer commandBuffer, List<RtxEntityDraws.RtxEntityDraw> draws, @Nullable RtxEntitySurfaces surfaces) {
         if (draws.isEmpty()) {
             return NO_ADDRESS;
         }
         addresses.clear();
         List<RtxGeometry> geometries = draws.stream().map(this::geometry).toList();
         List<Shape> shapes = geometries.stream().map(Shape::of).toList();
+        if (surfaces != null) {
+            surfaces.write(draws, this::address);
+        }
         RtxAccelerationStructure current = structure;
         if (current == null || !current.fits(RtxAccelerationStructure.dynamicSizes(device, geometries))) {
             release();

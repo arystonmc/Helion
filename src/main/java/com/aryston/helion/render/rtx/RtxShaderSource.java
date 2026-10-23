@@ -6,6 +6,7 @@ import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -17,12 +18,18 @@ final class RtxShaderSource {
     private static final Pattern INCLUDE = Pattern.compile("^[ \\t]*#include <([a-z0-9_]+):([a-z0-9_./]+)>[ \\t]*$", Pattern.MULTILINE);
     private static final String INCLUDE_PATH = "/assets/%s/shaders/include/%s";
     private static final String ENTRY = "main";
+    private static final String DEFINE = "#define %s\n";
+    private static final char LINE_END = '\n';
 
     private RtxShaderSource() {
     }
 
     static ByteBuffer compileCompute(String resource, String name) {
-        String source = expand(read(resource), new HashSet<>());
+        return compileCompute(resource, name, List.of());
+    }
+
+    static ByteBuffer compileCompute(String resource, String name, List<String> defines) {
+        String source = defined(expand(read(resource), new HashSet<>()), defines);
         long compiler = Shaderc.shaderc_compiler_initialize();
         long options = Shaderc.shaderc_compile_options_initialize();
         try {
@@ -49,6 +56,13 @@ final class RtxShaderSource {
 
     static String entry() {
         return ENTRY;
+    }
+
+    private static String defined(String source, List<String> defines) {
+        int afterVersion = source.indexOf(LINE_END) + 1;
+        StringBuilder directives = new StringBuilder();
+        defines.forEach(define -> directives.append(DEFINE.formatted(define)));
+        return source.substring(0, afterVersion) + directives + source.substring(afterVersion);
     }
 
     private static String expand(String source, Set<String> included) {

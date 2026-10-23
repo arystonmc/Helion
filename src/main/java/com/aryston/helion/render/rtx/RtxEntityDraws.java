@@ -1,15 +1,19 @@
 package com.aryston.helion.render.rtx;
 
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.vulkan.VulkanGpuBuffer;
+import com.mojang.renderpearl.backend.vulkan.VulkanGpuTextureView;
 import java.util.ArrayList;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.vulkan.VK10;
 
 public final class RtxEntityDraws {
     private static final int TRIANGLE_INDICES = 3;
     private static final int SHORT_BYTES = Short.BYTES;
     private static final int INT_BYTES = Integer.BYTES;
+    private static final long NO_TEXTURE = VK10.VK_NULL_HANDLE;
 
     private final List<RtxEntityDraw> draws = new ArrayList<>();
     private boolean capturing;
@@ -19,7 +23,8 @@ public final class RtxEntityDraws {
     }
 
     public void add(
-        GpuBuffer vertices, GpuBuffer indices, boolean shortIndices, int vertexStride, int positionOffset, int baseVertex, int firstIndex, int indexCount, int usedVertices
+        GpuBuffer vertices, GpuBuffer indices, boolean shortIndices, int vertexStride, int positionOffset, int baseVertex, int firstIndex, int indexCount, int usedVertices,
+        Surface surface
     ) {
         if (!capturing || indexCount < TRIANGLE_INDICES || !(vertices instanceof VulkanGpuBuffer vertexBuffer) || !(indices instanceof VulkanGpuBuffer indexBuffer)) {
             return;
@@ -35,7 +40,12 @@ public final class RtxEntityDraws {
             positionOffset,
             baseVertex,
             firstIndex * indexBytes,
-            indexCount / TRIANGLE_INDICES
+            indexCount / TRIANGLE_INDICES,
+            surface.texture() instanceof VulkanGpuTextureView view ? view.vkImageView() : NO_TEXTURE,
+            surface.colorOffset(),
+            surface.uvOffset(),
+            surface.lightOffset(),
+            surface.cutout()
         ));
     }
 
@@ -59,7 +69,19 @@ public final class RtxEntityDraws {
         int positionOffset,
         int baseVertex,
         int indexOffset,
-        int triangles
+        int triangles,
+        long textureView,
+        int colorOffset,
+        int uvOffset,
+        int lightOffset,
+        float cutout
     ) {
+        boolean hasTexture() {
+            return textureView != NO_TEXTURE;
+        }
+    }
+
+    public record Surface(@Nullable GpuTextureView texture, int colorOffset, int uvOffset, int lightOffset, float cutout) {
+        public static final int MISSING = -1;
     }
 }

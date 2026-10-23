@@ -4,6 +4,7 @@ import static com.aryston.helion.Helion.LOGGER;
 
 import com.aryston.helion.render.resource.GpuResources;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,6 +23,7 @@ public final class RayTracingResources {
     private static final String REFLECTION_NAME = "reflection.csh";
     private static final String REFLECTION_PIPELINE_LABEL = "Helion Ray Tracing Reflection Pipeline";
     private static final String REFLECTION_LABEL = "Helion Ray Tracing Reflections";
+    private static final String ENTITY_TEXTURES_LABEL = "Helion Ray Tracing Entity Textures";
     private static final String PIPELINE_LABEL = "Helion Ray Tracing Sun Shadow Pipeline";
     private static final String MASK_LABEL = "Helion Ray Tracing Sun Shadow Mask";
     private static final long PIPELINE_BYTES = 0L;
@@ -44,6 +46,16 @@ public final class RayTracingResources {
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     };
+    private static final int[] ENTITY_REFLECTION_DESCRIPTORS = {
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        KHRAccelerationStructure.VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+    };
 
     private final GpuResources resources;
     private final RtxSectionInbox inbox = new RtxSectionInbox();
@@ -56,6 +68,8 @@ public final class RayTracingResources {
     private @Nullable RtxComputePipeline reflection;
     private @Nullable RtxImage reflectionImage;
     private @Nullable ByteBuffer reflectionConstants;
+    private @Nullable RtxEntityTextures entityTextures;
+    private @Nullable RtxEntitySurfaces entitySurfaces;
     private boolean checked;
     private boolean reportedComplete;
     private long frame;
@@ -121,6 +135,18 @@ public final class RayTracingResources {
 
     RtxComputePipeline reflectionPipeline() {
         return Objects.requireNonNull(reflection);
+    }
+
+    boolean reflectsEntities() {
+        return entitySurfaces != null;
+    }
+
+    RtxEntityTextures entityTextures() {
+        return Objects.requireNonNull(entityTextures);
+    }
+
+    RtxEntitySurfaces entitySurfaces() {
+        return Objects.requireNonNull(entitySurfaces);
     }
 
     ByteBuffer reflectionConstants() {
@@ -224,6 +250,39 @@ public final class RayTracingResources {
         device = rtx;
         sunShadow = pipeline;
         scene = new RtxSectionScene(rtx, resources);
+        if (!rtx.entityTextures() || !openEntityReflections(rtx)) {
+            openReflections(rtx);
+        }
+        LOGGER.info("Helion ray tracing is on: section scene within {} sections of the camera", RtxSectionInbox.RADIUS);
+    }
+
+    private boolean openEntityReflections(RtxDevice rtx) {
+        @Nullable RtxEntityTextures textures = null;
+        @Nullable RtxComputePipeline traced = null;
+        try {
+            textures = RtxEntityTextures.create(rtx);
+            traced = RtxComputePipeline.create(
+                rtx, REFLECTION_SOURCE, REFLECTION_NAME, ENTITY_REFLECTION_DESCRIPTORS, REFLECTION_CONSTANT_BYTES, List.of(RtxEntityTextures.DEFINE), textures.setLayout()
+            );
+            entitySurfaces = RtxEntitySurfaces.create(rtx, resources);
+            resources.track(REFLECTION_PIPELINE_LABEL, PIPELINE_BYTES, traced::destroy);
+            resources.track(ENTITY_TEXTURES_LABEL, PIPELINE_BYTES, textures::destroy);
+            reflection = traced;
+            entityTextures = textures;
+            return true;
+        } catch (IllegalStateException exception) {
+            if (traced != null) {
+                traced.destroy();
+            }
+            if (textures != null) {
+                textures.destroy();
+            }
+            LOGGER.warn("Helion ray traced reflections leave out mobs: {}", exception.getMessage());
+            return false;
+        }
+    }
+
+    private void openReflections(RtxDevice rtx) {
         try {
             RtxComputePipeline traced = RtxComputePipeline.create(rtx, REFLECTION_SOURCE, REFLECTION_NAME, REFLECTION_DESCRIPTORS, REFLECTION_CONSTANT_BYTES);
             resources.track(REFLECTION_PIPELINE_LABEL, PIPELINE_BYTES, traced::destroy);
@@ -231,7 +290,6 @@ public final class RayTracingResources {
         } catch (IllegalStateException exception) {
             LOGGER.error("Helion ray traced reflections are off: {}", exception.getMessage());
         }
-        LOGGER.info("Helion ray tracing is on: section scene within {} sections of the camera", RtxSectionInbox.RADIUS);
     }
 
     private static String millis(Map<String, Double> gpuMillis, String stage) {

@@ -6,6 +6,7 @@ import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.voxel.VoxelVolumeLayout;
 import com.mojang.blaze3d.framegraph.FramePass;
 import org.joml.Vector3dc;
+import org.jspecify.annotations.Nullable;
 
 public final class RtxSceneStage implements RenderStage {
     static final String BOTTOM_STAGE = "rt_bottom_levels";
@@ -49,7 +50,9 @@ public final class RtxSceneStage implements RenderStage {
             device.memoryBarrier();
             scene.recordBottomLevels(device.commandBuffer(), plan);
         });
-        boolean withEntities = frame.settings().rayTracing().tracesShadows();
+        boolean reflectsEntities = frame.settings().rayTracing().reflectsWater() && resources.reflectsEntities();
+        boolean withEntities = frame.settings().rayTracing().tracesShadows() || reflectsEntities;
+        @Nullable RtxEntitySurfaces surfaces = reflectsEntities ? resources.entitySurfaces() : null;
         resources.entityDraws().capture(withEntities);
         float translateX = (float) (position.x() - center.originX());
         float translateY = (float) (position.y() - center.originY());
@@ -57,7 +60,7 @@ public final class RtxSceneStage implements RenderStage {
         Runnable top = frame.graph().timed(TOP_STAGE, () -> {
             device.memoryBarrier();
             if (withEntities) {
-                scene.recordEntities(device.commandBuffer(), resources.entityDraws().take(), translateX, translateY, translateZ);
+                scene.recordEntities(device.commandBuffer(), resources.entityDraws().take(), surfaces, translateX, translateY, translateZ);
                 device.memoryBarrier();
             }
             scene.recordTopLevel(device.commandBuffer());

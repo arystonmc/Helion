@@ -20,7 +20,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### PreparedRenderTypeMixin
 - Path: `src/main/java/com/aryston/helion/mixin/PreparedRenderTypeMixin.java`
-- Role: In `PreparedRenderType.draw` skips the draws `EntityGeometryDraws` leaves to the other pass and swaps the pipeline for its geometry buffer variant in the entity geometry pass. It also reports every draw it keeps in the entity geometry pass to `EntityGeometryDraws.drawn`.
+- Role: In `PreparedRenderType.draw` skips the draws `EntityGeometryDraws` leaves to the other pass and swaps the pipeline for its geometry buffer variant in the entity geometry pass. It also reports every draw it keeps in the entity geometry pass to `EntityGeometryDraws.drawn`, with the textures of the render type.
 - Notes: No API lets a mod change the pipeline of a prepared render type or skip one draw of the feature dispatcher.
 
 #### FeatureGroupMixin
@@ -58,7 +58,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VulkanFeatureSetsMixin
 - Path: `src/main/java/com/aryston/helion/mixin/VulkanFeatureSetsMixin.java`
-- Role: Adds `RtxFeature.FEATURE_SET` to `VulkanFeatureSets.optionalFeatureSets()` when ray tracing was asked for at startup (`RayTracingStartup`, the setting or `helion.rayTracing`) or `helion.rtxSpike` is set, so renderpearl enables ray queries on devices that support them.
+- Role: Adds `RtxFeature.FEATURE_SET` and `RtxFeature.ENTITY_TEXTURES` to `VulkanFeatureSets.optionalFeatureSets()` when ray tracing was asked for at startup (`RayTracingStartup`, the setting or `helion.rayTracing`) or `helion.rtxSpike` is set, so renderpearl enables ray queries, and non-uniform indexing of sampled image arrays for entity textures in reflections, on devices that support them.
 - Notes: The device is created by renderpearl before any mod event; the optional feature set list is the only way to add extensions.
 
 #### VulkanConstMixin

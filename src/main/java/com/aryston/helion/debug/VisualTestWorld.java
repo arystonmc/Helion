@@ -54,7 +54,8 @@ final class VisualTestWorld {
 
     private static final List<Summon> ENTITIES = List.of(
         new Summon(-1, 0, -3, "armor_stand"),
-        new Summon(1, 0, -3, "cow")
+        new Summon(1, 0, -3, "cow"),
+        new Summon(-4, 0, -4, "villager")
     );
     private static final String FROZEN_ENTITY = " {NoAI:1b,NoGravity:1b,Invulnerable:1b,Rotation:[90f,0f]}";
     private static final double BLOCK_CENTER = 0.5;
