@@ -50,6 +50,10 @@ const float HELION_STREAK_TO = 0.75;
 const float HELION_STREAK_DARKENING = 0.25;
 const float HELION_STREAK_SHEEN = 0.7;
 const float HELION_WALL_UP = 0.5;
+const float HELION_MUD_DARKENING = 0.5;
+const float HELION_MUD_SHEEN = 0.25;
+const float HELION_MUD_PUDDLES = 0.7;
+const float HELION_MUD_RAIN = 0.4;
 const HelionWetSurface HELION_DRY_SURFACE = HelionWetSurface(0.0, 0.0, 0.0, 0.0, vec3(0.0, 1.0, 0.0));
 
 float helionWetHash(vec2 cell, float periodCells) {
@@ -110,14 +114,16 @@ HelionWetSurface helionWetSurface(vec4 light, vec3 normal, vec3 worldPosition, v
         return HELION_DRY_SURFACE;
     }
     bool porous = helionIsGeometryMaterial(light.a, HELION_GEOMETRY_POROUS);
+    bool muddy = helionIsGeometryMaterial(light.a, HELION_GEOMETRY_MUDDY);
     bool glossy = helionIsGeometryMaterial(light.a, HELION_GEOMETRY_GLOSSY);
     float facingUp = smoothstep(HELION_WET_FLAT_FROM, HELION_WET_FLAT_TO, normal.y);
     float exposure = smoothstep(HELION_WET_EXPOSED_FROM, HELION_WET_EXPOSED_TO, light.g) * mix(HELION_WET_WALL_SHARE, 1.0, facingUp);
     float wet = wetness.x * exposure;
     float streak = porous || normal.y > HELION_WALL_UP ? 0.0 : helionWallStreaks(normal, worldPosition, wetness.w) * wet * wetness.z;
-    float puddle = porous ? 0.0 : helionPuddleMask(worldPosition.xz, wetness.y) * facingUp * exposure;
-    float darkening = porous ? HELION_POROUS_DARKENING : glossy ? HELION_GLOSSY_DARKENING : HELION_ORDINARY_DARKENING;
-    float sheen = porous ? HELION_POROUS_SHEEN : glossy ? HELION_GLOSSY_SHEEN : HELION_ORDINARY_SHEEN;
+    float mudPuddles = wetness.y * HELION_MUD_PUDDLES * smoothstep(0.0, HELION_MUD_RAIN, wetness.z);
+    float puddle = porous ? 0.0 : helionPuddleMask(worldPosition.xz, muddy ? mudPuddles : wetness.y) * facingUp * exposure;
+    float darkening = muddy ? HELION_MUD_DARKENING : porous ? HELION_POROUS_DARKENING : glossy ? HELION_GLOSSY_DARKENING : HELION_ORDINARY_DARKENING;
+    float sheen = muddy ? HELION_MUD_SHEEN : porous ? HELION_POROUS_SHEEN : glossy ? HELION_GLOSSY_SHEEN : HELION_ORDINARY_SHEEN;
     vec2 ripples = puddle <= 0.0 ? vec2(0.0) : simulated ? simulatedSlope : helionRainRipples(worldPosition.xz, wetness.w) * wetness.z;
     vec3 puddleNormal = normalize(vec3(-ripples.x, 1.0, -ripples.y));
     return HelionWetSurface(

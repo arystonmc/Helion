@@ -18,6 +18,10 @@ On by default (`reflections.rainWetness`), in every preset but Vanilla. Needs th
 
 Walls that the rain reaches (not porous, normal below 0.5 up) get running water: value noise stretched along the wall (3 cells per block across, 0.35 per block down) that scrolls down at 0.9 per second, above 0.55 to 0.75 it darkens by 0.25 more and adds 0.7 sheen, scaled by the wetness and the rain level.
 
+## Mud (2026-10-24)
+
+Dirt, grass blocks, podzol, farmland, mud and mycelium are a fifth material class (muddy, 0.5625 in the light target alpha; the material mask now has five steps). They darken by 0.5 when wet with a sheen of 0.25, and in heavy rain (rain level above 0.4) they gather small mud puddles at 0.7 of the puddle level, so fields and paths turn dark and shiny with standing water.
+
 ## Wet Footprints (2026-10-24)
 
 Players and mobs that come out of water leave wet prints for 20 seconds, one every 0.6 blocks, alternating feet 0.13 blocks to the side. Up to 32 prints live for 45 seconds and fade; each is an oval of 0.17 by 0.3 blocks that darkens the ground by 0.35 and adds a little sheen, only on flat surfaces that are not dry blocks. Visual test scene `footprints` walks an armor stand out of the pool (summoned in the water, then teleported 0.7 blocks every 3 ticks).

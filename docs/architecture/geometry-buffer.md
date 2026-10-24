@@ -17,7 +17,7 @@ Foundation for Helion's own lighting. Off by default (`geometryBuffer.enabled`).
 |---|---|---|
 | 0 | scene RGBA8 | vanilla terrain color with fog |
 | 1 `helion:geometry_normal` | RGB10A2_UNORM | world space face normal as `n * 0.5 + 0.5`, straight up for crossed plant planes (grass, flowers, saplings) so plants are lit and shadowed like the ground they stand on, alpha 1 where terrain was drawn |
-| 2 `helion:geometry_light` | RGBA8_UNORM | R block light, G sky light (lightmap coordinate / 240), B chunk fade-in visibility, alpha the block material where terrain was drawn: 1 ordinary, 0.875 porous (also crossed plant planes and entities), 0.75 glossy, 0.625 dry (texel of the material mask; every reader tests alpha against 0.5 for presence) |
+| 2 `helion:geometry_light` | RGBA8_UNORM | R block light, G sky light (lightmap coordinate / 240), B chunk fade-in visibility, alpha the block material where terrain was drawn: 1 ordinary, 0.875 porous (also crossed plant planes and entities), 0.75 glossy, 0.625 dry, 0.5625 muddy (texel of the material mask; every reader tests alpha against 0.5 for presence) |
 | 3 `helion:geometry_albedo` | RGBA8_UNORM | texture color times vertex color (biome tint and vanilla shading), before light and fog; alpha is the vanilla fog amount of the pixel |
 
 Solid entities are in the geometry buffer as well (`EntityGeometryStage`, pass `entity_geometry`), so sun shadows, ambient occlusion, deferred and voxel lighting light mobs and players per pixel like the ground they stand on:

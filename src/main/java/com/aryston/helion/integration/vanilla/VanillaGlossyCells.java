@@ -24,6 +24,8 @@ final class VanillaGlossyCells {
         "sand", "gravel", "dirt", "grass_block", "podzol", "mycelium", "farmland", "wool", "carpet", "moss", "leaves", "hay_block", "sponge",
         "soul_soil", "nylium", "wart_block", "concrete_powder"
     );
+    private static final List<String> MUDDY_PARTS = List.of("dirt", "grass_block", "podzol", "farmland", "mud", "mycelium");
+    private static final List<String> NOT_MUDDY_PARTS = List.of("dirt_path", "brick", "packed");
     private static final List<String> HOLDS_WATER_PARTS = List.of("sandstone", "dirt_path", "mossy");
 
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -50,8 +52,8 @@ final class VanillaGlossyCells {
         }
         GlossyCells built = new GlossyCells(view, width, height, cells);
         LOGGER.info(
-            "Helion material mask: {} glossy, {} porous and {} dry of {} block atlas cells",
-            count(cells, GlossyCells.GLOSSY), count(cells, GlossyCells.POROUS), count(cells, GlossyCells.DRY), cells.length
+            "Helion material mask: {} glossy, {} muddy, {} porous and {} dry of {} block atlas cells",
+            count(cells, GlossyCells.GLOSSY), count(cells, GlossyCells.MUDDY), count(cells, GlossyCells.POROUS), count(cells, GlossyCells.DRY), cells.length
         );
         cached = built;
         return built;
@@ -77,6 +79,9 @@ final class VanillaGlossyCells {
         }
         if (DRY_PARTS.stream().anyMatch(path::contains)) {
             return GlossyCells.DRY;
+        }
+        if (MUDDY_PARTS.stream().anyMatch(path::contains) && NOT_MUDDY_PARTS.stream().noneMatch(path::contains)) {
+            return GlossyCells.MUDDY;
         }
         boolean porous = POROUS_PARTS.stream().anyMatch(path::contains) && HOLDS_WATER_PARTS.stream().noneMatch(path::contains);
         return porous ? GlossyCells.POROUS : GlossyCells.ORDINARY;

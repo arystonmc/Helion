@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Dirt, grass and farmland turn muddy with small puddles in heavy rain
 - Wet footprints after coming out of the water
 - Water gets choppy in rain and thunderstorms
 - Under water: blue-green depth fog, light shafts from the surface and caustics on the bottom
