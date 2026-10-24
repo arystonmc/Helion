@@ -6,11 +6,22 @@ The owner wants water that behaves like in a graphics engine, not a shader pack 
 
 ## Phase 1a: Interactive Surface (2026-10-24)
 
-1. `WaterWaveStage` (pass `water_waves`, before `water_surface`) simulates a height field of 512 x 512 cells, 4 per block, so 128 x 128 blocks around the camera. A texel holds the cell whose world coordinate is congruent to it modulo 512; when the window follows the camera, texels that now hold a new cell start calm, nothing is copied. The last 24 cells at the window edge damp waves out instead of reflecting them.
-2. Fixed 60 Hz steps from a real time backlog, at most 4 per frame: `next = h + (h - previous) * 0.985 + 0.05 * (sum of the four neighbors - 4 h)`, so waves spread at about 3 blocks per second and fall to 40 % in a second.
+1. `WaterWaveStage` (pass `water_waves`, before `water_surface`) simulates a height field of 1024 x 1024 cells, 8 per block (512 x 512 and 4 per block before the feedback pass), so 128 x 128 blocks around the camera. A texel holds the cell whose world coordinate is congruent to it modulo 512; when the window follows the camera, texels that now hold a new cell start calm, nothing is copied. The last 24 cells at the window edge damp waves out instead of reflecting them.
+2. Fixed 60 Hz steps from a real time backlog, at most 4 per frame: `next = h + (h - previous) * 0.985 + (0.16 + 0.04) * (sum of the four neighbors - 4 h)`, so waves spread at about 3 blocks per second and fall to 40 % in a second.
 3. Impulses (`VanillaWaveSource`): entities whose feet touch water and whose head is not deep under it push the surface down along their path with their horizontal speed (up to 0.03 per step) and make one splash in the frame they enter falling (up to 0.25). In rain a cell gets a drop 0.025 deep with a chance of 0.004 per step (about 4 drops per block and second) scaled by the rain level.
 4. `water_surface` samples the field with repeat addressing (the chunk-wrapped wave position of the vertex shader repeats every 1024 blocks, a multiple of the 128 block window) and tilts the normal by its slope (0.85 of the true slope) within 44 to 60 blocks; the realistic water composite then refracts and reflects with that normal.
 5. Measured (visual test `rain_pool`, RTX 4050 Laptop, 1080p, raining): `water_waves` 0.005 ms, `water_surface` 0.10 ms (0.03 to 0.04 ms before the extra target, refraction copy and wave sampling).
+
+## Owner Feedback Pass (2026-10-24)
+
+The owner tested the first version at night and noon and asked for four fixes, with SEUS Renewed as the look to aim for:
+
+1. Night: the whole surface glowed. The water composite reflected `helionSkyColorWithCelestials`, whose moon halo and disc are wide, so every pixel got some moonlight. Water now reflects the sky without discs (`helionSkyColor`) and adds a separate glint: a sharp and a soft specular lobe around the reflected sun and moon (powers 1200 and 90 for the sun, 4000 and 700 for the moon), only under open sky (sky light 0.85 to 1) and dimmed by rain.
+2. Quality and the checker pattern: the eight sine waves interfered into a regular grid. They are replaced by five octaves of rotated gradient noise (`helion_water_waves.glsl`, wavelengths from about 3 blocks down to a sixth of a block, drifting), and the wave simulation now has 8 cells per block (1024 x 1024, same 128 block window), a little viscosity against grid noise and rain drops spread over the four neighbor cells.
+3. A weak sun reflection: the old glint came only from the sky color. The sun glint is now its own term in the hue of the sky near the sun, intensity 3 before tone mapping, so it blooms on the water at noon and turns gold at sunset.
+4. Under water the surface kept the vanilla look: the composite now shades surfaces seen from below: Snell's window (inside the critical angle, cosine 0.66, the world above shows through, refracted), total internal reflection outside it (deep water color), and extinction by distance. Caustics: two layers of warped interference lines move over the bottom of shallow water by day.
+
+The water color moved toward the teal of the reference (biome tint mixed 55 % with 0.10, 0.55, 0.52; extinction 0.32, 0.075, 0.06 per block).
 
 ## Phase 1b: Shores (2026-10-24)
 

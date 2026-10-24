@@ -12,8 +12,8 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 final class WaterWaves {
-    static final int SIZE = 512;
-    static final int CELLS_PER_BLOCK = 4;
+    static final int SIZE = 1024;
+    static final int CELLS_PER_BLOCK = 8;
     static final int MAX_IMPULSES = 32;
     static final int MAX_STEPS = 4;
     static final double REACH = (double) SIZE / CELLS_PER_BLOCK / 2.0;
@@ -24,10 +24,10 @@ final class WaterWaves {
     private static final double STEPS_PER_SECOND = 60.0;
     private static final double MAX_BACKLOG_SECONDS = MAX_STEPS / STEPS_PER_SECOND;
     private static final double TIME_JUMP_SECONDS = 1.0;
-    private static final float WAVE_SPEED = 0.05F;
+    private static final float WAVE_SPEED = 0.16F;
     private static final float DAMPING = 0.985F;
-    private static final float RAIN_DROP_CHANCE = 0.004F;
-    private static final float RAIN_DROP_DEPTH = 0.025F;
+    private static final float RAIN_DROP_CHANCE = 0.001F;
+    private static final float RAIN_DROP_DEPTH = 0.02F;
     private static final int HALF = SIZE / 2;
     private static final int RESET = 1;
     private static final int KEEP = 0;

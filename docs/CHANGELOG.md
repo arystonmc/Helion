@@ -35,6 +35,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Depth of field focuses on the sky when you look at it, so the sun, the moon and the stars stay sharp
 
 ### Fixed
+- Realistic water no longer glows all over at night, shows a strong sun glint by day, has smoother waves without a checker pattern and looks right from under water
 - Experimental voxel lighting: several lights right behind a wall no longer shine through it
 - Experimental voxel lighting: bounced light no longer makes rooms next to bright lights brighter than vanilla
 - Experimental voxel lighting: High quality costs about a third more than Medium instead of three to four times as much

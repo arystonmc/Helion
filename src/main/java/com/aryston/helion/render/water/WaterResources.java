@@ -33,6 +33,7 @@ public final class WaterResources {
         .putFloat()
         .putFloat()
         .putFloat()
+        .putFloat()
         .get();
     private static final String SCREEN_LABEL = "Helion Screen Reflection Settings";
     private static final int SCREEN_SIZE = new Std140SizeCalculator()
@@ -43,6 +44,8 @@ public final class WaterResources {
         .putVec4()
         .get();
     private static final double NOISE_PERIOD = 1024.0;
+    private static final double NANOS_PER_SECOND = 1.0e9;
+    private static final double SECONDS_PERIOD = 3600.0;
     private static final float PRESENT = 1.0F;
     private static final float ABSENT = 0.0F;
 
@@ -106,7 +109,8 @@ public final class WaterResources {
             .putFloat(REFLECTION_STRENGTH)
             .putFloat(traced ? PRESENT : ABSENT)
             .putFloat(screen ? PRESENT : ABSENT)
-            .putFloat(realistic ? PRESENT : ABSENT));
+            .putFloat(realistic ? PRESENT : ABSENT)
+            .putFloat((float) ((System.nanoTime() / NANOS_PER_SECOND) % SECONDS_PERIOD)));
     }
 
     Optional<CompiledRenderPipeline> polishedProgram() {

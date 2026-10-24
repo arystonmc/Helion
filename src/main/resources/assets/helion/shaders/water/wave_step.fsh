@@ -15,10 +15,12 @@ layout(location = 0) in vec2 texCoord;
 
 layout(location = 0) out vec4 waveState;
 
-const int HELION_WAVE_SIZE = 512;
+const int HELION_WAVE_SIZE = 1024;
 const int HELION_WAVE_MASK = HELION_WAVE_SIZE - 1;
 const int HELION_WAVE_LAST = HELION_WAVE_SIZE - 1;
-const float HELION_WAVE_EDGE = 24.0;
+const float HELION_WAVE_EDGE = 48.0;
+const float HELION_WAVE_VISCOSITY = 0.04;
+const float HELION_DROP_SPREAD = 0.5;
 const float HELION_CELL_CENTER = 0.5;
 const uint HELION_HASH_MULTIPLIER = 747796405u;
 const uint HELION_HASH_INCREMENT = 2891336453u;
@@ -31,7 +33,7 @@ const uint HELION_HASH_SEED_SCALE = 9277u;
 const float HELION_HASH_RANGE = 4294967295.0;
 const vec4 HELION_CALM = vec4(0.0);
 const int HELION_SHORE_MASK = 127;
-const int HELION_CELLS_PER_BLOCK_SHIFT = 2;
+const int HELION_CELLS_PER_BLOCK_SHIFT = 3;
 const float HELION_SHORE_WATER = 0.5;
 
 uint helionWavePcg(uint value) {
@@ -43,6 +45,13 @@ uint helionWavePcg(uint value) {
 float helionWaveRandom(ivec2 cell, int seed) {
     uint mixed = uint(cell.x) + uint(cell.y) * HELION_HASH_Z_SCALE + uint(seed) * HELION_HASH_SEED_SCALE;
     return float(helionWavePcg(helionWavePcg(mixed))) / HELION_HASH_RANGE;
+}
+
+float helionDrop(ivec2 cell, int seed, float chance) {
+    float here = helionWaveRandom(cell, seed) < chance ? 1.0 : 0.0;
+    float around = (helionWaveRandom(cell + ivec2(1, 0), seed) < chance ? 1.0 : 0.0) + (helionWaveRandom(cell - ivec2(1, 0), seed) < chance ? 1.0 : 0.0)
+        + (helionWaveRandom(cell + ivec2(0, 1), seed) < chance ? 1.0 : 0.0) + (helionWaveRandom(cell - ivec2(0, 1), seed) < chance ? 1.0 : 0.0);
+    return here + around * HELION_DROP_SPREAD;
 }
 
 bool helionHoldsWaves(ivec2 cell) {
@@ -70,7 +79,8 @@ void main() {
     float around = helionNeighborHeight(texel, local, ivec2(1, 0)) + helionNeighborHeight(texel, local, ivec2(-1, 0))
         + helionNeighborHeight(texel, local, ivec2(0, 1)) + helionNeighborHeight(texel, local, ivec2(0, -1));
     float velocity = (state.r - state.g) * WaveParams.y;
-    float next = state.r + velocity + WaveParams.x * (around - 4.0 * state.r);
+    float curvature = around - 4.0 * state.r;
+    float next = state.r + velocity + WaveParams.x * curvature + HELION_WAVE_VISCOSITY * curvature;
     vec2 center = vec2(local) + HELION_CELL_CENTER;
     for (int index = 0; index < WaveCounts.x; index++) {
         vec4 impulse = WaveImpulses[index];
@@ -80,9 +90,7 @@ void main() {
             next -= impulse.w * falloff * falloff;
         }
     }
-    if (helionWaveRandom(cell, WaveCounts.y) < WaveParams.z) {
-        next -= WaveParams.w;
-    }
+    next -= WaveParams.w * helionDrop(cell, WaveCounts.y, WaveParams.z);
     float edge = float(min(min(local.x, local.y), min(HELION_WAVE_LAST - local.x, HELION_WAVE_LAST - local.y)));
     next *= smoothstep(0.0, HELION_WAVE_EDGE, edge);
     waveState = vec4(next, state.r, 0.0, 0.0);

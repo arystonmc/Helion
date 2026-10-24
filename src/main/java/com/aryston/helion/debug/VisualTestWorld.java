@@ -61,6 +61,8 @@ final class VisualTestWorld {
     private static final String FROZEN_ENTITY = " {NoAI:1b,NoGravity:1b,Invulnerable:1b,Rotation:[90f,0f]}";
     private static final double BLOCK_CENTER = 0.5;
     static final BlockPos POOL_CAMERA = new BlockPos(-4, 0, 1);
+    static final BlockPos POOL_SIDE_CAMERA = new BlockPos(-6, 0, -5);
+    static final BlockPos UNDERWATER_CAMERA = new BlockPos(-4, -3, -6);
     static final BlockPos CAVE_CAMERA = new BlockPos(24, -23, -2);
     private static final Volume CAVE_ROCK = new Volume(new BlockPos(12, -26, -18), new BlockPos(32, -12, 4));
     private static final List<Volume> CAVE_CORRIDORS = List.of(

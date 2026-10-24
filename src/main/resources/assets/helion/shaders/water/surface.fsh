@@ -6,6 +6,7 @@
 #include <helion:helion_water.glsl>
 #include <helion:helion_geometry.glsl>
 #include <helion:helion_wetness.glsl>
+#include <helion:helion_water_waves.glsl>
 
 uniform sampler2D Sampler0;
 uniform sampler2D SceneDepthSampler;
@@ -30,21 +31,12 @@ layout(location = 0) out vec4 waterSurface;
 layout(location = 1) out vec4 waterTint;
 
 const float HELION_SECONDS_PER_DAY = 1200.0;
-const float HELION_WAVE_PERIOD = 1024.0;
 const float HELION_FLAT_SURFACE = 0.9;
 const float HELION_SPRITE_EDGE = 1.0e-4;
-const float HELION_TAU = 6.28318531;
-const int HELION_WAVE_COUNT = 8;
-const vec2 HELION_WAVE_CYCLES[HELION_WAVE_COUNT] = vec2[](
-    vec2(97.0, 41.0), vec2(-63.0, 131.0), vec2(173.0, -89.0), vec2(-211.0, -157.0),
-    vec2(521.0, 307.0), vec2(-397.0, 613.0), vec2(733.0, -251.0), vec2(-887.0, -509.0)
-);
-const float HELION_WAVE_HEIGHT[HELION_WAVE_COUNT] = float[](0.030, 0.022, 0.012, 0.007, 0.0040, 0.0030, 0.0022, 0.0015);
-const float HELION_WAVE_SPEED[HELION_WAVE_COUNT] = float[](1.1, 1.4, 1.9, 2.6, 3.4, 3.9, 4.6, 5.3);
 const vec4 HELION_NO_TINT = vec4(0.0);
 const float HELION_TINT_PRESENT = 1.0;
-const float HELION_SIMULATION_TEXELS = 512.0;
-const float HELION_SIMULATION_CELLS_PER_BLOCK = 4.0;
+const float HELION_SIMULATION_TEXELS = 1024.0;
+const float HELION_SIMULATION_CELLS_PER_BLOCK = 8.0;
 const float HELION_SIMULATION_FADE_START = 44.0;
 const float HELION_SIMULATION_FADE_END = 60.0;
 const float HELION_SIMULATION_SLOPE_SHARE = 0.85;
@@ -70,12 +62,7 @@ vec2 helionSimulatedSlope(vec2 position, float horizontalDistance) {
 }
 
 vec3 helionWaveNormal(vec2 position, float seconds, float horizontalDistance) {
-    vec2 slope = vec2(0.0);
-    for (int wave = 0; wave < HELION_WAVE_COUNT; wave++) {
-        vec2 frequency = HELION_WAVE_CYCLES[wave] * (HELION_TAU / HELION_WAVE_PERIOD);
-        float phase = dot(frequency, position) + HELION_WAVE_SPEED[wave] * seconds;
-        slope += frequency * (HELION_WAVE_HEIGHT[wave] * cos(phase));
-    }
+    vec2 slope = helionSwellSlope(position, seconds);
     vec2 ripples = WaterRain.x > 0.0 && WaterRain.z < HELION_SIMULATION_ON ? helionRainRipples(position, WaterRain.y) * WaterRain.x : vec2(0.0);
     vec2 simulated = helionSimulatedSlope(position, horizontalDistance);
     return normalize(vec3(-slope.x * WaveStrength - ripples.x - simulated.x, 1.0, -slope.y * WaveStrength - ripples.y - simulated.y));
@@ -116,6 +103,8 @@ void main() {
     }
     if (normal.y > HELION_FLAT_SURFACE) {
         normal = helionWaveNormal(wavePosition, GameTime * HELION_SECONDS_PER_DAY, length(cameraRelativePosition.xz));
+    } else if (normal.y < -HELION_FLAT_SURFACE) {
+        normal = -helionWaveNormal(wavePosition, GameTime * HELION_SECONDS_PER_DAY, length(cameraRelativePosition.xz));
     }
     waterSurface = vec4(helionEncodeOctahedral(normal), helionWaterThickness(sceneDepth), skyLight);
     waterTint = vec4(vertexTint, HELION_TINT_PRESENT);

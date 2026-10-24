@@ -214,11 +214,14 @@ Water reflects what is on screen on every graphics card, mobs and players includ
 Water looks like water instead of a flat blue texture.
 
 - Clear water: the bottom of shallow water shows through, bent by the waves; deeper water turns dark blue-green
+- Bright sun and moon glints that move with the waves and turn gold at sunset; at night only the moonlit spot shines
+- Moving light patterns (caustics) on the bottom of shallow water by day
+- From under water you look up through a bright window to the world above, and the surface around it mirrors the depths
 - The color follows the biome: blue oceans, green swamps, the same colors vanilla gives the water
 - Gentle waves with fine ripples, and rings where raindrops hit the water
 - Living water: players, mobs, boats and items leave wakes, things falling in make splash rings, and every raindrop leaves a ring that spreads and fades; waves bounce back from the shore
 - Reflects the sky (with the sun and the moon under the physical sky); with screen space reflections or ray tracing also the world and mobs
-- Works on every graphics card; looking up from under water keeps the vanilla look
+- Works on every graphics card
 - Settings: Realistic Water on or off on the Lighting page, on in every preset but Vanilla
 
 ### Rain Wetness
