@@ -233,6 +233,7 @@ Rain makes the world wet instead of only falling past it.
 - Surfaces get wet within half a minute of rain and dry over a minute and a half after it; puddles fill and dry more slowly
 - Only where it rains: snowy and dry biomes stay as they are
 - Lightning flashes light up wet ground, puddles and water for a moment
+- Water runs down walls in the rain in darker, glistening streaks
 - Settings: Rain Wetness on or off on the Lighting page, on in every preset but Vanilla; needs Helion lighting
 
 ### Ray Tracing (Experimental)

@@ -42,6 +42,14 @@ const vec2 HELION_WET_HASH_STEP = vec2(127.1, 311.7);
 const float HELION_WET_HASH_SCALE = 43758.5453;
 const vec2 HELION_RIPPLE_OFFSET_X = vec2(3.1, 1.7);
 const vec2 HELION_RIPPLE_OFFSET_Z = vec2(7.7, 5.3);
+const float HELION_STREAK_WIDTH = 3.0;
+const float HELION_STREAK_LENGTH = 0.35;
+const float HELION_STREAK_SPEED = 0.9;
+const float HELION_STREAK_FROM = 0.55;
+const float HELION_STREAK_TO = 0.75;
+const float HELION_STREAK_DARKENING = 0.25;
+const float HELION_STREAK_SHEEN = 0.7;
+const float HELION_WALL_UP = 0.5;
 const HelionWetSurface HELION_DRY_SURFACE = HelionWetSurface(0.0, 0.0, 0.0, 0.0, vec3(0.0, 1.0, 0.0));
 
 float helionWetHash(vec2 cell, float periodCells) {
@@ -91,6 +99,12 @@ vec2 helionRainRipples(vec2 position, float seconds) {
     return tilt * HELION_RIPPLE_STRENGTH;
 }
 
+float helionWallStreaks(vec3 normal, vec3 worldPosition, float seconds) {
+    vec2 across = normalize(vec2(-normal.z, normal.x) + vec2(1.0e-4, 0.0));
+    vec2 position = vec2(dot(worldPosition.xz, across) * HELION_STREAK_WIDTH, worldPosition.y * HELION_STREAK_LENGTH + seconds * HELION_STREAK_SPEED);
+    return smoothstep(HELION_STREAK_FROM, HELION_STREAK_TO, helionWetNoise(position, 1.0));
+}
+
 HelionWetSurface helionWetSurface(vec4 light, vec3 normal, vec3 worldPosition, vec4 wetness, vec2 simulatedSlope, bool simulated) {
     if (wetness.x <= 0.0 && wetness.y <= 0.0 || helionIsGeometryMaterial(light.a, HELION_GEOMETRY_DRY)) {
         return HELION_DRY_SURFACE;
@@ -100,6 +114,7 @@ HelionWetSurface helionWetSurface(vec4 light, vec3 normal, vec3 worldPosition, v
     float facingUp = smoothstep(HELION_WET_FLAT_FROM, HELION_WET_FLAT_TO, normal.y);
     float exposure = smoothstep(HELION_WET_EXPOSED_FROM, HELION_WET_EXPOSED_TO, light.g) * mix(HELION_WET_WALL_SHARE, 1.0, facingUp);
     float wet = wetness.x * exposure;
+    float streak = porous || normal.y > HELION_WALL_UP ? 0.0 : helionWallStreaks(normal, worldPosition, wetness.w) * wet * wetness.z;
     float puddle = porous ? 0.0 : helionPuddleMask(worldPosition.xz, wetness.y) * facingUp * exposure;
     float darkening = porous ? HELION_POROUS_DARKENING : glossy ? HELION_GLOSSY_DARKENING : HELION_ORDINARY_DARKENING;
     float sheen = porous ? HELION_POROUS_SHEEN : glossy ? HELION_GLOSSY_SHEEN : HELION_ORDINARY_SHEEN;
@@ -108,8 +123,8 @@ HelionWetSurface helionWetSurface(vec4 light, vec3 normal, vec3 worldPosition, v
     return HelionWetSurface(
         wet,
         puddle,
-        min(wet * darkening + puddle * HELION_PUDDLE_DARKENING, 1.0),
-        mix(wet * sheen, 1.0, puddle),
+        min(wet * darkening + puddle * HELION_PUDDLE_DARKENING + streak * HELION_STREAK_DARKENING, 1.0),
+        mix(wet * sheen + streak * HELION_STREAK_SHEEN, 1.0, puddle),
         normalize(mix(normal, puddleNormal, puddle))
     );
 }

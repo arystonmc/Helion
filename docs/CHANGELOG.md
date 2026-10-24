@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Rain runs down walls in glistening streaks
 - Lightning flashes light up wet ground, puddles and water
 - Realistic water reacts: players, mobs, boats and items leave wakes, falling things make splash rings and raindrops ripple the surface
 - Experimental ray tracing: glass and ice reflect the world, reflected places in the shade of the sun are darker, and reflected mobs are shaded and flash red when hurt
