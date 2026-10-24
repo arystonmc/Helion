@@ -5,10 +5,12 @@ import com.aryston.helion.render.geometry.TerrainTextures;
 import com.aryston.helion.render.resource.GpuResources;
 import com.aryston.helion.render.resource.UniformRing;
 import com.aryston.helion.render.shader.HelionPipelines;
+import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.buffers.Std140SizeCalculator;
 import com.mojang.logging.LogUtils;
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
+import java.util.List;
 import java.util.Optional;
 import org.joml.Vector3dc;
 import org.jspecify.annotations.Nullable;
@@ -40,21 +42,17 @@ public final class WaterResources {
     private static final String UNDERWATER_LABEL = "Helion Underwater Settings";
     private static final int UNDERWATER_SIZE = new Std140SizeCalculator().putMat4f().putVec4().putVec4().get();
     private static final String SCREEN_LABEL = "Helion Screen Reflection Settings";
-    private static final int SCREEN_SIZE = new Std140SizeCalculator()
-        .putMat4f()
-        .putMat4f()
-        .putVec4()
-        .putVec4()
-        .putVec4()
-        .get();
+    private static final int SCREEN_SIZE = screenSize();
     private static final double NOISE_PERIOD = 1024.0;
     private static final double NANOS_PER_SECOND = 1.0e9;
+    private static final float AGE_SIGN_OFFSET = 1.0e-3F;
     private static final double SECONDS_PERIOD = 3600.0;
     private static final float PRESENT = 1.0F;
     private static final float ABSENT = 0.0F;
 
     private final GpuResources resources;
     private final RainWetness rainWetness = new RainWetness();
+    private final Footprints footprints = new Footprints();
     private final WaterWaves waves;
     private @Nullable UniformRing surfaceUniforms;
     private @Nullable UniformRing reflectionUniforms;
@@ -92,6 +90,10 @@ public final class WaterResources {
         return waves;
     }
 
+    Footprints footprints() {
+        return footprints;
+    }
+
     public RainWetness rainWetness() {
         return rainWetness;
     }
@@ -124,17 +126,43 @@ public final class WaterResources {
         return HelionPipelines.compiled(WaterPipelines.POLISHED_COMPOSITE);
     }
 
-    GpuBuffer screenUniforms(HelionCamera camera, boolean geometry, boolean water, boolean polished, boolean waves, Wetness wetness) {
+    GpuBuffer screenUniforms(HelionCamera camera, boolean geometry, boolean water, boolean polished, boolean waves, Wetness wetness, List<Footprint> prints, double seconds) {
         if (screenUniforms == null) {
             screenUniforms = new UniformRing(SCREEN_LABEL, SCREEN_SIZE, resources);
         }
         Vector3dc position = camera.position();
-        return screenUniforms.write(builder -> builder
-            .putMat4f(camera.levelViewProjection())
-            .putMat4f(camera.levelViewProjection().invert())
-            .putVec4(geometry ? PRESENT : ABSENT, water ? PRESENT : ABSENT, polished ? PRESENT : ABSENT, waves ? PRESENT : ABSENT)
-            .putVec4(wetness.surfaces(), wetness.puddles(), wetness.rain(), wetness.seconds())
-            .putVec4((float) (position.x() % NOISE_PERIOD), (float) (position.y() % NOISE_PERIOD), (float) (position.z() % NOISE_PERIOD), wetness.flash()));
+        int count = Math.min(prints.size(), Footprints.MAX_PRINTS);
+        return screenUniforms.write(builder -> {
+            builder
+                .putMat4f(camera.levelViewProjection())
+                .putMat4f(camera.levelViewProjection().invert())
+                .putVec4(geometry ? PRESENT : ABSENT, water ? PRESENT : ABSENT, polished ? PRESENT : ABSENT, waves ? PRESENT : ABSENT)
+                .putVec4(wetness.surfaces(), wetness.puddles(), wetness.rain(), wetness.seconds())
+                .putVec4((float) (position.x() % NOISE_PERIOD), (float) (position.y() % NOISE_PERIOD), (float) (position.z() % NOISE_PERIOD), wetness.flash())
+                .putVec4(count, ABSENT, ABSENT, ABSENT);
+            for (int index = 0; index < Footprints.MAX_PRINTS; index++) {
+                putFootprint(builder, index < count ? prints.get(prints.size() - count + index) : null, seconds);
+            }
+        });
+    }
+
+    private static void putFootprint(Std140Builder builder, @Nullable Footprint print, double seconds) {
+        if (print == null) {
+            builder.putVec4(ABSENT, ABSENT, ABSENT, ABSENT);
+            return;
+        }
+        float age = (float) ((seconds - print.seconds()) / Footprints.LIFETIME_SECONDS);
+        builder.putVec4(
+            (float) (print.x() % NOISE_PERIOD), (float) (print.z() % NOISE_PERIOD), (float) Math.toRadians(print.yaw()), print.left() ? age : -age - AGE_SIGN_OFFSET
+        );
+    }
+
+    private static int screenSize() {
+        Std140SizeCalculator calculator = new Std140SizeCalculator().putMat4f().putMat4f().putVec4().putVec4().putVec4().putVec4();
+        for (int index = 0; index < Footprints.MAX_PRINTS; index++) {
+            calculator.putVec4();
+        }
+        return calculator.get();
     }
 
     GpuBuffer underwaterUniforms(HelionCamera camera, float daylight) {

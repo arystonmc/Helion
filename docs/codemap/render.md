@@ -20,7 +20,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### FrameSources
 - Path: `src/main/java/com/aryston/helion/render/FrameSources.java`
-- Role: Per-frame bundle of the terrain, entity, atmosphere, cloud, weather, waves, transparency and shadow caster sources plus the post effects.
+- Role: Per-frame bundle of the terrain, entity, atmosphere, cloud, weather, waves, footprints, transparency and shadow caster sources plus the post effects.
 
 #### FrameStages
 - Path: `src/main/java/com/aryston/helion/render/FrameStages.java`

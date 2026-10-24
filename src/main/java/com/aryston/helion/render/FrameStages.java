@@ -68,7 +68,7 @@ public final class FrameStages {
         HelionRenderCore core = HelionRenderCore.get();
         return List.of(
             new ClearStage(),
-            new RainWetnessStage(sources.weather(), core.water()),
+            new RainWetnessStage(sources.weather(), sources.footprints(), core.water()),
             sky(frame, sources, core),
             new OpaqueGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere(), core.glossy()),
             new EntityGeometryStage(sources.entities()),

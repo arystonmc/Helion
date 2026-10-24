@@ -83,6 +83,12 @@ final class VisualTestWorld {
     private static final String SAVANNA_BIOME = "minecraft:savanna";
     static final BlockPos RAIN_CAMERA = new BlockPos(12, 0, 4);
     static final BlockPos RAIN_POOL_CAMERA = new BlockPos(12, 0, -5);
+    private static final BlockPos WALKER_START = new BlockPos(-3, -2, -2);
+    private static final BlockPos WALKER_PATH = new BlockPos(-1, 0, -2);
+    private static final double WALKER_STRIDE = 0.7;
+    private static final String WALKER = "helion_walker";
+    private static final String WALKER_TAG = " {Tags:[\"" + WALKER + "\"],Invulnerable:1b}";
+    private static final String WALKER_FACING = " -90 0";
     private static final BlockPos RAIN_POOL_DROP = new BlockPos(11, 4, -11);
     private static final String DROPPED_ITEM = " {Item:{id:\"minecraft:cobblestone\",count:1},PickupDelay:32767}";
     private static final Volume RAIN_YARD_AIR = new Volume(new BlockPos(8, 0, -12), new BlockPos(16, 8, 4));
@@ -185,6 +191,17 @@ final class VisualTestWorld {
     static void dropIntoRainPool(IntegratedServer server, BlockPos origin) {
         BlockPos above = origin.offset(RAIN_POOL_DROP);
         run(server, "summon item " + (above.getX() + BLOCK_CENTER) + " " + above.getY() + " " + (above.getZ() + BLOCK_CENTER) + DROPPED_ITEM);
+    }
+
+    static void summonWalker(IntegratedServer server, BlockPos origin) {
+        BlockPos start = origin.offset(WALKER_START);
+        run(server, "summon armor_stand " + (start.getX() + BLOCK_CENTER) + " " + start.getY() + " " + (start.getZ() + BLOCK_CENTER) + WALKER_TAG);
+    }
+
+    static void moveWalker(IntegratedServer server, BlockPos origin, int step) {
+        BlockPos path = origin.offset(WALKER_PATH);
+        double x = path.getX() + BLOCK_CENTER + step * WALKER_STRIDE;
+        run(server, "tp @e[tag=" + WALKER + "] " + x + " " + path.getY() + " " + (path.getZ() + BLOCK_CENTER) + WALKER_FACING);
     }
 
     static void setRain(IntegratedServer server, boolean rain) {

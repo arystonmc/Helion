@@ -24,6 +24,8 @@ layout(std140) uniform HelionScreenReflection {
     vec4 ReflectionFlags;
     vec4 Wetness;
     vec4 WetnessOrigin;
+    vec4 FootprintCount;
+    vec4 Footprints[32];
 };
 
 layout(location = 0) in vec2 texCoord;
@@ -58,6 +60,12 @@ const float HELION_PUDDLE_WAVE_TEXELS = 1024.0;
 const float HELION_PUDDLE_WAVE_CELLS = 8.0;
 const float HELION_PUDDLE_WAVE_SLOPE = 3.4;
 const float HELION_FLASH_SKY = 4.0;
+const float HELION_FOOT_SIDE = 0.13;
+const vec2 HELION_FOOT_SIZE = vec2(0.085, 0.15);
+const float HELION_FOOT_EDGE = 0.35;
+const float HELION_FOOT_DARKENING = 0.35;
+const float HELION_FOOT_SHEEN = 0.3;
+const float HELION_FOOT_FLAT = 0.9;
 
 struct HelionScreenPoint {
     bool valid;
@@ -162,6 +170,21 @@ vec2 helionPuddleWaveSlope(vec2 position) {
     return vec2(right - left, front - back) * HELION_PUDDLE_WAVE_SLOPE;
 }
 
+float helionFootprints(vec2 position) {
+    float wet = 0.0;
+    for (int index = 0; index < int(FootprintCount.x); index++) {
+        vec4 print = Footprints[index];
+        vec2 offset = position - print.xy;
+        vec2 forward = vec2(-sin(print.z), cos(print.z));
+        vec2 right = vec2(-forward.y, forward.x);
+        float side = print.w >= 0.0 ? HELION_FOOT_SIDE : -HELION_FOOT_SIDE;
+        vec2 local = vec2(dot(offset, right) - side, dot(offset, forward)) / HELION_FOOT_SIZE;
+        float shape = 1.0 - smoothstep(1.0 - HELION_FOOT_EDGE, 1.0, length(local));
+        wet = max(wet, shape * (1.0 - abs(print.w)));
+    }
+    return wet;
+}
+
 vec4 helionSurfaceSheen(ivec2 pixel, vec2 screen) {
     if (ReflectionFlags.x < HELION_FLAG_SET) {
         return vec4(0.0);
@@ -178,6 +201,9 @@ vec4 helionSurfaceSheen(ivec2 pixel, vec2 screen) {
     bool simulated = ReflectionFlags.w > HELION_FLAG_SET;
     vec2 waveSlope = simulated ? helionPuddleWaveSlope(worldPosition.xz) : vec2(0.0);
     HelionWetSurface wet = helionWetSurface(light, surfaceNormal, worldPosition, Wetness, waveSlope, simulated);
+    float footprint = surfaceNormal.y > HELION_FOOT_FLAT && !helionIsGeometryMaterial(light.a, HELION_GEOMETRY_DRY) ? helionFootprints(worldPosition.xz) : 0.0;
+    wet.darkening = min(wet.darkening + footprint * HELION_FOOT_DARKENING, 1.0);
+    wet.sheen = max(wet.sheen, footprint * HELION_FOOT_SHEEN);
     if (!polished && wet.sheen <= 0.0) {
         return vec4(0.0);
     }

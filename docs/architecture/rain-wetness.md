@@ -18,6 +18,10 @@ On by default (`reflections.rainWetness`), in every preset but Vanilla. Needs th
 
 Walls that the rain reaches (not porous, normal below 0.5 up) get running water: value noise stretched along the wall (3 cells per block across, 0.35 per block down) that scrolls down at 0.9 per second, above 0.55 to 0.75 it darkens by 0.25 more and adds 0.7 sheen, scaled by the wetness and the rain level.
 
+## Wet Footprints (2026-10-24)
+
+Players and mobs that come out of water leave wet prints for 20 seconds, one every 0.6 blocks, alternating feet 0.13 blocks to the side. Up to 32 prints live for 45 seconds and fade; each is an oval of 0.17 by 0.3 blocks that darkens the ground by 0.35 and adds a little sheen, only on flat surfaces that are not dry blocks. Visual test scene `footprints` walks an armor stand out of the pool (summoned in the water, then teleported 0.7 blocks every 3 ticks).
+
 ## Rainbow (2026-10-24)
 
 After rain, while surfaces are still wet (`Wetness.surfaces`, passed as `LastRain` to the physical sky block and in `CloudOrigin.w` to the clouds), the rain has cleared (rain brightness above 0.85) and the sun is low (above the horizon, fading out by 0.7 of its height), the sky pass adds a rainbow 41.5 degrees around the antisolar point: a band of 2 times 2 degrees from red outside to violet inside, scaled by the sky brightness, with a faint brighter sky inside the arc. The cloud composite thins the clouds along the arc (up to 70 %), because real rainbows hang in front of the clouds. Visual test scene `rainbow` (300 ticks, facing west, wet but clear).

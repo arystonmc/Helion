@@ -60,6 +60,8 @@ public final class ScreenReflectionStage implements RenderStage {
         Optional<SceneSkyColor> sky = frame.atmosphere().skyColor();
         boolean water = reflectsWater(frame);
         Wetness wetness = frame.water().wetness().orElse(Wetness.DRY);
+        List<Footprint> prints = frame.water().footprints();
+        double printSeconds = frame.water().footprintSeconds();
         Optional<ResourceHandle<RenderTarget>> waves = frame.water().waves();
         waves.ifPresent(pass::reads);
         surface.ifPresent(pass::reads);
@@ -84,7 +86,7 @@ public final class ScreenReflectionStage implements RenderStage {
             FullscreenPass.draw(PASS_LABEL, List.of(reflections.get(), polished.get()), pipeline, renderPass -> {
                 RenderSystem.bindDefaultUniforms(renderPass);
                 sky.ifPresent(color -> color.bind(renderPass));
-                renderPass.setUniform(WaterPipelines.SCREEN_REFLECTION_UNIFORM, resources.screenUniforms(camera, geometry.isPresent(), water, frame.settings().reflections().screenSpace(), waves.isPresent(), wetness));
+                renderPass.setUniform(WaterPipelines.SCREEN_REFLECTION_UNIFORM, resources.screenUniforms(camera, geometry.isPresent(), water, frame.settings().reflections().screenSpace(), waves.isPresent(), wetness, prints, printSeconds));
                 renderPass.setUniform(WaterPipelines.SURFACE_SAMPLER, standIn, nearest);
                 renderPass.setUniform(WaterPipelines.DEPTH_SAMPLER, Objects.requireNonNull(waterTarget.getDepthTextureView()), nearest);
                 renderPass.setUniform(WaterPipelines.SCENE_COLOR_SAMPLER, Objects.requireNonNull(lit.getColorTextureView()), linear);
@@ -106,7 +108,7 @@ public final class ScreenReflectionStage implements RenderStage {
     }
 
     private static boolean wetsSurfaces(FrameContext frame) {
-        return frame.water().wetness().isPresent() && frame.geometry().targets().isPresent();
+        return (frame.water().wetness().isPresent() || !frame.water().footprints().isEmpty()) && frame.geometry().targets().isPresent();
     }
 
     private static void addComposite(FrameContext frame, ResourceHandle<RenderTarget> polished, CompiledRenderPipeline composite) {

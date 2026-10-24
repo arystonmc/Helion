@@ -35,6 +35,10 @@ public final class VisualTest {
     private static final int VARIANT_SETTLE_TICKS = 20;
     private static final int RETURN_TICKS = 20;
     private static final int SPLASH_LEAD_TICKS = 18;
+    private static final int WALKER_SUMMON_TICKS = 90;
+    private static final int WALKER_FIRST_STEP_TICKS = 80;
+    private static final int WALKER_STEPS = 6;
+    private static final int WALKER_STEP_TICKS = 3;
     private static final int SCREENSHOT_DOWNSCALE = 2;
     private static final int FULL_SIZE = 1;
     private static final String SCREENSHOT_PREFIX = "helion_";
@@ -89,7 +93,17 @@ public final class VisualTest {
         if (prepared && scene.rain() && ticksUntilAction == SPLASH_LEAD_TICKS) {
             VisualTestWorld.dropIntoRainPool(server, origin);
         }
+        if (prepared && scene.walks()) {
+            walk(server);
+        }
         if (ticksUntilAction > 0) {
+            return;
+        }
+        if (!prepared && shots.isEmpty()) {
+            LOGGER.warn("Helion visual test: no scene and variant matched the requested lists");
+            hudWasHidden = true;
+            pausedOnLostFocus = minecraft.options.pauseOnLostFocus;
+            finish(minecraft);
             return;
         }
         if (!prepared) {
@@ -206,6 +220,16 @@ public final class VisualTest {
             );
         }
         return true;
+    }
+
+    private void walk(IntegratedServer server) {
+        if (ticksUntilAction == WALKER_SUMMON_TICKS) {
+            VisualTestWorld.summonWalker(server, origin);
+        }
+        int sinceFirst = WALKER_FIRST_STEP_TICKS - ticksUntilAction;
+        if (sinceFirst >= 0 && sinceFirst % WALKER_STEP_TICKS == 0 && sinceFirst / WALKER_STEP_TICKS < WALKER_STEPS) {
+            VisualTestWorld.moveWalker(server, origin, sinceFirst / WALKER_STEP_TICKS);
+        }
     }
 
     private void holdCamera(LocalPlayer player) {

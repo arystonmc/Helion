@@ -238,6 +238,7 @@ Rain makes the world wet instead of only falling past it.
 - Only where it rains: snowy and dry biomes stay as they are
 - Lightning flashes light up wet ground, puddles and water for a moment
 - A rainbow appears opposite a low sun after the rain, in front of the clouds
+- Players and mobs coming out of the water leave wet footprints that fade
 - Water runs down walls in the rain in darker, glistening streaks
 - Settings: Rain Wetness on or off on the Lighting page, on in every preset but Vanilla; needs Helion lighting
 

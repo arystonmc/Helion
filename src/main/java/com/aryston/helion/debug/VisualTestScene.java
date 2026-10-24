@@ -28,6 +28,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final boolean RAIN = true;
     private static final boolean CLEAR = false;
     private static final boolean WET = true;
+    private static final String FOOTPRINT_SCENE = "footprints";
     private static final float RAINBOW_PITCH = -15.0F;
 
     static final List<VisualTestScene> ALL = List.of(
@@ -61,11 +62,16 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("rain_yard_low", NOON, NORTH, POOL_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),
         new VisualTestScene("rain_yard_dusk", SUNSET, NORTH, POOL_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),
         new VisualTestScene("rain_pool", NOON, NORTH, RAIN_POOL_PITCH, VisualTestWorld.RAIN_POOL_CAMERA, RAIN),
+        new VisualTestScene("footprints", NOON, NORTH, CLOSE_PITCH, VisualTestWorld.POOL_CAMERA),
         new VisualTestScene("rainbow", EARLY_MORNING, WEST, RAINBOW_PITCH, VisualTestWorld.RAIN_CAMERA, CLEAR, WET)
     );
 
     VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPos cameraOffset, boolean rain) {
         this(name, dayTime, yaw, pitch, cameraOffset, rain, rain);
+    }
+
+    boolean walks() {
+        return FOOTPRINT_SCENE.equals(name);
     }
 
     VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPos cameraOffset) {

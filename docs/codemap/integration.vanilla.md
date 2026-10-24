@@ -36,6 +36,11 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaTerrainSource.java`
 - Role: `TerrainSource` over vanilla `ChunkSectionsToRender`: fog (the current `SceneFog` buffer, so the physical sky fog reaches terrain), chunk sampler, opaque and translucent layer groups, matching stage events. `renderOpaqueGeometry` draws the solid and cutout layers one by one with the geometry pipelines through `ChunkSectionsToRenderAccessor`; `supportsGeometryBuffer` is false for wireframe terrain or missing shaders. When the frame has dynamic lights it binds their uniform and draws every layer with the dynamic light pipelines (`VanillaDynamicLightPipelines`, or the geometry pipelines with lights), falling back per layer to the vanilla pipelines when a variant is missing; without lights it draws exactly as before. `renderWaterSurface` draws the translucent layer with the water surface pipelines (skipped for wireframe terrain or missing shaders); `renderWaterSurface` also draws the cutout layer with the glass surface pipelines, so plain glass gets a reflecting surface. `textures()` hands the block atlas, the lightmap and the atlas bounds of `block/water_still` and `block/water_flow` to the core; `glossyCells()` the glossy mask cells of the block atlas from `VanillaGlossyCells`.
 
+#### VanillaFootprintSource
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaFootprintSource.java`
+- Role: `FootprintSource` over the client level, kept by `VanillaFrameDriver`: every living entity within 32 blocks that was in water during the last 20 seconds leaves a print on the ground every 0.6 blocks it walks, alternating feet.
+- Depends on: `FootprintSource`.
+
 #### VanillaWaveSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaWaveSource.java`
 - Role: `WaveSource` over the client level, kept by `VanillaFrameDriver` across frames: every rendered entity within the wave window whose feet are in water and whose head is not 0.5 blocks under it makes a continuous wake proportional to its horizontal speed (from `xo`, `zo`), and a splash proportional to its falling speed in the frame it starts touching the surface. `holdsWaves` classifies a column for the shore mask from the client height map with a short scan below roofs.

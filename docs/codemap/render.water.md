@@ -21,6 +21,11 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Role: Rain wetness (`reflections.rainWetness`). `RainWetnessStage`, right after the clear stage, every frame and without a pass, publishes whether the camera is in water and, with the setting, feeds the `WeatherState` of the frame (rain level, game seconds, whether it rains in the camera biome, lightning flash) into `RainWetness` (owned by `WaterResources`), which wets surfaces in 30 s and dries them in 90 s, fills puddles in 90 s and dries them in 240 s, and skips frames after a time jump; the `Wetness` (surfaces, puddles, rain, seconds) is published in `WaterResults` while it is visible. `saturate()` lets the visual test start wet.
 - Depends on: `WaterResources`, `WaterResults`.
 
+#### Footprints, Footprint, FootprintSource
+- Path: `src/main/java/com/aryston/helion/render/water/Footprints.java`, `src/main/java/com/aryston/helion/render/water/Footprint.java`, `src/main/java/com/aryston/helion/render/water/FootprintSource.java`
+- Role: Wet footprints. `RainWetnessStage` asks the `FootprintSource` for the steps of the frame (world position, yaw, foot, game seconds) and keeps the newest 32 in `Footprints` (owned by `WaterResources`) for 45 seconds; the visible ones go to `WaterResults` and into the screen reflection uniform, where `helionFootprints` darkens and wets a small oval per print, fading with its age.
+- Depends on: `WaterResources`, `WaterResults`.
+
 #### UnderwaterStage
 - Path: `src/main/java/com/aryston/helion/render/water/UnderwaterStage.java`
 - Role: Pass `underwater` (with realistic water, only while the camera is in water): one fullscreen premultiplied blend of `water/underwater.fsh` over the scene with its depth: distance extinction toward a teal-shifted water fog color, caustics below the eye and light shafts looking up, scaled by the daylight from the physical sky light (0.5 without it).
