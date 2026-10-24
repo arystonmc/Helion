@@ -18,6 +18,10 @@ On by default (`reflections.rainWetness`), in every preset but Vanilla. Needs th
 
 Walls that the rain reaches (not porous, normal below 0.5 up) get running water: value noise stretched along the wall (3 cells per block across, 0.35 per block down) that scrolls down at 0.9 per second, above 0.55 to 0.75 it darkens by 0.25 more and adds 0.7 sheen, scaled by the wetness and the rain level.
 
+## Rainbow (2026-10-24)
+
+After rain, while surfaces are still wet (`Wetness.surfaces`, passed as `LastRain` to the physical sky block and in `CloudOrigin.w` to the clouds), the rain has cleared (rain brightness above 0.85) and the sun is low (above the horizon, fading out by 0.7 of its height), the sky pass adds a rainbow 41.5 degrees around the antisolar point: a band of 2 times 2 degrees from red outside to violet inside, scaled by the sky brightness, with a faint brighter sky inside the arc. The cloud composite thins the clouds along the arc (up to 70 %), because real rainbows hang in front of the clouds. Visual test scene `rainbow` (300 ticks, facing west, wet but clear).
+
 ## Lightning (2026-10-24)
 
 While `ClientLevel.skyFlashTime` runs (and the hide lightning flash option is off), the sky that wet surfaces, puddles and water reflect is five times as bright, so a flash lights up every wet surface for its few ticks.

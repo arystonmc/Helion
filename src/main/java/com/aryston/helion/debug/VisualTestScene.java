@@ -3,7 +3,8 @@ package com.aryston.helion.debug;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 
-record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPos cameraOffset, boolean rain) {
+record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPos cameraOffset, boolean rain, boolean wet) {
+    private static final int EARLY_MORNING = 300;
     private static final int SUNRISE = 1500;
     private static final int MORNING = 3000;
     private static final int NOON = 6000;
@@ -26,6 +27,8 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final float RAIN_POOL_PITCH = 35.0F;
     private static final boolean RAIN = true;
     private static final boolean CLEAR = false;
+    private static final boolean WET = true;
+    private static final float RAINBOW_PITCH = -15.0F;
 
     static final List<VisualTestScene> ALL = List.of(
         new VisualTestScene("day_sky", NOON, NORTH, -35.0F, BlockPos.ZERO),
@@ -56,10 +59,15 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("rain_yard", NOON, NORTH, SHOWCASE_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),
         new VisualTestScene("rain_yard_low", NOON, NORTH, POOL_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),
         new VisualTestScene("rain_yard_dusk", SUNSET, NORTH, POOL_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),
-        new VisualTestScene("rain_pool", NOON, NORTH, RAIN_POOL_PITCH, VisualTestWorld.RAIN_POOL_CAMERA, RAIN)
+        new VisualTestScene("rain_pool", NOON, NORTH, RAIN_POOL_PITCH, VisualTestWorld.RAIN_POOL_CAMERA, RAIN),
+        new VisualTestScene("rainbow", EARLY_MORNING, WEST, RAINBOW_PITCH, VisualTestWorld.RAIN_CAMERA, CLEAR, WET)
     );
 
+    VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPos cameraOffset, boolean rain) {
+        this(name, dayTime, yaw, pitch, cameraOffset, rain, rain);
+    }
+
     VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPos cameraOffset) {
-        this(name, dayTime, yaw, pitch, cameraOffset, CLEAR);
+        this(name, dayTime, yaw, pitch, cameraOffset, CLEAR, CLEAR);
     }
 }

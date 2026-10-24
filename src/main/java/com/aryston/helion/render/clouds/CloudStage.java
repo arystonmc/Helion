@@ -4,6 +4,7 @@ import com.aryston.helion.render.atmosphere.SkyLight;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.shader.FullscreenPass;
+import com.aryston.helion.render.water.Wetness;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
@@ -19,6 +20,7 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 public final class CloudStage implements RenderStage {
+    private static final float NO_RAINBOW = 0.0F;
     private static final String NAME = "clouds";
     private static final String NOISE_PASS = "cloud_noise";
     private static final String MARCH_PASS = "cloud_march";
@@ -178,7 +180,8 @@ public final class CloudStage implements RenderStage {
         GpuBuffer get() {
             if (frameUniforms == null) {
                 frameUniforms = resources.writeUniforms(
-                    frame.camera(), light.sunDirection(), light.moonDirection(), clouds, quality, width, height, marchWidth, marchHeight
+                    frame.camera(), light.sunDirection(), light.moonDirection(), clouds, quality, width, height, marchWidth, marchHeight,
+                    frame.water().wetness().map(Wetness::surfaces).orElse(NO_RAINBOW)
                 );
             }
             return frameUniforms;

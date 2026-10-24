@@ -123,7 +123,7 @@ public final class CloudResources {
     }
 
     GpuBuffer writeUniforms(HelionCamera camera, Vector3fc sunDirection, Vector3fc moonDirection, CloudEnvironment environment,
-        CloudQuality quality, int width, int height, int marchWidth, int marchHeight) {
+        CloudQuality quality, int width, int height, int marchWidth, int marchHeight, float lastRain) {
         if (uniforms == null) {
             uniforms = new UniformRing(SETTINGS_LABEL, UNIFORM_SIZE, resources);
         }
@@ -146,7 +146,7 @@ public final class CloudResources {
         return uniforms.write(builder -> builder
             .putMat4f(inverse)
             .putMat4f(previous)
-            .putVec4((float) wrap(position.x()), (float) position.y(), (float) wrap(position.z()), 0.0F)
+            .putVec4((float) wrap(position.x()), (float) position.y(), (float) wrap(position.z()), lastRain)
             .putVec4((float) motion.x, (float) motion.y, (float) motion.z, valid ? 1.0F : 0.0F)
             .putVec4(light.x(), light.y(), light.z(), sunLit ? 1.0F : 0.0F)
             .putVec4(LAYER_BOTTOM, LAYER_TOP, EXTINCTION, COVERAGE)

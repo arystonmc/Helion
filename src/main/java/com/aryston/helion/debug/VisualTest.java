@@ -157,7 +157,7 @@ public final class VisualTest {
             scene = shot.scene();
             VisualTestWorld.setTime(server, scene.dayTime());
             VisualTestWorld.setRain(server, scene.rain());
-            if (scene.rain()) {
+            if (scene.wet()) {
                 HelionRenderCore.get().water().rainWetness().saturate();
             }
             VisualTestWorld.placeCamera(server, start, origin, scene.cameraOffset());

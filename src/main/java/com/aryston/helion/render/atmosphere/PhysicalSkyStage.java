@@ -3,6 +3,7 @@ package com.aryston.helion.render.atmosphere;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.shader.FullscreenPass;
+import com.aryston.helion.render.water.Wetness;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
@@ -23,6 +24,7 @@ import java.util.stream.IntStream;
 import org.jspecify.annotations.Nullable;
 
 public final class PhysicalSkyStage implements RenderStage {
+    private static final float NO_RAINBOW = 0.0F;
     private static final String NAME = "sky";
     private static final String TARGET_PREFIX = "helion:";
     private static final String LABEL_PREFIX = "Helion ";
@@ -219,7 +221,8 @@ public final class PhysicalSkyStage implements RenderStage {
 
     private GpuBuffer uniforms(SkyEnvironment sky, FrameContext frame) {
         if (frameUniforms == null) {
-            frameUniforms = resources.writeUniforms(sky, frame.camera(), frame.settings().sky());
+            float lastRain = frame.water().wetness().map(Wetness::surfaces).orElse(NO_RAINBOW);
+            frameUniforms = resources.writeUniforms(sky, frame.camera(), frame.settings().sky(), lastRain);
         }
         return frameUniforms;
     }

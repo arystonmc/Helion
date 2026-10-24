@@ -19,6 +19,7 @@ layout(std140) uniform HelionSky {
     float MilkyWay;
     float AuroraStrength;
     float SkyTime;
+    float LastRain;
 };
 
 #endif

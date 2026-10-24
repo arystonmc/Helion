@@ -73,6 +73,7 @@ public final class PhysicalSkyResources {
         .putFloat()
         .putFloat()
         .putFloat()
+        .putFloat()
         .get();
     private static final int SPECTRUM_VECTORS = AtmosphereSpectrum.GROUP_COUNT * (2 + AtmosphereSpectrum.RGB_CHANNELS);
     private static final int SPECTRUM_SIZE = SPECTRUM_VECTORS * Float.BYTES * AtmosphereSpectrum.CHANNELS_PER_GROUP;
@@ -181,7 +182,7 @@ public final class PhysicalSkyResources {
         horizon.request(horizonTexture);
     }
 
-    GpuBuffer writeUniforms(SkyEnvironment environment, HelionCamera camera, PhysicalSkySettings settings) {
+    GpuBuffer writeUniforms(SkyEnvironment environment, HelionCamera camera, PhysicalSkySettings settings, float lastRain) {
         if (uniforms == null) {
             uniforms = new UniformRing(SKY_LABEL, SKY_UNIFORM_SIZE, resources);
         }
@@ -203,7 +204,8 @@ public final class PhysicalSkyResources {
             .putFloat(settings.starDensity().fraction())
             .putFloat(settings.milkyWay() ? 1.0F : 0.0F)
             .putFloat(environment.aurora())
-            .putFloat(skyTime()));
+            .putFloat(skyTime())
+            .putFloat(lastRain));
     }
 
     private static float moonLight(float phaseAngle) {

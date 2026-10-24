@@ -70,13 +70,45 @@ vec3 helionSkyColor(vec3 direction) {
     return helionEncodedSky(helionSkyRadiance(direction));
 }
 
+const float HELION_RAINBOW_RADIUS = 0.7243;
+const float HELION_RAINBOW_WIDTH = 0.035;
+const float HELION_RAINBOW_STRENGTH = 0.9;
+const float HELION_RAINBOW_SUN_HIGH = 0.7;
+const float HELION_RAINBOW_SUN_LOW = 0.02;
+const float HELION_RAINBOW_CLEARING = 0.85;
+const float HELION_RAINBOW_INNER_GLOW = 0.15;
+const float HELION_RAINBOW_PI = 3.14159265;
+const float HELION_RAINBOW_HUE_RANGE = 0.75;
+const float HELION_HUE_SECTORS = 6.0;
+const vec3 HELION_HUE_CENTERS = vec3(3.0, 2.0, 4.0);
+const vec3 HELION_HUE_SIGNS = vec3(1.0, -1.0, -1.0);
+const vec3 HELION_HUE_OFFSETS = vec3(-1.0, 2.0, 2.0);
+
+vec3 helionRainbowColor(float band) {
+    return clamp(HELION_HUE_SIGNS * abs(band * HELION_HUE_SECTORS - HELION_HUE_CENTERS) + HELION_HUE_OFFSETS, 0.0, 1.0);
+}
+
+vec3 helionRainbow(vec3 direction, vec3 sky) {
+    float strength = LastRain * smoothstep(HELION_RAINBOW_CLEARING, 1.0, RainBrightness)
+        * smoothstep(-HELION_RAINBOW_SUN_LOW, HELION_RAINBOW_SUN_LOW, SunDirection.y) * (1.0 - smoothstep(0.0, HELION_RAINBOW_SUN_HIGH, SunDirection.y));
+    if (strength <= 0.0 || direction.y <= 0.0) {
+        return vec3(0.0);
+    }
+    float angle = acos(clamp(dot(direction, -SunDirection), -1.0, 1.0));
+    float band = (angle - (HELION_RAINBOW_RADIUS - HELION_RAINBOW_WIDTH)) / (2.0 * HELION_RAINBOW_WIDTH);
+    float inside = band >= 0.0 && band <= 1.0 ? sin(band * HELION_RAINBOW_PI) : 0.0;
+    vec3 arc = helionRainbowColor((1.0 - band) * HELION_RAINBOW_HUE_RANGE) * inside;
+    float glow = angle < HELION_RAINBOW_RADIUS - HELION_RAINBOW_WIDTH ? HELION_RAINBOW_INNER_GLOW : 0.0;
+    return (arc + glow) * helionLuminance(sky) * HELION_RAINBOW_STRENGTH * strength;
+}
+
 vec3 helionSkyColorWithCelestials(vec3 direction) {
     float pixel = max(max(length(dFdx(direction)), length(dFdy(direction))), HELION_MIN_DISC_EDGE);
     vec3 sky = helionSkyRadiance(direction);
     float moonCover = helionDiscCoverage(length(direction - MoonDirection), HELION_MOON_ANGULAR_RADIUS);
     vec3 night = helionNightSky(direction, pixel, helionLuminance(sky)) * (1.0 - moonCover);
     vec3 celestials = helionSunDisc(direction, SunDirection, SunIlluminance) + helionMoonDisc(direction, MoonDirection, MoonPhaseAngle);
-    return helionEncodedSky(sky + night + celestials * RainBrightness);
+    return helionEncodedSky(sky + night + celestials * RainBrightness + helionRainbow(direction, sky));
 }
 
 vec3 helionViewPosition(vec2 screenUv, float deviceDepth) {
