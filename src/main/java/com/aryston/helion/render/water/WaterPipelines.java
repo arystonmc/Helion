@@ -35,6 +35,8 @@ public final class WaterPipelines {
     public static final String WAVE_UNIFORM = "HelionWaterWaves";
     public static final String SHORE_SAMPLER = "ShoreSampler";
     public static final String UNDERWATER_UNIFORM = "HelionUnderwater";
+    public static final String HEAT_UNIFORM = "HelionHeat";
+    public static final String HEAT_SOURCE_SAMPLER = "HeatSourceSampler";
     private static final int POLISHED_TARGET = 1;
     private static final String FOG = "Fog";
     private static final String REFLECTION_SHADER = "water/reflection";
@@ -64,6 +66,15 @@ public final class WaterPipelines {
         .withColorTargetState(new ColorTargetState(Optional.of(BlendFunction.TRANSLUCENT_PREMULTIPLIED_ALPHA), SCENE_COLOR_FORMAT, ColorTargetState.WRITE_COLOR))
         .build();
 
+    public static final RenderPipeline HEAT_SHIMMER = HelionPipelines.fullscreen("water/heat_shimmer")
+        .withBindGroupLayout(BindGroupLayout.builder()
+            .withUniform(HEAT_UNIFORM, UniformType.UNIFORM_BUFFER)
+            .withUniform(HEAT_SOURCE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(GEOMETRY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .build())
+        .withColorTargetState(new ColorTargetState(Optional.empty(), SCENE_COLOR_FORMAT, ColorTargetState.WRITE_COLOR))
+        .build();
+
     public static final RenderPipeline WAVE_STEP = HelionPipelines.fullscreen("water/wave_step")
         .withBindGroupLayout(BindGroupLayout.builder()
             .withUniform(WAVE_UNIFORM, UniformType.UNIFORM_BUFFER)
@@ -84,7 +95,7 @@ public final class WaterPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(REFLECTION, REFLECTION_PHYSICAL_SKY, SCREEN_REFLECTION, SCREEN_REFLECTION_PHYSICAL_SKY, POLISHED_COMPOSITE, WAVE_STEP, UNDERWATER);
+        return List.of(REFLECTION, REFLECTION_PHYSICAL_SKY, SCREEN_REFLECTION, SCREEN_REFLECTION_PHYSICAL_SKY, POLISHED_COMPOSITE, WAVE_STEP, UNDERWATER, HEAT_SHIMMER);
     }
 
     private static RenderPipeline.Builder screenReflection(String name, BindGroupLayout.Builder bindings) {

@@ -23,6 +23,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final float POOL_PITCH = 8.0F;
     private static final float LAKE_PITCH = 12.0F;
     private static final float GRASS_PITCH = 50.0F;
+    private static final float LAVA_PITCH = 25.0F;
     private static final float LAKE_FLOOR_PITCH = 20.0F;
     private static final float CLOSE_PITCH = 45.0F;
     private static final float UNDERWATER_PITCH = -40.0F;
@@ -75,6 +76,8 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("grass_close", NOON, EAST, GRASS_PITCH, VisualTestWorld.GRASS_CAMERA),
         new VisualTestScene("grass_close_morning", MORNING, EAST, GRASS_PITCH, VisualTestWorld.GRASS_CAMERA),
         new VisualTestScene("grass_close_rain", NOON, EAST, GRASS_PITCH, VisualTestWorld.GRASS_CAMERA, RAIN),
+        new VisualTestScene("lava_pool", NOON, NORTH, LAVA_PITCH, VisualTestWorld.LAVA_CAMERA),
+        new VisualTestScene("lava_pool_night", MIDNIGHT, NORTH, LAVA_PITCH, VisualTestWorld.LAVA_CAMERA),
         new VisualTestScene("footprints", NOON, NORTH, CLOSE_PITCH, VisualTestWorld.POOL_CAMERA),
         new VisualTestScene("rainbow", EARLY_MORNING, WEST, RAINBOW_PITCH, VisualTestWorld.RAIN_CAMERA, CLEAR, WET)
     );

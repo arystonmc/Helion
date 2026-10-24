@@ -136,6 +136,10 @@ final class VisualTestWorld {
     private static final Volume LAKE_PILLAR = new Volume(new BlockPos(-25, -3, -12), new BlockPos(-25, 0, -12));
     private static final Placement LAKE_TORCH = new Placement(-25, 1, -12, "torch");
     private static final Volume LAKE_BIOME = new Volume(new BlockPos(-41, -4, -31), new BlockPos(-9, 12, 2));
+    static final BlockPos LAVA_CAMERA = new BlockPos(23, 0, 18);
+    private static final Volume LAVA_AIR = new Volume(new BlockPos(18, 0, 6), new BlockPos(28, 6, 19));
+    private static final Volume LAVA_BASIN = new Volume(new BlockPos(18, -3, 6), new BlockPos(28, -1, 19));
+    private static final Volume LAVA_POOL = new Volume(new BlockPos(20, -1, 8), new BlockPos(26, -1, 14));
     private static final List<Volume> WALL_ROOMS = List.of(
         new Volume(new BlockPos(14, -17, -9), new BlockPos(20, -15, -3)),
         new Volume(new BlockPos(22, -17, -9), new BlockPos(26, -15, -3))
@@ -190,6 +194,9 @@ final class VisualTestWorld {
         run(server, fill(origin.offset(RAIN_YARD_FLOOR.from()), origin.offset(RAIN_YARD_FLOOR.to()), RAIN_YARD_BLOCK));
         RAIN_YARD_PATCHES.forEach(patch -> run(server, fill(origin.offset(patch.volume().from()), origin.offset(patch.volume().to()), patch.block())));
         run(server, "fillbiome " + coordinates(origin.offset(RAIN_YARD_BIOME.from())) + " " + coordinates(origin.offset(RAIN_YARD_BIOME.to())) + " " + RAIN_BIOME);
+        run(server, fill(origin.offset(LAVA_AIR.from()), origin.offset(LAVA_AIR.to()), "air"));
+        run(server, fill(origin.offset(LAVA_BASIN.from()), origin.offset(LAVA_BASIN.to()), CASTER_BLOCK));
+        run(server, fill(origin.offset(LAVA_POOL.from()), origin.offset(LAVA_POOL.to()), "lava"));
         run(server, killEntities(origin.offset(LAKE_AIR.from()), origin.offset(LAKE_AIR.to())));
         run(server, fill(origin.offset(LAKE_AIR.from()), origin.offset(LAKE_AIR.to()), "air"));
         run(server, fill(origin.offset(LAKE_BASIN.from()), origin.offset(LAKE_BASIN.to()), CASTER_BLOCK));

@@ -19,6 +19,8 @@ final class VanillaGlossyCells {
     private static final List<String> GLOSSY_PARTS = List.of("quartz", "prismarine", "glass");
     private static final List<String> GLOSSY_SUFFIXES = List.of("glazed_terracotta", "ice", "smooth_stone");
     private static final String ORE = "ore";
+    private static final Identifier LAVA_STILL = Identifier.withDefaultNamespace("block/lava_still");
+    private static final Identifier LAVA_FLOW = Identifier.withDefaultNamespace("block/lava_flow");
     private static final List<String> DRY_PARTS = List.of("snow", "magma");
     private static final List<String> POROUS_PARTS = List.of(
         "sand", "gravel", "dirt", "grass_block", "podzol", "mycelium", "farmland", "wool", "carpet", "moss", "leaves", "hay_block", "sponge",
@@ -50,10 +52,13 @@ final class VanillaGlossyCells {
                 FACE_SUFFIXES.forEach(suffix -> mark(atlas, block.withPath(TEXTURE_FOLDER + block.getPath() + suffix), cells, width, height, material));
             }
         }
+        mark(atlas, LAVA_STILL, cells, width, height, GlossyCells.LAVA);
+        mark(atlas, LAVA_FLOW, cells, width, height, GlossyCells.LAVA_FLOW);
         GlossyCells built = new GlossyCells(view, width, height, cells);
         LOGGER.info(
-            "Helion material mask: {} glossy, {} muddy, {} porous and {} dry of {} block atlas cells",
-            count(cells, GlossyCells.GLOSSY), count(cells, GlossyCells.MUDDY), count(cells, GlossyCells.POROUS), count(cells, GlossyCells.DRY), cells.length
+            "Helion material mask: {} glossy, {} muddy, {} porous, {} dry and {} lava of {} block atlas cells",
+            count(cells, GlossyCells.GLOSSY), count(cells, GlossyCells.MUDDY), count(cells, GlossyCells.POROUS), count(cells, GlossyCells.DRY),
+            count(cells, GlossyCells.LAVA) + count(cells, GlossyCells.LAVA_FLOW), cells.length
         );
         cached = built;
         return built;

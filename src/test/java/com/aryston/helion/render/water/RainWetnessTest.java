@@ -9,6 +9,7 @@ class RainWetnessTest {
     private static final float RAINING = 1.0F;
     private static final float DRY = 0.0F;
     private static final float OPEN_SKY = 1.0F;
+    private static final boolean NO_LAVA = false;
     private static final float NO_FLASH = 0.0F;
     private static final float DESERT = 0.0F;
     private static final float JUNGLE = 0.9F;
@@ -39,7 +40,7 @@ class RainWetnessTest {
         double seconds = 0.0;
         Wetness last = Wetness.DRY;
         for (int step = 0; step < RAIN_SECONDS; step++) {
-            last = wetness.update(new WeatherState(RAINING, seconds, false, NO_FLASH, JUNGLE, ABOVE_WATER, OPEN_SKY));
+            last = wetness.update(new WeatherState(RAINING, seconds, false, NO_FLASH, JUNGLE, ABOVE_WATER, OPEN_SKY, NO_LAVA));
             seconds += STEP;
         }
         assertEquals(DRY, last.surfaces(), TOLERANCE);
@@ -49,7 +50,7 @@ class RainWetnessTest {
     void aTimeJumpKeepsTheWetness() {
         RainWetness wetness = new RainWetness();
         Wetness wet = run(wetness, 0.0, RAIN_SECONDS, RAINING, JUNGLE);
-        Wetness jumped = wetness.update(new WeatherState(DRY, RAIN_SECONDS + 10000.0, true, NO_FLASH, JUNGLE, ABOVE_WATER, OPEN_SKY));
+        Wetness jumped = wetness.update(new WeatherState(DRY, RAIN_SECONDS + 10000.0, true, NO_FLASH, JUNGLE, ABOVE_WATER, OPEN_SKY, NO_LAVA));
         assertEquals(wet.surfaces(), jumped.surfaces(), TOLERANCE);
     }
 
@@ -62,7 +63,7 @@ class RainWetnessTest {
     private static Wetness run(RainWetness wetness, double start, int seconds, float rain, float humidity) {
         Wetness last = Wetness.DRY;
         for (int step = 0; step <= seconds; step++) {
-            last = wetness.update(new WeatherState(rain, start + step * STEP, true, NO_FLASH, humidity, ABOVE_WATER, OPEN_SKY));
+            last = wetness.update(new WeatherState(rain, start + step * STEP, true, NO_FLASH, humidity, ABOVE_WATER, OPEN_SKY, NO_LAVA));
         }
         return last;
     }

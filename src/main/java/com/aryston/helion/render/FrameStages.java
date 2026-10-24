@@ -35,6 +35,7 @@ import com.aryston.helion.render.voxel.VoxelLightStage;
 import com.aryston.helion.render.voxel.VoxelProbeStage;
 import com.aryston.helion.render.voxel.VoxelSliceStage;
 import com.aryston.helion.render.water.RainWetnessStage;
+import com.aryston.helion.render.water.HeatShimmerStage;
 import com.aryston.helion.render.water.ScreenReflectionStage;
 import com.aryston.helion.render.water.UnderwaterStage;
 import com.aryston.helion.render.water.WaterReflectionStage;
@@ -89,6 +90,7 @@ public final class FrameStages {
             new CloudStage(sources.clouds(), core.clouds()),
             new LightShaftStage(core.lightShafts()),
             new TransparentGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere(), sources.transparency()),
+            new HeatShimmerStage(core.water()),
             new UnderwaterStage(core.water()),
             new TemporalStage(core.temporal()),
             new PostProcessingStage(postEffects(sources.postEffects(), core)),

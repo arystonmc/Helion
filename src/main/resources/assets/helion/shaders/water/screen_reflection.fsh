@@ -203,7 +203,7 @@ vec4 helionSurfaceSheen(ivec2 pixel, vec2 screen) {
     bool simulated = ReflectionFlags.w > HELION_FLAG_SET;
     vec2 waveSlope = simulated ? helionPuddleWaveSlope(worldPosition.xz) : vec2(0.0);
     HelionWetSurface wet = helionWetSurface(light, surfaceNormal, worldPosition, Wetness, waveSlope, simulated);
-    float footprint = surfaceNormal.y > HELION_FOOT_FLAT && !helionIsGeometryMaterial(light.a, HELION_GEOMETRY_DRY) ? helionFootprints(worldPosition.xz) : 0.0;
+    float footprint = surfaceNormal.y > HELION_FOOT_FLAT && !helionIsDryGeometry(light.a) ? helionFootprints(worldPosition.xz) : 0.0;
     wet.darkening = min(wet.darkening + footprint * HELION_FOOT_DARKENING, 1.0);
     wet.sheen = max(wet.sheen, footprint * HELION_FOOT_SHEEN);
     if (!polished && wet.sheen <= 0.0) {

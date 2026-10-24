@@ -70,3 +70,13 @@ The owner tested in a real world (sea, night, rain) and reported the following; 
 9. Quality: the swell octaves fade out with the pixel footprint (`fwidth` of the wave position) once a wavelength covers less than about three pixels, and the ripples fade the same way, so distant water no longer sparkles with aliased normals. All `sin`-based noise hashes (swell, caustics, wetness) use an integer PCG hash (`helion_hash.glsl`); the `sin` hash lost precision at large cell coordinates and drew straight lines.
 
 Visual test scenes for this pass: `water_lake_night` (torch on a pillar), `water_lake_under`, `water_lake_under_floor`, `water_lake_under_night`, `grass_close`, `grass_close_morning`, `grass_close_rain`; the rain yard has a torch north of the pool, short grass and a dropped item in the grass.
+
+## Lava (2026-10-25, phase 5)
+
+Lava has its own material class: `VanillaGlossyCells` marks `block/lava_still` (0xDF) and `block/lava_flow` (0x9F) in the material mask, which now has eight steps. The geometry buffer stores lava as `HELION_GEOMETRY_LAVA` (0.6875), which rain wetness, puddles and footprints treat like dry blocks (no puddles or film on lava any more).
+
+1. Crust: on lava faces pointing up, `terrain/geometry.fsh` runs `helionLavaColor` (`helion_lava.glsl`): drifting Voronoi cells (2 per block, points moving on small circles) of which some cool into dark crust (0.3, 0.12, 0.07 of the lava color), with glowing cracks (yellow-white) along the borders of crusted cells. Three slow swells (wavelengths of about 23, 17 and 12 blocks, whole cycles per 1024 blocks) shift how much crust there is, so heavy waves of cooling seem to roll over the pool. Flowing lava drifts the pattern along its flow at 0.25 blocks per second (flow direction from the texture coordinate derivatives, as for water). The color goes into the albedo, so deferred lighting keeps lava as bright as before and the crust reads darker.
+2. Heat shimmer: `HeatShimmerStage` (see the code map) wobbles the image on and above lava. It only runs while `VanillaWeatherSource` found a section that may hold lava within 2 sections of the camera (palette check every 10 frames), so it costs nothing elsewhere.
+3. The surface is not displaced: lava is opaque terrain drawn by the geometry buffer pipelines, and the swells already show in the crust.
+
+Visual test `lava_pool`, `lava_pool_night` (a 7 x 7 lava pool east of the test area).

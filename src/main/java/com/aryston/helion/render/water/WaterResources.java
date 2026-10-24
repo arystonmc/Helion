@@ -41,6 +41,8 @@ public final class WaterResources {
         .get();
     private static final String UNDERWATER_LABEL = "Helion Underwater Settings";
     private static final int UNDERWATER_SIZE = new Std140SizeCalculator().putMat4f().putVec4().putVec4().get();
+    private static final String HEAT_LABEL = "Helion Heat Shimmer Settings";
+    private static final int HEAT_SIZE = new Std140SizeCalculator().putVec4().get();
     private static final String SCREEN_LABEL = "Helion Screen Reflection Settings";
     private static final int SCREEN_SIZE = screenSize();
     private static final double NOISE_PERIOD = 1024.0;
@@ -58,6 +60,7 @@ public final class WaterResources {
     private @Nullable UniformRing reflectionUniforms;
     private @Nullable UniformRing screenUniforms;
     private @Nullable UniformRing underwaterUniforms;
+    private @Nullable UniformRing heatUniforms;
     private boolean missingScreenPipelineReported;
     private boolean missingPipelinesReported;
 
@@ -176,6 +179,19 @@ public final class WaterResources {
             .putVec4((float) ((System.nanoTime() / NANOS_PER_SECOND) % SECONDS_PERIOD), skyLight, ABSENT, ABSENT));
     }
 
+    GpuBuffer heatUniforms() {
+        if (heatUniforms == null) {
+            heatUniforms = new UniformRing(HEAT_LABEL, HEAT_SIZE, resources);
+        }
+        return heatUniforms.write(builder -> builder.putVec4((float) ((System.nanoTime() / NANOS_PER_SECOND) % SECONDS_PERIOD), ABSENT, ABSENT, ABSENT));
+    }
+
+    void finishHeat() {
+        if (heatUniforms != null) {
+            heatUniforms.rotate();
+        }
+    }
+
     void finishUnderwater() {
         if (underwaterUniforms != null) {
             underwaterUniforms.rotate();
@@ -214,6 +230,10 @@ public final class WaterResources {
         if (underwaterUniforms != null) {
             underwaterUniforms.close();
         }
+        if (heatUniforms != null) {
+            heatUniforms.close();
+        }
+        heatUniforms = null;
         underwaterUniforms = null;
         surfaceUniforms = null;
         reflectionUniforms = null;

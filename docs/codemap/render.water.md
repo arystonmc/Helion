@@ -27,6 +27,11 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Role: Wet footprints. `RainWetnessStage` asks the `FootprintSource` for the steps of the frame (world position, yaw, foot, game seconds) and keeps the newest 32 in `Footprints` (owned by `WaterResources`) for 45 seconds; the visible ones go to `WaterResults` and into the screen reflection uniform, where `helionFootprints` darkens and wets a small oval per print, fading with its age.
 - Depends on: `WaterResources`, `WaterResults`.
 
+#### HeatShimmerStage
+- Path: `src/main/java/com/aryston/helion/render/water/HeatShimmerStage.java`
+- Role: Pass `heat_shimmer` after transparent geometry, with realistic water and the geometry buffer, only while lava may be near (`WeatherState.lavaNearby`) and the camera is not in water: copies the scene into `helion:heat_source` and redraws the pixels on or up to 8 taps (1.2 % of the screen height each) above lava in the geometry light target (`HELION_GEOMETRY_LAVA`) with a rising sine wobble of the copy (`water/heat_shimmer.fsh`), strongest right above the lava.
+- Depends on: `WaterResources` (uniform ring), `WaterPipelines.HEAT_SHIMMER`, `GeometryBuffer`.
+
 #### UnderwaterStage
 - Path: `src/main/java/com/aryston/helion/render/water/UnderwaterStage.java`
 - Role: Pass `underwater` (with realistic water, only while the camera is in water): one fullscreen premultiplied blend of `water/underwater.fsh` over the scene with its depth: distance extinction toward a teal-shifted water fog color and toward black in the dark, caustics (`helion_caustics.glsl`) below the eye and light shafts looking up, all scaled by the sun reaching the camera: the camera sky light (minus the vanilla sky darkening) squared, times the daylight from the physical sky light (1 without it). `RainWetnessStage` also asks the weather source every frame to extend the vanilla underwater fog while realistic water is on.

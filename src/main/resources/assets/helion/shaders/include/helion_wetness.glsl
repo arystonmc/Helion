@@ -114,7 +114,7 @@ float helionWallStreaks(vec3 normal, vec3 worldPosition, float seconds) {
 }
 
 HelionWetSurface helionWetSurface(vec4 light, vec3 normal, vec3 worldPosition, vec4 wetness, vec2 simulatedSlope, bool simulated) {
-    if (wetness.x <= 0.0 && wetness.y <= 0.0 || helionIsGeometryMaterial(light.a, HELION_GEOMETRY_DRY)) {
+    if (wetness.x <= 0.0 && wetness.y <= 0.0 || helionIsDryGeometry(light.a)) {
         return HELION_DRY_SURFACE;
     }
     bool porous = helionIsGeometryMaterial(light.a, HELION_GEOMETRY_POROUS);

@@ -221,6 +221,7 @@ Water looks like water instead of a flat blue texture.
 - From under water you look up through a bright window to the sky and the world above, and the surface around it mirrors the depths
 - Under water you see much farther than in vanilla; the world fades into blue-green with depth, light shafts fall from the surface and caustics dance on the bottom where sunlight reaches, and at night or deep down it turns nearly black
 - Lamps, torches and lava leave bright reflections on the water, and the sun only glints where it is not hidden behind terrain
+- Lava: dark crust drifts slowly over the glowing lava with bright cracks between the crust plates, and the air above lava shimmers with heat
 - The color follows the biome: blue oceans, green swamps, the same colors vanilla gives the water
 - Gentle waves with fine ripples, and rings where raindrops hit the water
 - Open water rolls with a real swell that moves the surface itself, calm near the shore

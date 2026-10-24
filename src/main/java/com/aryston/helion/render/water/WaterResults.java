@@ -17,6 +17,7 @@ public final class WaterResults {
     private @Nullable ResourceHandle<RenderTarget> refraction;
     private @Nullable ResourceHandle<RenderTarget> waves;
     private boolean underwater;
+    private boolean lava;
     private float underwaterSkyLight;
     private List<Footprint> footprints = List.of();
     private double footprintSeconds;
@@ -76,6 +77,14 @@ public final class WaterResults {
 
     boolean underwater() {
         return underwater;
+    }
+
+    boolean lavaNearby() {
+        return lava;
+    }
+
+    void publishLava() {
+        lava = true;
     }
 
     float underwaterSkyLight() {
