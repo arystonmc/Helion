@@ -23,6 +23,10 @@ The owner tested the first version at night and noon and asked for four fixes, w
 
 The water color moved toward the teal of the reference (biome tint mixed 55 % with 0.10, 0.55, 0.52; extinction 0.32, 0.075, 0.06 per block).
 
+## Puddle Waves (2026-10-24)
+
+While puddles are filling (puddle level above 0.05) the land cells of the field come alive too: the shore mask stores land as 0x80, water as 0xFF, and a cell only takes neighbors of its own class (others count as its own height, a reflecting wall), so lake waves and puddle waves never mix. Land cells damp at 0.93 per step, so a ring stays small. Entities standing on ground step into puddles (impulse up to 0.02 with their speed) and rain drops land on them like on water. The rain wetness pass samples the field over land (repeat, same world mapping) for the puddle normal instead of its procedural rings, at 3.4 times the field slope.
+
 ## Phase 1b: Shores (2026-10-24)
 
 `WaterShoreMask` keeps one byte per block for the 128 x 128 block window (R8 texture, toroidal like the field) and rescans 16 rows of it per frame through `WaveSource.holdsWaves`: a column holds waves when the topmost motion blocking block (client height map) is water, when it is more than 8 blocks above the camera (caves, high roofs: unknown, so waves stay free), or when below a roof of at most 3 blocks and at most 12 blocks of air the first block is water. Cells of land columns stay at zero, so waves reflect from shores and never cross land into the next pond. About 3 to 6 block lookups per column, 2048 columns per frame.

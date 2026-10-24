@@ -21,7 +21,7 @@ final class WaterShoreMask {
     private static final int HALF = SIZE / 2;
     private static final int ROWS_PER_FRAME = 16;
     private static final byte WATER = (byte) 0xFF;
-    private static final byte LAND = 0;
+    private static final byte LAND = (byte) 0x80;
     private static final int SINGLE = 1;
     private static final int BASE_LEVEL = 0;
     private static final int FIRST_LAYER = 0;

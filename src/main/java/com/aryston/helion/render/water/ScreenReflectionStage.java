@@ -60,6 +60,8 @@ public final class ScreenReflectionStage implements RenderStage {
         Optional<SceneSkyColor> sky = frame.atmosphere().skyColor();
         boolean water = reflectsWater(frame);
         Wetness wetness = frame.water().wetness().orElse(Wetness.DRY);
+        Optional<ResourceHandle<RenderTarget>> waves = frame.water().waves();
+        waves.ifPresent(pass::reads);
         surface.ifPresent(pass::reads);
         pass.reads(scene);
         sky.ifPresent(color -> color.declareReads(pass));
@@ -82,13 +84,15 @@ public final class ScreenReflectionStage implements RenderStage {
             FullscreenPass.draw(PASS_LABEL, List.of(reflections.get(), polished.get()), pipeline, renderPass -> {
                 RenderSystem.bindDefaultUniforms(renderPass);
                 sky.ifPresent(color -> color.bind(renderPass));
-                renderPass.setUniform(WaterPipelines.SCREEN_REFLECTION_UNIFORM, resources.screenUniforms(camera, geometry.isPresent(), water, frame.settings().reflections().screenSpace(), wetness));
+                renderPass.setUniform(WaterPipelines.SCREEN_REFLECTION_UNIFORM, resources.screenUniforms(camera, geometry.isPresent(), water, frame.settings().reflections().screenSpace(), waves.isPresent(), wetness));
                 renderPass.setUniform(WaterPipelines.SURFACE_SAMPLER, standIn, nearest);
                 renderPass.setUniform(WaterPipelines.DEPTH_SAMPLER, Objects.requireNonNull(waterTarget.getDepthTextureView()), nearest);
                 renderPass.setUniform(WaterPipelines.SCENE_COLOR_SAMPLER, Objects.requireNonNull(lit.getColorTextureView()), linear);
                 renderPass.setUniform(WaterPipelines.SCENE_DEPTH_SAMPLER, Objects.requireNonNull(lit.getDepthTextureView()), nearest);
                 renderPass.setUniform(WaterPipelines.GEOMETRY_NORMAL_SAMPLER, geometry.map(targets -> colorView(targets.normal())).orElse(standIn), nearest);
                 renderPass.setUniform(WaterPipelines.GEOMETRY_LIGHT_SAMPLER, geometry.map(targets -> colorView(targets.light())).orElse(standIn), nearest);
+                GpuTextureView waveView = waves.map(handle -> Objects.requireNonNull(handle.get().getColorTextureView())).orElse(standIn);
+                renderPass.setUniform(WaterPipelines.WAVE_SAMPLER, waveView, RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR));
             });
             resources.finishScreen();
         }));

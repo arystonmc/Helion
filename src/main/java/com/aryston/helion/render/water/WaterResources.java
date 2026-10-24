@@ -117,7 +117,7 @@ public final class WaterResources {
         return HelionPipelines.compiled(WaterPipelines.POLISHED_COMPOSITE);
     }
 
-    GpuBuffer screenUniforms(HelionCamera camera, boolean geometry, boolean water, boolean polished, Wetness wetness) {
+    GpuBuffer screenUniforms(HelionCamera camera, boolean geometry, boolean water, boolean polished, boolean waves, Wetness wetness) {
         if (screenUniforms == null) {
             screenUniforms = new UniformRing(SCREEN_LABEL, SCREEN_SIZE, resources);
         }
@@ -125,7 +125,7 @@ public final class WaterResources {
         return screenUniforms.write(builder -> builder
             .putMat4f(camera.levelViewProjection())
             .putMat4f(camera.levelViewProjection().invert())
-            .putVec4(geometry ? PRESENT : ABSENT, water ? PRESENT : ABSENT, polished ? PRESENT : ABSENT, ABSENT)
+            .putVec4(geometry ? PRESENT : ABSENT, water ? PRESENT : ABSENT, polished ? PRESENT : ABSENT, waves ? PRESENT : ABSENT)
             .putVec4(wetness.surfaces(), wetness.puddles(), wetness.rain(), wetness.seconds())
             .putVec4((float) (position.x() % NOISE_PERIOD), (float) (position.y() % NOISE_PERIOD), (float) (position.z() % NOISE_PERIOD), ABSENT));
     }

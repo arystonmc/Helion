@@ -16,6 +16,7 @@ uniform sampler2D SceneColorSampler;
 uniform sampler2D SceneDepthSampler;
 uniform sampler2D GeometryNormalSampler;
 uniform sampler2D GeometryLightSampler;
+uniform sampler2D WaveSampler;
 
 layout(std140) uniform HelionScreenReflection {
     mat4 ReflectionViewProjection;
@@ -53,6 +54,9 @@ const float HELION_WET_F0 = 0.02;
 const float HELION_PUDDLE_F0 = 0.3;
 const float HELION_PUDDLE_MARCH = 0.05;
 const float HELION_WET_REACH = 48.0;
+const float HELION_PUDDLE_WAVE_TEXELS = 1024.0;
+const float HELION_PUDDLE_WAVE_CELLS = 8.0;
+const float HELION_PUDDLE_WAVE_SLOPE = 3.4;
 
 struct HelionScreenPoint {
     bool valid;
@@ -147,6 +151,16 @@ float helionFresnel(float baseReflectance, vec3 view, vec3 normal) {
     return baseReflectance + (1.0 - baseReflectance) * pow(1.0 - facing, HELION_FRESNEL_POWER);
 }
 
+vec2 helionPuddleWaveSlope(vec2 position) {
+    vec2 uv = position * HELION_PUDDLE_WAVE_CELLS / HELION_PUDDLE_WAVE_TEXELS;
+    float texel = 1.0 / HELION_PUDDLE_WAVE_TEXELS;
+    float right = textureLod(WaveSampler, uv + vec2(texel, 0.0), 0.0).r;
+    float left = textureLod(WaveSampler, uv - vec2(texel, 0.0), 0.0).r;
+    float front = textureLod(WaveSampler, uv + vec2(0.0, texel), 0.0).r;
+    float back = textureLod(WaveSampler, uv - vec2(0.0, texel), 0.0).r;
+    return vec2(right - left, front - back) * HELION_PUDDLE_WAVE_SLOPE;
+}
+
 vec4 helionSurfaceSheen(ivec2 pixel, vec2 screen) {
     if (ReflectionFlags.x < HELION_FLAG_SET) {
         return vec4(0.0);
@@ -159,7 +173,10 @@ vec4 helionSurfaceSheen(ivec2 pixel, vec2 screen) {
     bool polished = ReflectionFlags.z > HELION_FLAG_SET && helionIsGlossyGeometry(light.a);
     vec3 surfaceNormal = normalize(texelFetch(GeometryNormalSampler, pixel, 0).rgb * 2.0 - 1.0);
     vec3 start = helionWorldAt(screen, depth);
-    HelionWetSurface wet = helionWetSurface(light, surfaceNormal, start + WetnessOrigin.xyz, Wetness);
+    vec3 worldPosition = start + WetnessOrigin.xyz;
+    bool simulated = ReflectionFlags.w > HELION_FLAG_SET;
+    vec2 waveSlope = simulated ? helionPuddleWaveSlope(worldPosition.xz) : vec2(0.0);
+    HelionWetSurface wet = helionWetSurface(light, surfaceNormal, worldPosition, Wetness, waveSlope, simulated);
     if (!polished && wet.sheen <= 0.0) {
         return vec4(0.0);
     }

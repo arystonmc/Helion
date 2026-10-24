@@ -23,6 +23,7 @@ public final class WaterWaveStage implements RenderStage {
     private static final double NANOS_PER_SECOND = 1.0e9;
     private static final double IMPULSE_MARGIN = 8.0;
     private static final int STATES = 2;
+    private static final float PUDDLE_WAVES = 0.05F;
 
     private final WaveSource source;
     private final WaterResources resources;
@@ -53,7 +54,8 @@ public final class WaterWaveStage implements RenderStage {
         CompiledRenderPipeline pipeline = Objects.requireNonNull(program);
         WaterWaves waves = resources.waves();
         Vector3dc camera = frame.camera().position();
-        List<WaveImpulse> impulses = source.impulses(camera.x(), camera.z(), WaterWaves.REACH - IMPULSE_MARGIN);
+        boolean puddles = frame.water().wetness().map(wetness -> wetness.puddles() > PUDDLE_WAVES).orElse(false);
+        List<WaveImpulse> impulses = source.impulses(camera.x(), camera.z(), WaterWaves.REACH - IMPULSE_MARGIN, puddles);
         waves.queueSplashes(impulses);
         int steps = waves.plan(System.nanoTime() / NANOS_PER_SECOND);
         float rain = frame.water().wetness().map(Wetness::rain).orElse(0.0F);
@@ -73,7 +75,7 @@ public final class WaterWaveStage implements RenderStage {
                 RenderTarget written = step % STATES == 0 ? stateB.get() : stateA.get();
                 int index = step;
                 FullscreenPass.draw(PASS_LABEL, written, pipeline, renderPass -> {
-                    renderPass.setUniform(WaterPipelines.WAVE_UNIFORM, waves.stepUniforms(index, cameraX, cameraZ, impulses, rain));
+                    renderPass.setUniform(WaterPipelines.WAVE_UNIFORM, waves.stepUniforms(index, cameraX, cameraZ, impulses, rain, puddles));
                     renderPass.setUniform(WaterPipelines.SHORE_SAMPLER, shore, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
                     renderPass.setUniform(
                         WaterPipelines.WAVE_SAMPLER,

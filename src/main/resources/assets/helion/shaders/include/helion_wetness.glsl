@@ -91,7 +91,7 @@ vec2 helionRainRipples(vec2 position, float seconds) {
     return tilt * HELION_RIPPLE_STRENGTH;
 }
 
-HelionWetSurface helionWetSurface(vec4 light, vec3 normal, vec3 worldPosition, vec4 wetness) {
+HelionWetSurface helionWetSurface(vec4 light, vec3 normal, vec3 worldPosition, vec4 wetness, vec2 simulatedSlope, bool simulated) {
     if (wetness.x <= 0.0 && wetness.y <= 0.0 || helionIsGeometryMaterial(light.a, HELION_GEOMETRY_DRY)) {
         return HELION_DRY_SURFACE;
     }
@@ -103,7 +103,7 @@ HelionWetSurface helionWetSurface(vec4 light, vec3 normal, vec3 worldPosition, v
     float puddle = porous ? 0.0 : helionPuddleMask(worldPosition.xz, wetness.y) * facingUp * exposure;
     float darkening = porous ? HELION_POROUS_DARKENING : glossy ? HELION_GLOSSY_DARKENING : HELION_ORDINARY_DARKENING;
     float sheen = porous ? HELION_POROUS_SHEEN : glossy ? HELION_GLOSSY_SHEEN : HELION_ORDINARY_SHEEN;
-    vec2 ripples = puddle > 0.0 ? helionRainRipples(worldPosition.xz, wetness.w) * wetness.z : vec2(0.0);
+    vec2 ripples = puddle <= 0.0 ? vec2(0.0) : simulated ? simulatedSlope : helionRainRipples(worldPosition.xz, wetness.w) * wetness.z;
     vec3 puddleNormal = normalize(vec3(-ripples.x, 1.0, -ripples.y));
     return HelionWetSurface(
         wet,

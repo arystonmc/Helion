@@ -31,13 +31,16 @@ final class VanillaWaveSource implements WaveSource {
     private static final boolean CONTINUOUS = false;
     private static final boolean SPLASH = true;
     private static final int ROOF_MARGIN = 8;
+    private static final float STEP_RADIUS_SHARE = 0.4F;
+    private static final float STEP_PER_SPEED = 0.003F;
+    private static final float MAX_STEP = 0.02F;
     private static final int MAX_ROOF_THICKNESS = 3;
     private static final int MAX_HEADROOM = 12;
 
     private IntSet touching = new IntOpenHashSet();
 
     @Override
-    public List<WaveImpulse> impulses(double cameraX, double cameraZ, double reach) {
+    public List<WaveImpulse> impulses(double cameraX, double cameraZ, double reach, boolean puddles) {
         ClientLevel level = Minecraft.getInstance().level;
         List<WaveImpulse> impulses = new ArrayList<>();
         IntSet nowTouching = new IntOpenHashSet();
@@ -48,7 +51,13 @@ final class VanillaWaveSource implements WaveSource {
         for (Entity entity : level.entitiesForRendering()) {
             double x = entity.getX();
             double z = entity.getZ();
-            if (Math.abs(x - cameraX) > reach || Math.abs(z - cameraZ) > reach || !touchesSurface(level, entity.getBoundingBox(), x, z)) {
+            if (Math.abs(x - cameraX) > reach || Math.abs(z - cameraZ) > reach) {
+                continue;
+            }
+            if (!touchesSurface(level, entity.getBoundingBox(), x, z)) {
+                if (puddles && entity.onGround()) {
+                    step(entity, x, z, impulses);
+                }
                 continue;
             }
             nowTouching.add(entity.getId());
@@ -89,6 +98,13 @@ final class VanillaWaveSource implements WaveSource {
             position.move(Direction.DOWN);
         }
         return level.getFluidState(position).is(FluidTags.WATER);
+    }
+
+    private static void step(Entity entity, double x, double z, List<WaveImpulse> impulses) {
+        double speed = Math.hypot(x - entity.xo, z - entity.zo) * TICKS_PER_SECOND;
+        if (speed > MIN_WAKE_SPEED) {
+            impulses.add(new WaveImpulse(x, z, Math.max(entity.getBbWidth() * STEP_RADIUS_SHARE, MIN_RADIUS), Math.min((float) speed * STEP_PER_SPEED, MAX_STEP), CONTINUOUS));
+        }
     }
 
     private static boolean touchesSurface(ClientLevel level, AABB box, double x, double z) {
