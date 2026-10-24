@@ -232,7 +232,7 @@ Water looks like water instead of a flat blue texture.
 Rain makes the world wet instead of only falling past it.
 
 - Ground, walls and roofs that the rain reaches turn darker and get a soft wet sheen; places under a roof or under trees stay dry
-- Puddles slowly gather on flat stone, brick, wood and other surfaces that hold water, reflect the sky, lights and the world around them, and ripple where the raindrops land; walking through a puddle sends out small rings
+- Puddles slowly gather on flat stone, brick, wood and other surfaces that hold water, reflect the sky, lights and the world around them, and ripple where the raindrops land (with ray tracing they also reflect what is off screen); walking through a puddle sends out small rings
 - Sand, gravel, leaves and wool only darken, they soak the water up; snow and magma stay dry
 - Dirt, grass and farmland turn dark and muddy in the rain and gather small muddy puddles in heavy rain
 - Surfaces get wet within half a minute of rain and dry over a minute and a half after it; puddles fill and dry more slowly, faster in deserts and savannas, slower in jungles and swamps

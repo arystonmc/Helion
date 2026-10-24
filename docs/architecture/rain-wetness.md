@@ -39,8 +39,11 @@ While `ClientLevel.skyFlashTime` runs (and the hide lightning flash option is of
 - `ssr` 0.30 ms in rain with the whole frame wet (0.08 ms with only polished blocks), `ssr_polished` 0.03 ms.
 - Rain fog and the rain streaks drawn later soften the darkening: a black composite at alpha 0.5 lowered the floor by 20 %, not 50 %, so the darkening values are higher than a physical wet albedo would need.
 
+### Ray Traced Puddles (2026-10-24)
+
+With ray traced reflections on, `rt_reflection` runs before `ssr` and also traces every geometry buffer pixel that is a puddle above 0.05 (the shader evaluates `helionWetSurface` with the published puddle level, so the mask matches the screen pass), starting at the scene depth with an up normal. `ssr` reads the traced image (flag in `FootprintCount.y`) and uses it where its own march misses instead of the sky, so puddles show what is off screen or hidden. Bindings 7 to 9 of `rtx/reflection.csh` are the scene depth, geometry normal and geometry light; without the geometry buffer the water color stands in and no puddles are traced.
+
 ## Not Yet
 
-- Ray traced puddle reflections (puddles reflect only what is on screen and the sky).
 - Rain exposure from a height map instead of the sky light, so glass roofs keep the floor dry and the biome is checked per pixel instead of at the camera.
 - Wet entities beyond the porous darkening, drips from roof edges, puddles that evaporate unevenly.

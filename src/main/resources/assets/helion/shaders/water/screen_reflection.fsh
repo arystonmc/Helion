@@ -17,6 +17,7 @@ uniform sampler2D SceneDepthSampler;
 uniform sampler2D GeometryNormalSampler;
 uniform sampler2D GeometryLightSampler;
 uniform sampler2D WaveSampler;
+uniform sampler2D ReflectionSampler;
 
 layout(std140) uniform HelionScreenReflection {
     mat4 ReflectionViewProjection;
@@ -217,7 +218,9 @@ vec4 helionSurfaceSheen(ivec2 pixel, vec2 screen) {
     if (polished || wet.puddle > HELION_PUDDLE_MARCH) {
         vec4 skySeen;
         vec4 hit = helionMarch(start, normal, reach, skySeen);
+        vec4 traced = FootprintCount.y > HELION_FLAG_SET ? texelFetch(ReflectionSampler, pixel, 0) : vec4(0.0);
         vec3 missed = polished && skySeen.a > 0.0 ? mix(sky, skySeen.rgb, skySeen.a) : sky;
+        missed = traced.a > HELION_FLAG_SET ? traced.rgb : missed;
         float fade = clamp(1.0 - reach / (polished ? HELION_POLISHED_REACH : HELION_WET_REACH), 0.0, 1.0);
         reflection = mix(missed, hit.rgb, hit.a * fade);
     }

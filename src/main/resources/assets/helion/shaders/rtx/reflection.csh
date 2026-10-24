@@ -7,6 +7,7 @@
 #endif
 
 #include <helion:helion_water.glsl>
+#include <helion:helion_wetness.glsl>
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
@@ -19,10 +20,13 @@ layout(set = 0, binding = 5) uniform sampler2D LightmapSampler;
 layout(set = 0, binding = 6, std430) readonly buffer HelionSurfaceTable {
     uvec4 Sections[];
 };
+layout(set = 0, binding = 7) uniform sampler2D SceneDepthSampler;
+layout(set = 0, binding = 8) uniform sampler2D GeometryNormalSampler;
+layout(set = 0, binding = 9) uniform sampler2D GeometryLightSampler;
 #ifdef HELION_RT_ENTITIES
 const int HELION_RT_ENTITY_TEXTURES = 16;
-layout(set = 0, binding = 7) uniform sampler2D EntityTextures[HELION_RT_ENTITY_TEXTURES];
-layout(set = 0, binding = 8, std430) readonly buffer HelionEntityTable {
+layout(set = 0, binding = 10) uniform sampler2D EntityTextures[HELION_RT_ENTITY_TEXTURES];
+layout(set = 0, binding = 11, std430) readonly buffer HelionEntityTable {
     uvec4 Entities[];
 };
 #endif
@@ -53,6 +57,9 @@ const float HELION_RT_SET = 0.5;
 const float HELION_RT_LIGHTMAP_SCALE = 1.0 / 256.0;
 const float HELION_RT_LIGHTMAP_TEXEL = 0.5 / 16.0;
 const vec4 HELION_RT_MISS = vec4(0.0);
+const float HELION_RT_PUDDLE_TRACED = 0.05;
+const vec3 HELION_RT_UP = vec3(0.0, 1.0, 0.0);
+const vec4 HELION_RT_PUDDLE_WETNESS = vec4(1.0, 0.0, 0.0, 0.0);
 
 vec4 helionLitColor(vec3 albedo, vec2 light) {
     vec2 lightmapUv = clamp(light * HELION_RT_LIGHTMAP_SCALE + HELION_RT_LIGHTMAP_TEXEL, vec2(HELION_RT_LIGHTMAP_TEXEL), vec2(1.0 - HELION_RT_LIGHTMAP_TEXEL));
@@ -106,6 +113,19 @@ uint helionReflectedInstances() {
 #endif
 }
 
+bool helionIsTracedPuddle(ivec2 pixel, vec2 screen) {
+    float sceneDepth = texelFetch(SceneDepthSampler, pixel, 0).r;
+    vec4 light = texelFetch(GeometryLightSampler, pixel, 0);
+    if (Trace.w <= 0.0 || sceneDepth <= HELION_RT_SKY_DEPTH || light.a < HELION_GEOMETRY_PRESENT_THRESHOLD) {
+        return false;
+    }
+    vec3 surfaceNormal = normalize(texelFetch(GeometryNormalSampler, pixel, 0).rgb * 2.0 - 1.0);
+    vec4 world = InverseViewProjection * vec4(screen * 2.0 - 1.0, sceneDepth, 1.0);
+    vec3 position = world.xyz / world.w + vec3(Trace.y, 0.0, Trace.z);
+    vec4 wetness = vec4(HELION_RT_PUDDLE_WETNESS.x, Trace.w, HELION_RT_PUDDLE_WETNESS.zw);
+    return helionWetSurface(light, surfaceNormal, position, wetness, vec2(0.0), false).puddle > HELION_RT_PUDDLE_TRACED;
+}
+
 void main() {
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
     ivec2 size = imageSize(Reflection);
@@ -114,12 +134,17 @@ void main() {
     }
     float depth = texelFetch(WaterDepthSampler, pixel, 0).r;
     vec4 water = texelFetch(WaterSurfaceSampler, pixel, 0);
-    if (depth <= HELION_RT_SKY_DEPTH || !helionIsWater(water) && !helionIsGlossy(water)) {
+    vec2 screen = (vec2(pixel) + 0.5) / vec2(size);
+    vec3 normal;
+    if (depth > HELION_RT_SKY_DEPTH && (helionIsWater(water) || helionIsGlossy(water))) {
+        normal = helionDecodeOctahedral(water.xy);
+    } else if (helionIsTracedPuddle(pixel, screen)) {
+        depth = texelFetch(SceneDepthSampler, pixel, 0).r;
+        normal = HELION_RT_UP;
+    } else {
         imageStore(Reflection, pixel, HELION_RT_MISS);
         return;
     }
-    vec3 normal = helionDecodeOctahedral(water.xy);
-    vec2 screen = (vec2(pixel) + 0.5) / vec2(size);
     vec4 world = InverseViewProjection * vec4(screen * 2.0 - 1.0, depth, 1.0);
     vec3 position = world.xyz / world.w;
     vec3 direction = reflect(normalize(position), normal);

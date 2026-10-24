@@ -126,7 +126,7 @@ public final class WaterResources {
         return HelionPipelines.compiled(WaterPipelines.POLISHED_COMPOSITE);
     }
 
-    GpuBuffer screenUniforms(HelionCamera camera, boolean geometry, boolean water, boolean polished, boolean waves, Wetness wetness, List<Footprint> prints, double seconds) {
+    GpuBuffer screenUniforms(HelionCamera camera, boolean geometry, boolean water, boolean polished, boolean waves, Wetness wetness, List<Footprint> prints, double seconds, boolean traced) {
         if (screenUniforms == null) {
             screenUniforms = new UniformRing(SCREEN_LABEL, SCREEN_SIZE, resources);
         }
@@ -139,7 +139,7 @@ public final class WaterResources {
                 .putVec4(geometry ? PRESENT : ABSENT, water ? PRESENT : ABSENT, polished ? PRESENT : ABSENT, waves ? PRESENT : ABSENT)
                 .putVec4(wetness.surfaces(), wetness.puddles(), wetness.rain(), wetness.seconds())
                 .putVec4((float) (position.x() % NOISE_PERIOD), (float) (position.y() % NOISE_PERIOD), (float) (position.z() % NOISE_PERIOD), wetness.flash())
-                .putVec4(count, ABSENT, ABSENT, ABSENT);
+                .putVec4(count, traced ? PRESENT : ABSENT, ABSENT, ABSENT);
             for (int index = 0; index < Footprints.MAX_PRINTS; index++) {
                 putFootprint(builder, index < count ? prints.get(prints.size() - count + index) : null, seconds);
             }

@@ -2,11 +2,13 @@ package com.aryston.helion.render.rtx;
 
 import com.aryston.helion.render.atmosphere.SkyLight;
 import com.aryston.helion.render.camera.HelionCamera;
+import com.aryston.helion.render.geometry.GeometryBuffer;
 import com.aryston.helion.render.geometry.TerrainSource;
 import com.aryston.helion.render.geometry.TerrainTextures;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.voxel.VoxelVolumeLayout;
+import com.aryston.helion.render.water.Wetness;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.ResourceHandle;
@@ -30,6 +32,8 @@ public final class RtxReflectionStage implements RenderStage {
     private static final long WHOLE_BUFFER = 0L;
     private static final float UNUSED = 0.0F;
     private static final float TRACED = 1.0F;
+    private static final float NO_PUDDLES = 0.0F;
+    private static final double NOISE_PERIOD = 1024.0;
     private static final float HORIZON = 0.0F;
     private static final Vector3fc NO_LIGHT = new Vector3f(0.0F, 1.0F, 0.0F);
 
@@ -61,11 +65,19 @@ public final class RtxReflectionStage implements RenderStage {
         RtxSectionPos center = Objects.requireNonNull(anchor);
         RtxImage image = resources.reflection(frame.scene().width(), frame.scene().height());
         ByteBuffer constants = resources.reflectionConstants();
-        writeConstants(constants, frame.camera(), center, frame.atmosphere().skyLight());
+        Optional<GeometryBuffer.Targets> geometry = frame.geometry().targets();
+        float puddles = geometry.isPresent() ? frame.water().wetness().map(Wetness::puddles).orElse(NO_PUDDLES) : NO_PUDDLES;
+        writeConstants(constants, frame.camera(), center, frame.atmosphere().skyLight(), puddles);
         ResourceHandle<RenderTarget> surface = frame.water().surface().orElseThrow();
         TerrainTextures textures = terrain.textures();
         FramePass pass = frame.graph().addPass(NAME);
         pass.reads(surface);
+        ResourceHandle<RenderTarget> sceneTarget = frame.targets().scene();
+        pass.reads(sceneTarget);
+        geometry.ifPresent(targets -> {
+            pass.reads(targets.normal());
+            pass.reads(targets.light());
+        });
         pass.disableCulling();
         RtxDevice device = resources.device();
         RtxSectionScene scene = resources.scene();
@@ -81,7 +93,10 @@ public final class RtxReflectionStage implements RenderStage {
                 new RtxBinding.Sampled(handle(Objects.requireNonNull(water.getColorTextureView()))),
                 new RtxBinding.Sampled(handle(textures.atlas())),
                 new RtxBinding.Sampled(handle(textures.lightmap())),
-                new RtxBinding.StorageBuffer(table.buffer(), WHOLE_BUFFER, table.size())
+                new RtxBinding.StorageBuffer(table.buffer(), WHOLE_BUFFER, table.size()),
+                new RtxBinding.Sampled(handle(Objects.requireNonNull(sceneTarget.get().getDepthTextureView()))),
+                new RtxBinding.Sampled(geometry.map(targets -> handle(colorView(targets.normal()))).orElse(handle(Objects.requireNonNull(water.getColorTextureView())))),
+                new RtxBinding.Sampled(geometry.map(targets -> handle(colorView(targets.light()))).orElse(handle(Objects.requireNonNull(water.getColorTextureView()))))
             ));
             if (device.entityTextures()) {
                 bindings.addAll(entityBindings(scene.entitySurfaces(), handle(textures.atlas())));
@@ -108,7 +123,11 @@ public final class RtxReflectionStage implements RenderStage {
         return ((VulkanGpuTextureView) view).vkImageView();
     }
 
-    private static void writeConstants(ByteBuffer constants, HelionCamera camera, RtxSectionPos center, Optional<SkyLight> sky) {
+    private static GpuTextureView colorView(ResourceHandle<RenderTarget> handle) {
+        return Objects.requireNonNull(handle.get().getColorTextureView());
+    }
+
+    private static void writeConstants(ByteBuffer constants, HelionCamera camera, RtxSectionPos center, Optional<SkyLight> sky, float puddles) {
         Vector3dc position = camera.position();
         constants.clear();
         camera.levelViewProjection().invert().get(0, constants);
@@ -117,7 +136,7 @@ public final class RtxReflectionStage implements RenderStage {
             .putFloat((float) (position.y() - center.originY()))
             .putFloat((float) (position.z() - center.originZ()))
             .putFloat(RtxSectionInbox.RADIUS * VoxelVolumeLayout.SECTION_SIZE);
-        constants.putFloat(MAX_DISTANCE).putFloat(UNUSED).putFloat(UNUSED).putFloat(UNUSED);
+        constants.putFloat(MAX_DISTANCE).putFloat((float) (position.x() % NOISE_PERIOD)).putFloat((float) (position.z() % NOISE_PERIOD)).putFloat(puddles);
         Optional<Vector3fc> light = sky.map(RtxReflectionStage::shadowLight).filter(direction -> direction.y() > HORIZON);
         Vector3fc direction = light.orElse(NO_LIGHT);
         constants.putFloat(direction.x()).putFloat(direction.y()).putFloat(direction.z()).putFloat(light.isPresent() ? TRACED : UNUSED);

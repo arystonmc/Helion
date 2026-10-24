@@ -61,6 +61,7 @@ public final class ScreenReflectionStage implements RenderStage {
         boolean water = reflectsWater(frame);
         Wetness wetness = frame.water().wetness().orElse(Wetness.DRY);
         List<Footprint> prints = frame.water().footprints();
+        Optional<GpuTextureView> traced = frame.water().reflections();
         double printSeconds = frame.water().footprintSeconds();
         Optional<ResourceHandle<RenderTarget>> waves = frame.water().waves();
         waves.ifPresent(pass::reads);
@@ -86,7 +87,7 @@ public final class ScreenReflectionStage implements RenderStage {
             FullscreenPass.draw(PASS_LABEL, List.of(reflections.get(), polished.get()), pipeline, renderPass -> {
                 RenderSystem.bindDefaultUniforms(renderPass);
                 sky.ifPresent(color -> color.bind(renderPass));
-                renderPass.setUniform(WaterPipelines.SCREEN_REFLECTION_UNIFORM, resources.screenUniforms(camera, geometry.isPresent(), water, frame.settings().reflections().screenSpace(), waves.isPresent(), wetness, prints, printSeconds));
+                renderPass.setUniform(WaterPipelines.SCREEN_REFLECTION_UNIFORM, resources.screenUniforms(camera, geometry.isPresent(), water, frame.settings().reflections().screenSpace(), waves.isPresent(), wetness, prints, printSeconds, traced.isPresent()));
                 renderPass.setUniform(WaterPipelines.SURFACE_SAMPLER, standIn, nearest);
                 renderPass.setUniform(WaterPipelines.DEPTH_SAMPLER, Objects.requireNonNull(waterTarget.getDepthTextureView()), nearest);
                 renderPass.setUniform(WaterPipelines.SCENE_COLOR_SAMPLER, Objects.requireNonNull(lit.getColorTextureView()), linear);
@@ -95,6 +96,7 @@ public final class ScreenReflectionStage implements RenderStage {
                 renderPass.setUniform(WaterPipelines.GEOMETRY_LIGHT_SAMPLER, geometry.map(targets -> colorView(targets.light())).orElse(standIn), nearest);
                 GpuTextureView waveView = waves.map(handle -> Objects.requireNonNull(handle.get().getColorTextureView())).orElse(standIn);
                 renderPass.setUniform(WaterPipelines.WAVE_SAMPLER, waveView, RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR));
+                renderPass.setUniform(WaterPipelines.REFLECTION_SAMPLER, traced.orElse(standIn), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
             });
             resources.finishScreen();
         }));
