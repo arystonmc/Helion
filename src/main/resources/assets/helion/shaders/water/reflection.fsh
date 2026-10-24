@@ -25,6 +25,7 @@ layout(std140) uniform HelionWaterReflection {
     float RealisticWater;
     float WaterSeconds;
     float LightningFlash;
+    vec4 WaterCameraPosition;
 };
 
 layout(location = 0) in vec2 texCoord;
@@ -79,6 +80,12 @@ const float HELION_DAYLIGHT_FROM = 0.0;
 const float HELION_DAYLIGHT_TO = 0.25;
 const float HELION_FOG_DAYLIGHT = 0.35;
 const float HELION_FLASH_SKY = 4.0;
+const float HELION_FOAM_DEPTH = 0.35;
+const float HELION_FOAM_SCALE = 3.0;
+const float HELION_FOAM_SPEED = 0.35;
+const float HELION_FOAM_FROM = 0.25;
+const float HELION_FOAM_TO = 0.6;
+const float HELION_FOAM_STRENGTH = 0.75;
 
 vec3 helionReflectedSky(vec3 direction, bool water) {
     #ifdef HELION_PHYSICAL_SKY
@@ -134,6 +141,13 @@ float helionCaustics(vec2 position) {
     return 0.5 * (helionCausticLayer(scaled, WaterSeconds) + second);
 }
 
+float helionShoreFoam(vec2 position, float thickness) {
+    float shore = 1.0 - smoothstep(0.0, HELION_FOAM_DEPTH, thickness);
+    vec2 drifting = position * HELION_FOAM_SCALE + vec2(WaterSeconds * HELION_FOAM_SPEED, -WaterSeconds * HELION_FOAM_SPEED * 0.7);
+    float bubbles = helionCausticLayer(drifting, WaterSeconds) + helionCausticLayer(drifting * 1.9, -WaterSeconds);
+    return shore * smoothstep(HELION_FOAM_FROM, HELION_FOAM_TO, bubbles * 0.5 + shore * 0.5) * HELION_FOAM_STRENGTH;
+}
+
 vec3 helionWaterColor(vec3 tint) {
     return mix(tint, HELION_TEAL, HELION_TEAL_SHARE);
 }
@@ -155,13 +169,15 @@ vec3 helionRealisticWater(ivec2 pixel, vec2 screen, vec4 surface, vec3 normal, v
     vec2 refracted = helionRefractedScreen(screen, normal, surface.z, distanceToWater);
     float thickness = textureLod(WaterSurfaceSampler, refracted, 0.0).z;
     vec3 bottom = helionSrgbToLinear(textureLod(RefractionSampler, refracted, 0.0).rgb);
-    vec3 bottomPosition = position + normalize(position) * thickness;
+    vec3 bottomPosition = position + normalize(position) * thickness + WaterCameraPosition.xyz;
     float light = surface.w * surface.w;
     bottom *= 1.0 + helionCaustics(bottomPosition.xz) * HELION_CAUSTIC_STRENGTH * helionDaylight() * light * exp(-thickness * HELION_CAUSTIC_FADE);
     vec3 transmitted = exp(-max(thickness, HELION_WATER_MIN_THICKNESS) * helionWaterExtinction(tint));
     vec3 scattered = helionWaterColor(tint) * helionSrgbToLinear(helionWaterAmbient()) * light * HELION_SCATTER_STRENGTH;
     vec3 water = bottom * transmitted + scattered * (1.0 - transmitted);
     vec3 surfaceColor = mix(water, helionSrgbToLinear(reflection), fresnel) + helionCelestialGlint(reflected, surface.w);
+    float foam = helionShoreFoam(position.xz + WaterCameraPosition.xz, surface.z);
+    surfaceColor = mix(surfaceColor, helionSrgbToLinear(helionWaterAmbient()) * light, foam);
     return helionLinearToSrgb(surfaceColor);
 }
 

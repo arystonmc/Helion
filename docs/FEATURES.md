@@ -216,6 +216,7 @@ Water looks like water instead of a flat blue texture.
 - Clear water: the bottom of shallow water shows through, bent by the waves; deeper water turns dark blue-green
 - Bright sun and moon glints that move with the waves and turn gold at sunset; at night only the moonlit spot shines
 - Moving light patterns (caustics) on the bottom of shallow water by day
+- Foam drifts along shores and around blocks standing in the water
 - From under water you look up through a bright window to the world above, and the surface around it mirrors the depths
 - The color follows the biome: blue oceans, green swamps, the same colors vanilla gives the water
 - Gentle waves with fine ripples, and rings where raindrops hit the water

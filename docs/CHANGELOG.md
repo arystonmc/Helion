@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Foam along shores and around blocks in the water
 - Rain runs down walls in glistening streaks
 - Lightning flashes light up wet ground, puddles and water
 - Realistic water reacts: players, mobs, boats and items leave wakes, falling things make splash rings and raindrops ripple the surface

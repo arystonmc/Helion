@@ -35,6 +35,7 @@ public final class WaterResources {
         .putFloat()
         .putFloat()
         .putFloat()
+        .putVec4()
         .get();
     private static final String SCREEN_LABEL = "Helion Screen Reflection Settings";
     private static final int SCREEN_SIZE = new Std140SizeCalculator()
@@ -112,7 +113,8 @@ public final class WaterResources {
             .putFloat(screen ? PRESENT : ABSENT)
             .putFloat(realistic ? PRESENT : ABSENT)
             .putFloat((float) ((System.nanoTime() / NANOS_PER_SECOND) % SECONDS_PERIOD))
-            .putFloat(flash));
+            .putFloat(flash)
+            .putVec4((float) (camera.position().x() % NOISE_PERIOD), (float) (camera.position().y() % NOISE_PERIOD), (float) (camera.position().z() % NOISE_PERIOD), ABSENT));
     }
 
     Optional<CompiledRenderPipeline> polishedProgram() {

@@ -23,6 +23,10 @@ The owner tested the first version at night and noon and asked for four fixes, w
 
 The water color moved toward the teal of the reference (biome tint mixed 55 % with 0.10, 0.55, 0.52; extinction 0.32, 0.075, 0.06 per block).
 
+## Shore Foam (2026-10-24)
+
+Where the water is thinner than 0.35 blocks along the view ray (at walls, shores and blocks standing in water) the composite mixes in drifting foam: two layers of the caustic line pattern at 3 cells per block, thresholded against the shallowness, up to 0.75 of the sky ambient color. Caustics and foam now use the world position (camera position modulo 1024 in the composite uniform), so they no longer slide with the camera.
+
 ## Puddle Waves (2026-10-24)
 
 While puddles are filling (puddle level above 0.05) the land cells of the field come alive too: the shore mask stores land as 0x80, water as 0xFF, and a cell only takes neighbors of its own class (others count as its own height, a reflecting wall), so lake waves and puddle waves never mix. Land cells damp at 0.93 per step, so a ring stays small. Entities standing on ground step into puddles (impulse up to 0.02 with their speed) and rain drops land on them like on water. The rain wetness pass samples the field over land (repeat, same world mapping) for the puddle normal instead of its procedural rings, at 3.4 times the field slope.
