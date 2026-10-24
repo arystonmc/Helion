@@ -42,6 +42,7 @@ const float HELION_SIMULATION_FADE_END = 60.0;
 const float HELION_SIMULATION_SLOPE_SHARE = 0.85;
 const float HELION_SIMULATION_SLOPE_SCALE = HELION_SIMULATION_CELLS_PER_BLOCK / 2.0 * HELION_SIMULATION_SLOPE_SHARE;
 const float HELION_SIMULATION_ON = 0.5;
+const float HELION_STORM_WAVES = 1.2;
 const float HELION_FLOW_SPEED = 1.6;
 const float HELION_FALLING_TINT = 0.5;
 const float HELION_MIN_DETERMINANT = 1.0e-12;
@@ -76,7 +77,7 @@ vec2 helionSimulatedSlope(vec2 position, float horizontalDistance) {
 }
 
 vec3 helionWaveNormal(vec2 position, float seconds, float horizontalDistance) {
-    vec2 slope = helionSwellSlope(position, seconds);
+    vec2 slope = helionSwellSlope(position, seconds) * (1.0 + WaterRain.x * HELION_STORM_WAVES);
     vec2 ripples = WaterRain.x > 0.0 && WaterRain.z < HELION_SIMULATION_ON ? helionRainRipples(position, WaterRain.y) * WaterRain.x : vec2(0.0);
     vec2 simulated = helionSimulatedSlope(position, horizontalDistance);
     return normalize(vec3(-slope.x * WaveStrength - ripples.x - simulated.x, 1.0, -slope.y * WaveStrength - ripples.y - simulated.y));

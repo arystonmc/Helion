@@ -31,6 +31,10 @@ The surface pass reads the flow direction of flowing water from the texture coor
 
 `VanillaWeatherSource` reports when the camera is in water (`Camera.getFluidInCamera`); `RainWetnessStage`, now active every frame, publishes it in `WaterResults`, and `UnderwaterStage` (pass `underwater`, after transparent geometry, before temporal anti-aliasing) draws one fullscreen premultiplied blend over the scene: extinction by distance (0.16, 0.055, 0.045 per block, 48 blocks for the sky) toward the vanilla water fog color mixed 60 % with teal, darkened at night, plus moving caustics on surfaces below the eye within a few blocks and soft light shafts looking up, both scaled by daylight. Visual test scenes `water_under` (looking up) and `water_under_floor` (looking down from the pool floor).
 
+## Storm Waves (2026-10-24)
+
+The swell slope grows with the rain level up to 2.2 times, so water gets choppy in rain and thunderstorms and calms down when it clears.
+
 ## Shore Foam (2026-10-24)
 
 Where the water is thinner than 0.35 blocks along the view ray (at walls, shores and blocks standing in water) the composite mixes in drifting foam: two layers of the caustic line pattern at 3 cells per block, thresholded against the shallowness, up to 0.75 of the sky ambient color. Caustics and foam now use the world position (camera position modulo 1024 in the composite uniform), so they no longer slide with the camera.

@@ -218,6 +218,7 @@ Water looks like water instead of a flat blue texture.
 - Moving light patterns (caustics) on the bottom of shallow water by day
 - Foam drifts along shores and around blocks standing in the water
 - Rivers carry their waves downstream, and waterfalls are covered in white falling foam
+- Water gets choppy in the rain and calms down when it clears
 - From under water you look up through a bright window to the world above, and the surface around it mirrors the depths
 - Under water the world fades into blue-green with depth, light shafts fall from the surface and caustics dance on the bottom
 - The color follows the biome: blue oceans, green swamps, the same colors vanilla gives the water
