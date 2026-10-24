@@ -21,12 +21,19 @@ public final class RainWetnessStage implements RenderStage {
 
     @Override
     public boolean isActive(FrameContext frame) {
-        return frame.settings().reflections().rainWetness();
+        return true;
     }
 
     @Override
     public void addTo(FrameContext frame) {
-        Wetness wetness = resources.rainWetness().update(weather.weather());
+        WeatherState state = weather.weather();
+        if (state.underwater()) {
+            frame.water().publishUnderwater();
+        }
+        if (!frame.settings().reflections().rainWetness()) {
+            return;
+        }
+        Wetness wetness = resources.rainWetness().update(state);
         if (wetness.visible()) {
             frame.water().publishWetness(wetness);
         }

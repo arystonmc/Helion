@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.material.FogType;
 
 final class VanillaWeatherSource implements WeatherSource {
     private static final double TICKS_PER_SECOND = 20.0;
@@ -27,6 +28,9 @@ final class VanillaWeatherSource implements WeatherSource {
         boolean rainsHere = biome.getPrecipitationAt(camera, level.getSeaLevel()) == Biome.Precipitation.RAIN;
         double seconds = (level.getGameTime() + (double) partialTick) / TICKS_PER_SECOND;
         boolean flashing = ((ClientLevelAccessor) level).helion$skyFlashTime() > 0 && !minecraft.options.hideLightningFlash().get();
-        return new WeatherState(level.getRainLevel(partialTick), seconds, rainsHere, flashing ? FLASH : NO_FLASH, biome.getModifiedClimateSettings().downfall());
+        return new WeatherState(
+            level.getRainLevel(partialTick), seconds, rainsHere, flashing ? FLASH : NO_FLASH, biome.getModifiedClimateSettings().downfall(),
+            minecraft.gameRenderer.mainCamera().getFluidInCamera() == FogType.WATER
+        );
     }
 }

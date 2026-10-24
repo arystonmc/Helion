@@ -34,6 +34,7 @@ public final class WaterPipelines {
     public static final String WAVE_SAMPLER = "WaveSampler";
     public static final String WAVE_UNIFORM = "HelionWaterWaves";
     public static final String SHORE_SAMPLER = "ShoreSampler";
+    public static final String UNDERWATER_UNIFORM = "HelionUnderwater";
     private static final int POLISHED_TARGET = 1;
     private static final String FOG = "Fog";
     private static final String REFLECTION_SHADER = "water/reflection";
@@ -52,6 +53,15 @@ public final class WaterPipelines {
 
     public static final RenderPipeline SCREEN_REFLECTION_PHYSICAL_SKY = screenReflection("water/screen_reflection_physical_sky", PhysicalSkyPipelines.skyColorBindings())
         .withShaderDefine(PHYSICAL_SKY_DEFINE)
+        .build();
+
+    public static final RenderPipeline UNDERWATER = HelionPipelines.fullscreen("water/underwater")
+        .withBindGroupLayout(BindGroupLayout.builder()
+            .withUniform(FOG, UniformType.UNIFORM_BUFFER)
+            .withUniform(UNDERWATER_UNIFORM, UniformType.UNIFORM_BUFFER)
+            .withUniform(SCENE_DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .build())
+        .withColorTargetState(new ColorTargetState(Optional.of(BlendFunction.TRANSLUCENT_PREMULTIPLIED_ALPHA), SCENE_COLOR_FORMAT, ColorTargetState.WRITE_COLOR))
         .build();
 
     public static final RenderPipeline WAVE_STEP = HelionPipelines.fullscreen("water/wave_step")
@@ -74,7 +84,7 @@ public final class WaterPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(REFLECTION, REFLECTION_PHYSICAL_SKY, SCREEN_REFLECTION, SCREEN_REFLECTION_PHYSICAL_SKY, POLISHED_COMPOSITE, WAVE_STEP);
+        return List.of(REFLECTION, REFLECTION_PHYSICAL_SKY, SCREEN_REFLECTION, SCREEN_REFLECTION_PHYSICAL_SKY, POLISHED_COMPOSITE, WAVE_STEP, UNDERWATER);
     }
 
     private static RenderPipeline.Builder screenReflection(String name, BindGroupLayout.Builder bindings) {

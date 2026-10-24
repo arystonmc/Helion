@@ -52,6 +52,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("water_glint", MORNING, EAST, CLOSE_PITCH, VisualTestWorld.POOL_SIDE_CAMERA),
         new VisualTestScene("water_night_close", MIDNIGHT, NORTH, CLOSE_PITCH, VisualTestWorld.POOL_CAMERA),
         new VisualTestScene("water_under", NOON, NORTH, UNDERWATER_PITCH, VisualTestWorld.UNDERWATER_CAMERA),
+        new VisualTestScene("water_under_floor", NOON, NORTH, CLOSE_PITCH, VisualTestWorld.UNDERWATER_CAMERA),
         new VisualTestScene("cave_corner", MIDNIGHT, NORTH, CAVE_PITCH, VisualTestWorld.CAVE_CAMERA),
         new VisualTestScene("wall_leak", MIDNIGHT, EAST, WALL_PITCH, VisualTestWorld.WALL_CAMERA),
         new VisualTestScene("tinted_glass", MIDNIGHT, EAST, TINT_PITCH, VisualTestWorld.TINT_CAMERA),

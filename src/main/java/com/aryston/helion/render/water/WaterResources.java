@@ -37,6 +37,8 @@ public final class WaterResources {
         .putFloat()
         .putVec4()
         .get();
+    private static final String UNDERWATER_LABEL = "Helion Underwater Settings";
+    private static final int UNDERWATER_SIZE = new Std140SizeCalculator().putMat4f().putVec4().putVec4().get();
     private static final String SCREEN_LABEL = "Helion Screen Reflection Settings";
     private static final int SCREEN_SIZE = new Std140SizeCalculator()
         .putMat4f()
@@ -57,6 +59,7 @@ public final class WaterResources {
     private @Nullable UniformRing surfaceUniforms;
     private @Nullable UniformRing reflectionUniforms;
     private @Nullable UniformRing screenUniforms;
+    private @Nullable UniformRing underwaterUniforms;
     private boolean missingScreenPipelineReported;
     private boolean missingPipelinesReported;
 
@@ -134,6 +137,23 @@ public final class WaterResources {
             .putVec4((float) (position.x() % NOISE_PERIOD), (float) (position.y() % NOISE_PERIOD), (float) (position.z() % NOISE_PERIOD), wetness.flash()));
     }
 
+    GpuBuffer underwaterUniforms(HelionCamera camera, float daylight) {
+        if (underwaterUniforms == null) {
+            underwaterUniforms = new UniformRing(UNDERWATER_LABEL, UNDERWATER_SIZE, resources);
+        }
+        Vector3dc position = camera.position();
+        return underwaterUniforms.write(builder -> builder
+            .putMat4f(camera.levelViewProjection().invert())
+            .putVec4((float) (position.x() % NOISE_PERIOD), (float) (position.y() % NOISE_PERIOD), (float) (position.z() % NOISE_PERIOD), daylight)
+            .putVec4((float) ((System.nanoTime() / NANOS_PER_SECOND) % SECONDS_PERIOD), ABSENT, ABSENT, ABSENT));
+    }
+
+    void finishUnderwater() {
+        if (underwaterUniforms != null) {
+            underwaterUniforms.rotate();
+        }
+    }
+
     void finishScreen() {
         if (screenUniforms != null) {
             screenUniforms.rotate();
@@ -163,6 +183,10 @@ public final class WaterResources {
         if (screenUniforms != null) {
             screenUniforms.close();
         }
+        if (underwaterUniforms != null) {
+            underwaterUniforms.close();
+        }
+        underwaterUniforms = null;
         surfaceUniforms = null;
         reflectionUniforms = null;
         screenUniforms = null;

@@ -219,6 +219,7 @@ Water looks like water instead of a flat blue texture.
 - Foam drifts along shores and around blocks standing in the water
 - Rivers carry their waves downstream, and waterfalls are covered in white falling foam
 - From under water you look up through a bright window to the world above, and the surface around it mirrors the depths
+- Under water the world fades into blue-green with depth, light shafts fall from the surface and caustics dance on the bottom
 - The color follows the biome: blue oceans, green swamps, the same colors vanilla gives the water
 - Gentle waves with fine ripples, and rings where raindrops hit the water
 - Living water: players, mobs, boats and items leave wakes, things falling in make splash rings, and every raindrop leaves a ring that spreads and fades; waves bounce back from the shore
