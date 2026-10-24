@@ -31,6 +31,7 @@ public final class WaterResources {
         .get();
     private static final int REFLECTION_SIZE = new Std140SizeCalculator()
         .putMat4f()
+        .putMat4f()
         .putFloat()
         .putFloat()
         .putFloat()
@@ -110,19 +111,20 @@ public final class WaterResources {
         return compiled;
     }
 
-    GpuBuffer reflectionUniforms(HelionCamera camera, boolean traced, boolean screen, boolean realistic, float flash) {
+    GpuBuffer reflectionUniforms(HelionCamera camera, boolean traced, boolean screen, boolean realistic, float flash, boolean clouds) {
         if (reflectionUniforms == null) {
             reflectionUniforms = new UniformRing(REFLECTION_LABEL, REFLECTION_SIZE, resources);
         }
         return reflectionUniforms.write(builder -> builder
             .putMat4f(camera.levelViewProjection().invert())
+            .putMat4f(camera.levelViewProjection())
             .putFloat(REFLECTION_STRENGTH)
             .putFloat(traced ? PRESENT : ABSENT)
             .putFloat(screen ? PRESENT : ABSENT)
             .putFloat(realistic ? PRESENT : ABSENT)
             .putFloat((float) ((System.nanoTime() / NANOS_PER_SECOND) % SECONDS_PERIOD))
             .putFloat(flash)
-            .putVec4((float) (camera.position().x() % NOISE_PERIOD), (float) (camera.position().y() % NOISE_PERIOD), (float) (camera.position().z() % NOISE_PERIOD), ABSENT));
+            .putVec4((float) (camera.position().x() % NOISE_PERIOD), (float) (camera.position().y() % NOISE_PERIOD), (float) (camera.position().z() % NOISE_PERIOD), clouds ? PRESENT : ABSENT));
     }
 
     Optional<CompiledRenderPipeline> polishedProgram() {

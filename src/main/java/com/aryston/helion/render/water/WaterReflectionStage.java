@@ -1,6 +1,7 @@
 package com.aryston.helion.render.water;
 
 import com.aryston.helion.render.atmosphere.SceneSkyColor;
+import com.aryston.helion.render.clouds.SceneCloudPass;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.shader.FullscreenPass;
@@ -54,7 +55,8 @@ public final class WaterReflectionStage implements RenderStage {
             frame.water().screenReflections(),
             frame.water().tint(),
             frame.water().refraction(),
-            frame.atmosphere().skyColor()
+            frame.atmosphere().skyColor(),
+            frame.atmosphere().clouds().map(SceneCloudPass::resolved)
         ));
     }
 
@@ -67,6 +69,7 @@ public final class WaterReflectionStage implements RenderStage {
         private final Optional<ResourceHandle<RenderTarget>> tint;
         private final Optional<ResourceHandle<RenderTarget>> refraction;
         private final Optional<SceneSkyColor> sky;
+        private final Optional<ResourceHandle<RenderTarget>> clouds;
 
         private Composite(
             FrameContext frame,
@@ -76,7 +79,8 @@ public final class WaterReflectionStage implements RenderStage {
             Optional<ResourceHandle<RenderTarget>> screenReflections,
             Optional<ResourceHandle<RenderTarget>> tint,
             Optional<ResourceHandle<RenderTarget>> refraction,
-            Optional<SceneSkyColor> sky
+            Optional<SceneSkyColor> sky,
+            Optional<ResourceHandle<RenderTarget>> clouds
         ) {
             this.frame = frame;
             this.pipeline = pipeline;
@@ -86,6 +90,7 @@ public final class WaterReflectionStage implements RenderStage {
             this.tint = tint;
             this.refraction = refraction;
             this.sky = sky;
+            this.clouds = clouds;
         }
 
         @Override
@@ -95,6 +100,7 @@ public final class WaterReflectionStage implements RenderStage {
             tint.ifPresent(pass::reads);
             refraction.ifPresent(pass::reads);
             sky.ifPresent(color -> color.declareReads(pass));
+            clouds.ifPresent(pass::reads);
         }
 
         @Override
@@ -104,7 +110,7 @@ public final class WaterReflectionStage implements RenderStage {
             FullscreenPass.draw(PASS_LABEL, scene, pipeline, renderPass -> {
                 RenderSystem.bindDefaultUniforms(renderPass);
                 sky.ifPresent(color -> color.bind(renderPass));
-                renderPass.setUniform(WaterPipelines.REFLECTION_UNIFORM, resources.reflectionUniforms(frame.camera(), reflections.isPresent(), screenReflections.isPresent(), refraction.isPresent(), frame.water().wetness().map(Wetness::flash).orElse(NO_FLASH)));
+                renderPass.setUniform(WaterPipelines.REFLECTION_UNIFORM, resources.reflectionUniforms(frame.camera(), reflections.isPresent(), screenReflections.isPresent(), refraction.isPresent(), frame.water().wetness().map(Wetness::flash).orElse(NO_FLASH), clouds.isPresent()));
                 renderPass.setUniform(WaterPipelines.SURFACE_SAMPLER, Objects.requireNonNull(water.getColorTextureView()), nearest);
                 renderPass.setUniform(WaterPipelines.DEPTH_SAMPLER, Objects.requireNonNull(water.getDepthTextureView()), nearest);
                 GpuTextureView standIn = Objects.requireNonNull(water.getColorTextureView());
@@ -113,6 +119,7 @@ public final class WaterReflectionStage implements RenderStage {
                 renderPass.setUniform(WaterPipelines.SCREEN_REFLECTION_SAMPLER, screen, nearest);
                 renderPass.setUniform(WaterPipelines.TINT_SAMPLER, tint.map(WaterReflectionStage::colorView).orElse(standIn), nearest);
                 renderPass.setUniform(WaterPipelines.REFRACTION_SAMPLER, refraction.map(WaterReflectionStage::colorView).orElse(standIn), linear());
+                renderPass.setUniform(WaterPipelines.REFLECTED_CLOUD_SAMPLER, clouds.map(WaterReflectionStage::colorView).orElse(standIn), linear());
             });
             resources.finishReflection();
         }

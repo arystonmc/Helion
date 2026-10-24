@@ -218,6 +218,7 @@ Water looks like water instead of a flat blue texture.
 - Realistic moving light patterns (caustics) on the bottom of shallow water by day, from sunlight bent by the waves
 - Rivers carry their waves downstream, and waterfalls are covered in white falling foam
 - Raindrops leave rings on the water without making it choppy
+- Water reflects the clouds
 - Large, soft natural waves that stretch the reflections; deep water blurs the bottom, and water glows when you look toward the sun across it
 - Rain falls in gusts that sweep across water and wet ground
 - From under water you look up through a bright window to the sky and the world above, and the surface around it mirrors the depths

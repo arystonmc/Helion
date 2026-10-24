@@ -17,9 +17,11 @@ uniform sampler2D ReflectionSampler;
 uniform sampler2D ScreenReflectionSampler;
 uniform sampler2D WaterTintSampler;
 uniform sampler2D RefractionSampler;
+uniform sampler2D ReflectedCloudSampler;
 
 layout(std140) uniform HelionWaterReflection {
     mat4 WaterInverseViewProjection;
+    mat4 WaterViewProjection;
     float ReflectionStrength;
     float TracedReflections;
     float ScreenReflections;
@@ -77,6 +79,8 @@ const vec2 HELION_FOAM_LINES = vec2(2.2, 2.0);
 const vec2 HELION_FOAM_BEND = vec2(1.4, 1.1);
 const float HELION_BRIGHT_FROM = 0.6;
 const float HELION_SKY_BEHIND_MARGIN = 0.01;
+const float HELION_CLOUD_EDGE = 0.08;
+const float HELION_MIN_CLOUD_COVER = 1.0e-3;
 const int HELION_BLUR_TAPS = 6;
 const float HELION_BLUR_GOLDEN = 2.39996323;
 const float HELION_BLUR_PER_BLOCK = 1.2;
@@ -97,9 +101,29 @@ const float HELION_FALL_FOAM_STRETCH = 0.35;
 const float HELION_FALL_FOAM_SPEED = 4.0;
 const float HELION_FALL_FOAM = 0.85;
 
+vec3 helionReflectedClouds(vec3 sky, vec3 direction) {
+    if (WaterCameraPosition.w < HELION_PRESENT || direction.y <= 0.0) {
+        return sky;
+    }
+    vec4 clip = WaterViewProjection * vec4(direction, 0.0);
+    if (clip.w <= 0.0) {
+        return sky;
+    }
+    vec2 screen = clip.xy / clip.w * 0.5 + 0.5;
+    vec2 inside = min(screen, 1.0 - screen);
+    float edge = smoothstep(0.0, HELION_CLOUD_EDGE, min(inside.x, inside.y));
+    if (edge <= 0.0) {
+        return sky;
+    }
+    vec4 clouds = textureLod(ReflectedCloudSampler, screen, 0.0);
+    float cover = (1.0 - clamp(clouds.a, 0.0, 1.0)) * edge;
+    vec3 radiance = clouds.rgb / max(1.0 - clamp(clouds.a, 0.0, 1.0), HELION_MIN_CLOUD_COVER);
+    return mix(sky, helionLinearToSrgb(helionNeutral(radiance)), cover);
+}
+
 vec3 helionReflectedSky(vec3 direction, bool water) {
     #ifdef HELION_PHYSICAL_SKY
-    return water ? helionSkyColor(direction) : helionSkyColorWithCelestials(direction);
+    return helionReflectedClouds(water ? helionSkyColor(direction) : helionSkyColorWithCelestials(direction), direction);
     #else
     return FogColor.rgb;
     #endif
