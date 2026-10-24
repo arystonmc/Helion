@@ -7,6 +7,7 @@
 struct HelionWetSurface {
     float wetness;
     float puddle;
+    float film;
     float darkening;
     float sheen;
     vec3 normal;
@@ -53,7 +54,11 @@ const float HELION_MUD_DARKENING = 0.5;
 const float HELION_MUD_SHEEN = 0.25;
 const float HELION_MUD_PUDDLES = 0.7;
 const float HELION_MUD_RAIN = 0.4;
-const HelionWetSurface HELION_DRY_SURFACE = HelionWetSurface(0.0, 0.0, 0.0, 0.0, vec3(0.0, 1.0, 0.0));
+const float HELION_FILM_WET_FROM = 0.5;
+const float HELION_FILM_RAIN = 0.3;
+const float HELION_MUD_FILM = 0.4;
+const float HELION_FILM_DARKENING = 0.08;
+const HelionWetSurface HELION_DRY_SURFACE = HelionWetSurface(0.0, 0.0, 0.0, 0.0, 0.0, vec3(0.0, 1.0, 0.0));
 
 float helionWetHash(vec2 cell, float periodCells) {
     vec2 wrapped = mod(cell, periodCells);
@@ -121,16 +126,19 @@ HelionWetSurface helionWetSurface(vec4 light, vec3 normal, vec3 worldPosition, v
     float streak = porous || normal.y > HELION_WALL_UP ? 0.0 : helionWallStreaks(normal, worldPosition, wetness.w) * wet * wetness.z;
     float mudPuddles = wetness.y * HELION_MUD_PUDDLES * smoothstep(0.0, HELION_MUD_RAIN, wetness.z);
     float puddle = porous ? 0.0 : helionPuddleMask(worldPosition.xz, muddy ? mudPuddles : wetness.y) * facingUp * exposure;
+    float film = porous ? 0.0 : smoothstep(HELION_FILM_WET_FROM, 1.0, wetness.x) * smoothstep(0.0, HELION_FILM_RAIN, wetness.z) * facingUp * exposure * (muddy ? HELION_MUD_FILM : 1.0);
+    float layer = max(puddle, film);
     float darkening = muddy ? HELION_MUD_DARKENING : porous ? HELION_POROUS_DARKENING : glossy ? HELION_GLOSSY_DARKENING : HELION_ORDINARY_DARKENING;
     float sheen = muddy ? HELION_MUD_SHEEN : porous ? HELION_POROUS_SHEEN : glossy ? HELION_GLOSSY_SHEEN : HELION_ORDINARY_SHEEN;
-    vec2 ripples = puddle <= 0.0 ? vec2(0.0) : simulated ? simulatedSlope : helionRainRipples(worldPosition.xz, wetness.w) * wetness.z;
+    vec2 ripples = layer <= 0.0 ? vec2(0.0) : simulated ? simulatedSlope : helionRainRipples(worldPosition.xz, wetness.w) * wetness.z;
     vec3 puddleNormal = normalize(vec3(-ripples.x, 1.0, -ripples.y));
     return HelionWetSurface(
         wet,
         puddle,
-        min(wet * darkening + puddle * HELION_PUDDLE_DARKENING + streak * HELION_STREAK_DARKENING, 1.0),
-        mix(wet * sheen + streak * HELION_STREAK_SHEEN, 1.0, puddle),
-        normalize(mix(normal, puddleNormal, puddle))
+        film,
+        min(wet * darkening + puddle * HELION_PUDDLE_DARKENING + film * HELION_FILM_DARKENING + streak * HELION_STREAK_DARKENING, 1.0),
+        mix(wet * sheen + streak * HELION_STREAK_SHEEN, 1.0, layer),
+        normalize(mix(normal, puddleNormal, layer))
     );
 }
 

@@ -1,9 +1,9 @@
 package com.aryston.helion.render.water;
 
 public final class RainWetness {
-    private static final float SURFACE_WETTING_SECONDS = 30.0F;
+    private static final float SURFACE_WETTING_SECONDS = 60.0F;
     private static final float SURFACE_DRYING_SECONDS = 90.0F;
-    private static final float PUDDLE_FILLING_SECONDS = 90.0F;
+    private static final float PUDDLE_FILLING_SECONDS = 150.0F;
     private static final float PUDDLE_DRYING_SECONDS = 240.0F;
     private static final double TIME_JUMP_SECONDS = 5.0;
     private static final double SECONDS_PERIOD = 3600.0;

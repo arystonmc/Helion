@@ -7,6 +7,8 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Rain covers every flat surface that holds water with a thin reflecting water layer; puddles stay after the rain
+- Realistic rain: thin faint streaks and small splashes instead of the blue vanilla rain
 - Under water: longer view, sunlight only where it reaches, pitch dark at night, the sky through Snell's window and realistic caustics on the bottom
 - Lakes and oceans roll with a real swell
 - Experimental ray tracing: puddles reflect the world beyond the screen

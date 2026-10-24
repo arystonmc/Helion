@@ -236,7 +236,8 @@ Rain makes the world wet instead of only falling past it.
 - Puddles slowly gather on flat stone, brick, wood and other surfaces that hold water, reflect the sky, lights and the world around them, and ripple where the raindrops land (with ray tracing they also reflect what is off screen); walking through a puddle sends out small rings
 - Sand, gravel, leaves and wool only darken, they soak the water up; snow and magma stay dry
 - Dirt, grass and farmland turn dark and muddy in the rain and gather small muddy puddles in heavy rain
-- Surfaces get wet within half a minute of rain and dry over a minute and a half after it; puddles fill and dry more slowly, faster in deserts and savannas, slower in jungles and swamps
+- Surfaces slowly get wet over a minute of rain and dry over a minute and a half after it; while it rains every flat surface that holds water is covered by a thin reflecting water layer, and puddles fill late and stay for minutes after the rain, drying faster in deserts and savannas, slower in jungles and swamps
+- Realistic rain: thin, faint streaks and small droplet splashes instead of the blue vanilla rain
 - Only where it rains: snowy and dry biomes stay as they are
 - Lightning flashes light up wet ground, puddles and water for a moment
 - A rainbow appears opposite a low sun after the rain, in front of the clouds

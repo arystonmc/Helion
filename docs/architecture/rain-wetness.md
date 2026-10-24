@@ -43,6 +43,12 @@ While `ClientLevel.skyFlashTime` runs (and the hide lightning flash option is of
 
 With ray traced reflections on, `rt_reflection` runs before `ssr` and also traces every geometry buffer pixel that is a puddle above 0.05 (the shader evaluates `helionWetSurface` with the published puddle level, so the mask matches the screen pass), starting at the scene depth with an up normal. `ssr` reads the traced image (flag in `FootprintCount.y`) and uses it where its own march misses instead of the sky, so puddles show what is off screen or hidden. Bindings 7 to 9 of `rtx/reflection.csh` are the scene depth, geometry normal and geometry light; without the geometry buffer the water color stands in and no puddles are traced.
 
+### Water Film and Realistic Rain (2026-10-25)
+
+The owner asked for the SEUS Renewed look while it rains: every surface that holds water gets a thin water layer, and puddles remain after the rain. `helionWetSurface` now returns a `film`: on faces pointing up of every material but porous (muddy at 0.4), it grows with the surface wetness from 0.5 to 1 and with the rain level up to 0.3, so it forms once the ground is half wet and drains within seconds after the rain stops, leaving the puddles (which dry over minutes). The film reflects like a thin puddle: Fresnel from F0 0.12, the screen space march (and the rain ripple normal), 0.08 extra darkening. Surfaces now wet in 60 s (was 30) and puddles fill in 150 s (was 90), so the ground darkens slowly and puddles appear late in the rain. Ray traced reflections still only trace puddles; the film falls back to the sky where the screen march misses.
+
+Vanilla rain is replaced by texture overrides in `assets/minecraft/textures`: thin, faint, pale grey streaks and small grey droplet splashes instead of the blue dashes and blue splash chevrons.
+
 ## Not Yet
 
 - Rain exposure from a height map instead of the sky light, so glass roofs keep the floor dry and the biome is checked per pixel instead of at the camera.
