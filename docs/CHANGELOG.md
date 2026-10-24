@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Rivers carry their waves downstream and waterfalls get falling foam
 - Foam along shores and around blocks in the water
 - Rain runs down walls in glistening streaks
 - Lightning flashes light up wet ground, puddles and water

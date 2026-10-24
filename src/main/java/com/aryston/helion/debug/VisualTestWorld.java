@@ -30,7 +30,10 @@ final class VisualTestWorld {
         new Placement(-3, 0, -9, "end_rod"),
         new Placement(0, 0, -9, "jack_o_lantern[facing=south]"),
         new Placement(3, -1, -9, "redstone_block"),
-        new Placement(3, 0, -9, "redstone_lamp[lit=true]")
+        new Placement(3, 0, -9, "redstone_lamp[lit=true]"),
+        new Placement(-4, 0, -11, "stone"),
+        new Placement(-4, 1, -11, "stone"),
+        new Placement(-4, 2, -11, "water")
     );
     private static final Volume CANOPY = new Volume(new BlockPos(4, 4, -5), new BlockPos(6, 4, -3));
     private static final String CANOPY_BLOCK = "oak_leaves[persistent=true]";
@@ -52,7 +55,7 @@ final class VisualTestWorld {
         new Volume(new BlockPos(-6, 2, -5), new BlockPos(-4, 2, -3))
     );
 
-    private static final BlockPos POOL_COW = new BlockPos(-4, 0, -11);
+    private static final BlockPos POOL_COW = new BlockPos(-2, 0, -11);
     private static final List<Summon> ENTITIES = List.of(
         new Summon(-1, 0, -3, "armor_stand"),
         new Summon(1, 0, -3, "cow"),

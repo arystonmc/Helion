@@ -86,6 +86,11 @@ const float HELION_FOAM_SPEED = 0.35;
 const float HELION_FOAM_FROM = 0.25;
 const float HELION_FOAM_TO = 0.6;
 const float HELION_FOAM_STRENGTH = 0.75;
+const float HELION_FALLING_MARK = 0.75;
+const float HELION_FALL_FOAM_SCALE = 3.0;
+const float HELION_FALL_FOAM_STRETCH = 0.35;
+const float HELION_FALL_FOAM_SPEED = 4.0;
+const float HELION_FALL_FOAM = 0.85;
 
 vec3 helionReflectedSky(vec3 direction, bool water) {
     #ifdef HELION_PHYSICAL_SKY
@@ -164,7 +169,8 @@ vec2 helionRefractedScreen(vec2 screen, vec3 normal, float thickness, float dist
 }
 
 vec3 helionRealisticWater(ivec2 pixel, vec2 screen, vec4 surface, vec3 normal, vec3 position, vec3 reflected, vec3 reflection, float fresnel) {
-    vec3 tint = helionSrgbToLinear(texelFetch(WaterTintSampler, pixel, 0).rgb);
+    vec4 tintSample = texelFetch(WaterTintSampler, pixel, 0);
+    vec3 tint = helionSrgbToLinear(tintSample.rgb);
     float distanceToWater = length(position);
     vec2 refracted = helionRefractedScreen(screen, normal, surface.z, distanceToWater);
     float thickness = textureLod(WaterSurfaceSampler, refracted, 0.0).z;
@@ -176,7 +182,12 @@ vec3 helionRealisticWater(ivec2 pixel, vec2 screen, vec4 surface, vec3 normal, v
     vec3 scattered = helionWaterColor(tint) * helionSrgbToLinear(helionWaterAmbient()) * light * HELION_SCATTER_STRENGTH;
     vec3 water = bottom * transmitted + scattered * (1.0 - transmitted);
     vec3 surfaceColor = mix(water, helionSrgbToLinear(reflection), fresnel) + helionCelestialGlint(reflected, surface.w);
-    float foam = helionShoreFoam(position.xz + WaterCameraPosition.xz, surface.z);
+    vec3 world = position + WaterCameraPosition.xyz;
+    float foam = helionShoreFoam(world.xz, surface.z);
+    if (tintSample.a < HELION_FALLING_MARK) {
+        vec2 falling = vec2((world.x + world.z) * HELION_FALL_FOAM_SCALE, (world.y + WaterSeconds * HELION_FALL_FOAM_SPEED) * HELION_FALL_FOAM_STRETCH);
+        foam = max(foam, smoothstep(HELION_FOAM_FROM, HELION_FOAM_TO, helionCausticLayer(falling, WaterSeconds)) * HELION_FALL_FOAM);
+    }
     surfaceColor = mix(surfaceColor, helionSrgbToLinear(helionWaterAmbient()) * light, foam);
     return helionLinearToSrgb(surfaceColor);
 }

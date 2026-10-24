@@ -23,6 +23,10 @@ The owner tested the first version at night and noon and asked for four fixes, w
 
 The water color moved toward the teal of the reference (biome tint mixed 55 % with 0.10, 0.55, 0.52; extinction 0.32, 0.075, 0.06 per block).
 
+## Flowing Water and Waterfalls (2026-10-24)
+
+The surface pass reads the flow direction of flowing water from the texture coordinate derivatives (the world direction in which the flow sprite's v grows, taken before any branch) and shifts the swell along it at 1.6 blocks per second, so rivers carry their waves downstream. Steep flowing faces (waterfalls) write 0.5 into the alpha of the tint target; the composite covers them with falling foam streaks (the caustic line pattern stretched along the fall, scrolling down at 4 blocks per second, up to 0.85 strength). The test world has a waterfall from a two block pillar into the far end of the pool.
+
 ## Shore Foam (2026-10-24)
 
 Where the water is thinner than 0.35 blocks along the view ray (at walls, shores and blocks standing in water) the composite mixes in drifting foam: two layers of the caustic line pattern at 3 cells per block, thresholded against the shallowness, up to 0.75 of the sky ambient color. Caustics and foam now use the world position (camera position modulo 1024 in the composite uniform), so they no longer slide with the camera.

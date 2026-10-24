@@ -42,9 +42,23 @@ const float HELION_SIMULATION_FADE_END = 60.0;
 const float HELION_SIMULATION_SLOPE_SHARE = 0.85;
 const float HELION_SIMULATION_SLOPE_SCALE = HELION_SIMULATION_CELLS_PER_BLOCK / 2.0 * HELION_SIMULATION_SLOPE_SHARE;
 const float HELION_SIMULATION_ON = 0.5;
+const float HELION_FLOW_SPEED = 1.6;
+const float HELION_FALLING_TINT = 0.5;
+const float HELION_MIN_DETERMINANT = 1.0e-12;
 
 bool helionInside(vec2 uv, vec4 rect) {
     return all(greaterThanEqual(uv, rect.xy - HELION_SPRITE_EDGE)) && all(lessThanEqual(uv, rect.zw + HELION_SPRITE_EDGE));
+}
+
+vec2 helionFlowDirection(vec3 positionX, vec3 positionY, vec2 uvX, vec2 uvY) {
+    float determinant = uvX.x * uvY.y - uvY.x * uvX.y;
+    if (abs(determinant) < HELION_MIN_DETERMINANT) {
+        return vec2(0.0);
+    }
+    vec2 screen = vec2(-uvY.x, uvX.x) / determinant;
+    vec3 along = positionX * screen.x + positionY * screen.y;
+    float length2 = dot(along.xz, along.xz);
+    return length2 > 0.0 ? along.xz * inversesqrt(length2) : vec2(0.0);
 }
 
 vec2 helionSimulatedSlope(vec2 position, float horizontalDistance) {
@@ -80,6 +94,7 @@ float helionWaterThickness(float sceneDepth) {
 void main() {
     vec4 texel = texture(Sampler0, texCoord0);
     vec3 normal = normalize(cross(dFdx(cameraRelativePosition), dFdy(cameraRelativePosition)));
+    vec2 flow = helionFlowDirection(dFdx(cameraRelativePosition), dFdy(cameraRelativePosition), dFdx(texCoord0), dFdy(texCoord0));
     #ifdef HELION_GLOSSY_ONLY
     if (texture(GlossySampler, texCoord0).r < HELION_GLOSSY_CELL) {
         discard;
@@ -101,11 +116,15 @@ void main() {
         waterTint = HELION_NO_TINT;
         return;
     }
+    bool flowing = helionInside(texCoord0, WaterFlow);
+    float seconds = GameTime * HELION_SECONDS_PER_DAY;
+    vec2 flowing2d = flowing ? flow * seconds * HELION_FLOW_SPEED : vec2(0.0);
+    bool falling = flowing && abs(normal.y) < HELION_FLAT_SURFACE;
     if (normal.y > HELION_FLAT_SURFACE) {
-        normal = helionWaveNormal(wavePosition, GameTime * HELION_SECONDS_PER_DAY, length(cameraRelativePosition.xz));
+        normal = helionWaveNormal(wavePosition - flowing2d, seconds, length(cameraRelativePosition.xz));
     } else if (normal.y < -HELION_FLAT_SURFACE) {
         normal = -helionWaveNormal(wavePosition, GameTime * HELION_SECONDS_PER_DAY, length(cameraRelativePosition.xz));
     }
     waterSurface = vec4(helionEncodeOctahedral(normal), helionWaterThickness(sceneDepth), skyLight);
-    waterTint = vec4(vertexTint, HELION_TINT_PRESENT);
+    waterTint = vec4(vertexTint, falling ? HELION_FALLING_TINT : HELION_TINT_PRESENT);
 }
