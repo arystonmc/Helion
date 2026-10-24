@@ -8,6 +8,8 @@ public final class RainWetness {
     private static final double TIME_JUMP_SECONDS = 5.0;
     private static final double SECONDS_PERIOD = 3600.0;
     private static final double NO_TIME = -1.0;
+    private static final float DRY_CLIMATE_DRYING = 0.4F;
+    private static final float HUMID_CLIMATE_DRYING = 2.0F;
 
     private float surfaces;
     private float puddles;
@@ -19,8 +21,9 @@ public final class RainWetness {
         lastSeconds = weather.seconds();
         if (elapsed >= 0.0 && elapsed <= TIME_JUMP_SECONDS) {
             float seconds = (float) elapsed;
-            surfaces = approach(surfaces, raining, seconds, SURFACE_WETTING_SECONDS, SURFACE_DRYING_SECONDS);
-            puddles = approach(puddles, Math.min(raining, surfaces), seconds, PUDDLE_FILLING_SECONDS, PUDDLE_DRYING_SECONDS);
+            float drying = DRY_CLIMATE_DRYING + (HUMID_CLIMATE_DRYING - DRY_CLIMATE_DRYING) * Math.clamp(weather.humidity(), 0.0F, 1.0F);
+            surfaces = approach(surfaces, raining, seconds, SURFACE_WETTING_SECONDS, SURFACE_DRYING_SECONDS * drying);
+            puddles = approach(puddles, Math.min(raining, surfaces), seconds, PUDDLE_FILLING_SECONDS, PUDDLE_DRYING_SECONDS * drying);
         }
         return new Wetness(surfaces, puddles, raining, (float) (weather.seconds() % SECONDS_PERIOD), weather.flash());
     }

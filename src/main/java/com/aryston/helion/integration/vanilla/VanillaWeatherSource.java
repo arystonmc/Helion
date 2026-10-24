@@ -23,9 +23,10 @@ final class VanillaWeatherSource implements WeatherSource {
         }
         float partialTick = minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(PAUSED_TICK);
         BlockPos camera = minecraft.gameRenderer.mainCamera().blockPosition();
-        boolean rainsHere = level.getBiome(camera).value().getPrecipitationAt(camera, level.getSeaLevel()) == Biome.Precipitation.RAIN;
+        Biome biome = level.getBiome(camera).value();
+        boolean rainsHere = biome.getPrecipitationAt(camera, level.getSeaLevel()) == Biome.Precipitation.RAIN;
         double seconds = (level.getGameTime() + (double) partialTick) / TICKS_PER_SECOND;
         boolean flashing = ((ClientLevelAccessor) level).helion$skyFlashTime() > 0 && !minecraft.options.hideLightningFlash().get();
-        return new WeatherState(level.getRainLevel(partialTick), seconds, rainsHere, flashing ? FLASH : NO_FLASH);
+        return new WeatherState(level.getRainLevel(partialTick), seconds, rainsHere, flashing ? FLASH : NO_FLASH, biome.getModifiedClimateSettings().downfall());
     }
 }
