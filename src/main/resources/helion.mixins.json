@@ -23,6 +23,7 @@
     "VulkanDeviceAccessor",
     "VulkanFeatureSetsMixin",
     "VulkanGpuBufferMixin",
+    "WaterDropParticleMixin",
     "WaterFogEnvironmentMixin"
   ],
   "injectors": {

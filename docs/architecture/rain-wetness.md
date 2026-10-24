@@ -47,7 +47,7 @@ With ray traced reflections on, `rt_reflection` runs before `ssr` and also trace
 
 The owner asked for the SEUS Renewed look while it rains: every surface that holds water gets a thin water layer, and puddles remain after the rain. `helionWetSurface` now returns a `film`: on faces pointing up of every material but porous (muddy at 0.4), it grows with the surface wetness from 0.5 to 1 and with the rain level up to 0.3, so it forms once the ground is half wet and drains within seconds after the rain stops, leaving the puddles (which dry over minutes). The film reflects like a thin puddle: Fresnel from F0 0.12, the screen space march (and the rain ripple normal), 0.08 extra darkening. Surfaces now wet in 60 s (was 30) and puddles fill in 150 s (was 90), so the ground darkens slowly and puddles appear late in the rain. Ray traced reflections still only trace puddles; the film falls back to the sky where the screen march misses.
 
-Vanilla rain is replaced by texture overrides in `assets/minecraft/textures`: thin, faint, pale grey streaks and small grey droplet splashes instead of the blue dashes and blue splash chevrons.
+Vanilla rain is replaced by texture overrides in `assets/minecraft/textures`: soft, faint, pale streaks at four times the vanilla resolution (the weather UVs are normalized, so a larger texture only sharpens it) and soft droplet splashes, which `WaterDropParticleMixin` blends (the owner found the first, alpha tested splashes broken and the first streaks too dense).
 
 ## Not Yet
 

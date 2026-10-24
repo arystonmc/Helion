@@ -90,6 +90,10 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Path: `src/main/java/com/aryston/helion/mixin/WaterFogEnvironmentMixin.java`
 - Role: After `WaterFogEnvironment.setupFog`, replaces the environmental, sky and cloud fog end with `HelionUnderwaterFog.extendedEnd`, so the realistic underwater pass, not the vanilla fog, limits how far the player sees under water.
 
+#### WaterDropParticleMixin
+- Path: `src/main/java/com/aryston/helion/mixin/WaterDropParticleMixin.java`
+- Role: Draws `WaterDropParticle` (rain drops hitting the ground and water splashes) in the translucent particle layer instead of the alpha tested one, so the soft splash textures blend instead of showing as blocky pixels.
+
 #### SectionCompilerMixin
 - Path: `src/main/java/com/aryston/helion/mixin/SectionCompilerMixin.java`
 - Role: Hands the result of every `SectionCompiler.compile` (on the section compile worker) to `RtxSectionCapture`, which copies the solid and cutout quad positions for ray tracing.
