@@ -89,3 +89,12 @@ The owner wants the water, ocean, rain film and ripples to look like SEUS Renewe
 2. Rings: two drops per cell of 1/3 block, random sizes from 0.55 to 1, radius up to 0.38 blocks, strength 0.28, fading with the square of their age, so rings overlap like real rain instead of a regular grid.
 3. Color: clear extinction 0.30, 0.06, 0.05 per block, scattering toward a brighter turquoise (0.08, 0.62, 0.66, 65 % of the biome tint, strength 0.55), Fresnel F0 0.035.
 4. Waves: the small swell octaves are lower (heights 0.075, 0.03, 0.01, 0.004, 0.0015), and the swell slope falls to 35 % from 12 to 80 blocks, so the water reads as a smooth mirror in the distance with soft large waves near the camera.
+
+## Techniques Studied in SEUS Renewed (2026-10-25)
+
+The owner asked to study SEUS Renewed's water and do better without copying (project rule T1: restrictive licenses are for ideas only). The ideas taken, all implemented in Helion's own code and parameters:
+
+1. Waves are large and crested, not fine noise: `helionSwellHeight` now sums six gradient noise octaves from wavelengths of about 14 blocks down to half a block, each rotated, sheared and stretched across the wind so the waves are long, and the three largest turned into ridges (one minus the smoothed absolute noise) so they meet in sharp crest lines. The slope uses central differences with a probe of at least 0.6 times the pixel footprint, so distant water is filtered instead of aliased (SEUS uses a fixed probe).
+2. The refracted bottom is blurred by depth (six golden-angle taps, 1.2 pixels per block of water, at most 6) and dispersed (red, green and blue at 0.92, 1 and 1.1 times the refraction offset), so deep water looks soft and edges show a faint color fringe.
+3. Sunlight scatters forward inside the water: the refracted view ray against the sun direction drives a Henyey-Greenstein phase (g 0.7) in the sun's hue, added to the water's scattered light, so water glows toward the sun.
+4. Rain falls in gusts: drop rings are scaled from 0.4 to 1.35 by a large noise (20 blocks) drifting with the wind, on water and on wet ground.

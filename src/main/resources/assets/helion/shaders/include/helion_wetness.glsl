@@ -46,6 +46,12 @@ const vec2 HELION_RIPPLE_OFFSET_SIZE = vec2(11.3, 2.9);
 const vec2 HELION_RIPPLE_DROP_OFFSET = vec2(517.0, 263.0);
 const int HELION_RIPPLE_DROPS = 2;
 const float HELION_RIPPLE_SMALLEST = 0.55;
+const vec2 HELION_GUST_DRIFT = vec2(1.4, 0.5);
+const float HELION_GUST_SCALE = 1.0 / 20.0;
+const float HELION_GUST_LIGHT = 0.4;
+const float HELION_GUST_HEAVY = 1.35;
+const float HELION_GUST_FROM = 0.3;
+const float HELION_GUST_TO = 0.75;
 const float HELION_STREAK_WIDTH = 3.0;
 const float HELION_STREAK_LENGTH = 0.35;
 const float HELION_STREAK_SPEED = 0.9;
@@ -92,6 +98,11 @@ float helionPuddleMask(vec2 position, float puddles) {
     return smoothstep(threshold, threshold + HELION_PUDDLE_EDGE, noise);
 }
 
+float helionRainGust(vec2 position, float seconds) {
+    float gust = helionWetNoise(position + seconds * HELION_GUST_DRIFT, HELION_GUST_SCALE);
+    return mix(HELION_GUST_LIGHT, HELION_GUST_HEAVY, smoothstep(HELION_GUST_FROM, HELION_GUST_TO, gust));
+}
+
 vec2 helionRainRipples(vec2 position, float seconds) {
     float periodCells = HELION_WET_NOISE_PERIOD * HELION_RIPPLE_DENSITY;
     vec2 home = floor(position * HELION_RIPPLE_DENSITY);
@@ -113,7 +124,7 @@ vec2 helionRainRipples(vec2 position, float seconds) {
             }
         }
     }
-    return tilt * HELION_RIPPLE_STRENGTH;
+    return tilt * HELION_RIPPLE_STRENGTH * helionRainGust(position, seconds);
 }
 
 float helionWallStreaks(vec3 normal, vec3 worldPosition, float seconds) {

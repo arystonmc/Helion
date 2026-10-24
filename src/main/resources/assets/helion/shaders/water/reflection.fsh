@@ -77,6 +77,13 @@ const vec2 HELION_FOAM_LINES = vec2(2.2, 2.0);
 const vec2 HELION_FOAM_BEND = vec2(1.4, 1.1);
 const float HELION_BRIGHT_FROM = 0.6;
 const float HELION_SKY_BEHIND_MARGIN = 0.01;
+const int HELION_BLUR_TAPS = 6;
+const float HELION_BLUR_GOLDEN = 2.39996323;
+const float HELION_BLUR_PER_BLOCK = 1.2;
+const float HELION_BLUR_MAX = 6.0;
+const vec3 HELION_DISPERSION = vec3(0.92, 1.0, 1.1);
+const float HELION_SCATTER_G = 0.7;
+const float HELION_SUN_SCATTER = 0.35;
 const float HELION_BRIGHT_REFLECTANCE = 0.5;
 const float HELION_DAYLIGHT_FROM = 0.0;
 const float HELION_DAYLIGHT_TO = 0.25;
@@ -153,19 +160,50 @@ vec2 helionRefractedScreen(vec2 screen, vec3 normal, float thickness, float dist
     return helionIsWater(refractedSurface) ? refracted : screen;
 }
 
+vec3 helionRefractedBottom(vec2 screen, vec2 refracted, float thickness) {
+    vec2 offset = refracted - screen;
+    vec2 texel = 1.0 / vec2(textureSize(RefractionSampler, 0));
+    float radius = min(thickness * HELION_BLUR_PER_BLOCK, HELION_BLUR_MAX);
+    vec3 sum = vec3(0.0);
+    for (int tap = 0; tap < HELION_BLUR_TAPS; tap++) {
+        float angle = float(tap) * HELION_BLUR_GOLDEN + WaterSeconds;
+        vec2 jitter = vec2(cos(angle), sin(angle)) * radius * sqrt((float(tap) + 0.5) / float(HELION_BLUR_TAPS)) * texel;
+        vec2 base = screen + jitter;
+        sum += vec3(
+            textureLod(RefractionSampler, clamp(base + offset * HELION_DISPERSION.r, vec2(0.0), vec2(1.0)), 0.0).r,
+            textureLod(RefractionSampler, clamp(base + offset * HELION_DISPERSION.g, vec2(0.0), vec2(1.0)), 0.0).g,
+            textureLod(RefractionSampler, clamp(base + offset * HELION_DISPERSION.b, vec2(0.0), vec2(1.0)), 0.0).b
+        );
+    }
+    return helionSrgbToLinear(sum / float(HELION_BLUR_TAPS));
+}
+
+vec3 helionSunScatter(vec3 view, vec3 normal) {
+    #ifdef HELION_PHYSICAL_SKY
+    vec3 inside = refract(view, normal, 1.0 / HELION_WATER_IOR);
+    float cosine = dot(inside, SunDirection);
+    float phase = (1.0 - HELION_SCATTER_G * HELION_SCATTER_G) / pow(1.0 + HELION_SCATTER_G * HELION_SCATTER_G - 2.0 * HELION_SCATTER_G * cosine, 1.5);
+    vec3 nearSun = helionSkyRadiance(SunDirection);
+    vec3 sunHue = nearSun / max(max(nearSun.r, nearSun.g), max(nearSun.b, HELION_MIN_CHANNEL));
+    return sunHue * phase * HELION_SUN_SCATTER * smoothstep(-HELION_SUN_HORIZON, HELION_SUN_HORIZON, SunDirection.y) * RainBrightness;
+    #else
+    return vec3(0.0);
+    #endif
+}
+
 vec3 helionRealisticWater(ivec2 pixel, vec2 screen, vec4 surface, vec3 normal, vec3 position, vec3 reflected, vec3 reflection, float fresnel, float hit) {
     vec4 tintSample = texelFetch(WaterTintSampler, pixel, 0);
     vec3 tint = helionSrgbToLinear(tintSample.rgb);
     float distanceToWater = length(position);
     vec2 refracted = helionRefractedScreen(screen, normal, surface.z, distanceToWater);
     float thickness = textureLod(WaterSurfaceSampler, refracted, 0.0).z;
-    vec3 bottom = helionSrgbToLinear(textureLod(RefractionSampler, refracted, 0.0).rgb);
+    vec3 bottom = helionRefractedBottom(screen, refracted, thickness);
     vec3 bottomPosition = position + normalize(position) * thickness + WaterCameraPosition.xyz;
     float light = surface.w * surface.w;
     float causticShare = HELION_CAUSTIC_STRENGTH * helionDaylight() * light * exp(-thickness * HELION_CAUSTIC_FADE) * (1.0 - smoothstep(HELION_CAUSTIC_NEAR, HELION_CAUSTIC_FAR, distanceToWater));
     bottom *= mix(1.0, helionCausticLight(bottomPosition.xz, thickness, WaterSeconds), causticShare);
     vec3 transmitted = exp(-max(thickness, HELION_WATER_MIN_THICKNESS) * helionWaterExtinction(tint));
-    vec3 scattered = helionWaterColor(tint) * helionSrgbToLinear(helionWaterAmbient()) * light * HELION_SCATTER_STRENGTH;
+    vec3 scattered = helionWaterColor(tint) * (helionSrgbToLinear(helionWaterAmbient()) + helionSunScatter(normalize(position), normal)) * light * HELION_SCATTER_STRENGTH;
     vec3 water = bottom * transmitted + scattered * (1.0 - transmitted);
     vec3 mirrored = helionSrgbToLinear(reflection);
     float bright = smoothstep(HELION_BRIGHT_FROM, 1.0, max(max(mirrored.r, mirrored.g), mirrored.b)) * hit;

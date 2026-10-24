@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Realistic water: large crested waves, a depth blurred bottom with a faint color fringe, sun glow through the water and rain gusts
 - Lava: dark crust drifts over glowing lava with bright cracks, and the air shimmers above it
 - Rain covers every flat surface that holds water with a thin reflecting water layer; puddles stay after the rain
 - Realistic rain: thin faint streaks and small splashes instead of the blue vanilla rain
