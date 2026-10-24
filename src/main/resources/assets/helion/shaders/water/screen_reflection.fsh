@@ -55,7 +55,8 @@ const float HELION_POLISHED_REACH = 24.0;
 const float HELION_FRESNEL_POWER = 5.0;
 const float HELION_WET_F0 = 0.02;
 const float HELION_PUDDLE_F0 = 0.3;
-const float HELION_FILM_F0 = 0.12;
+const float HELION_FILM_F0 = 0.2;
+const float HELION_RIPPLE_CATCH = 4.0;
 const float HELION_PUDDLE_MARCH = 0.05;
 const float HELION_WET_REACH = 48.0;
 const float HELION_PUDDLE_WAVE_TEXELS = 1024.0;
@@ -225,6 +226,7 @@ vec4 helionSurfaceSheen(ivec2 pixel, vec2 screen) {
         float fade = clamp(1.0 - reach / (polished ? HELION_POLISHED_REACH : HELION_WET_REACH), 0.0, 1.0);
         reflection = mix(missed, hit.rgb, hit.a * fade);
     }
+    reflection *= 1.0 + length(normal.xz) * HELION_RIPPLE_CATCH * max(wet.puddle, wet.film);
     float kept = (1.0 - wet.darkening) * (1.0 - wetWeight);
     return vec4(reflection * (polishedWeight + wetWeight), 1.0 - kept);
 }

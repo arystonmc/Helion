@@ -49,6 +49,8 @@ The owner asked for the SEUS Renewed look while it rains: every surface that hol
 
 Vanilla rain is replaced by texture overrides in `assets/minecraft/textures`: soft, faint, pale streaks at four times the vanilla resolution (the weather UVs are normalized, so a larger texture only sharpens it) and soft droplet splashes, which `WaterDropParticleMixin` blends (the owner found the first, alpha tested splashes broken and the first streaks too dense).
 
+The film now reflects from F0 0.2, and the ripple normal brightens its reflection (by four times the tilt), so rings catch the light on wet ground (2026-10-25).
+
 ## Not Yet
 
 - Rain exposure from a height map instead of the sky light, so glass roofs keep the floor dry and the biome is checked per pixel instead of at the camera.

@@ -80,3 +80,12 @@ Lava has its own material class: `VanillaGlossyCells` marks `block/lava_still` (
 3. The surface is not displaced: lava is opaque terrain drawn by the geometry buffer pipelines, and the swells already show in the crust.
 
 Visual test `lava_pool`, `lava_pool_night` (a 7 x 7 lava pool east of the test area).
+
+## Toward the SEUS Renewed Look (2026-10-25)
+
+The owner wants the water, ocean, rain film and ripples to look like SEUS Renewed (used only as a visual reference from screenshots; its license forbids reusing its code or textures). First step:
+
+1. Rain no longer drops impulses into the simulated wave field on water (that read as trembling); water in rain only gets the procedural drop rings, 1.6 times stronger.
+2. Rings: two drops per cell of 1/3 block, random sizes from 0.55 to 1, radius up to 0.38 blocks, strength 0.28, fading with the square of their age, so rings overlap like real rain instead of a regular grid.
+3. Color: clear extinction 0.30, 0.06, 0.05 per block, scattering toward a brighter turquoise (0.08, 0.62, 0.66, 65 % of the biome tint, strength 0.55), Fresnel F0 0.035.
+4. Waves: the small swell octaves are lower (heights 0.075, 0.03, 0.01, 0.004, 0.0015), and the swell slope falls to 35 % from 12 to 80 blocks, so the water reads as a smooth mirror in the distance with soft large waves near the camera.

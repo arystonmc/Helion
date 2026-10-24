@@ -35,13 +35,17 @@ const float HELION_POROUS_SHEEN = 0.08;
 const float HELION_GLOSSY_SHEEN = 0.6;
 const float HELION_RIPPLE_DENSITY = 3.0;
 const float HELION_RIPPLE_RATE = 1.3;
-const float HELION_RIPPLE_RADIUS = 0.3;
+const float HELION_RIPPLE_RADIUS = 0.38;
 const float HELION_RIPPLE_FREQUENCY = 40.0;
 const float HELION_RIPPLE_WIDTH = 18.0;
-const float HELION_RIPPLE_STRENGTH = 0.2;
+const float HELION_RIPPLE_STRENGTH = 0.28;
 const float HELION_RIPPLE_MIN_DISTANCE = 1.0e-3;
 const vec2 HELION_RIPPLE_OFFSET_X = vec2(3.1, 1.7);
 const vec2 HELION_RIPPLE_OFFSET_Z = vec2(7.7, 5.3);
+const vec2 HELION_RIPPLE_OFFSET_SIZE = vec2(11.3, 2.9);
+const vec2 HELION_RIPPLE_DROP_OFFSET = vec2(517.0, 263.0);
+const int HELION_RIPPLE_DROPS = 2;
+const float HELION_RIPPLE_SMALLEST = 0.55;
 const float HELION_STREAK_WIDTH = 3.0;
 const float HELION_STREAK_LENGTH = 0.35;
 const float HELION_STREAK_SPEED = 0.9;
@@ -95,13 +99,18 @@ vec2 helionRainRipples(vec2 position, float seconds) {
     for (int x = -1; x <= 1; x++) {
         for (int z = -1; z <= 1; z++) {
             vec2 cell = home + vec2(x, z);
-            vec2 jitter = vec2(helionWetHash(cell + HELION_RIPPLE_OFFSET_X, periodCells), helionWetHash(cell + HELION_RIPPLE_OFFSET_Z, periodCells));
-            vec2 offset = position - (cell + jitter) / HELION_RIPPLE_DENSITY;
-            float distanceToDrop = length(offset);
-            float age = fract(seconds * HELION_RIPPLE_RATE + helionWetHash(cell, periodCells));
-            float fromRing = distanceToDrop - age * HELION_RIPPLE_RADIUS;
-            float ring = sin(fromRing * HELION_RIPPLE_FREQUENCY) * exp(-fromRing * fromRing * HELION_RIPPLE_WIDTH * HELION_RIPPLE_WIDTH) * (1.0 - age);
-            tilt += distanceToDrop > HELION_RIPPLE_MIN_DISTANCE ? offset / distanceToDrop * ring : vec2(0.0);
+            for (int drop = 0; drop < HELION_RIPPLE_DROPS; drop++) {
+                vec2 seed = cell + float(drop) * HELION_RIPPLE_DROP_OFFSET;
+                vec2 jitter = vec2(helionWetHash(seed + HELION_RIPPLE_OFFSET_X, periodCells), helionWetHash(seed + HELION_RIPPLE_OFFSET_Z, periodCells));
+                vec2 offset = position - (cell + jitter) / HELION_RIPPLE_DENSITY;
+                float distanceToDrop = length(offset);
+                float age = fract(seconds * HELION_RIPPLE_RATE + helionWetHash(seed, periodCells));
+                float size = mix(HELION_RIPPLE_SMALLEST, 1.0, helionWetHash(seed + HELION_RIPPLE_OFFSET_SIZE, periodCells));
+                float fromRing = distanceToDrop - age * HELION_RIPPLE_RADIUS * size;
+                float fade = (1.0 - age) * (1.0 - age);
+                float ring = sin(fromRing * HELION_RIPPLE_FREQUENCY) * exp(-fromRing * fromRing * HELION_RIPPLE_WIDTH * HELION_RIPPLE_WIDTH) * fade * size;
+                tilt += distanceToDrop > HELION_RIPPLE_MIN_DISTANCE ? offset / distanceToDrop * ring : vec2(0.0);
+            }
         }
     }
     return tilt * HELION_RIPPLE_STRENGTH;

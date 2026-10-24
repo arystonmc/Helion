@@ -44,6 +44,10 @@ const float HELION_SIMULATION_SLOPE_SHARE = 0.85;
 const float HELION_SIMULATION_SLOPE_SCALE = HELION_SIMULATION_CELLS_PER_BLOCK / 2.0 * HELION_SIMULATION_SLOPE_SHARE;
 const float HELION_SIMULATION_ON = 0.5;
 const float HELION_FLOW_SPEED = 1.6;
+const float HELION_FAR_CALM = 0.35;
+const float HELION_WATER_RIPPLES = 1.6;
+const float HELION_CALM_FROM = 12.0;
+const float HELION_CALM_TO = 80.0;
 const float HELION_RIPPLE_DETAIL_FROM = 0.08;
 const float HELION_RIPPLE_DETAIL_TO = 0.25;
 const float HELION_FALLING_TINT = 0.5;
@@ -79,8 +83,9 @@ vec2 helionSimulatedSlope(vec2 position, float horizontalDistance) {
 }
 
 vec3 helionWaveNormal(vec2 position, float seconds, float horizontalDistance, float footprint) {
-    vec2 slope = helionSwellSlope(position, seconds, footprint) + helionOceanSlope(position, seconds) * oceanSwell;
-    vec2 ripples = WaterRain.x > 0.0 ? helionRainRipples(position, WaterRain.y) * WaterRain.x * (1.0 - smoothstep(HELION_RIPPLE_DETAIL_FROM, HELION_RIPPLE_DETAIL_TO, footprint)) : vec2(0.0);
+    float calm = mix(1.0, HELION_FAR_CALM, smoothstep(HELION_CALM_FROM, HELION_CALM_TO, horizontalDistance));
+    vec2 slope = (helionSwellSlope(position, seconds, footprint) + helionOceanSlope(position, seconds) * oceanSwell) * calm;
+    vec2 ripples = WaterRain.x > 0.0 ? helionRainRipples(position, WaterRain.y) * WaterRain.x * HELION_WATER_RIPPLES * (1.0 - smoothstep(HELION_RIPPLE_DETAIL_FROM, HELION_RIPPLE_DETAIL_TO, footprint)) : vec2(0.0);
     vec2 simulated = helionSimulatedSlope(position, horizontalDistance);
     return normalize(vec3(-slope.x * WaveStrength - ripples.x - simulated.x, 1.0, -slope.y * WaveStrength - ripples.y - simulated.y));
 }

@@ -5,7 +5,7 @@
 
 const int HELION_SWELL_OCTAVES = 5;
 const float HELION_SWELL_FREQUENCY[HELION_SWELL_OCTAVES] = float[](0.31, 0.67, 1.43, 2.97, 6.1);
-const float HELION_SWELL_HEIGHT[HELION_SWELL_OCTAVES] = float[](0.07, 0.035, 0.016, 0.0075, 0.0035);
+const float HELION_SWELL_HEIGHT[HELION_SWELL_OCTAVES] = float[](0.075, 0.03, 0.01, 0.004, 0.0015);
 const vec2 HELION_SWELL_DRIFT[HELION_SWELL_OCTAVES] = vec2[](vec2(0.31, 0.12), vec2(-0.22, 0.37), vec2(0.45, -0.28), vec2(-0.61, -0.43), vec2(0.83, 0.71));
 const float HELION_SWELL_ROTATION = 1.07;
 const float HELION_SWELL_PROBE = 0.04;

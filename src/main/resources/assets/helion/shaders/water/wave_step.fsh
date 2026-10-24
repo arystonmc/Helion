@@ -37,7 +37,7 @@ const int HELION_CELLS_PER_BLOCK_SHIFT = 3;
 const float HELION_SHORE_WATER = 0.75;
 const float HELION_LAND_DAMPING = 0.93;
 const int HELION_PUDDLES_ON = 1;
-const float HELION_WATER_DROP_SHARE = 0.5;
+const float HELION_WATER_DROP_SHARE = 0.0;
 
 uint helionWavePcg(uint value) {
     uint state = value * HELION_HASH_MULTIPLIER + HELION_HASH_INCREMENT;

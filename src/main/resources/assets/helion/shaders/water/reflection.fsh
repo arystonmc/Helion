@@ -33,7 +33,7 @@ layout(location = 0) in vec2 texCoord;
 
 layout(location = 0) out vec4 fragColor;
 
-const float HELION_WATER_F0 = 0.02;
+const float HELION_WATER_F0 = 0.035;
 const float HELION_GLOSSY_F0 = 0.04;
 const float HELION_FRESNEL_POWER = 5.0;
 const float HELION_MIN_FACING = 0.05;
@@ -41,13 +41,13 @@ const float HELION_WATER_ABSORPTION = 0.15;
 const vec3 HELION_WATER_SCATTER = vec3(0.08, 0.2, 0.22);
 const vec3 HELION_UP = vec3(0.0, 1.0, 0.0);
 const float HELION_PRESENT = 0.5;
-const vec3 HELION_CLEAR_EXTINCTION = vec3(0.32, 0.075, 0.06);
+const vec3 HELION_CLEAR_EXTINCTION = vec3(0.30, 0.06, 0.05);
 const float HELION_TINT_EXTINCTION = 0.3;
 const float HELION_MIN_EXTINCTION = 0.02;
 const float HELION_TINT_SHARE = 0.4;
-const vec3 HELION_TEAL = vec3(0.10, 0.55, 0.52);
-const float HELION_TEAL_SHARE = 0.55;
-const float HELION_SCATTER_STRENGTH = 0.3;
+const vec3 HELION_TEAL = vec3(0.08, 0.62, 0.66);
+const float HELION_TEAL_SHARE = 0.65;
+const float HELION_SCATTER_STRENGTH = 0.55;
 const float HELION_REFRACTION_STRENGTH = 0.035;
 const float HELION_REFRACTION_DEPTH = 2.0;
 const float HELION_REFRACTION_DISTANCE = 0.05;
