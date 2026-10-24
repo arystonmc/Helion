@@ -20,6 +20,8 @@ public final class WaterReflectionStage implements RenderStage {
     private static final String NAME = "water_reflection";
     private static final String PASS_LABEL = "Helion Water Reflection";
 
+    private static final float NO_FLASH = 0.0F;
+
     private final WaterResources resources;
     private @Nullable CompiledRenderPipeline program;
 
@@ -102,7 +104,7 @@ public final class WaterReflectionStage implements RenderStage {
             FullscreenPass.draw(PASS_LABEL, scene, pipeline, renderPass -> {
                 RenderSystem.bindDefaultUniforms(renderPass);
                 sky.ifPresent(color -> color.bind(renderPass));
-                renderPass.setUniform(WaterPipelines.REFLECTION_UNIFORM, resources.reflectionUniforms(frame.camera(), reflections.isPresent(), screenReflections.isPresent(), refraction.isPresent()));
+                renderPass.setUniform(WaterPipelines.REFLECTION_UNIFORM, resources.reflectionUniforms(frame.camera(), reflections.isPresent(), screenReflections.isPresent(), refraction.isPresent(), frame.water().wetness().map(Wetness::flash).orElse(NO_FLASH)));
                 renderPass.setUniform(WaterPipelines.SURFACE_SAMPLER, Objects.requireNonNull(water.getColorTextureView()), nearest);
                 renderPass.setUniform(WaterPipelines.DEPTH_SAMPLER, Objects.requireNonNull(water.getDepthTextureView()), nearest);
                 GpuTextureView standIn = Objects.requireNonNull(water.getColorTextureView());

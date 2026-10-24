@@ -14,6 +14,10 @@ On by default (`reflections.rainWetness`), in every preset but Vanilla. Needs th
    - Puddles: three octaves of value noise (scales 1/4, 1/2 and 1 per block, weights 0.55, 0.3, 0.15) over the world xz position (camera position modulo 1024, so the pattern repeats every 1024 blocks without precision loss), above a threshold that falls from 1.05 (none) to 0.55 (about a third of the floor) with the puddle level; only on faces pointing up. Puddles darken by 0.15 more, reflect with Schlick Fresnel from F0 0.3 (stylized; water is 0.02, but at that value a puddle near the camera reads as a shadow) and get rain drop rings: 9 cells of 1/3 block around the pixel, each with one ring of radius up to 0.3 blocks growing 1.3 times per second, tilting the normal by up to 0.2.
    - The reflection marches the screen only for puddles and polished blocks (48 steps like water); everything else reflects the sky in the reflected direction (physical sky without the sun and moon discs, whose edge needs screen derivatives that are undefined after the branches, lesson L-154; else the fog color) scaled by the square of the sky light.
 
+## Lightning (2026-10-24)
+
+While `ClientLevel.skyFlashTime` runs (and the hide lightning flash option is off), the sky that wet surfaces, puddles and water reflect is five times as bright, so a flash lights up every wet surface for its few ticks.
+
 ## Measured (RTX 4050 Laptop, 1920 x 1080, visual test `rain_yard`, 2026-10-24)
 
 - `ssr` 0.30 ms in rain with the whole frame wet (0.08 ms with only polished blocks), `ssr_polished` 0.03 ms.

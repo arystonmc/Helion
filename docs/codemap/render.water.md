@@ -18,7 +18,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### RainWetnessStage, RainWetness, Wetness, WeatherSource, WeatherState
 - Path: `src/main/java/com/aryston/helion/render/water/RainWetnessStage.java`, `src/main/java/com/aryston/helion/render/water/RainWetness.java`, `src/main/java/com/aryston/helion/render/water/Wetness.java`, `src/main/java/com/aryston/helion/render/water/WeatherSource.java`, `src/main/java/com/aryston/helion/render/water/WeatherState.java`
-- Role: Rain wetness (`reflections.rainWetness`). `RainWetnessStage`, right after the clear stage and without a pass, feeds the `WeatherState` of the frame (rain level, game seconds, whether it rains in the camera biome) into `RainWetness` (owned by `WaterResources`), which wets surfaces in 30 s and dries them in 90 s, fills puddles in 90 s and dries them in 240 s, and skips frames after a time jump; the `Wetness` (surfaces, puddles, rain, seconds) is published in `WaterResults` while it is visible. `saturate()` lets the visual test start wet.
+- Role: Rain wetness (`reflections.rainWetness`). `RainWetnessStage`, right after the clear stage and without a pass, feeds the `WeatherState` of the frame (rain level, game seconds, whether it rains in the camera biome, lightning flash) into `RainWetness` (owned by `WaterResources`), which wets surfaces in 30 s and dries them in 90 s, fills puddles in 90 s and dries them in 240 s, and skips frames after a time jump; the `Wetness` (surfaces, puddles, rain, seconds) is published in `WaterResults` while it is visible. `saturate()` lets the visual test start wet.
 - Depends on: `WaterResources`, `WaterResults`.
 
 #### WaterWaveStage, WaterWaves, WaterShoreMask, WaveSource, WaveImpulse

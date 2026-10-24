@@ -57,6 +57,7 @@ const float HELION_WET_REACH = 48.0;
 const float HELION_PUDDLE_WAVE_TEXELS = 1024.0;
 const float HELION_PUDDLE_WAVE_CELLS = 8.0;
 const float HELION_PUDDLE_WAVE_SLOPE = 3.4;
+const float HELION_FLASH_SKY = 4.0;
 
 struct HelionScreenPoint {
     bool valid;
@@ -184,7 +185,7 @@ vec4 helionSurfaceSheen(ivec2 pixel, vec2 screen) {
     vec3 normal = wet.normal;
     float polishedWeight = polished ? helionFresnel(HELION_POLISHED_F0, view, normal) * HELION_POLISHED_STRENGTH : 0.0;
     float wetWeight = helionFresnel(mix(HELION_WET_F0, HELION_PUDDLE_F0, wet.puddle), view, normal) * wet.sheen;
-    vec3 sky = helionReflectedSky(reflect(view, normal)) * light.g * light.g;
+    vec3 sky = helionReflectedSky(reflect(view, normal)) * light.g * light.g * (1.0 + WetnessOrigin.w * HELION_FLASH_SKY);
     vec3 reflection = sky;
     float reach = 0.0;
     if (polished || wet.puddle > HELION_PUDDLE_MARCH) {

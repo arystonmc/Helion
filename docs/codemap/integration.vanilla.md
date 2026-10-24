@@ -43,7 +43,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaWeatherSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaWeatherSource.java`
-- Role: `WeatherSource` over the client level: the rain level with the partial tick, the game time in seconds, and whether the biome at the camera has rain as its precipitation there (snowy and dry biomes do not wet surfaces).
+- Role: `WeatherSource` over the client level: the rain level with the partial tick, the game time in seconds, the lightning flash (`ClientLevelAccessor`, off with the hide lightning flash option), and whether the biome at the camera has rain as its precipitation there (snowy and dry biomes do not wet surfaces).
 - Depends on: `WeatherSource`.
 
 #### VanillaGlossyCells

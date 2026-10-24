@@ -232,6 +232,7 @@ Rain makes the world wet instead of only falling past it.
 - Sand, gravel, dirt, grass, leaves and wool only darken, they soak the water up; snow and magma stay dry
 - Surfaces get wet within half a minute of rain and dry over a minute and a half after it; puddles fill and dry more slowly
 - Only where it rains: snowy and dry biomes stay as they are
+- Lightning flashes light up wet ground, puddles and water for a moment
 - Settings: Rain Wetness on or off on the Lighting page, on in every preset but Vanilla; needs Helion lighting
 
 ### Ray Tracing (Experimental)

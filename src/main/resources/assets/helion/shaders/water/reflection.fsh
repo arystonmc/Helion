@@ -24,6 +24,7 @@ layout(std140) uniform HelionWaterReflection {
     float ScreenReflections;
     float RealisticWater;
     float WaterSeconds;
+    float LightningFlash;
 };
 
 layout(location = 0) in vec2 texCoord;
@@ -77,6 +78,7 @@ const float HELION_CAUSTIC_SECOND_SPEED = 1.3;
 const float HELION_DAYLIGHT_FROM = 0.0;
 const float HELION_DAYLIGHT_TO = 0.25;
 const float HELION_FOG_DAYLIGHT = 0.35;
+const float HELION_FLASH_SKY = 4.0;
 
 vec3 helionReflectedSky(vec3 direction, bool water) {
     #ifdef HELION_PHYSICAL_SKY
@@ -202,7 +204,7 @@ void main() {
     float baseReflectance = water ? HELION_WATER_F0 : HELION_GLOSSY_F0;
     float fresnel = (baseReflectance + (1.0 - baseReflectance) * pow(1.0 - facing, HELION_FRESNEL_POWER)) * ReflectionStrength;
     vec4 traced = TracedReflections > HELION_PRESENT ? texelFetch(ReflectionSampler, pixel, 0) : vec4(0.0);
-    vec3 sky = helionReflectedSky(reflected, realistic) * (water ? 1.0 : surface.w * surface.w);
+    vec3 sky = helionReflectedSky(reflected, realistic) * (water ? 1.0 : surface.w * surface.w) * (1.0 + LightningFlash * HELION_FLASH_SKY * surface.w);
     vec3 fallback = traced.a > HELION_GEOMETRY_PRESENT_THRESHOLD ? traced.rgb : sky;
     vec4 screenHit = ScreenReflections > HELION_PRESENT ? texelFetch(ScreenReflectionSampler, pixel, 0) : vec4(0.0);
     vec3 reflection = mix(fallback, screenHit.rgb, screenHit.a);

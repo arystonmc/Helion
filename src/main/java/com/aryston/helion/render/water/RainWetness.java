@@ -22,7 +22,7 @@ public final class RainWetness {
             surfaces = approach(surfaces, raining, seconds, SURFACE_WETTING_SECONDS, SURFACE_DRYING_SECONDS);
             puddles = approach(puddles, Math.min(raining, surfaces), seconds, PUDDLE_FILLING_SECONDS, PUDDLE_DRYING_SECONDS);
         }
-        return new Wetness(surfaces, puddles, raining, (float) (weather.seconds() % SECONDS_PERIOD));
+        return new Wetness(surfaces, puddles, raining, (float) (weather.seconds() % SECONDS_PERIOD), weather.flash());
     }
 
     public void saturate() {

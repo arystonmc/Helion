@@ -34,6 +34,7 @@ public final class WaterResources {
         .putFloat()
         .putFloat()
         .putFloat()
+        .putFloat()
         .get();
     private static final String SCREEN_LABEL = "Helion Screen Reflection Settings";
     private static final int SCREEN_SIZE = new Std140SizeCalculator()
@@ -100,7 +101,7 @@ public final class WaterResources {
         return compiled;
     }
 
-    GpuBuffer reflectionUniforms(HelionCamera camera, boolean traced, boolean screen, boolean realistic) {
+    GpuBuffer reflectionUniforms(HelionCamera camera, boolean traced, boolean screen, boolean realistic, float flash) {
         if (reflectionUniforms == null) {
             reflectionUniforms = new UniformRing(REFLECTION_LABEL, REFLECTION_SIZE, resources);
         }
@@ -110,7 +111,8 @@ public final class WaterResources {
             .putFloat(traced ? PRESENT : ABSENT)
             .putFloat(screen ? PRESENT : ABSENT)
             .putFloat(realistic ? PRESENT : ABSENT)
-            .putFloat((float) ((System.nanoTime() / NANOS_PER_SECOND) % SECONDS_PERIOD)));
+            .putFloat((float) ((System.nanoTime() / NANOS_PER_SECOND) % SECONDS_PERIOD))
+            .putFloat(flash));
     }
 
     Optional<CompiledRenderPipeline> polishedProgram() {
@@ -127,7 +129,7 @@ public final class WaterResources {
             .putMat4f(camera.levelViewProjection().invert())
             .putVec4(geometry ? PRESENT : ABSENT, water ? PRESENT : ABSENT, polished ? PRESENT : ABSENT, waves ? PRESENT : ABSENT)
             .putVec4(wetness.surfaces(), wetness.puddles(), wetness.rain(), wetness.seconds())
-            .putVec4((float) (position.x() % NOISE_PERIOD), (float) (position.y() % NOISE_PERIOD), (float) (position.z() % NOISE_PERIOD), ABSENT));
+            .putVec4((float) (position.x() % NOISE_PERIOD), (float) (position.y() % NOISE_PERIOD), (float) (position.z() % NOISE_PERIOD), wetness.flash()));
     }
 
     void finishScreen() {

@@ -66,6 +66,11 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Role: Adds `VK_IMAGE_USAGE_STORAGE_BIT` to `VulkanConst.textureUsageToVk` for textures created with `RtxSpike.TEXTURE_USAGE_STORAGE`, so the RTX spike mask can be written by a compute shader and sampled by a fragment shader.
 - Notes: Renderpearl texture usages have no storage flag.
 
+#### ClientLevelAccessor
+- Path: `src/main/java/com/aryston/helion/mixin/ClientLevelAccessor.java`
+- Role: The private `skyFlashTime` of `ClientLevel`, read by `VanillaWeatherSource` so a lightning flash brightens wet surfaces and water.
+- Notes: The getter is private; the public environment attributes only expose the flash already mixed into the sky color and the sky light factor.
+
 #### FrontendGpuDeviceAccessor, VulkanDeviceAccessor, VulkanCommandEncoderAccessor
 - Path: `src/main/java/com/aryston/helion/mixin/FrontendGpuDeviceAccessor.java`, `src/main/java/com/aryston/helion/mixin/VulkanDeviceAccessor.java`, `src/main/java/com/aryston/helion/mixin/VulkanCommandEncoderAccessor.java`
 - Role: The renderpearl backend behind the frontend device, its enabled feature set and the command buffer being recorded, for `RtxDevice`.
