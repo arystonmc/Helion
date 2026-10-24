@@ -26,6 +26,7 @@ layout(location = 2) in vec2 wavePosition;
 layout(location = 3) in float vertexAlpha;
 layout(location = 4) in float skyLight;
 layout(location = 5) in vec3 vertexTint;
+layout(location = 6) in float oceanSwell;
 
 layout(location = 0) out vec4 waterSurface;
 layout(location = 1) out vec4 waterTint;
@@ -43,6 +44,7 @@ const float HELION_SIMULATION_SLOPE_SHARE = 0.85;
 const float HELION_SIMULATION_SLOPE_SCALE = HELION_SIMULATION_CELLS_PER_BLOCK / 2.0 * HELION_SIMULATION_SLOPE_SHARE;
 const float HELION_SIMULATION_ON = 0.5;
 const float HELION_STORM_WAVES = 1.2;
+const float HELION_STORM_SWELL = 0.8;
 const float HELION_FLOW_SPEED = 1.6;
 const float HELION_FALLING_TINT = 0.5;
 const float HELION_MIN_DETERMINANT = 1.0e-12;
@@ -77,7 +79,8 @@ vec2 helionSimulatedSlope(vec2 position, float horizontalDistance) {
 }
 
 vec3 helionWaveNormal(vec2 position, float seconds, float horizontalDistance) {
-    vec2 slope = helionSwellSlope(position, seconds) * (1.0 + WaterRain.x * HELION_STORM_WAVES);
+    vec2 slope = helionSwellSlope(position, seconds) * (1.0 + WaterRain.x * HELION_STORM_WAVES)
+        + helionOceanSlope(position, seconds) * oceanSwell * (1.0 + WaterRain.x * HELION_STORM_SWELL);
     vec2 ripples = WaterRain.x > 0.0 && WaterRain.z < HELION_SIMULATION_ON ? helionRainRipples(position, WaterRain.y) * WaterRain.x : vec2(0.0);
     vec2 simulated = helionSimulatedSlope(position, horizontalDistance);
     return normalize(vec3(-slope.x * WaveStrength - ripples.x - simulated.x, 1.0, -slope.y * WaveStrength - ripples.y - simulated.y));

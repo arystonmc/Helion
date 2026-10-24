@@ -21,6 +21,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final float TINT_PITCH = 20.0F;
     private static final float SAVANNA_PITCH = 30.0F;
     private static final float POOL_PITCH = 8.0F;
+    private static final float LAKE_PITCH = 12.0F;
     private static final float CLOSE_PITCH = 45.0F;
     private static final float UNDERWATER_PITCH = -40.0F;
     private static final float SHOWCASE_PITCH = 25.0F;
@@ -52,6 +53,9 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("water_close", NOON, NORTH, CLOSE_PITCH, VisualTestWorld.POOL_CAMERA),
         new VisualTestScene("water_glint", MORNING, EAST, CLOSE_PITCH, VisualTestWorld.POOL_SIDE_CAMERA),
         new VisualTestScene("water_night_close", MIDNIGHT, NORTH, CLOSE_PITCH, VisualTestWorld.POOL_CAMERA),
+        new VisualTestScene("water_lake", NOON, NORTH, LAKE_PITCH, VisualTestWorld.LAKE_CAMERA),
+        new VisualTestScene("water_lake_sunset", SUNSET, NORTH, LAKE_PITCH, VisualTestWorld.LAKE_CAMERA),
+        new VisualTestScene("water_lake_storm", NOON, NORTH, LAKE_PITCH, VisualTestWorld.LAKE_CAMERA, RAIN),
         new VisualTestScene("water_under", NOON, NORTH, UNDERWATER_PITCH, VisualTestWorld.UNDERWATER_CAMERA),
         new VisualTestScene("water_under_floor", NOON, NORTH, CLOSE_PITCH, VisualTestWorld.UNDERWATER_CAMERA),
         new VisualTestScene("cave_corner", MIDNIGHT, NORTH, CAVE_PITCH, VisualTestWorld.CAVE_CAMERA),

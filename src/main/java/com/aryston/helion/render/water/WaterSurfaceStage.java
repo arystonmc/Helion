@@ -106,6 +106,8 @@ public final class WaterSurfaceStage implements RenderStage {
                 RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
             );
             pass.setUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, mask, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
+            GpuTextureView shoreView = waves.flatMap(ignored -> resources.waves().shore().view()).orElse(scene.getColorTextureView());
+            pass.setUniform(WaterPipelines.SHORE_SAMPLER, Objects.requireNonNull(shoreView), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
             terrain.renderWaterSurface(pass);
         }
         resources.finishSurface();

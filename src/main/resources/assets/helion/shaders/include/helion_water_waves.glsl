@@ -46,4 +46,64 @@ vec2 helionSwellSlope(vec2 position, float seconds) {
     return vec2(alongX - center, alongZ - center) / HELION_SWELL_PROBE;
 }
 
+const int HELION_OCEAN_WAVES = 4;
+const vec2 HELION_OCEAN_CYCLES[HELION_OCEAN_WAVES] = vec2[](vec2(55.0, 26.0), vec2(24.0, 90.0), vec2(131.0, -50.0), vec2(-118.0, 162.0));
+const float HELION_OCEAN_PERIOD = 1024.0;
+const float HELION_OCEAN_HEIGHT[HELION_OCEAN_WAVES] = float[](0.11, 0.07, 0.045, 0.028);
+const float HELION_OCEAN_GRAVITY = 6.0;
+const float HELION_OCEAN_WARP_CELLS = 32.0;
+const float HELION_OCEAN_WARP = 3.0;
+const float HELION_OCEAN_WARP_OFFSET = 7.0;
+const float HELION_OCEAN_PROBE = 0.05;
+const float HELION_OCEAN_SHORE_REACH = 4.0;
+const float HELION_OCEAN_SHORE_CALM = 1.0;
+const int HELION_OCEAN_SHORE_RADIUS = 4;
+const int HELION_OCEAN_SHORE_WRAP = 127;
+const float HELION_OCEAN_SHORE_WATER = 0.75;
+const float HELION_OCEAN_BLOCK_CENTER = 0.5;
+
+float helionOceanWarp(vec2 position) {
+    vec2 cell = floor(position);
+    vec2 inside = position - cell;
+    vec2 blend = inside * inside * (3.0 - 2.0 * inside);
+    float corner00 = dot(helionSwellGradient(mod(cell, HELION_OCEAN_WARP_CELLS)), inside);
+    float corner10 = dot(helionSwellGradient(mod(cell + vec2(1.0, 0.0), HELION_OCEAN_WARP_CELLS)), inside - vec2(1.0, 0.0));
+    float corner01 = dot(helionSwellGradient(mod(cell + vec2(0.0, 1.0), HELION_OCEAN_WARP_CELLS)), inside - vec2(0.0, 1.0));
+    float corner11 = dot(helionSwellGradient(mod(cell + vec2(1.0, 1.0), HELION_OCEAN_WARP_CELLS)), inside - vec2(1.0, 1.0));
+    return mix(mix(corner00, corner10, blend.x), mix(corner01, corner11, blend.x), blend.y);
+}
+
+float helionOceanHeight(vec2 position, float seconds) {
+    float height = 0.0;
+    vec2 warpPosition = position * HELION_OCEAN_WARP_CELLS / HELION_OCEAN_PERIOD;
+    for (int wave = 0; wave < HELION_OCEAN_WAVES; wave++) {
+        vec2 vector = HELION_OCEAN_CYCLES[wave] * HELION_SWELL_TAU / HELION_OCEAN_PERIOD;
+        float warp = helionOceanWarp(warpPosition + float(wave) * HELION_OCEAN_WARP_OFFSET) * HELION_OCEAN_WARP;
+        float phase = dot(vector, position) - sqrt(HELION_OCEAN_GRAVITY * length(vector)) * seconds + warp;
+        height += sin(phase) * HELION_OCEAN_HEIGHT[wave];
+    }
+    return height;
+}
+
+vec2 helionOceanSlope(vec2 position, float seconds) {
+    float center = helionOceanHeight(position, seconds);
+    float alongX = helionOceanHeight(position + vec2(HELION_OCEAN_PROBE, 0.0), seconds);
+    float alongZ = helionOceanHeight(position + vec2(0.0, HELION_OCEAN_PROBE), seconds);
+    return vec2(alongX - center, alongZ - center) / HELION_OCEAN_PROBE;
+}
+
+float helionOceanOpenness(sampler2D shore, vec2 position) {
+    ivec2 corner = ivec2(floor(position + HELION_OCEAN_BLOCK_CENTER));
+    float nearest = HELION_OCEAN_SHORE_REACH;
+    for (int x = -HELION_OCEAN_SHORE_RADIUS; x < HELION_OCEAN_SHORE_RADIUS; x++) {
+        for (int z = -HELION_OCEAN_SHORE_RADIUS; z < HELION_OCEAN_SHORE_RADIUS; z++) {
+            ivec2 column = corner + ivec2(x, z);
+            if (texelFetch(shore, column & HELION_OCEAN_SHORE_WRAP, 0).r < HELION_OCEAN_SHORE_WATER) {
+                nearest = min(nearest, length(vec2(column) + HELION_OCEAN_BLOCK_CENTER - position));
+            }
+        }
+    }
+    return smoothstep(HELION_OCEAN_SHORE_CALM, HELION_OCEAN_SHORE_REACH, nearest);
+}
+
 #endif

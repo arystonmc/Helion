@@ -8,6 +8,7 @@ import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.nio.ByteBuffer;
 import java.util.Objects;
+import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 
@@ -53,6 +54,10 @@ final class WaterShoreMask {
         }
         RenderSystem.getDevice().createCommandEncoder().writeToTexture(texture(), data, BASE_LEVEL, FIRST_LAYER, ORIGIN, ORIGIN, SIZE, SIZE);
         return Objects.requireNonNull(view);
+    }
+
+    Optional<GpuTextureView> view() {
+        return Optional.ofNullable(view);
     }
 
     void close() {

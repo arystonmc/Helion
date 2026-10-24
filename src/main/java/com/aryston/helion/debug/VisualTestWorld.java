@@ -123,6 +123,11 @@ final class VisualTestWorld {
         new Placement(22, -17, 1, "sea_lantern"),
         new Placement(22, -17, 2, "sea_lantern")
     );
+    static final BlockPos LAKE_CAMERA = new BlockPos(-25, 0, 1);
+    private static final Volume LAKE_AIR = new Volume(new BlockPos(-41, 0, -31), new BlockPos(-9, 10, 2));
+    private static final Volume LAKE_BASIN = new Volume(new BlockPos(-41, -4, -31), new BlockPos(-9, -1, 1));
+    private static final Volume LAKE_WATER = new Volume(new BlockPos(-40, -3, -30), new BlockPos(-10, -1, 0));
+    private static final Volume LAKE_BIOME = new Volume(new BlockPos(-41, -4, -31), new BlockPos(-9, 12, 2));
     private static final List<Volume> WALL_ROOMS = List.of(
         new Volume(new BlockPos(14, -17, -9), new BlockPos(20, -15, -3)),
         new Volume(new BlockPos(22, -17, -9), new BlockPos(26, -15, -3))
@@ -177,6 +182,11 @@ final class VisualTestWorld {
         run(server, fill(origin.offset(RAIN_YARD_FLOOR.from()), origin.offset(RAIN_YARD_FLOOR.to()), RAIN_YARD_BLOCK));
         RAIN_YARD_PATCHES.forEach(patch -> run(server, fill(origin.offset(patch.volume().from()), origin.offset(patch.volume().to()), patch.block())));
         run(server, "fillbiome " + coordinates(origin.offset(RAIN_YARD_BIOME.from())) + " " + coordinates(origin.offset(RAIN_YARD_BIOME.to())) + " " + RAIN_BIOME);
+        run(server, killEntities(origin.offset(LAKE_AIR.from()), origin.offset(LAKE_AIR.to())));
+        run(server, fill(origin.offset(LAKE_AIR.from()), origin.offset(LAKE_AIR.to()), "air"));
+        run(server, fill(origin.offset(LAKE_BASIN.from()), origin.offset(LAKE_BASIN.to()), CASTER_BLOCK));
+        run(server, fill(origin.offset(LAKE_WATER.from()), origin.offset(LAKE_WATER.to()), "water"));
+        run(server, "fillbiome " + coordinates(origin.offset(LAKE_BIOME.from())) + " " + coordinates(origin.offset(LAKE_BIOME.to())) + " " + RAIN_BIOME);
     }
 
     static void placeCamera(IntegratedServer server, Vec3 start, BlockPos origin, BlockPos cameraOffset) {

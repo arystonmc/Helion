@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Lakes and oceans roll with a real swell that grows in storms
 - Experimental ray tracing: puddles reflect the world beyond the screen
 - Dirt, grass and farmland turn muddy with small puddles in heavy rain
 - Wet footprints after coming out of the water
