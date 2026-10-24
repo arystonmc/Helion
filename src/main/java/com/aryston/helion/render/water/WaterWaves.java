@@ -26,8 +26,6 @@ final class WaterWaves {
     private static final double TIME_JUMP_SECONDS = 1.0;
     private static final float WAVE_SPEED = 0.16F;
     private static final float DAMPING = 0.985F;
-    private static final float RAIN_DROP_CHANCE = 0.001F;
-    private static final float RAIN_DROP_DEPTH = 0.02F;
     private static final int HALF = SIZE / 2;
     private static final int RESET = 1;
     private static final int KEEP = 0;
@@ -92,7 +90,7 @@ final class WaterWaves {
         return current;
     }
 
-    GpuBuffer stepUniforms(int step, double cameraX, double cameraZ, List<WaveImpulse> impulses, float rain, boolean puddles) {
+    GpuBuffer stepUniforms(int step, double cameraX, double cameraZ, List<WaveImpulse> impulses, boolean puddles) {
         if (uniforms[step] == null) {
             uniforms[step] = new UniformRing(UNIFORM_LABEL + step, UNIFORM_SIZE, resources);
         }
@@ -111,7 +109,7 @@ final class WaterWaves {
         int seed = stepIndex++;
         return uniforms[step].write(builder -> {
             builder.putIVec4(originX, originZ, reset ? originX : previousX, reset ? originZ : previousZ)
-                .putVec4(WAVE_SPEED, DAMPING, RAIN_DROP_CHANCE * rain, RAIN_DROP_DEPTH)
+                .putVec4(WAVE_SPEED, DAMPING, NO_IMPULSE, NO_IMPULSE)
                 .putIVec4(count, seed, reset ? RESET : KEEP, puddles ? PUDDLES : KEEP);
             for (int index = 0; index < MAX_IMPULSES; index++) {
                 putImpulse(builder, index < count ? applied.get(index) : null);

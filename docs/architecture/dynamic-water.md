@@ -98,3 +98,10 @@ The owner asked to study SEUS Renewed's water and do better without copying (pro
 2. The refracted bottom is blurred by depth (six golden-angle taps, 1.2 pixels per block of water, at most 6) and dispersed (red, green and blue at 0.92, 1 and 1.1 times the refraction offset), so deep water looks soft and edges show a faint color fringe.
 3. Sunlight scatters forward inside the water: the refracted view ray against the sun direction drives a Henyey-Greenstein phase (g 0.7) in the sun's hue, added to the water's scattered light, so water glows toward the sun.
 4. Rain falls in gusts: drop rings are scaled from 0.4 to 1.35 by a large noise (20 blocks) drifting with the wind, on water and on wet ground.
+
+## Calmer Sea and No Rain Noise (2026-10-25)
+
+The owner found open water artificial (the pool was fine) and the rain film on the ground still trembling.
+
+1. Rain no longer drops impulses into the wave simulation at all, on water or land (the grid of tiny drop waves read as trembling); `wave_step.fsh` lost its drop hash and `WaterWaves` sends zero for those two parameters. Wet ground and puddles now get the procedural rings plus the simulated slope (footsteps only).
+2. The sea: the crested share of the large swell octaves is lower (0.45, 0.35, 0.2) and the height moves from the largest octaves toward the middle ones (0.05, 0.045, 0.035, 0.022, 0.011, 0.0045), so open water shows soft natural undulation instead of long sharp streaks. The geometric ocean swell is half as high (0.04, 0.025, 0.015, 0.008, rise 0.088) and only 35 % of its slope reaches the shading, because its four regular sine trains looked artificial over a large surface.

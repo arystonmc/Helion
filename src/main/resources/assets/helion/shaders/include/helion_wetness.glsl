@@ -150,7 +150,7 @@ HelionWetSurface helionWetSurface(vec4 light, vec3 normal, vec3 worldPosition, v
     float layer = max(puddle, film);
     float darkening = muddy ? HELION_MUD_DARKENING : porous ? HELION_POROUS_DARKENING : glossy ? HELION_GLOSSY_DARKENING : HELION_ORDINARY_DARKENING;
     float sheen = muddy ? HELION_MUD_SHEEN : porous ? HELION_POROUS_SHEEN : glossy ? HELION_GLOSSY_SHEEN : HELION_ORDINARY_SHEEN;
-    vec2 ripples = layer <= 0.0 ? vec2(0.0) : simulated ? simulatedSlope : helionRainRipples(worldPosition.xz, wetness.w) * wetness.z;
+    vec2 ripples = layer <= 0.0 ? vec2(0.0) : helionRainRipples(worldPosition.xz, wetness.w) * wetness.z + (simulated ? simulatedSlope : vec2(0.0));
     vec3 puddleNormal = normalize(vec3(-ripples.x, 1.0, -ripples.y));
     return HelionWetSurface(
         wet,

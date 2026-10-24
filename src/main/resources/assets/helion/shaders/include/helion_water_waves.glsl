@@ -5,8 +5,8 @@
 
 const int HELION_SWELL_OCTAVES = 6;
 const float HELION_SWELL_FREQUENCY[HELION_SWELL_OCTAVES] = float[](0.07, 0.13, 0.24, 0.45, 0.9, 1.9);
-const float HELION_SWELL_HEIGHT[HELION_SWELL_OCTAVES] = float[](0.09, 0.07, 0.04, 0.018, 0.007, 0.0025);
-const float HELION_SWELL_CRESTED[HELION_SWELL_OCTAVES] = float[](1.0, 1.0, 0.6, 0.0, 0.0, 0.0);
+const float HELION_SWELL_HEIGHT[HELION_SWELL_OCTAVES] = float[](0.05, 0.045, 0.035, 0.022, 0.011, 0.0045);
+const float HELION_SWELL_CRESTED[HELION_SWELL_OCTAVES] = float[](0.45, 0.35, 0.2, 0.0, 0.0, 0.0);
 const vec2 HELION_SWELL_STRETCH[HELION_SWELL_OCTAVES] = vec2[](vec2(1.0, 0.45), vec2(1.0, 0.55), vec2(1.0, 0.7), vec2(1.0, 0.8), vec2(1.0, 0.9), vec2(1.0, 1.0));
 const float HELION_SWELL_SHEAR[HELION_SWELL_OCTAVES] = float[](0.8, -0.6, 0.5, -0.4, 0.2, 0.0);
 const float HELION_SWELL_TURN[HELION_SWELL_OCTAVES] = float[](0.35, 0.9, -0.5, 1.6, 2.4, -1.2);
@@ -60,8 +60,8 @@ vec2 helionSwellSlope(vec2 position, float seconds, float footprint) {
 const int HELION_OCEAN_WAVES = 4;
 const vec2 HELION_OCEAN_CYCLES[HELION_OCEAN_WAVES] = vec2[](vec2(55.0, 26.0), vec2(24.0, 90.0), vec2(131.0, -50.0), vec2(-118.0, 162.0));
 const float HELION_OCEAN_PERIOD = 1024.0;
-const float HELION_OCEAN_HEIGHT[HELION_OCEAN_WAVES] = float[](0.07, 0.045, 0.03, 0.015);
-const float HELION_OCEAN_RISE = 0.16;
+const float HELION_OCEAN_HEIGHT[HELION_OCEAN_WAVES] = float[](0.04, 0.025, 0.015, 0.008);
+const float HELION_OCEAN_RISE = 0.088;
 const float HELION_OCEAN_GRAVITY = 6.0;
 const float HELION_OCEAN_WARP_CELLS = 32.0;
 const float HELION_OCEAN_WARP = 3.0;

@@ -58,7 +58,6 @@ public final class WaterWaveStage implements RenderStage {
         List<WaveImpulse> impulses = source.impulses(camera.x(), camera.z(), WaterWaves.REACH - IMPULSE_MARGIN, puddles);
         waves.queueSplashes(impulses);
         int steps = waves.plan(System.nanoTime() / NANOS_PER_SECOND);
-        float rain = frame.water().wetness().map(Wetness::rain).orElse(0.0F);
         FramePass pass = frame.graph().addPass(NAME);
         int first = waves.current();
         ResourceHandle<RenderTarget> stateA = pass.readsAndWrites(frame.graph().builder().importExternal(STATE_PREFIX + first, waves.state(first)));
@@ -75,7 +74,7 @@ public final class WaterWaveStage implements RenderStage {
                 RenderTarget written = step % STATES == 0 ? stateB.get() : stateA.get();
                 int index = step;
                 FullscreenPass.draw(PASS_LABEL, written, pipeline, renderPass -> {
-                    renderPass.setUniform(WaterPipelines.WAVE_UNIFORM, waves.stepUniforms(index, cameraX, cameraZ, impulses, rain, puddles));
+                    renderPass.setUniform(WaterPipelines.WAVE_UNIFORM, waves.stepUniforms(index, cameraX, cameraZ, impulses, puddles));
                     renderPass.setUniform(WaterPipelines.SHORE_SAMPLER, shore, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
                     renderPass.setUniform(
                         WaterPipelines.WAVE_SAMPLER,
