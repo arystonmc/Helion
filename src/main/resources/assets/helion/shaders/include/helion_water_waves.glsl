@@ -1,6 +1,8 @@
 #ifndef HELION_WATER_WAVES_GLSL
 #define HELION_WATER_WAVES_GLSL
 
+#include <helion:helion_hash.glsl>
+
 const int HELION_SWELL_OCTAVES = 5;
 const float HELION_SWELL_FREQUENCY[HELION_SWELL_OCTAVES] = float[](0.31, 0.67, 1.43, 2.97, 6.1);
 const float HELION_SWELL_HEIGHT[HELION_SWELL_OCTAVES] = float[](0.07, 0.035, 0.016, 0.0075, 0.0035);
@@ -8,12 +10,12 @@ const vec2 HELION_SWELL_DRIFT[HELION_SWELL_OCTAVES] = vec2[](vec2(0.31, 0.12), v
 const float HELION_SWELL_ROTATION = 1.07;
 const float HELION_SWELL_PROBE = 0.04;
 const float HELION_SWELL_TAU = 6.28318531;
-const vec2 HELION_SWELL_HASH_STEP = vec2(269.5, 183.3);
-const float HELION_SWELL_HASH_SCALE = 43758.5453;
 const float HELION_SWELL_PERIOD = 2048.0;
+const float HELION_SWELL_DETAIL_FROM = 0.15;
+const float HELION_SWELL_DETAIL_TO = 0.45;
 
 vec2 helionSwellGradient(vec2 cell) {
-    float angle = fract(sin(dot(mod(cell, HELION_SWELL_PERIOD), HELION_SWELL_HASH_STEP)) * HELION_SWELL_HASH_SCALE) * HELION_SWELL_TAU;
+    float angle = helionHash(mod(cell, HELION_SWELL_PERIOD)) * HELION_SWELL_TAU;
     return vec2(cos(angle), sin(angle));
 }
 
@@ -28,28 +30,30 @@ float helionSwellNoise(vec2 position) {
     return mix(mix(corner00, corner10, blend.x), mix(corner01, corner11, blend.x), blend.y);
 }
 
-float helionSwellHeight(vec2 position, float seconds) {
+float helionSwellHeight(vec2 position, float seconds, float footprint) {
     float height = 0.0;
     mat2 turn = mat2(cos(HELION_SWELL_ROTATION), sin(HELION_SWELL_ROTATION), -sin(HELION_SWELL_ROTATION), cos(HELION_SWELL_ROTATION));
     vec2 warped = position;
     for (int octave = 0; octave < HELION_SWELL_OCTAVES; octave++) {
         warped = turn * warped;
-        height += helionSwellNoise(warped * HELION_SWELL_FREQUENCY[octave] + HELION_SWELL_DRIFT[octave] * seconds) * HELION_SWELL_HEIGHT[octave];
+        float detail = 1.0 - smoothstep(HELION_SWELL_DETAIL_FROM, HELION_SWELL_DETAIL_TO, footprint * HELION_SWELL_FREQUENCY[octave]);
+        height += helionSwellNoise(warped * HELION_SWELL_FREQUENCY[octave] + HELION_SWELL_DRIFT[octave] * seconds) * HELION_SWELL_HEIGHT[octave] * detail;
     }
     return height;
 }
 
-vec2 helionSwellSlope(vec2 position, float seconds) {
-    float center = helionSwellHeight(position, seconds);
-    float alongX = helionSwellHeight(position + vec2(HELION_SWELL_PROBE, 0.0), seconds);
-    float alongZ = helionSwellHeight(position + vec2(0.0, HELION_SWELL_PROBE), seconds);
+vec2 helionSwellSlope(vec2 position, float seconds, float footprint) {
+    float center = helionSwellHeight(position, seconds, footprint);
+    float alongX = helionSwellHeight(position + vec2(HELION_SWELL_PROBE, 0.0), seconds, footprint);
+    float alongZ = helionSwellHeight(position + vec2(0.0, HELION_SWELL_PROBE), seconds, footprint);
     return vec2(alongX - center, alongZ - center) / HELION_SWELL_PROBE;
 }
 
 const int HELION_OCEAN_WAVES = 4;
 const vec2 HELION_OCEAN_CYCLES[HELION_OCEAN_WAVES] = vec2[](vec2(55.0, 26.0), vec2(24.0, 90.0), vec2(131.0, -50.0), vec2(-118.0, 162.0));
 const float HELION_OCEAN_PERIOD = 1024.0;
-const float HELION_OCEAN_HEIGHT[HELION_OCEAN_WAVES] = float[](0.11, 0.07, 0.045, 0.028);
+const float HELION_OCEAN_HEIGHT[HELION_OCEAN_WAVES] = float[](0.07, 0.045, 0.03, 0.015);
+const float HELION_OCEAN_RISE = 0.16;
 const float HELION_OCEAN_GRAVITY = 6.0;
 const float HELION_OCEAN_WARP_CELLS = 32.0;
 const float HELION_OCEAN_WARP = 3.0;

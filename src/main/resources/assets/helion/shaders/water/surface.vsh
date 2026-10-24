@@ -38,7 +38,6 @@ const float HELION_SECONDS_PER_DAY = 1200.0;
 const float HELION_SIMULATION_ON = 0.5;
 const float HELION_SWELL_NEAR = 48.0;
 const float HELION_SWELL_FAR = 60.0;
-const float HELION_STORM_SWELL = 0.8;
 const float HELION_SPRITE_EDGE = 1.0e-4;
 
 bool helionInsideSprite(vec2 uv, vec4 rect) {
@@ -56,7 +55,7 @@ void main() {
     float open = simulated && far < 1.0 ? helionOceanOpenness(ShoreSampler, wavePosition) : 0.0;
     float displaced = open * (1.0 - far);
     if (displaced > 0.0) {
-        pos.y += helionOceanHeight(wavePosition, GameTime * HELION_SECONDS_PER_DAY) * displaced * (1.0 + WaterRain.x * HELION_STORM_SWELL);
+        pos.y += (helionOceanHeight(wavePosition, GameTime * HELION_SECONDS_PER_DAY) + HELION_OCEAN_RISE) * displaced;
     }
     oceanSwell = simulated ? mix(open, 1.0, far) : 0.0;
     gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);

@@ -215,15 +215,15 @@ Water looks like water instead of a flat blue texture.
 
 - Clear water: the bottom of shallow water shows through, bent by the waves; deeper water turns dark blue-green
 - Bright sun and moon glints that move with the waves and turn gold at sunset; at night only the moonlit spot shines
-- Moving light patterns (caustics) on the bottom of shallow water by day
-- Foam drifts along shores and around blocks standing in the water
+- Realistic moving light patterns (caustics) on the bottom of shallow water by day, from sunlight bent by the waves
 - Rivers carry their waves downstream, and waterfalls are covered in white falling foam
-- Water gets choppy in the rain and calms down when it clears
-- From under water you look up through a bright window to the world above, and the surface around it mirrors the depths
-- Under water the world fades into blue-green with depth, light shafts fall from the surface and caustics dance on the bottom
+- Raindrops leave rings on the water without making it choppy
+- From under water you look up through a bright window to the sky and the world above, and the surface around it mirrors the depths
+- Under water you see much farther than in vanilla; the world fades into blue-green with depth, light shafts fall from the surface and caustics dance on the bottom where sunlight reaches, and at night or deep down it turns nearly black
+- Lamps, torches and lava leave bright reflections on the water, and the sun only glints where it is not hidden behind terrain
 - The color follows the biome: blue oceans, green swamps, the same colors vanilla gives the water
 - Gentle waves with fine ripples, and rings where raindrops hit the water
-- Open water rolls with a real swell that moves the surface itself, calm near the shore and taller in storms
+- Open water rolls with a real swell that moves the surface itself, calm near the shore
 - Living water: players, mobs, boats and items leave wakes, things falling in make splash rings, and every raindrop leaves a ring that spreads and fades; waves bounce back from the shore
 - Reflects the sky (with the sun and the moon under the physical sky); with screen space reflections or ray tracing also the world and mobs
 - Works on every graphics card

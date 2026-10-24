@@ -86,6 +86,10 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Role: When ray tracing is asked for and the device enabled `VK_KHR_acceleration_structure`, creates renderpearl's VMA allocator with `VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT`, so ray tracing buffers come from VMA's blocks instead of one `vkAllocateMemory` each.
 - Notes: Renderpearl creates the allocator in a private static method; hundreds of section structures would exceed the driver's allocation count limit with own allocations.
 
+#### WaterFogEnvironmentMixin
+- Path: `src/main/java/com/aryston/helion/mixin/WaterFogEnvironmentMixin.java`
+- Role: After `WaterFogEnvironment.setupFog`, replaces the environmental, sky and cloud fog end with `HelionUnderwaterFog.extendedEnd`, so the realistic underwater pass, not the vanilla fog, limits how far the player sees under water.
+
 #### SectionCompilerMixin
 - Path: `src/main/java/com/aryston/helion/mixin/SectionCompilerMixin.java`
 - Role: Hands the result of every `SectionCompiler.compile` (on the section compile worker) to `RtxSectionCapture`, which copies the solid and cutout quad positions for ray tracing.

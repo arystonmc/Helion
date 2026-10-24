@@ -83,6 +83,7 @@ final class VisualTestWorld {
     private static final String SAVANNA_BIOME = "minecraft:savanna";
     static final BlockPos RAIN_CAMERA = new BlockPos(12, 0, 4);
     static final BlockPos RAIN_POOL_CAMERA = new BlockPos(12, 0, -5);
+    static final BlockPos GRASS_CAMERA = new BlockPos(13, 0, 0);
     private static final BlockPos WALKER_START = new BlockPos(-3, -2, -2);
     private static final BlockPos WALKER_PATH = new BlockPos(-1, 0, -2);
     private static final double WALKER_STRIDE = 0.7;
@@ -90,6 +91,8 @@ final class VisualTestWorld {
     private static final String WALKER_TAG = " {Tags:[\"" + WALKER + "\"],Invulnerable:1b}";
     private static final String WALKER_FACING = " -90 0";
     private static final BlockPos RAIN_POOL_DROP = new BlockPos(11, 4, -11);
+    private static final BlockPos YARD_DROP = new BlockPos(15, 0, 1);
+    private static final String YARD_ITEM = " {Item:{id:\"minecraft:beef\",count:1},PickupDelay:32767}";
     private static final String DROPPED_ITEM = " {Item:{id:\"minecraft:cobblestone\",count:1},PickupDelay:32767}";
     private static final Volume RAIN_YARD_AIR = new Volume(new BlockPos(8, 0, -12), new BlockPos(16, 8, 4));
     private static final Volume RAIN_YARD_FLOOR = new Volume(new BlockPos(8, -1, -12), new BlockPos(16, -1, 4));
@@ -104,7 +107,9 @@ final class VisualTestWorld {
         new Fill(new Volume(new BlockPos(12, 0, -11), new BlockPos(12, 2, -11)), "stone_bricks"),
         new Fill(new Volume(new BlockPos(10, 0, -7), new BlockPos(10, 0, -7)), "lantern"),
         new Fill(new Volume(new BlockPos(9, -3, -13), new BlockPos(15, -1, -8)), "stone_bricks"),
-        new Fill(new Volume(new BlockPos(10, -2, -12), new BlockPos(14, -1, -9)), "water")
+        new Fill(new Volume(new BlockPos(10, -2, -12), new BlockPos(14, -1, -9)), "water"),
+        new Fill(new Volume(new BlockPos(13, 0, -13), new BlockPos(13, 0, -13)), "torch"),
+        new Fill(new Volume(new BlockPos(15, 0, -3), new BlockPos(16, 0, 3)), "short_grass")
     );
     private static final Volume TINT_ROOM = new Volume(new BlockPos(14, -17, 0), new BlockPos(24, -15, 3));
     private static final List<Placement> TINT_BLOCKS = List.of(
@@ -124,9 +129,12 @@ final class VisualTestWorld {
         new Placement(22, -17, 2, "sea_lantern")
     );
     static final BlockPos LAKE_CAMERA = new BlockPos(-25, 0, 1);
+    static final BlockPos LAKE_UNDER_CAMERA = new BlockPos(-25, -3, -4);
     private static final Volume LAKE_AIR = new Volume(new BlockPos(-41, 0, -31), new BlockPos(-9, 10, 2));
     private static final Volume LAKE_BASIN = new Volume(new BlockPos(-41, -4, -31), new BlockPos(-9, -1, 1));
     private static final Volume LAKE_WATER = new Volume(new BlockPos(-40, -3, -30), new BlockPos(-10, -1, 0));
+    private static final Volume LAKE_PILLAR = new Volume(new BlockPos(-25, -3, -12), new BlockPos(-25, 0, -12));
+    private static final Placement LAKE_TORCH = new Placement(-25, 1, -12, "torch");
     private static final Volume LAKE_BIOME = new Volume(new BlockPos(-41, -4, -31), new BlockPos(-9, 12, 2));
     private static final List<Volume> WALL_ROOMS = List.of(
         new Volume(new BlockPos(14, -17, -9), new BlockPos(20, -15, -3)),
@@ -186,6 +194,8 @@ final class VisualTestWorld {
         run(server, fill(origin.offset(LAKE_AIR.from()), origin.offset(LAKE_AIR.to()), "air"));
         run(server, fill(origin.offset(LAKE_BASIN.from()), origin.offset(LAKE_BASIN.to()), CASTER_BLOCK));
         run(server, fill(origin.offset(LAKE_WATER.from()), origin.offset(LAKE_WATER.to()), "water"));
+        run(server, fill(origin.offset(LAKE_PILLAR.from()), origin.offset(LAKE_PILLAR.to()), CASTER_BLOCK));
+        run(server, LAKE_TORCH.command(origin));
         run(server, "fillbiome " + coordinates(origin.offset(LAKE_BIOME.from())) + " " + coordinates(origin.offset(LAKE_BIOME.to())) + " " + RAIN_BIOME);
     }
 
@@ -201,6 +211,8 @@ final class VisualTestWorld {
     static void dropIntoRainPool(IntegratedServer server, BlockPos origin) {
         BlockPos above = origin.offset(RAIN_POOL_DROP);
         run(server, "summon item " + (above.getX() + BLOCK_CENTER) + " " + above.getY() + " " + (above.getZ() + BLOCK_CENTER) + DROPPED_ITEM);
+        BlockPos yard = origin.offset(YARD_DROP);
+        run(server, "summon item " + (yard.getX() + BLOCK_CENTER) + " " + yard.getY() + " " + (yard.getZ() + BLOCK_CENTER) + YARD_ITEM);
     }
 
     static void summonWalker(IntegratedServer server, BlockPos origin) {

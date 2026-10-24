@@ -2,6 +2,7 @@
 #define HELION_WETNESS_GLSL
 
 #include <helion:helion_geometry.glsl>
+#include <helion:helion_hash.glsl>
 
 struct HelionWetSurface {
     float wetness;
@@ -38,8 +39,6 @@ const float HELION_RIPPLE_FREQUENCY = 40.0;
 const float HELION_RIPPLE_WIDTH = 18.0;
 const float HELION_RIPPLE_STRENGTH = 0.2;
 const float HELION_RIPPLE_MIN_DISTANCE = 1.0e-3;
-const vec2 HELION_WET_HASH_STEP = vec2(127.1, 311.7);
-const float HELION_WET_HASH_SCALE = 43758.5453;
 const vec2 HELION_RIPPLE_OFFSET_X = vec2(3.1, 1.7);
 const vec2 HELION_RIPPLE_OFFSET_Z = vec2(7.7, 5.3);
 const float HELION_STREAK_WIDTH = 3.0;
@@ -58,7 +57,7 @@ const HelionWetSurface HELION_DRY_SURFACE = HelionWetSurface(0.0, 0.0, 0.0, 0.0,
 
 float helionWetHash(vec2 cell, float periodCells) {
     vec2 wrapped = mod(cell, periodCells);
-    return fract(sin(dot(wrapped, HELION_WET_HASH_STEP)) * HELION_WET_HASH_SCALE);
+    return helionHash(wrapped);
 }
 
 float helionWetNoise(vec2 position, float scale) {

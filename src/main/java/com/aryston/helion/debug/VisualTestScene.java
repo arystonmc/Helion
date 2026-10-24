@@ -22,6 +22,8 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final float SAVANNA_PITCH = 30.0F;
     private static final float POOL_PITCH = 8.0F;
     private static final float LAKE_PITCH = 12.0F;
+    private static final float GRASS_PITCH = 50.0F;
+    private static final float LAKE_FLOOR_PITCH = 20.0F;
     private static final float CLOSE_PITCH = 45.0F;
     private static final float UNDERWATER_PITCH = -40.0F;
     private static final float SHOWCASE_PITCH = 25.0F;
@@ -55,6 +57,10 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("water_night_close", MIDNIGHT, NORTH, CLOSE_PITCH, VisualTestWorld.POOL_CAMERA),
         new VisualTestScene("water_lake", NOON, NORTH, LAKE_PITCH, VisualTestWorld.LAKE_CAMERA),
         new VisualTestScene("water_lake_sunset", SUNSET, NORTH, LAKE_PITCH, VisualTestWorld.LAKE_CAMERA),
+        new VisualTestScene("water_lake_night", MIDNIGHT, NORTH, LAKE_PITCH, VisualTestWorld.LAKE_CAMERA),
+        new VisualTestScene("water_lake_under", NOON, NORTH, UNDERWATER_PITCH, VisualTestWorld.LAKE_UNDER_CAMERA),
+        new VisualTestScene("water_lake_under_floor", NOON, NORTH, LAKE_FLOOR_PITCH, VisualTestWorld.LAKE_UNDER_CAMERA),
+        new VisualTestScene("water_lake_under_night", MIDNIGHT, NORTH, UNDERWATER_PITCH, VisualTestWorld.LAKE_UNDER_CAMERA),
         new VisualTestScene("water_lake_storm", NOON, NORTH, LAKE_PITCH, VisualTestWorld.LAKE_CAMERA, RAIN),
         new VisualTestScene("water_under", NOON, NORTH, UNDERWATER_PITCH, VisualTestWorld.UNDERWATER_CAMERA),
         new VisualTestScene("water_under_floor", NOON, NORTH, CLOSE_PITCH, VisualTestWorld.UNDERWATER_CAMERA),
@@ -66,6 +72,9 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("rain_yard_low", NOON, NORTH, POOL_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),
         new VisualTestScene("rain_yard_dusk", SUNSET, NORTH, POOL_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),
         new VisualTestScene("rain_pool", NOON, NORTH, RAIN_POOL_PITCH, VisualTestWorld.RAIN_POOL_CAMERA, RAIN),
+        new VisualTestScene("grass_close", NOON, EAST, GRASS_PITCH, VisualTestWorld.GRASS_CAMERA),
+        new VisualTestScene("grass_close_morning", MORNING, EAST, GRASS_PITCH, VisualTestWorld.GRASS_CAMERA),
+        new VisualTestScene("grass_close_rain", NOON, EAST, GRASS_PITCH, VisualTestWorld.GRASS_CAMERA, RAIN),
         new VisualTestScene("footprints", NOON, NORTH, CLOSE_PITCH, VisualTestWorld.POOL_CAMERA),
         new VisualTestScene("rainbow", EARLY_MORNING, WEST, RAINBOW_PITCH, VisualTestWorld.RAIN_CAMERA, CLEAR, WET)
     );

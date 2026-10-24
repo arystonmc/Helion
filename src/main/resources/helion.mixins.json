@@ -22,7 +22,8 @@
     "VulkanConstMixin",
     "VulkanDeviceAccessor",
     "VulkanFeatureSetsMixin",
-    "VulkanGpuBufferMixin"
+    "VulkanGpuBufferMixin",
+    "WaterFogEnvironmentMixin"
   ],
   "injectors": {
     "defaultRequire": 1

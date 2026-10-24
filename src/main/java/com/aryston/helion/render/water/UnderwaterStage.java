@@ -19,7 +19,7 @@ public final class UnderwaterStage implements RenderStage {
     private static final String PASS_LABEL = "Helion Underwater";
     private static final float DAYLIGHT_FROM = 0.0F;
     private static final float DAYLIGHT_TO = 0.25F;
-    private static final float UNKNOWN_DAYLIGHT = 0.5F;
+    private static final float UNKNOWN_DAYLIGHT = 1.0F;
     private static final float SMOOTH_START = 3.0F;
     private static final float SMOOTH_SLOPE = 2.0F;
 
@@ -50,12 +50,13 @@ public final class UnderwaterStage implements RenderStage {
         FramePass pass = frame.graph().addPass(NAME);
         ResourceHandle<RenderTarget> scene = pass.readsAndWrites(frame.targets().scene());
         frame.targets().updateScene(scene);
+        float skyLight = frame.water().underwaterSkyLight();
         float daylight = frame.atmosphere().skyLight().map(UnderwaterStage::daylight).orElse(UNKNOWN_DAYLIGHT);
         pass.executes(frame.graph().timed(NAME, () -> {
             RenderTarget target = scene.get();
             FullscreenPass.draw(PASS_LABEL, target, pipeline, renderPass -> {
                 RenderSystem.bindDefaultUniforms(renderPass);
-                renderPass.setUniform(WaterPipelines.UNDERWATER_UNIFORM, resources.underwaterUniforms(frame.camera(), daylight));
+                renderPass.setUniform(WaterPipelines.UNDERWATER_UNIFORM, resources.underwaterUniforms(frame.camera(), daylight, skyLight));
                 renderPass.setUniform(
                     WaterPipelines.SCENE_DEPTH_SAMPLER,
                     Objects.requireNonNull(target.getDepthTextureView()),

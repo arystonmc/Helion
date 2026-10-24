@@ -29,7 +29,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### UnderwaterStage
 - Path: `src/main/java/com/aryston/helion/render/water/UnderwaterStage.java`
-- Role: Pass `underwater` (with realistic water, only while the camera is in water): one fullscreen premultiplied blend of `water/underwater.fsh` over the scene with its depth: distance extinction toward a teal-shifted water fog color, caustics below the eye and light shafts looking up, scaled by the daylight from the physical sky light (0.5 without it).
+- Role: Pass `underwater` (with realistic water, only while the camera is in water): one fullscreen premultiplied blend of `water/underwater.fsh` over the scene with its depth: distance extinction toward a teal-shifted water fog color and toward black in the dark, caustics (`helion_caustics.glsl`) below the eye and light shafts looking up, all scaled by the sun reaching the camera: the camera sky light (minus the vanilla sky darkening) squared, times the daylight from the physical sky light (1 without it). `RainWetnessStage` also asks the weather source every frame to extend the vanilla underwater fog while realistic water is on.
 - Depends on: `WaterResources`, `WaterPipelines`, `WaterResults`, `FullscreenPass`.
 
 #### WaterWaveStage, WaterWaves, WaterShoreMask, WaveSource, WaveImpulse

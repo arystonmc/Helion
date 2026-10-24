@@ -34,7 +34,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaTerrainSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaTerrainSource.java`
-- Role: `TerrainSource` over vanilla `ChunkSectionsToRender`: fog (the current `SceneFog` buffer, so the physical sky fog reaches terrain), chunk sampler, opaque and translucent layer groups, matching stage events. `renderOpaqueGeometry` draws the solid and cutout layers one by one with the geometry pipelines through `ChunkSectionsToRenderAccessor`; `supportsGeometryBuffer` is false for wireframe terrain or missing shaders. When the frame has dynamic lights it binds their uniform and draws every layer with the dynamic light pipelines (`VanillaDynamicLightPipelines`, or the geometry pipelines with lights), falling back per layer to the vanilla pipelines when a variant is missing; without lights it draws exactly as before. `renderWaterSurface` draws the translucent layer with the water surface pipelines (skipped for wireframe terrain or missing shaders); `renderWaterSurface` also draws the cutout layer with the glass surface pipelines, so plain glass gets a reflecting surface. `textures()` hands the block atlas, the lightmap and the atlas bounds of `block/water_still` and `block/water_flow` to the core; `glossyCells()` the glossy mask cells of the block atlas from `VanillaGlossyCells`.
+- Role: `TerrainSource` over vanilla `ChunkSectionsToRender`: fog (the current `SceneFog` buffer, so the physical sky fog reaches terrain), chunk sampler, opaque and translucent layer groups, matching stage events. `renderOpaqueGeometry` draws the solid and cutout layers one by one with the geometry pipelines through `ChunkSectionsToRenderAccessor`; `supportsGeometryBuffer` is false for wireframe terrain or missing shaders. With dynamic lights it binds their uniform and draws every layer with the dynamic light pipelines (`VanillaDynamicLightPipelines`), per layer falling back to vanilla when a variant is missing. `renderWaterSurface` draws the translucent layer with the water surface pipelines and the cutout layer with the glass surface pipelines (plain glass reflects). `textures()` hands the block atlas, the lightmap and the atlas bounds of `block/water_still` and `block/water_flow` to the core; `glossyCells()` the glossy mask cells of the block atlas from `VanillaGlossyCells`.
 
 #### VanillaFootprintSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaFootprintSource.java`
@@ -157,6 +157,10 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 #### HelionClouds
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/HelionClouds.java`
 - Role: Whether the volumetric clouds replace the vanilla clouds in the current Helion frame, read by `CloudRendererMixin`. `VanillaFrameDriver` clears it when the frame ends, so vanilla frames always keep their clouds.
+
+#### HelionUnderwaterFog
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/HelionUnderwaterFog.java`
+- Role: Underwater fog extension for realistic water (set each frame by `VanillaWeatherSource`, read by `WaterFogEnvironmentMixin`): three times the vanilla end, at least 72 blocks; expires a second after the last frame.
 
 #### VanillaTransparencySource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaTransparencySource.java`

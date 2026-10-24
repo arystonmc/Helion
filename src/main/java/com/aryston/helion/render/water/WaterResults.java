@@ -17,6 +17,7 @@ public final class WaterResults {
     private @Nullable ResourceHandle<RenderTarget> refraction;
     private @Nullable ResourceHandle<RenderTarget> waves;
     private boolean underwater;
+    private float underwaterSkyLight;
     private List<Footprint> footprints = List.of();
     private double footprintSeconds;
 
@@ -77,8 +78,13 @@ public final class WaterResults {
         return underwater;
     }
 
-    void publishUnderwater() {
+    float underwaterSkyLight() {
+        return underwaterSkyLight;
+    }
+
+    void publishUnderwater(float skyLight) {
         underwater = true;
+        underwaterSkyLight = skyLight;
     }
 
     void publishWaves(ResourceHandle<RenderTarget> simulated) {

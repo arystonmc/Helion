@@ -30,8 +30,9 @@ public final class RainWetnessStage implements RenderStage {
     @Override
     public void addTo(FrameContext frame) {
         WeatherState state = weather.weather();
+        weather.extendUnderwaterView(frame.settings().reflections().realisticWater());
         if (state.underwater()) {
-            frame.water().publishUnderwater();
+            frame.water().publishUnderwater(state.cameraSkyLight());
         }
         if (!frame.settings().reflections().rainWetness()) {
             resources.footprints().clear();

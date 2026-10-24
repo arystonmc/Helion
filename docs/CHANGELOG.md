@@ -7,15 +7,14 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
-- Lakes and oceans roll with a real swell that grows in storms
+- Under water: longer view, sunlight only where it reaches, pitch dark at night, the sky through Snell's window and realistic caustics on the bottom
+- Lakes and oceans roll with a real swell
 - Experimental ray tracing: puddles reflect the world beyond the screen
 - Dirt, grass and farmland turn muddy with small puddles in heavy rain
 - Wet footprints after coming out of the water
-- Water gets choppy in rain and thunderstorms
 - Under water: blue-green depth fog, light shafts from the surface and caustics on the bottom
 - Rainbows opposite a low sun after rain
 - Rivers carry their waves downstream and waterfalls get falling foam
-- Foam along shores and around blocks in the water
 - Rain runs down walls in glistening streaks
 - Lightning flashes light up wet ground, puddles and water
 - Realistic water reacts: players, mobs, boats and items leave wakes, falling things make splash rings and raindrops ripple the surface
@@ -46,6 +45,8 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Depth of field focuses on the sky when you look at it, so the sun, the moon and the stars stay sharp
 
 ### Fixed
+- Realistic water: lamps and torches reflect visibly, the sun no longer glints behind mountains, the moon glint is brighter, vanilla water no longer shows along the shore, rain no longer makes the water tremble, and distant water no longer sparkles
+- Realistic water: shore foam removed
 - Realistic water no longer glows all over at night, shows a strong sun glint by day, has smoother waves without a checker pattern and looks right from under water
 - Experimental voxel lighting: several lights right behind a wall no longer shine through it
 - Experimental voxel lighting: bounced light no longer makes rooms next to bright lights brighter than vanilla

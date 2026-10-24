@@ -165,7 +165,7 @@ public final class WaterResources {
         return calculator.get();
     }
 
-    GpuBuffer underwaterUniforms(HelionCamera camera, float daylight) {
+    GpuBuffer underwaterUniforms(HelionCamera camera, float daylight, float skyLight) {
         if (underwaterUniforms == null) {
             underwaterUniforms = new UniformRing(UNDERWATER_LABEL, UNDERWATER_SIZE, resources);
         }
@@ -173,7 +173,7 @@ public final class WaterResources {
         return underwaterUniforms.write(builder -> builder
             .putMat4f(camera.levelViewProjection().invert())
             .putVec4((float) (position.x() % NOISE_PERIOD), (float) (position.y() % NOISE_PERIOD), (float) (position.z() % NOISE_PERIOD), daylight)
-            .putVec4((float) ((System.nanoTime() / NANOS_PER_SECOND) % SECONDS_PERIOD), ABSENT, ABSENT, ABSENT));
+            .putVec4((float) ((System.nanoTime() / NANOS_PER_SECOND) % SECONDS_PERIOD), skyLight, ABSENT, ABSENT));
     }
 
     void finishUnderwater() {
