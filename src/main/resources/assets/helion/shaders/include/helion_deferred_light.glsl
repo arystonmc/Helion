@@ -28,7 +28,8 @@ vec3 helionDeferredBase(ivec2 pixel, vec4 levels) {
 }
 
 vec4 helionDeferredLightWithBlock(ivec2 pixel, vec4 levels, vec3 block) {
-    vec3 light = helionAdjustLight(helionDeferredBase(pixel, levels) + block * BlockLightIntensity);
+    vec3 base = helionDeferredBase(pixel, levels);
+    vec3 light = helionAdjustLight(base + helionShapedBlockLight(block, base) * BlockLightIntensity);
     vec3 referenceSky = helionInterpolatedSkyTerm(levels.g, SkyLightColor);
     float reference = max(helionMaxComponent(helionAdjustLight(helionAmbientTerm() + referenceSky)) * HELION_SKY_ADAPTATION, HELION_MIN_REFERENCE_LIGHT);
     return vec4(light, reference);

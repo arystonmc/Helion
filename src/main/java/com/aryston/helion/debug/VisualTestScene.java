@@ -93,6 +93,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("glass_window", NOON, NORTH, GLASS_PITCH, VisualTestWorld.GLASS_CAMERA),
         new VisualTestScene("glass_window_rain", NOON, NORTH, GLASS_PITCH, VisualTestWorld.GLASS_CAMERA, RAIN),
         new VisualTestScene("emitter_shadow", SUNRISE, NORTH, EMITTER_PITCH, VisualTestWorld.EMITTER_CAMERA),
+        new VisualTestScene("emitter_night", MIDNIGHT, NORTH, EMITTER_PITCH, VisualTestWorld.EMITTER_CAMERA),
         new VisualTestScene("water_swamp", NOON, NORTH, SWAMP_PITCH, VisualTestWorld.SWAMP_CAMERA),
         new VisualTestScene("water_swamp_under", NOON, NORTH, SWAMP_UNDER_PITCH, VisualTestWorld.SWAMP_UNDER_CAMERA),
         new VisualTestScene("water_beach", NOON, NORTH, BEACH_PITCH, VisualTestWorld.BEACH_CAMERA),

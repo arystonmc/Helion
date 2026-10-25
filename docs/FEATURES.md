@@ -113,7 +113,7 @@ The foundation for Helion's own lighting, sky and shadows.
 Torches, lanterns and lava finally shine brighter than the vanilla light limit.
 
 - Helion lights terrain itself, with block light and sky light computed separately and nothing cut off at full brightness
-- In daylight and wherever lights are weak the world looks exactly like vanilla; at night and in caves, blocks next to a light glow and bloom picks them up
+- In daylight the world looks like vanilla; at night and in caves lights are much stronger close by and fade faster with distance, so light falls in clear pools and places without a light stay dark; moonlit nights and caves are darker than vanilla
 - Settings: on or off, block light intensity, sky light intensity, and a view that shows the light alone; needs the geometry buffer, off by default while it is experimental
 - Since: 1.0
 

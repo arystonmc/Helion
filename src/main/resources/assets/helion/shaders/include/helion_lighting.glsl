@@ -24,9 +24,32 @@ layout(std140) uniform HelionLighting {
 
 const float HELION_BLOCK_TINT_FADE = 0.9;
 const vec3 HELION_BOSS_DARKENING_TINT = vec3(0.7, 0.6, 0.6);
+const float HELION_BLOCK_LIGHT_GAIN = 1.4;
+const float HELION_BLOCK_LIGHT_FALLOFF = 1.5;
+const float HELION_DAYLIGHT_FROM = 0.15;
+const float HELION_DAYLIGHT_TO = 0.6;
+const float HELION_AMBIENT_SHARE = 0.5;
+const float HELION_NIGHT_SKY_SHARE = 0.45;
+const float HELION_NIGHT_SKY_FROM = 0.3;
+const float HELION_NIGHT_SKY_TO = 0.9;
+const float HELION_BRIGHTNESS_LIFT_SHARE = 0.6;
+
+float helionNightSkyShare() {
+    return mix(HELION_NIGHT_SKY_SHARE, 1.0, smoothstep(HELION_NIGHT_SKY_FROM, HELION_NIGHT_SKY_TO, SkyFactor));
+}
 
 vec3 helionSkyTerm(float level, vec3 skyColor) {
-    return skyColor * helionLevelBrightness(level) * SkyFactor;
+    return skyColor * helionLevelBrightness(level) * SkyFactor * helionNightSkyShare();
+}
+
+vec3 helionShapedBlockLight(vec3 block, vec3 base) {
+    float peak = max(block.r, max(block.g, block.b));
+    if (peak <= 0.0) {
+        return block;
+    }
+    float shaped = HELION_BLOCK_LIGHT_GAIN * pow(peak, HELION_BLOCK_LIGHT_FALLOFF - 1.0);
+    float daylight = smoothstep(HELION_DAYLIGHT_FROM, HELION_DAYLIGHT_TO, max(base.r, max(base.g, base.b)));
+    return block * mix(shaped, 1.0, daylight);
 }
 
 vec3 helionBlockTerm(float level) {
@@ -50,7 +73,7 @@ vec3 helionInterpolatedBlockTerm(float coordinate) {
 }
 
 vec3 helionAmbientTerm() {
-    return max(AmbientColor, NightVisionColor * NightVisionFactor);
+    return max(AmbientColor * HELION_AMBIENT_SHARE, NightVisionColor * NightVisionFactor);
 }
 
 vec3 helionAdjustLight(vec3 light) {
@@ -65,7 +88,7 @@ vec3 helionVanillaBrightness(vec3 light) {
     }
     float inverted = 1.0 - peak;
     float lifted = 1.0 - inverted * inverted * inverted * inverted;
-    return mix(light, light * (lifted / peak), Brightness);
+    return mix(light, light * (lifted / peak), Brightness * HELION_BRIGHTNESS_LIFT_SHARE);
 }
 
 #endif

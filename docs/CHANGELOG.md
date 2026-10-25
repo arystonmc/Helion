@@ -48,6 +48,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental ray tracing: mobs, players and dropped items show in water reflections, also when they are off screen
 
 ### Changed
+- HDR lighting: lights shine stronger close by and fade faster, while unlit places, moonlit nights and caves are darker
 - Volumetric clouds are a little thinner in clear weather
 - Needs NeoForge 26.3.0.95 or newer (NeoForge for Minecraft 26.3 is no longer beta)
 - Physical sky: a small sun of realistic size with a bright halo that turns orange and red as it sets

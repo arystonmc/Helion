@@ -64,8 +64,8 @@ HelionVoxelBlock helionVoxelBlock(ivec2 pixel, vec4 levels) {
     vec3 unshadowed = mix(vanilla, helionWithBounce(tracedLight, bounced, vanilla, floorTerm), trust);
     vec3 shadowed = mix(vanilla, helionWithBounce(tracedLight * traced.a, bounced, vanilla, floorTerm), trust);
     vec3 base = helionDeferredBase(pixel, levels);
-    float lit = helionDisplayedLight(base + unshadowed * BlockLightIntensity);
-    float dimmed = helionDisplayedLight(base + shadowed * BlockLightIntensity);
+    float lit = helionDisplayedLight(base + helionShapedBlockLight(unshadowed, base) * BlockLightIntensity);
+    float dimmed = helionDisplayedLight(base + helionShapedBlockLight(shadowed, base) * BlockLightIntensity);
     float transmission = lit > HELION_MIN_SKY_LUMINANCE ? dimmed / lit : 1.0;
     return HelionVoxelBlock(unshadowed, transmission);
 }
@@ -74,7 +74,8 @@ HelionVoxelBlock helionVoxelBlock(ivec2 pixel, vec4 levels) {
 #ifdef HELION_SHADOWS
 float helionSkyShare(vec4 levels) {
     vec3 sky = helionInterpolatedSkyTerm(levels.g, SkyLightColor) * SkyLightIntensity;
-    vec3 total = helionAmbientTerm() + sky + helionInterpolatedBlockTerm(levels.r) * BlockLightIntensity;
+    vec3 base = helionAmbientTerm() + sky;
+    vec3 total = base + helionShapedBlockLight(helionInterpolatedBlockTerm(levels.r), base) * BlockLightIntensity;
     return helionLuminance(sky) / max(helionLuminance(total), HELION_MIN_SKY_LUMINANCE);
 }
 #endif
