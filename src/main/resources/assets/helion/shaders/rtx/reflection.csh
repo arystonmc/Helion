@@ -23,10 +23,12 @@ layout(set = 0, binding = 6, std430) readonly buffer HelionSurfaceTable {
 layout(set = 0, binding = 7) uniform sampler2D SceneDepthSampler;
 layout(set = 0, binding = 8) uniform sampler2D GeometryNormalSampler;
 layout(set = 0, binding = 9) uniform sampler2D GeometryLightSampler;
+layout(set = 0, binding = 10) uniform sampler2D GlassDepthSampler;
+layout(set = 0, binding = 11) uniform sampler2D GlassSurfaceSampler;
 #ifdef HELION_RT_ENTITIES
 const int HELION_RT_ENTITY_TEXTURES = 16;
-layout(set = 0, binding = 10) uniform sampler2D EntityTextures[HELION_RT_ENTITY_TEXTURES];
-layout(set = 0, binding = 11, std430) readonly buffer HelionEntityTable {
+layout(set = 0, binding = 12) uniform sampler2D EntityTextures[HELION_RT_ENTITY_TEXTURES];
+layout(set = 0, binding = 13, std430) readonly buffer HelionEntityTable {
     uvec4 Entities[];
 };
 #endif
@@ -134,6 +136,10 @@ void main() {
     }
     float depth = texelFetch(WaterDepthSampler, pixel, 0).r;
     vec4 water = texelFetch(WaterSurfaceSampler, pixel, 0);
+    if (!helionIsWater(water)) {
+        depth = texelFetch(GlassDepthSampler, pixel, 0).r;
+        water = texelFetch(GlassSurfaceSampler, pixel, 0);
+    }
     vec2 screen = (vec2(pixel) + 0.5) / vec2(size);
     vec3 normal;
     if (depth > HELION_RT_SKY_DEPTH && (helionIsWater(water) || helionIsGlossy(water))) {

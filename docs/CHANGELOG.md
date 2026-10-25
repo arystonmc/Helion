@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Realistic glass: plain glass slightly bends the view behind it, stained glass tints it like real colored glass, and glass reflects the world
 - Realistic water: waves roll in from open water and break on beaches with white foam that runs up the shore
 - In third person the player, slimes and other see-through mobs mirror in the water and show through it
 - Realistic water is clear, and its color and clarity follow the biome and the depth: murky green swamps, clear turquoise shallows and lakes, dark blue deep ocean
@@ -57,6 +58,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Depth of field focuses on the sky when you look at it, so the sun, the moon and the stars stay sharp
 
 ### Fixed
+- The world behind stained glass no longer looks like vanilla: water, fog, rain and light shafts show through it
 - Distant water reflections no longer show frozen dotted edges in dry weather
 - Realistic water: lamps and torches reflect visibly, the sun no longer glints behind mountains, the moon glint is brighter, vanilla water no longer shows along the shore, rain no longer makes the water tremble, and distant water no longer sparkles
 - Realistic water: shore foam removed

@@ -18,6 +18,8 @@ uniform sampler2D GeometryNormalSampler;
 uniform sampler2D GeometryLightSampler;
 uniform sampler2D WaveSampler;
 uniform sampler2D ReflectionSampler;
+uniform sampler2D GlassSurfaceSampler;
+uniform sampler2D GlassDepthSampler;
 
 layout(std140) uniform HelionScreenReflection {
     mat4 ReflectionViewProjection;
@@ -248,7 +250,12 @@ void main() {
     ivec2 pixel = ivec2(gl_FragCoord.xy);
     vec2 screen = (vec2(pixel) + 0.5) / vec2(textureSize(WaterDepthSampler, 0));
     vec4 surface = texelFetch(WaterSurfaceSampler, pixel, 0);
+    float depth = texelFetch(WaterDepthSampler, pixel, 0).r;
     bool water = helionIsWater(surface);
+    if (!water) {
+        surface = texelFetch(GlassSurfaceSampler, pixel, 0);
+        depth = texelFetch(GlassDepthSampler, pixel, 0).r;
+    }
     if (ReflectionFlags.y < HELION_FLAG_SET || !water && !helionIsGlossy(surface)) {
         polishedColor = helionSurfaceSheen(pixel, screen);
         return;
@@ -259,5 +266,5 @@ void main() {
     }
     float reach;
     vec4 sky;
-    fragColor = helionMarch(helionWorldAt(screen, texelFetch(WaterDepthSampler, pixel, 0).r), normal, reach, sky);
+    fragColor = helionMarch(helionWorldAt(screen, depth), normal, reach, sky);
 }

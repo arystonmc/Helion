@@ -59,7 +59,9 @@ public final class WaterReflectionStage implements RenderStage {
             frame.atmosphere().skyColor(),
             frame.atmosphere().clouds().map(SceneCloudPass::resolved),
             frame.atmosphere().clouds().flatMap(SceneCloudPass::skyMap),
-            frame.water().waves().flatMap(ignored -> resources.waves().shore().distanceView())
+            frame.water().waves().flatMap(ignored -> resources.waves().shore().distanceView()),
+            frame.water().glassSurface(),
+            frame.water().glassTint()
         ));
     }
 
@@ -75,6 +77,8 @@ public final class WaterReflectionStage implements RenderStage {
         private final Optional<ResourceHandle<RenderTarget>> clouds;
         private final Optional<ResourceHandle<RenderTarget>> skyMap;
         private final Optional<GpuTextureView> shore;
+        private final Optional<ResourceHandle<RenderTarget>> glassSurface;
+        private final Optional<ResourceHandle<RenderTarget>> glassTint;
 
         private Composite(
             FrameContext frame,
@@ -87,7 +91,9 @@ public final class WaterReflectionStage implements RenderStage {
             Optional<SceneSkyColor> sky,
             Optional<ResourceHandle<RenderTarget>> clouds,
             Optional<ResourceHandle<RenderTarget>> skyMap,
-            Optional<GpuTextureView> shore
+            Optional<GpuTextureView> shore,
+            Optional<ResourceHandle<RenderTarget>> glassSurface,
+            Optional<ResourceHandle<RenderTarget>> glassTint
         ) {
             this.frame = frame;
             this.pipeline = pipeline;
@@ -100,6 +106,8 @@ public final class WaterReflectionStage implements RenderStage {
             this.clouds = clouds;
             this.skyMap = skyMap;
             this.shore = shore;
+            this.glassSurface = glassSurface;
+            this.glassTint = glassTint;
         }
 
         @Override
@@ -111,6 +119,8 @@ public final class WaterReflectionStage implements RenderStage {
             sky.ifPresent(color -> color.declareReads(pass));
             clouds.ifPresent(pass::reads);
             skyMap.ifPresent(pass::reads);
+            glassSurface.ifPresent(pass::reads);
+            glassTint.ifPresent(pass::reads);
         }
 
         @Override
@@ -132,6 +142,10 @@ public final class WaterReflectionStage implements RenderStage {
                 renderPass.setUniform(WaterPipelines.REFLECTED_CLOUD_SAMPLER, clouds.map(WaterReflectionStage::colorView).orElse(standIn), linear());
                 renderPass.setUniform(WaterPipelines.SKY_CLOUD_SAMPLER, skyMap.map(WaterReflectionStage::colorView).orElse(standIn), linear());
                 renderPass.setUniform(WaterPipelines.SHORE_DISTANCE_SAMPLER, shore.orElse(standIn), RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR));
+                RenderTarget glass = glassSurface.map(ResourceHandle::get).orElse(water);
+                renderPass.setUniform(WaterPipelines.GLASS_SURFACE_SAMPLER, Objects.requireNonNull(glass.getColorTextureView()), nearest);
+                renderPass.setUniform(WaterPipelines.GLASS_DEPTH_SAMPLER, Objects.requireNonNull(glass.getDepthTextureView()), nearest);
+                renderPass.setUniform(WaterPipelines.GLASS_TINT_SAMPLER, glassTint.map(WaterReflectionStage::colorView).orElse(standIn), nearest);
             });
             resources.finishReflection();
         }

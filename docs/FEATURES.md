@@ -232,6 +232,7 @@ Water looks like water instead of a flat blue texture.
 - Open water rolls with a real swell that moves the surface itself, calm near the shore
 - Waves roll in from open water toward beaches, grow and steepen in the shallows and break with white foam that runs up the shore; ponds, pools and deep walls stay calm
 - The player in third person and see-through mobs such as slimes mirror in the water and show through it
+- Glass: the world behind glass and stained glass keeps the Helion look, with its water, haze, rain and light shafts; plain glass bends the view a little, stained glass colors it like real tinted glass (dark glass really darkens), and every pane reflects the world, more at a glancing angle
 - Living water: players, mobs, boats and items leave wakes, things falling in make splash rings, and every raindrop leaves a ring that spreads and fades; waves bounce back from the shore
 - Reflects the sky (with the sun and the moon under the physical sky) and the world on screen: trees, shores, buildings and mobs mirror in the water even with screen space reflections off; with ray tracing also what is off screen
 - Works on every graphics card

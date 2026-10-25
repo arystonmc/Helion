@@ -8,10 +8,9 @@
 #include <helion:helion_caustics.glsl>
 #include <helion:helion_cloud_sky_map.glsl>
 #include <helion:helion_water_waves.glsl>
+#include <minecraft:fog.glsl>
 #ifdef HELION_PHYSICAL_SKY
 #include <helion:helion_sky_color.glsl>
-#else
-#include <minecraft:fog.glsl>
 #endif
 
 uniform sampler2D WaterSurfaceSampler;
@@ -23,6 +22,9 @@ uniform sampler2D RefractionSampler;
 uniform sampler2D ReflectedCloudSampler;
 uniform sampler2D SkyCloudSampler;
 uniform sampler2D ShoreDistanceSampler;
+uniform sampler2D GlassSurfaceSampler;
+uniform sampler2D GlassDepthSampler;
+uniform sampler2D GlassTintSampler;
 
 layout(std140) uniform HelionWaterReflection {
     mat4 WaterInverseViewProjection;
@@ -107,6 +109,12 @@ const float HELION_FALL_FOAM = 0.85;
 const float HELION_UNDER_GLOW = 0.35;
 const float HELION_UNDER_SUN = 0.6;
 const float HELION_DARK_WATER_BODY = 0.45;
+const float HELION_GLASS_WAVE_SCALE = 1.3;
+const float HELION_GLASS_WAVE_HEIGHT = 0.7;
+const float HELION_GLASS_WAVE = 0.0025;
+const float HELION_GLASS_FRAME = 0.9;
+const float HELION_GLASS_TRANSMIT_GAIN = 1.2;
+const float HELION_GLASS_STAIN_STRENGTH = 1.6;
 const float HELION_SHORE_FOAM_STRENGTH = 0.9;
 const float HELION_SHORE_FOAM_LIGHT = 0.9;
 const float HELION_SHORE_NEAR = 44.0;
@@ -278,6 +286,64 @@ float helionBottomFacing(ivec2 pixel, vec3 bottom) {
     return abs(across.y) / area;
 }
 
+vec3 helionGlassFog(vec3 behind, vec3 position) {
+    #ifdef HELION_PHYSICAL_SKY
+    float amount = total_fog_value(
+        fog_spherical_distance(position),
+        fog_cylindrical_distance(position),
+        AerialEnvironmentalStart,
+        AerialEnvironmentalEnd,
+        AerialRenderDistanceStart,
+        AerialRenderDistanceEnd
+    );
+    return mix(behind, helionSkyColor(normalize(position)), clamp(amount, 0.0, 1.0));
+    #else
+    return behind;
+    #endif
+}
+
+vec3 helionPositionAt(vec2 screen, float depth) {
+    vec4 world = WaterInverseViewProjection * vec4(screen * 2.0 - 1.0, depth, 1.0);
+    return world.xyz / world.w;
+}
+
+float helionGlassFresnel(vec3 view, vec3 normal) {
+    return helionSchlick(HELION_GLOSSY_F0, clamp(dot(-view, normal), 0.0, 1.0), 0.0) * ReflectionStrength;
+}
+
+vec3 helionGlassReflection(ivec2 pixel, vec4 glassSurface, vec3 view, vec3 normal, bool traced) {
+    float light = glassSurface.w * glassSurface.w;
+    vec3 sky = helionReflectedSky(reflect(view, normal), false) * light * (1.0 + LightningFlash * HELION_FLASH_SKY * glassSurface.w);
+    if (!traced) {
+        return sky;
+    }
+    vec4 rayHit = TracedReflections > HELION_PRESENT ? texelFetch(ReflectionSampler, pixel, 0) : vec4(0.0);
+    vec4 screenHit = ScreenReflections > HELION_PRESENT ? texelFetch(ScreenReflectionSampler, pixel, 0) : vec4(0.0);
+    return mix(rayHit.a > HELION_GEOMETRY_PRESENT_THRESHOLD ? rayHit.rgb : sky, screenHit.rgb, screenHit.a);
+}
+
+vec3 helionRealisticGlass(ivec2 pixel, vec2 screen, vec4 glassSurface, vec3 position, vec3 base, vec3 behindPosition, bool alone) {
+    vec4 glass = texelFetch(GlassTintSampler, pixel, 0);
+    vec3 world = position + WaterCameraPosition.xyz;
+    if (alone) {
+        vec2 wave = vec2(
+            helionNoiseValue(world.xz * HELION_GLASS_WAVE_SCALE + world.y * HELION_GLASS_WAVE_HEIGHT),
+            helionNoiseValue(world.zy * HELION_GLASS_WAVE_SCALE - world.x * HELION_GLASS_WAVE_HEIGHT)
+        ) * HELION_GLASS_WAVE * (1.0 - glass.a);
+        base = textureLod(RefractionSampler, clamp(screen + wave, vec2(0.0), vec2(1.0)), 0.0).rgb;
+    }
+    if (glass.a < HELION_GLASS_FRAME && length(behindPosition - position) < HELION_WATER_MAX_THICKNESS - HELION_SKY_BEHIND_MARGIN) {
+        base = helionGlassFog(base, behindPosition);
+    }
+    vec3 view = normalize(position);
+    vec3 normal = helionDecodeOctahedral(glassSurface.xy);
+    vec3 color = helionSrgbToLinear(glass.rgb);
+    vec3 stain = min(color * HELION_GLASS_TRANSMIT_GAIN, vec3(1.0));
+    vec3 transmitted = helionSrgbToLinear(base) * mix(vec3(1.0), stain, glass.a < HELION_GLASS_FRAME ? min(glass.a * HELION_GLASS_STAIN_STRENGTH, 1.0) : 0.0);
+    vec3 reflected = helionSrgbToLinear(helionGlassReflection(pixel, glassSurface, view, normal, alone));
+    return helionLinearToSrgb(mix(transmitted, reflected, helionGlassFresnel(view, normal)));
+}
+
 vec3 helionWaterLight() {
     vec3 sky = helionSrgbToLinear(helionWaterAmbient());
     return mix(vec3(dot(sky, HELION_LUMA)), sky, HELION_SKY_HUE_SHARE) + helionSunHue() * helionDaylight() * HELION_SUN_DIFFUSE;
@@ -342,47 +408,64 @@ vec3 helionUnderwaterSurface(ivec2 pixel, vec2 screen, vec4 surface, vec3 normal
     return helionLinearToSrgb(mix(glow, above, escaping));
 }
 
-void main() {
-    ivec2 pixel = ivec2(gl_FragCoord.xy);
-    vec4 surface = texelFetch(WaterSurfaceSampler, pixel, 0);
-    bool water = helionIsWater(surface);
-    if (!water && !helionIsGlossy(surface)) {
-        discard;
-    }
+vec4 helionWaterPixel(ivec2 pixel, vec2 screen, vec4 surface, float depth, bool realistic) {
     vec3 normal = helionDecodeOctahedral(surface.xy);
-    bool realistic = water && RealisticWater > HELION_PRESENT;
-    if (water && !realistic && normal.y < HELION_MIN_FACING) {
+    if (!realistic && normal.y < HELION_MIN_FACING) {
         discard;
     }
-    float depth = texelFetch(WaterDepthSampler, pixel, 0).r;
-    vec2 screen = (vec2(pixel) + 0.5) / vec2(textureSize(WaterDepthSampler, 0));
-    vec4 world = WaterInverseViewProjection * vec4(screen * 2.0 - 1.0, depth, 1.0);
-    vec3 position = world.xyz / world.w;
+    vec3 position = helionPositionAt(screen, depth);
     vec3 view = normalize(position);
     if (realistic && normal.y < -HELION_MIN_FACING) {
-        fragColor = vec4(helionUnderwaterSurface(pixel, screen, surface, normal, view), 1.0);
-        return;
+        return vec4(helionUnderwaterSurface(pixel, screen, surface, normal, view), 1.0);
     }
     vec3 reflected = reflect(view, normal);
     float facing = clamp(dot(-view, normal), 0.0, 1.0);
-    float baseReflectance = water ? HELION_WATER_F0 : HELION_GLOSSY_F0;
-    float fresnel = helionSchlick(baseReflectance, facing, 0.0) * ReflectionStrength;
+    float fresnel = helionSchlick(HELION_WATER_F0, facing, 0.0) * ReflectionStrength;
     vec4 traced = TracedReflections > HELION_PRESENT ? texelFetch(ReflectionSampler, pixel, 0) : vec4(0.0);
-    vec3 sky = helionReflectedSky(reflected, realistic) * (water ? 1.0 : surface.w * surface.w) * (1.0 + LightningFlash * HELION_FLASH_SKY * surface.w);
+    vec3 sky = helionReflectedSky(reflected, realistic) * (1.0 + LightningFlash * HELION_FLASH_SKY * surface.w);
     vec3 fallback = traced.a > HELION_GEOMETRY_PRESENT_THRESHOLD ? traced.rgb : sky;
     vec4 screenHit = ScreenReflections > HELION_PRESENT ? texelFetch(ScreenReflectionSampler, pixel, 0) : vec4(0.0);
     vec3 reflection = mix(fallback, screenHit.rgb, screenHit.a);
-    if (!water) {
-        fragColor = vec4(reflection * fresnel, fresnel);
-        return;
-    }
     if (realistic) {
         float hit = max(screenHit.a, traced.a > HELION_GEOMETRY_PRESENT_THRESHOLD ? 1.0 : 0.0);
-        fragColor = vec4(helionRealisticWater(pixel, screen, surface, normal, position, reflection, hit), 1.0);
-        return;
+        return vec4(helionRealisticWater(pixel, screen, surface, normal, position, reflection, hit), 1.0);
     }
     float transmitted = exp(-surface.z * HELION_WATER_ABSORPTION);
     vec3 scattered = HELION_WATER_SCATTER * helionWaterAmbient() * surface.w * surface.w;
     float kept = transmitted * (1.0 - fresnel);
-    fragColor = vec4(reflection * fresnel + scattered * (1.0 - transmitted) * (1.0 - fresnel), 1.0 - kept);
+    return vec4(reflection * fresnel + scattered * (1.0 - transmitted) * (1.0 - fresnel), 1.0 - kept);
+}
+
+vec4 helionPlainGlass(ivec2 pixel, vec4 glassSurface, vec2 screen, float depth, bool alone) {
+    vec3 view = normalize(helionPositionAt(screen, depth));
+    vec3 normal = helionDecodeOctahedral(glassSurface.xy);
+    float fresnel = helionGlassFresnel(view, normal);
+    return vec4(helionGlassReflection(pixel, glassSurface, view, normal, alone) * fresnel, fresnel);
+}
+
+void main() {
+    ivec2 pixel = ivec2(gl_FragCoord.xy);
+    vec4 surface = texelFetch(WaterSurfaceSampler, pixel, 0);
+    vec4 glassSurface = texelFetch(GlassSurfaceSampler, pixel, 0);
+    bool water = helionIsWater(surface);
+    bool glass = helionIsGlossy(glassSurface);
+    if (!water && !glass) {
+        discard;
+    }
+    vec2 screen = (vec2(pixel) + 0.5) / vec2(textureSize(WaterDepthSampler, 0));
+    float waterDepth = texelFetch(WaterDepthSampler, pixel, 0).r;
+    float glassDepth = texelFetch(GlassDepthSampler, pixel, 0).r;
+    bool glassInFront = glass && (!water || glassDepth >= waterDepth);
+    bool realistic = RealisticWater > HELION_PRESENT;
+    if (!realistic) {
+        fragColor = glassInFront ? helionPlainGlass(pixel, glassSurface, screen, glassDepth, !water) : helionWaterPixel(pixel, screen, surface, waterDepth, false);
+        return;
+    }
+    vec3 color = water ? helionWaterPixel(pixel, screen, surface, waterDepth, true).rgb : textureLod(RefractionSampler, screen, 0.0).rgb;
+    if (glassInFront) {
+        vec3 glassPosition = helionPositionAt(screen, glassDepth);
+        vec3 behindPosition = water ? helionPositionAt(screen, waterDepth) : glassPosition + normalize(glassPosition) * helionGlossyThickness(glassSurface);
+        color = helionRealisticGlass(pixel, screen, glassSurface, glassPosition, color, behindPosition, !water);
+    }
+    fragColor = vec4(color, 1.0);
 }

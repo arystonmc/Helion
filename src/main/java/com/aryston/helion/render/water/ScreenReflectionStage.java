@@ -55,6 +55,7 @@ public final class ScreenReflectionStage implements RenderStage {
         CompiledRenderPipeline pipeline = Objects.requireNonNull(program);
         FramePass pass = frame.graph().addPass(NAME);
         Optional<ResourceHandle<RenderTarget>> surface = frame.water().surface();
+        Optional<ResourceHandle<RenderTarget>> glassSurface = frame.water().glassSurface();
         ResourceHandle<RenderTarget> scene = frame.targets().scene();
         Optional<GeometryBuffer.Targets> geometry = frame.geometry().targets();
         Optional<SceneSkyColor> sky = frame.atmosphere().skyColor();
@@ -66,6 +67,7 @@ public final class ScreenReflectionStage implements RenderStage {
         Optional<ResourceHandle<RenderTarget>> waves = frame.water().waves();
         waves.ifPresent(pass::reads);
         surface.ifPresent(pass::reads);
+        glassSurface.ifPresent(pass::reads);
         pass.reads(scene);
         sky.ifPresent(color -> color.declareReads(pass));
         geometry.ifPresent(targets -> {
@@ -81,6 +83,7 @@ public final class ScreenReflectionStage implements RenderStage {
         pass.executes(frame.graph().timed(NAME, () -> {
             RenderTarget lit = scene.get();
             RenderTarget waterTarget = surface.map(ResourceHandle::get).orElse(lit);
+            RenderTarget glassTarget = glassSurface.map(ResourceHandle::get).orElse(waterTarget);
             GpuSampler nearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
             GpuSampler linear = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
             GpuTextureView standIn = Objects.requireNonNull(waterTarget.getColorTextureView());
@@ -97,6 +100,8 @@ public final class ScreenReflectionStage implements RenderStage {
                 GpuTextureView waveView = waves.map(handle -> Objects.requireNonNull(handle.get().getColorTextureView())).orElse(standIn);
                 renderPass.setUniform(WaterPipelines.WAVE_SAMPLER, waveView, RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR));
                 renderPass.setUniform(WaterPipelines.REFLECTION_SAMPLER, traced.orElse(standIn), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
+                renderPass.setUniform(WaterPipelines.GLASS_SURFACE_SAMPLER, Objects.requireNonNull(glassTarget.getColorTextureView()), nearest);
+                renderPass.setUniform(WaterPipelines.GLASS_DEPTH_SAMPLER, Objects.requireNonNull(glassTarget.getDepthTextureView()), nearest);
             });
             resources.finishScreen();
         }));

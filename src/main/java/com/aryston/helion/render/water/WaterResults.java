@@ -14,6 +14,8 @@ public final class WaterResults {
     private @Nullable ResourceHandle<RenderTarget> screenReflections;
     private @Nullable Wetness wetness;
     private @Nullable ResourceHandle<RenderTarget> tint;
+    private @Nullable ResourceHandle<RenderTarget> glassSurface;
+    private @Nullable ResourceHandle<RenderTarget> glassTint;
     private @Nullable ResourceHandle<RenderTarget> refraction;
     private @Nullable ResourceHandle<RenderTarget> waves;
     private UnderwaterView underwater = UnderwaterView.ABOVE_WATER;
@@ -105,6 +107,19 @@ public final class WaterResults {
 
     void publishTint(ResourceHandle<RenderTarget> written) {
         tint = written;
+    }
+
+    void publishGlass(ResourceHandle<RenderTarget> writtenSurface, ResourceHandle<RenderTarget> writtenTint) {
+        glassSurface = writtenSurface;
+        glassTint = writtenTint;
+    }
+
+    public Optional<ResourceHandle<RenderTarget>> glassSurface() {
+        return Optional.ofNullable(glassSurface);
+    }
+
+    Optional<ResourceHandle<RenderTarget>> glassTint() {
+        return Optional.ofNullable(glassTint);
     }
 
     void publishRefraction(ResourceHandle<RenderTarget> copied) {

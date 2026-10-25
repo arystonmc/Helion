@@ -72,6 +72,8 @@ public final class RtxReflectionStage implements RenderStage {
         TerrainTextures textures = terrain.textures();
         FramePass pass = frame.graph().addPass(NAME);
         pass.reads(surface);
+        Optional<ResourceHandle<RenderTarget>> glassSurface = frame.water().glassSurface();
+        glassSurface.ifPresent(pass::reads);
         ResourceHandle<RenderTarget> sceneTarget = frame.targets().scene();
         pass.reads(sceneTarget);
         geometry.ifPresent(targets -> {
@@ -86,6 +88,7 @@ public final class RtxReflectionStage implements RenderStage {
         pass.executes(frame.graph().timed(NAME, () -> {
             device.memoryBarrier();
             RenderTarget water = surface.get();
+            RenderTarget glass = glassSurface.map(ResourceHandle::get).orElse(water);
             List<RtxBinding> bindings = new ArrayList<>(List.of(
                 new RtxBinding.StorageImage(image.vkImageView()),
                 new RtxBinding.Scene(topLevel),
@@ -96,7 +99,9 @@ public final class RtxReflectionStage implements RenderStage {
                 new RtxBinding.StorageBuffer(table.buffer(), WHOLE_BUFFER, table.size()),
                 new RtxBinding.Sampled(handle(Objects.requireNonNull(sceneTarget.get().getDepthTextureView()))),
                 new RtxBinding.Sampled(geometry.map(targets -> handle(colorView(targets.normal()))).orElse(handle(Objects.requireNonNull(water.getColorTextureView())))),
-                new RtxBinding.Sampled(geometry.map(targets -> handle(colorView(targets.light()))).orElse(handle(Objects.requireNonNull(water.getColorTextureView()))))
+                new RtxBinding.Sampled(geometry.map(targets -> handle(colorView(targets.light()))).orElse(handle(Objects.requireNonNull(water.getColorTextureView())))),
+                new RtxBinding.Sampled(handle(Objects.requireNonNull(glass.getDepthTextureView()))),
+                new RtxBinding.Sampled(handle(Objects.requireNonNull(glass.getColorTextureView())))
             ));
             if (device.entityTextures()) {
                 bindings.addAll(entityBindings(scene.entitySurfaces(), handle(textures.atlas())));

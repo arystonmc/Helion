@@ -47,4 +47,12 @@ bool helionIsGlossy(vec4 surface) {
     return surface.z < HELION_GLOSSY_THRESHOLD;
 }
 
+float helionEncodeGlossy(float thickness) {
+    return HELION_GLOSSY_MARKER - thickness;
+}
+
+float helionGlossyThickness(vec4 surface) {
+    return HELION_GLOSSY_MARKER - surface.z;
+}
+
 #endif

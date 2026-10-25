@@ -11,6 +11,7 @@ import com.mojang.logging.LogUtils;
 import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.joml.Vector3dc;
 import org.joml.Vector3fc;
@@ -23,6 +24,7 @@ public final class WaterResources {
 
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String SURFACE_LABEL = "Helion Water Surface Settings";
+    private static final String GLASS_SURFACE_LABEL = "Helion Glass Surface Settings";
     private static final String REFLECTION_LABEL = "Helion Water Reflection Settings";
     private static final int SURFACE_SIZE = new Std140SizeCalculator()
         .putVec4()
@@ -66,6 +68,7 @@ public final class WaterResources {
     private final Footprints footprints = new Footprints();
     private final WaterWaves waves;
     private @Nullable UniformRing surfaceUniforms;
+    private @Nullable UniformRing glassSurfaceUniforms;
     private @Nullable UniformRing reflectionUniforms;
     private @Nullable UniformRing screenUniforms;
     private @Nullable UniformRing underwaterUniforms;
@@ -87,14 +90,16 @@ public final class WaterResources {
         return compiled;
     }
 
-    GpuBuffer surfaceUniforms(TerrainTextures textures, Wetness wetness, boolean dynamicWaves) {
+    GpuBuffer surfaceUniforms(TerrainTextures textures, Wetness wetness, boolean dynamicWaves, boolean glassPass) {
         if (surfaceUniforms == null) {
             surfaceUniforms = new UniformRing(SURFACE_LABEL, SURFACE_SIZE, resources);
+            glassSurfaceUniforms = new UniformRing(GLASS_SURFACE_LABEL, SURFACE_SIZE, resources);
         }
-        return surfaceUniforms.write(builder -> builder
+        UniformRing ring = glassPass ? Objects.requireNonNull(glassSurfaceUniforms) : surfaceUniforms;
+        return ring.write(builder -> builder
             .putVec4(textures.waterStill())
             .putVec4(textures.waterFlow())
-            .putVec4(wetness.rain(), wetness.seconds(), dynamicWaves ? PRESENT : ABSENT, ABSENT)
+            .putVec4(wetness.rain(), wetness.seconds(), dynamicWaves ? PRESENT : ABSENT, glassPass ? PRESENT : ABSENT)
             .putFloat(WAVE_STRENGTH));
     }
 
@@ -224,6 +229,7 @@ public final class WaterResources {
     void finishSurface() {
         if (surfaceUniforms != null) {
             surfaceUniforms.rotate();
+            Objects.requireNonNull(glassSurfaceUniforms).rotate();
         }
     }
 
@@ -237,6 +243,7 @@ public final class WaterResources {
         waves.close();
         if (surfaceUniforms != null) {
             surfaceUniforms.close();
+            Objects.requireNonNull(glassSurfaceUniforms).close();
         }
         if (reflectionUniforms != null) {
             reflectionUniforms.close();
@@ -253,6 +260,7 @@ public final class WaterResources {
         heatUniforms = null;
         underwaterUniforms = null;
         surfaceUniforms = null;
+        glassSurfaceUniforms = null;
         reflectionUniforms = null;
         screenUniforms = null;
     }

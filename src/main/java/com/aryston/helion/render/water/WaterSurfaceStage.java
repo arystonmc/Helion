@@ -25,6 +25,11 @@ public final class WaterSurfaceStage implements RenderStage {
     private static final String TARGET = "helion:water_surface";
     private static final String TINT_TARGET = "helion:water_tint";
     private static final String REFRACTION_TARGET = "helion:water_refraction";
+    private static final String GLASS_TARGET = "helion:glass_surface";
+    private static final String GLASS_TINT_TARGET = "helion:glass_tint";
+    private static final String GLASS_PASS_LABEL = "Helion Glass Surface";
+    private static final boolean WATER_PASS = false;
+    private static final boolean GLASS_PASS = true;
     private static final int BASE_LEVEL = 0;
     private static final int ORIGIN = 0;
 
@@ -55,26 +60,36 @@ public final class WaterSurfaceStage implements RenderStage {
         FramePass pass = frame.graph().addPass(NAME);
         ResourceHandle<RenderTarget> scene = frame.targets().scene();
         pass.reads(scene);
-        ResourceHandle<RenderTarget> surface = pass.createsInternal(TARGET, new RenderTargetDescriptor(
-            frame.scene().width(),
-            frame.scene().height(),
-            new RenderTargetDescriptor.TextureProperties(new Vector4f(), WaterPipelines.SURFACE_FORMAT),
-            RenderTargetDescriptor.TextureProperties.DEFAULT_DEPTH
-        ));
+        ResourceHandle<RenderTarget> surface = pass.createsInternal(TARGET, surfaceDescriptor(frame));
         ResourceHandle<RenderTarget> tint = pass.createsInternal(TINT_TARGET, colorDescriptor(frame, WaterPipelines.TINT_FORMAT));
+        ResourceHandle<RenderTarget> glassSurface = pass.createsInternal(GLASS_TARGET, surfaceDescriptor(frame));
+        ResourceHandle<RenderTarget> glassTint = pass.createsInternal(GLASS_TINT_TARGET, colorDescriptor(frame, WaterPipelines.TINT_FORMAT));
         Optional<ResourceHandle<RenderTarget>> refraction = frame.settings().reflections().realisticWater()
             ? Optional.of(pass.createsInternal(REFRACTION_TARGET, colorDescriptor(frame, WaterPipelines.SCENE_COLOR_FORMAT)))
             : Optional.empty();
         frame.water().publishSurface(surface);
         frame.water().publishTint(tint);
+        frame.water().publishGlass(glassSurface, glassTint);
         refraction.ifPresent(frame.water()::publishRefraction);
         Wetness wetness = frame.water().wetness().orElse(Wetness.DRY);
         Optional<ResourceHandle<RenderTarget>> waves = frame.water().waves();
         waves.ifPresent(pass::reads);
         pass.executes(frame.graph().timed(NAME, () -> {
             refraction.ifPresent(copy -> copyScene(scene.get(), copy.get()));
-            render(scene.get(), surface.get(), tint.get(), wetness, waves.map(ResourceHandle::get));
+            GpuTextureView mask = glossy.update(terrain.glossyCells());
+            render(scene.get(), surface.get(), tint.get(), mask, wetness, waves.map(ResourceHandle::get));
+            renderGlass(scene.get(), glassSurface.get(), glassTint.get(), mask, wetness, waves.map(ResourceHandle::get));
+            resources.finishSurface();
         }));
+    }
+
+    private static RenderTargetDescriptor surfaceDescriptor(FrameContext frame) {
+        return new RenderTargetDescriptor(
+            frame.scene().width(),
+            frame.scene().height(),
+            new RenderTargetDescriptor.TextureProperties(new Vector4f(), WaterPipelines.SURFACE_FORMAT),
+            RenderTargetDescriptor.TextureProperties.DEFAULT_DEPTH
+        );
     }
 
     private static RenderTargetDescriptor colorDescriptor(FrameContext frame, GpuFormat format) {
@@ -88,30 +103,39 @@ public final class WaterSurfaceStage implements RenderStage {
         );
     }
 
-    private void render(RenderTarget scene, RenderTarget surface, RenderTarget tint, Wetness wetness, Optional<RenderTarget> waves) {
-        GpuTextureView mask = glossy.update(terrain.glossyCells());
-        RenderPassDescriptor descriptor = RenderPassDescriptor.builder(() -> PASS_LABEL)
+    private void render(RenderTarget scene, RenderTarget surface, RenderTarget tint, GpuTextureView mask, Wetness wetness, Optional<RenderTarget> waves) {
+        try (RenderPass pass = openPass(PASS_LABEL, scene, surface, tint, mask, wetness, waves, WATER_PASS)) {
+            terrain.renderWaterSurface(pass);
+        }
+    }
+
+    private void renderGlass(RenderTarget scene, RenderTarget surface, RenderTarget tint, GpuTextureView mask, Wetness wetness, Optional<RenderTarget> waves) {
+        try (RenderPass pass = openPass(GLASS_PASS_LABEL, scene, surface, tint, mask, wetness, waves, GLASS_PASS)) {
+            terrain.renderWaterSurface(pass);
+        }
+    }
+
+    private RenderPass openPass(String label, RenderTarget scene, RenderTarget surface, RenderTarget tint, GpuTextureView mask, Wetness wetness, Optional<RenderTarget> waves, boolean glassPass) {
+        RenderPassDescriptor descriptor = RenderPassDescriptor.builder(() -> label)
             .withColorAttachment(Objects.requireNonNull(surface.getColorTextureView()))
             .withColorAttachment(Objects.requireNonNull(tint.getColorTextureView()))
             .withDepthAttachment(Objects.requireNonNull(surface.getDepthTextureView()))
             .build();
-        try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor)) {
-            RenderSystem.bindDefaultUniforms(pass);
-            pass.setUniform(WaterPipelines.SURFACE_UNIFORM, resources.surfaceUniforms(terrain.textures(), wetness, waves.isPresent()));
-            GpuTextureView waveView = waves.map(RenderTarget::getColorTextureView).orElse(scene.getColorTextureView());
-            pass.setUniform(WaterPipelines.WAVE_SAMPLER, Objects.requireNonNull(waveView), RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR));
-            pass.setUniform(
-                WaterPipelines.SCENE_DEPTH_SAMPLER,
-                Objects.requireNonNull(scene.getDepthTextureView()),
-                RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
-            );
-            pass.setUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, mask, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
-            GpuTextureView shoreView = waves.flatMap(ignored -> resources.waves().shore().view()).orElse(scene.getColorTextureView());
-            pass.setUniform(WaterPipelines.SHORE_SAMPLER, Objects.requireNonNull(shoreView), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
-            GpuTextureView distanceView = waves.flatMap(ignored -> resources.waves().shore().distanceView()).orElse(scene.getColorTextureView());
-            pass.setUniform(WaterPipelines.SHORE_DISTANCE_SAMPLER, Objects.requireNonNull(distanceView), RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR));
-            terrain.renderWaterSurface(pass);
-        }
-        resources.finishSurface();
+        RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor);
+        RenderSystem.bindDefaultUniforms(pass);
+        pass.setUniform(WaterPipelines.SURFACE_UNIFORM, resources.surfaceUniforms(terrain.textures(), wetness, waves.isPresent(), glassPass));
+        GpuTextureView waveView = waves.map(RenderTarget::getColorTextureView).orElse(scene.getColorTextureView());
+        pass.setUniform(WaterPipelines.WAVE_SAMPLER, Objects.requireNonNull(waveView), RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR));
+        pass.setUniform(
+            WaterPipelines.SCENE_DEPTH_SAMPLER,
+            Objects.requireNonNull(scene.getDepthTextureView()),
+            RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST)
+        );
+        pass.setUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, mask, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
+        GpuTextureView shoreView = waves.flatMap(ignored -> resources.waves().shore().view()).orElse(scene.getColorTextureView());
+        pass.setUniform(WaterPipelines.SHORE_SAMPLER, Objects.requireNonNull(shoreView), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
+        GpuTextureView distanceView = waves.flatMap(ignored -> resources.waves().shore().distanceView()).orElse(scene.getColorTextureView());
+        pass.setUniform(WaterPipelines.SHORE_DISTANCE_SAMPLER, Objects.requireNonNull(distanceView), RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR));
+        return pass;
     }
 }
