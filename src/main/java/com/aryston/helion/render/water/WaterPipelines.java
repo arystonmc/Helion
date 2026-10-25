@@ -34,6 +34,7 @@ public final class WaterPipelines {
     public static final String WAVE_SAMPLER = "WaveSampler";
     public static final String WAVE_UNIFORM = "HelionWaterWaves";
     public static final String SHORE_SAMPLER = "ShoreSampler";
+    public static final String SHORE_DISTANCE_SAMPLER = "ShoreDistanceSampler";
     public static final String UNDERWATER_UNIFORM = "HelionUnderwater";
     public static final String HEAT_UNIFORM = "HelionHeat";
     public static final String REFLECTED_CLOUD_SAMPLER = "ReflectedCloudSampler";
@@ -129,6 +130,7 @@ public final class WaterPipelines {
                 .withUniform(REFRACTION_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .withUniform(REFLECTED_CLOUD_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .withUniform(SKY_CLOUD_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform(SHORE_DISTANCE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .build())
             .withColorTargetState(new ColorTargetState(Optional.of(BlendFunction.TRANSLUCENT_PREMULTIPLIED_ALPHA), SCENE_COLOR_FORMAT, ColorTargetState.WRITE_COLOR));
     }

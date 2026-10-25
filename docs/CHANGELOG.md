@@ -7,6 +7,8 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Realistic water: waves roll in from open water and break on beaches with white foam that runs up the shore
+- In third person the player, slimes and other see-through mobs mirror in the water and show through it
 - Realistic water is clear, and its color and clarity follow the biome and the depth: murky green swamps, clear turquoise shallows and lakes, dark blue deep ocean
 - Realistic water: fine ripples gently wobble the reflections and break the sun into small sparkles; far away they merge into a soft glittering sun path
 - Realistic water mirrors the world on screen even with screen space reflections off, and reflects clouds beyond the edge of the screen

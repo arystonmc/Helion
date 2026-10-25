@@ -20,6 +20,7 @@ public final class WaterResults {
     private boolean lava;
     private List<Footprint> footprints = List.of();
     private double footprintSeconds;
+    private double gameSeconds;
 
     public Optional<ResourceHandle<RenderTarget>> surface() {
         return Optional.ofNullable(surface);
@@ -72,6 +73,14 @@ public final class WaterResults {
     void publishFootprints(List<Footprint> visible, double seconds) {
         footprints = List.copyOf(visible);
         footprintSeconds = seconds;
+    }
+
+    double gameSeconds() {
+        return gameSeconds;
+    }
+
+    void publishGameSeconds(double seconds) {
+        gameSeconds = seconds;
     }
 
     UnderwaterView underwater() {

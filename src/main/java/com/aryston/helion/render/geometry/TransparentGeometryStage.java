@@ -53,31 +53,32 @@ public final class TransparentGeometryStage implements RenderStage {
         );
         atmospherePasses.declareReads(pass);
         boolean orderIndependent = frame.scene().orderIndependentTransparency();
-        pass.executes(frame.graph().timed(NAME, () -> render(scene.get(), orderIndependent, atmospherePasses)));
+        boolean featuresDrawn = TranslucentFeatureStage.drawsBeforeWater(frame);
+        pass.executes(frame.graph().timed(NAME, () -> render(scene.get(), orderIndependent, featuresDrawn, atmospherePasses)));
     }
 
-    private void render(RenderTarget target, boolean orderIndependent, AtmospherePasses atmospherePasses) {
+    private void render(RenderTarget target, boolean orderIndependent, boolean featuresDrawn, AtmospherePasses atmospherePasses) {
         if (orderIndependent) {
             transparency.renderOrderIndependent();
             atmospherePasses.draw(target);
         } else if (!atmospherePasses.isEmpty()) {
-            renderSortedThroughFog(target, atmospherePasses);
+            renderSortedThroughFog(target, featuresDrawn, atmospherePasses);
         } else {
-            renderSorted(target);
+            renderSorted(target, featuresDrawn);
         }
         entities.renderOverlays(target);
     }
 
-    private void renderSorted(RenderTarget target) {
+    private void renderSorted(RenderTarget target, boolean featuresDrawn) {
         try (RenderPass pass = openPass(target)) {
-            renderTranslucents(pass);
+            renderTranslucents(pass, featuresDrawn);
             renderAtmosphere(pass);
         }
     }
 
-    private void renderSortedThroughFog(RenderTarget target, AtmospherePasses atmospherePasses) {
+    private void renderSortedThroughFog(RenderTarget target, boolean featuresDrawn, AtmospherePasses atmospherePasses) {
         try (RenderPass pass = openPass(target)) {
-            renderTranslucents(pass);
+            renderTranslucents(pass, featuresDrawn);
         }
         atmospherePasses.draw(target);
         try (RenderPass pass = openPass(target)) {
@@ -85,8 +86,10 @@ public final class TransparentGeometryStage implements RenderStage {
         }
     }
 
-    private void renderTranslucents(RenderPass pass) {
-        entities.renderTranslucent(pass);
+    private void renderTranslucents(RenderPass pass, boolean featuresDrawn) {
+        if (!featuresDrawn) {
+            entities.renderTranslucent(pass);
+        }
         terrain.renderTranslucent(pass);
         entities.renderTranslucentAfterTerrain(pass);
     }

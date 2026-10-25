@@ -52,6 +52,7 @@ public final class WaterResources {
     private static final double NANOS_PER_SECOND = 1.0e9;
     private static final float AGE_SIGN_OFFSET = 1.0e-3F;
     private static final double SECONDS_PERIOD = 3600.0;
+    private static final double GAME_SECONDS_PERIOD = 1200.0;
     private static final float PRESENT = 1.0F;
     private static final float ABSENT = 0.0F;
     private static final int RED_SHIFT = 16;
@@ -118,7 +119,7 @@ public final class WaterResources {
         return compiled;
     }
 
-    GpuBuffer reflectionUniforms(HelionCamera camera, boolean traced, boolean screen, boolean realistic, float flash, ReflectedClouds clouds, float turbidity) {
+    GpuBuffer reflectionUniforms(HelionCamera camera, boolean traced, boolean screen, boolean realistic, float flash, ReflectedClouds clouds, float turbidity, double gameSeconds, boolean shore) {
         if (reflectionUniforms == null) {
             reflectionUniforms = new UniformRing(REFLECTION_LABEL, REFLECTION_SIZE, resources);
         }
@@ -132,7 +133,7 @@ public final class WaterResources {
             .putFloat((float) ((System.nanoTime() / NANOS_PER_SECOND) % SECONDS_PERIOD))
             .putFloat(flash)
             .putVec4((float) (camera.position().x() % NOISE_PERIOD), (float) (camera.position().y() % NOISE_PERIOD), (float) (camera.position().z() % NOISE_PERIOD), clouds.level())
-            .putVec4(turbidity, ABSENT, ABSENT, ABSENT));
+            .putVec4(turbidity, (float) (gameSeconds % GAME_SECONDS_PERIOD), shore ? PRESENT : ABSENT, ABSENT));
     }
 
     Optional<CompiledRenderPipeline> polishedProgram() {

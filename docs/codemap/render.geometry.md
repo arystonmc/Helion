@@ -19,9 +19,14 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Role: Only when the geometry buffer was written: fires the after-opaque-blocks event and draws solid entities, block entities and particles into the scene, after deferred lighting so the lighting never paints over them. When `EntityGeometryStage` already drew entities into the geometry buffer it draws only the rest (`renderSolidRemainder`).
 - Depends on: `TerrainSource`, `EntitySource`.
 
+#### TranslucentFeatureStage
+- Path: `src/main/java/com/aryston/helion/render/geometry/TranslucentFeatureStage.java`
+- Role: While a water reflection setting is on and order independent transparency is off, draws the translucent entity features (players, slimes and other `entityTranslucent` models) and fires their event right after the solid features, in a pass of its own, so the water surface, refraction copy and screen space reflections see them; `TransparentGeometryStage` then skips them. Vanilla draws them before translucent terrain too, so the draw order of visible things does not change.
+- Depends on: `EntitySource`.
+
 #### TransparentGeometryStage
 - Path: `src/main/java/com/aryston/helion/render/geometry/TransparentGeometryStage.java`
-- Role: Draws sorted transparency (translucent features, translucent terrain, particles, clouds, weather, world border) or vanilla order independent transparency, then outline, see-through and always-on-top features. Declares the auxiliary OIT and outline targets. When the physical sky published a `SceneFogPass`, draws it after the sorted translucents and before clouds, weather and world border (a separate render pass on each side), or after order independent transparency. When `CloudStage` published a `SceneCloudPass`, draws the volumetric clouds right after the fog, and the light shafts of `LightShaftStage` right after the clouds. A `SceneReflectionPass` from `WaterResults` is drawn first among those passes, so fog, clouds and light shafts cover the reflections like the water under them.
+- Role: Draws sorted transparency (translucent features, unless `TranslucentFeatureStage` already drew them), translucent terrain, particles, clouds, weather, world border) or vanilla order independent transparency, then outline, see-through and always-on-top features. Declares the auxiliary OIT and outline targets. When the physical sky published a `SceneFogPass`, draws it after the sorted translucents and before clouds, weather and world border (a separate render pass on each side), or after order independent transparency. When `CloudStage` published a `SceneCloudPass`, draws the volumetric clouds right after the fog, and the light shafts of `LightShaftStage` right after the clouds. A `SceneReflectionPass` from `WaterResults` is drawn first among those passes, so fog, clouds and light shafts cover the reflections like the water under them.
 - Depends on: `TerrainSource`, `EntitySource`, `AtmosphereSource`, `TransparencySource`, `SceneFogPass`, `SceneCloudPass`, `SceneLightShaftPass`.
 
 #### TerrainSource

@@ -29,6 +29,7 @@ final class WaterShoreMask {
     private static final int ORIGIN = 0;
 
     private final GpuResources resources;
+    private final WaterShoreDistance distance;
     private @Nullable GpuTexture texture;
     private @Nullable GpuTextureView view;
     private @Nullable ByteBuffer cells;
@@ -37,6 +38,7 @@ final class WaterShoreMask {
 
     WaterShoreMask(GpuResources resources) {
         this.resources = resources;
+        this.distance = new WaterShoreDistance(resources);
     }
 
     GpuTextureView refresh(WaveSource source, double cameraX, double cameraY, double cameraZ) {
@@ -53,6 +55,7 @@ final class WaterShoreMask {
             nextRow = (nextRow + 1) % SIZE;
         }
         RenderSystem.getDevice().createCommandEncoder().writeToTexture(texture(), data, BASE_LEVEL, FIRST_LAYER, ORIGIN, ORIGIN, SIZE, SIZE);
+        distance.update(data, LAND, cornerX, cornerZ);
         return Objects.requireNonNull(view);
     }
 
@@ -60,7 +63,12 @@ final class WaterShoreMask {
         return Optional.ofNullable(view);
     }
 
+    Optional<GpuTextureView> distanceView() {
+        return distance.view();
+    }
+
     void close() {
+        distance.close();
         if (tracked != null) {
             resources.release(tracked);
         }

@@ -24,8 +24,8 @@ const float HELION_UNDER_PI = 3.14159265;
 const float HELION_SKY_DEPTH = 0.0;
 const float HELION_MIN_DEPTH = 1.0e-6;
 const float HELION_OPEN_DISTANCE = 96.0;
-const float HELION_MARCH_DISTANCE = 40.0;
-const int HELION_MARCH_STEPS = 12;
+const float HELION_MARCH_DISTANCE = 32.0;
+const int HELION_MARCH_STEPS = 16;
 const float HELION_WATER_IOR = 1.33;
 const vec3 HELION_UP = vec3(0.0, 1.0, 0.0);
 const float HELION_MIN_UPWARD = 0.05;
@@ -38,6 +38,11 @@ const float HELION_AMBIENT_SLANT = 1.25;
 const float HELION_SCATTER_GAIN = 7.0;
 const float HELION_SHAFT_GAIN = 6.0;
 const float HELION_SHAFT_FLOOR = 0.06;
+const float HELION_SHAFT_MEAN = 0.2;
+const float HELION_SHAFT_LENGTH = 8.0;
+const float HELION_SHAFT_REACH = 10.0;
+const float HELION_SHAFT_ALONG_FROM = 0.75;
+const float HELION_SHAFT_ALONG_TO = 0.97;
 const float HELION_PHASE_G = 0.65;
 const float HELION_ISOTROPIC = 1.0 / (4.0 * HELION_UNDER_PI);
 const float HELION_SHAFT_SCALE = 0.25;
@@ -47,7 +52,6 @@ const float HELION_SHAFT_SHARPNESS = 6.0;
 const vec2 HELION_SHAFT_DRIFT = vec2(0.11, 0.07);
 const float HELION_CAUSTIC_STRENGTH = 0.9;
 const float HELION_CAUSTIC_REACH = 0.04;
-const float HELION_CAUSTIC_FLOOR = 0.2;
 const float HELION_HUE_FLOOR = 1.0e-3;
 const vec3 HELION_LUMA = vec3(0.2126, 0.7152, 0.0722);
 const float HELION_UNDER_NOISE_SCALE = 52.9829189;
@@ -103,6 +107,7 @@ void main() {
     float stepLength = marched / float(HELION_MARCH_STEPS);
     float jitter = fract(HELION_UNDER_NOISE_SCALE * fract(dot(gl_FragCoord.xy + seconds * HELION_UNDER_NOISE_SPEED, HELION_UNDER_NOISE_PIXEL)));
     float phase = helionPhase(dot(direction, toLight));
+    float across = 1.0 - smoothstep(HELION_SHAFT_ALONG_FROM, HELION_SHAFT_ALONG_TO, abs(dot(direction, toLight)));
     vec3 inscattered = vec3(0.0);
     for (int index = 0; index < HELION_MARCH_STEPS; index++) {
         float along = (float(index) + jitter) * stepLength;
@@ -112,13 +117,13 @@ void main() {
         vec3 sunAtPoint = lightColor * exp(-optics.extinction * below / toLight.y);
         vec3 ambientAtPoint = ambient * exp(-optics.extinction * below * HELION_AMBIENT_SLANT);
         vec2 entry = point.xz + UnderwaterCamera.xz + toLight.xz / toLight.y * below;
-        float shaft = helionShaftPattern(entry, below, seconds);
+        float shaft = mix(HELION_SHAFT_MEAN, helionShaftPattern(entry, below, seconds), exp(-below / HELION_SHAFT_LENGTH - along / HELION_SHAFT_REACH) * across);
         inscattered += viewTransmittance * optics.scattering * (sunAtPoint * phase * shaft * HELION_SHAFT_GAIN + ambientAtPoint * HELION_ISOTROPIC) * stepLength;
     }
     if (travelled > marched) {
         float rest = travelled - marched;
         vec3 restTransmittance = exp(-optics.extinction * marched);
-        vec3 restLight = ambient * exp(-optics.extinction * surface) * HELION_ISOTROPIC + lightColor * exp(-optics.extinction * surface / toLight.y) * phase * HELION_SHAFT_FLOOR;
+        vec3 restLight = ambient * exp(-optics.extinction * surface) * HELION_ISOTROPIC + lightColor * exp(-optics.extinction * surface / toLight.y) * phase * HELION_SHAFT_MEAN;
         inscattered += restTransmittance * optics.albedo * restLight * (1.0 - exp(-optics.extinction * rest));
     }
     inscattered *= HELION_SCATTER_GAIN;
@@ -135,7 +140,7 @@ void main() {
         if (causticShare > 0.0) {
             vec2 entry = position.xz + UnderwaterCamera.xz + toLight.xz / toLight.y * pointBelow;
             float caustic = helionCausticLight(entry, pointBelow, seconds);
-            scene *= max(1.0 + (caustic - 1.0) * causticShare, HELION_CAUSTIC_FLOOR);
+            scene *= helionCausticGain(caustic, causticShare);
         }
     }
     vec3 color = scene * exp(-optics.extinction * travelled) + inscattered;

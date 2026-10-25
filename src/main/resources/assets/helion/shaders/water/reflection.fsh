@@ -7,6 +7,7 @@
 #include <helion:helion_color.glsl>
 #include <helion:helion_caustics.glsl>
 #include <helion:helion_cloud_sky_map.glsl>
+#include <helion:helion_water_waves.glsl>
 #ifdef HELION_PHYSICAL_SKY
 #include <helion:helion_sky_color.glsl>
 #else
@@ -21,6 +22,7 @@ uniform sampler2D WaterTintSampler;
 uniform sampler2D RefractionSampler;
 uniform sampler2D ReflectedCloudSampler;
 uniform sampler2D SkyCloudSampler;
+uniform sampler2D ShoreDistanceSampler;
 
 layout(std140) uniform HelionWaterReflection {
     mat4 WaterInverseViewProjection;
@@ -105,6 +107,12 @@ const float HELION_FALL_FOAM = 0.85;
 const float HELION_UNDER_GLOW = 0.35;
 const float HELION_UNDER_SUN = 0.6;
 const float HELION_DARK_WATER_BODY = 0.45;
+const float HELION_SHORE_FOAM_STRENGTH = 0.9;
+const float HELION_SHORE_FOAM_LIGHT = 0.9;
+const float HELION_SHORE_NEAR = 44.0;
+const float HELION_SHORE_FAR = 60.0;
+const float HELION_SHORE_FOAM_SHALLOW = 2.0;
+const float HELION_SHORE_FOAM_DEEP = 6.0;
 const float HELION_DARK_WATER_GLOW = 0.2;
 const float HELION_CAUSTIC_FLAT_FROM = 0.35;
 const float HELION_CAUSTIC_FLAT_TO = 0.8;
@@ -291,7 +299,7 @@ vec3 helionRealisticWater(ivec2 pixel, vec2 screen, vec4 surface, vec3 normal, v
     float light = surface.w * surface.w;
     float causticShare = HELION_CAUSTIC_STRENGTH * helionDaylight() * light * exp(-column * HELION_CAUSTIC_FADE) * (1.0 - smoothstep(HELION_CAUSTIC_NEAR, HELION_CAUSTIC_FAR, distanceToWater));
     causticShare *= smoothstep(HELION_CAUSTIC_FLAT_FROM, HELION_CAUSTIC_FLAT_TO, helionBottomFacing(pixel, position + view * surface.z));
-    bottom *= mix(1.0, helionCausticLight(bottomPosition.xz, column, WaterSeconds), causticShare);
+    bottom *= helionCausticGain(helionCausticLight(bottomPosition.xz, column, WaterSeconds), causticShare);
     vec3 transmitted = exp(-optics.extinction * (max(thickness, HELION_WATER_MIN_THICKNESS) + column * HELION_DOWNWELLING));
     vec3 lit = (helionWaterLight() + helionSunScatter(inside)) * light;
     vec3 scattered = optics.albedo * lit * HELION_SCATTER_STRENGTH * (1.0 - exp(-optics.extinction * thickness));
@@ -308,6 +316,10 @@ vec3 helionRealisticWater(ivec2 pixel, vec2 screen, vec4 surface, vec3 normal, v
         foam = smoothstep(HELION_FOAM_FROM, HELION_FOAM_TO, helionFoamLayer(fallingPosition, WaterSeconds)) * HELION_FALL_FOAM;
     }
     surfaceColor = mix(surfaceColor, helionSrgbToLinear(helionWaterAmbient()) * light, foam);
+    if (WaterEnvironment.z > HELION_PRESENT && !falling) {
+        float shoreFoam = helionShoreWave(ShoreDistanceSampler, world.xz, WaterEnvironment.y).foam * (1.0 - smoothstep(HELION_SHORE_NEAR, HELION_SHORE_FAR, length(position.xz))) * (1.0 - smoothstep(HELION_SHORE_FOAM_SHALLOW, HELION_SHORE_FOAM_DEEP, column));
+        surfaceColor = mix(surfaceColor, helionWaterLight() * light * HELION_SHORE_FOAM_LIGHT, shoreFoam * HELION_SHORE_FOAM_STRENGTH);
+    }
     return helionLinearToSrgb(surfaceColor);
 }
 

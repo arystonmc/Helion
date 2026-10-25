@@ -7,6 +7,7 @@ import com.aryston.helion.render.geometry.EntityGeometryStage;
 import com.aryston.helion.render.geometry.GeometryBufferDebugStage;
 import com.aryston.helion.render.geometry.OpaqueGeometryStage;
 import com.aryston.helion.render.geometry.SolidFeatureStage;
+import com.aryston.helion.render.geometry.TranslucentFeatureStage;
 import com.aryston.helion.render.geometry.TransparentGeometryStage;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
@@ -82,6 +83,7 @@ public final class FrameStages {
             new DeferredLightingStage(core.lighting()),
             new AmbientOcclusionStage(core.ambientOcclusion()),
             new SolidFeatureStage(sources.terrain(), sources.entities()),
+            new TranslucentFeatureStage(sources.entities()),
             new CloudStage(sources.clouds(), core.clouds()),
             new WaterWaveStage(sources.waves(), core.water()),
             new WaterSurfaceStage(sources.terrain(), core.water(), core.glossy()),

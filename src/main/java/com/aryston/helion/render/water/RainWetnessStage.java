@@ -31,6 +31,7 @@ public final class RainWetnessStage implements RenderStage {
     public void addTo(FrameContext frame) {
         WeatherState state = weather.weather();
         weather.extendUnderwaterView(frame.settings().reflections().realisticWater());
+        frame.water().publishGameSeconds(state.seconds());
         if (state.lavaNearby()) {
             frame.water().publishLava();
         }

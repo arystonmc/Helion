@@ -14,6 +14,7 @@ const float HELION_CAUSTIC_MIN_DEPTH = 1.5;
 const float HELION_CAUSTIC_MAX_DEPTH = 5.0;
 const float HELION_CAUSTIC_MIN_AREA = 0.03;
 const float HELION_CAUSTIC_MAX = 6.0;
+const float HELION_CAUSTIC_SHADE = 0.25;
 
 vec2 helionCausticSlope(vec2 position, float seconds) {
     vec2 slope = vec2(0.0);
@@ -33,6 +34,11 @@ float helionCausticLight(vec2 position, float depth, float seconds) {
     vec2 alongZ = (helionCausticSlope(position + vec2(0.0, HELION_CAUSTIC_PROBE), seconds) - center) / HELION_CAUSTIC_PROBE;
     float area = (1.0 + focus * alongX.x) * (1.0 + focus * alongZ.y) - focus * focus * alongX.y * alongZ.x;
     return min(1.0 / max(abs(area), HELION_CAUSTIC_MIN_AREA), HELION_CAUSTIC_MAX);
+}
+
+float helionCausticGain(float caustic, float share) {
+    float lift = caustic - 1.0;
+    return 1.0 + share * (lift > 0.0 ? lift : lift * HELION_CAUSTIC_SHADE);
 }
 
 #endif

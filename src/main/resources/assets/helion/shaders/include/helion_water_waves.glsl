@@ -86,6 +86,74 @@ float helionCapillaryLostVariance(float footprint) {
     return lost * HELION_CAPILLARY_VARIANCE;
 }
 
+const float HELION_SHORE_LIMIT = 16.0;
+const float HELION_SHORE_WINDOW = 128.0;
+const float HELION_SHORE_REACH = 15.0;
+const float HELION_SHORE_RISE_FROM = 0.2;
+const float HELION_SHORE_EDGE = 0.8;
+const float HELION_SHORE_NUMBER = 0.85;
+const float HELION_SHORE_SHOALING = 1.4;
+const float HELION_SHORE_SPEED = 1.7;
+const float HELION_SHORE_HEIGHT = 0.14;
+const float HELION_SHORE_SHARPNESS = 2.5;
+const float HELION_SHORE_FETCH_PROBE = 6.0;
+const float HELION_SHORE_FETCH_FROM = 3.0;
+const float HELION_SHORE_FETCH_TO = 9.0;
+const float HELION_SHORE_WARP_SCALE = 0.06;
+const float HELION_SHORE_WARP_DRIFT = 0.02;
+const float HELION_SHORE_WARP = 2.5;
+const float HELION_SHORE_MIN_GRADIENT = 1.0e-4;
+const float HELION_SHORE_BREAK_CREST = 0.6;
+const float HELION_SHORE_BREAK_NEAR = 0.4;
+const float HELION_SHORE_BREAK_FAR = 5.0;
+const float HELION_SHORE_FOAM_SCALE = 1.8;
+const vec2 HELION_SHORE_FOAM_DRIFT = vec2(0.13, -0.09);
+const float HELION_SHORE_FOAM_FROM = -0.15;
+const float HELION_SHORE_FOAM_TO = 0.25;
+
+struct HelionShoreWave {
+    vec2 slope;
+    float foam;
+};
+
+float helionShoreDistance(sampler2D distances, vec2 position) {
+    return textureLod(distances, position / HELION_SHORE_WINDOW, 0.0).r * HELION_SHORE_LIMIT;
+}
+
+HelionShoreWave helionShoreWave(sampler2D distances, vec2 position, float seconds) {
+    HelionShoreWave wave = HelionShoreWave(vec2(0.0), 0.0);
+    float shoreDistance = helionShoreDistance(distances, position);
+    if (shoreDistance >= HELION_SHORE_REACH) {
+        return wave;
+    }
+    vec2 away = vec2(
+        helionShoreDistance(distances, position + vec2(1.0, 0.0)) - helionShoreDistance(distances, position - vec2(1.0, 0.0)),
+        helionShoreDistance(distances, position + vec2(0.0, 1.0)) - helionShoreDistance(distances, position - vec2(0.0, 1.0))
+    ) * 0.5;
+    float gradient = dot(away, away);
+    if (gradient < HELION_SHORE_MIN_GRADIENT) {
+        return wave;
+    }
+    vec2 seaward = away * inversesqrt(gradient);
+    float fetch = smoothstep(HELION_SHORE_FETCH_FROM, HELION_SHORE_FETCH_TO, helionShoreDistance(distances, position + seaward * HELION_SHORE_FETCH_PROBE));
+    float rise = (1.0 - smoothstep(HELION_SHORE_REACH * HELION_SHORE_RISE_FROM, HELION_SHORE_REACH, shoreDistance)) * smoothstep(0.0, HELION_SHORE_EDGE, shoreDistance);
+    float amplitude = HELION_SHORE_HEIGHT * fetch * rise;
+    if (amplitude <= 0.0) {
+        return wave;
+    }
+    float number = HELION_SHORE_NUMBER * (1.0 + HELION_SHORE_SHOALING * (1.0 - shoreDistance / HELION_SHORE_REACH));
+    float travelled = shoreDistance + HELION_SHORE_SHOALING * (shoreDistance - shoreDistance * shoreDistance / (2.0 * HELION_SHORE_REACH));
+    float warp = helionNoiseValue(position * HELION_SHORE_WARP_SCALE + HELION_SHORE_WARP_DRIFT * seconds) * HELION_SHORE_WARP;
+    float phase = HELION_SHORE_NUMBER * travelled + HELION_SHORE_SPEED * seconds + warp;
+    float crest = 0.5 + 0.5 * sin(phase);
+    float steepness = amplitude * HELION_SHORE_SHARPNESS * pow(crest, HELION_SHORE_SHARPNESS - 1.0) * 0.5 * cos(phase) * number;
+    wave.slope = seaward * steepness;
+    float breaking = smoothstep(HELION_SHORE_BREAK_CREST, 1.0, crest) * (1.0 - smoothstep(HELION_SHORE_BREAK_NEAR, HELION_SHORE_BREAK_FAR, shoreDistance));
+    float breakup = smoothstep(HELION_SHORE_FOAM_FROM, HELION_SHORE_FOAM_TO, helionNoiseValue(position * HELION_SHORE_FOAM_SCALE + HELION_SHORE_FOAM_DRIFT * seconds));
+    wave.foam = fetch * breaking * breakup;
+    return wave;
+}
+
 const int HELION_OCEAN_WAVES = 4;
 const vec2 HELION_OCEAN_CYCLES[HELION_OCEAN_WAVES] = vec2[](vec2(55.0, 26.0), vec2(24.0, 90.0), vec2(131.0, -50.0), vec2(-118.0, 162.0));
 const float HELION_OCEAN_PERIOD = 1024.0;
