@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Experimental voxel lighting: torches, lanterns, campfires and other fire lights flicker gently
 - Realistic glass: plain glass slightly bends the view behind it, stained glass tints it like real colored glass, and glass reflects the world
 - Realistic water: waves roll in from open water and break on beaches with white foam that runs up the shore
 - In third person the player, slimes and other see-through mobs mirror in the water and show through it

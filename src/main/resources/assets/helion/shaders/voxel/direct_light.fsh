@@ -5,6 +5,7 @@
 #include <helion:helion_geometry.glsl>
 #include <helion:helion_light_level.glsl>
 #include <helion:helion_voxel.glsl>
+#include <helion:helion_hash.glsl>
 
 const int HELION_VOXEL_DYNAMIC_LIGHTS = 16;
 const int HELION_MAX_OCCLUDERS = 8;
@@ -14,6 +15,7 @@ layout(std140) uniform HelionVoxelLight {
     vec4 CameraToVolume;
     ivec4 VolumeMin;
     ivec4 Trace;
+    vec4 Flicker;
 };
 
 layout(std140) uniform HelionVoxelDynamic {
@@ -43,6 +45,27 @@ const int HELION_BLOCKED_RETRIES = 3;
 const int HELION_MAX_TRACE_ATTEMPTS = 8;
 const float HELION_EDGE_FADE_BLOCKS = 16.0;
 const float HELION_UNLIT = 1.0e-5;
+const float HELION_FLICKERING = 0.5;
+const float HELION_FLICKER_STRENGTH = 0.07;
+const float HELION_FLICKER_TAU = 6.28318531;
+const vec3 HELION_FLICKER_RATES = vec3(5.3, 9.1, 15.7);
+const vec3 HELION_FLICKER_WEIGHTS = vec3(0.5, 0.3, 0.2);
+const vec3 HELION_FLICKER_PHASE_SCALE = vec3(1.0, 1.9, 3.1);
+const uint HELION_FLICKER_DYNAMIC_SEED = 7919u;
+
+float helionFlicker(float flickers, uint seed) {
+    if (flickers < HELION_FLICKERING) {
+        return 1.0;
+    }
+    float phase = float(helionPcg(seed)) / HELION_HASH_RANGE * HELION_FLICKER_TAU;
+    vec3 waves = sin(Flicker.x * HELION_FLICKER_RATES + phase * HELION_FLICKER_PHASE_SCALE);
+    return 1.0 + HELION_FLICKER_STRENGTH * dot(waves, HELION_FLICKER_WEIGHTS);
+}
+
+uint helionLightSeed(vec3 volumePosition) {
+    ivec3 world = ivec3(floor(volumePosition)) + VolumeMin.xyz;
+    return helionPcg(helionPcg(helionPcg(uint(world.x)) + uint(world.y)) + uint(world.z));
+}
 bool helionOccluded(vec3 from, vec3 to) {
     vec3 direction = to - from;
     vec3 safe = mix(direction, vec3(HELION_MIN_DIRECTION), lessThan(abs(direction), vec3(HELION_MIN_DIRECTION)));
@@ -106,7 +129,8 @@ void main() {
         if (level <= 0.0) {
             continue;
         }
-        vec3 term = texelFetch(VoxelLightListSampler, ivec2(light, 1), 0).rgb * helionLevelBrightness(level / HELION_LIGHT_LEVELS);
+        vec4 color = texelFetch(VoxelLightListSampler, ivec2(light, 1), 0);
+        vec3 term = color.rgb * helionLevelBrightness(level / HELION_LIGHT_LEVELS) * helionFlicker(color.a, helionLightSeed(source.xyz));
         weights[slot] = helionLuminance(term);
         blended += term;
         strongest = max(strongest, weights[slot]);
@@ -123,7 +147,8 @@ void main() {
         if (level <= 0.0) {
             continue;
         }
-        vec3 term = DynamicLights[index * 2 + 1].rgb * helionLevelBrightness(level / HELION_LIGHT_LEVELS);
+        vec4 color = DynamicLights[index * 2 + 1];
+        vec3 term = color.rgb * helionLevelBrightness(level / HELION_LIGHT_LEVELS) * helionFlicker(color.a, helionPcg(uint(index) + HELION_FLICKER_DYNAMIC_SEED));
         float weight = helionLuminance(term);
         blended += term;
         strongest = max(strongest, weight);

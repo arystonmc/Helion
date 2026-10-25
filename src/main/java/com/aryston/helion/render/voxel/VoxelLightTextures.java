@@ -19,7 +19,8 @@ final class VoxelLightTextures {
     private static final int LIGHT_BYTES = VoxelLightGrid.MAX_LIGHTS * LIGHT_ROWS * TEXEL_FLOATS * FLOAT_BYTES;
     private static final int GRID_BYTES = GRID_WIDTH * GRID_HEIGHT * Short.BYTES;
     private static final float BLOCK_CENTER = 0.5F;
-    private static final float UNUSED = 0.0F;
+    private static final float STEADY = 0.0F;
+    private static final float FLICKERING = 1.0F;
 
     private final VoxelTexture lights = new VoxelTexture("Helion Voxel Lights", GpuFormat.RGBA32_FLOAT, VoxelLightGrid.MAX_LIGHTS, LIGHT_ROWS);
     private final VoxelTexture grid = new VoxelTexture("Helion Voxel Light Grid", GpuFormat.R16_UNORM, GRID_WIDTH, GRID_HEIGHT);
@@ -47,7 +48,7 @@ final class VoxelLightTextures {
             VoxelLight light = list.get(index);
             int position = index * TEXEL_FLOATS;
             putTexel(data, position, light.x() - minX + BLOCK_CENTER, light.y() - minY + BLOCK_CENTER, light.z() - minZ + BLOCK_CENTER, light.level());
-            putTexel(data, colorRow + position, light.red(), light.green(), light.blue(), UNUSED);
+            putTexel(data, colorRow + position, light.red(), light.green(), light.blue(), light.flickers() ? FLICKERING : STEADY);
         }
         lightCount = list.size();
         ByteBuffer cells = Objects.requireNonNull(gridData);

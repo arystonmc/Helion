@@ -26,7 +26,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelLight, VoxelLightSink
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLight.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelLightSink.java`
-- Role: A light source block found while reading a section (world block position, level, linear color normalized to luminance 1) and the callback that receives them.
+- Role: A light source block found while reading a section (world block position, level, linear color normalized to luminance 1, whether it is a flickering fire light) and the callback that receives them.
 
 #### VoxelLightGrid
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightGrid.java`
@@ -52,7 +52,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelDynamicLight, VoxelOccluder, VoxelDynamicScene
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelDynamicLight.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelOccluder.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelDynamicScene.java`
-- Role: The moving part of a frame in world coordinates: dynamic lights (position, level, linear color normalized to luminance 1, at most `MAX_LIGHTS` 16) and entity boxes that block light (at most `MAX_OCCLUDERS` 8).
+- Role: The moving part of a frame in world coordinates: dynamic lights (position, level, linear color normalized to luminance 1, flickering flag, at most `MAX_LIGHTS` 16) and entity boxes that block light (at most `MAX_OCCLUDERS` 8).
 
 #### VoxelBrickSink
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelBrickSink.java`
@@ -64,7 +64,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelLightTextures
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightTextures.java`
-- Role: Uploads a `VoxelLightGrid`: the light list as a 1024 x 2 RGBA32_FLOAT texture (row 0 position relative to the volume corner and level, row 1 color) and the grid as a 256 x 256 R16_UNORM texture (light index + 1 per cell slot, 0 for none).
+- Role: Uploads a `VoxelLightGrid`: the light list as a 1024 x 2 RGBA32_FLOAT texture (row 0 position relative to the volume corner and level, row 1 color with 1 in alpha for a flickering fire light) and the grid as a 256 x 256 R16_UNORM texture (light index + 1 per cell slot, 0 for none).
 
 #### VoxelLightPipelines, VoxelLightStage, VoxelLightResults
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightPipelines.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelLightStage.java`, `src/main/java/com/aryston/helion/render/voxel/VoxelLightResults.java`
@@ -86,7 +86,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelLightingResources
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightingResources.java`
-- Role: Owned by `HelionRenderCore`. `update` runs the volume while the mode is not `OFF` and releases it when the mode turns off; also keeps the uniform rings of the slice view and the direct light pass and warns once when the light pass did not compile. `observeBricks` registers a `VoxelBrickSink`. `useDynamicScene` takes the frame's `VoxelDynamicScene`, written relative to the volume corner into the `HelionVoxelDynamic` uniform ring for the light pass.
+- Role: Owned by `HelionRenderCore`. `update` runs the volume while the mode is not `OFF` and releases it when the mode turns off; also keeps the uniform rings of the slice view and the direct light pass (whose last vector carries the real time in seconds modulo an hour for the flicker) and warns once when the light pass did not compile. `observeBricks` registers a `VoxelBrickSink`. `useDynamicScene` takes the frame's `VoxelDynamicScene`, written relative to the volume corner into the `HelionVoxelDynamic` uniform ring for the light pass.
 - Depends on: `VoxelVolume`, `UniformRing`.
 
 #### VoxelSlicePipelines

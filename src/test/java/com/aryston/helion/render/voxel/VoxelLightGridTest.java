@@ -66,6 +66,6 @@ class VoxelLightGridTest {
     }
 
     private static VoxelLight light(int x, int y, int z, int level) {
-        return new VoxelLight(x, y, z, level, WHITE, WHITE, WHITE);
+        return new VoxelLight(x, y, z, level, WHITE, WHITE, WHITE, false);
     }
 }

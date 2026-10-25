@@ -17,13 +17,17 @@ public final class VoxelLightingResources {
     private static final String SLICE_LABEL = "Helion Voxel Slice";
     private static final int SLICE_UNIFORM_SIZE = new Std140SizeCalculator().putIVec4().putIVec4().putIVec4().get();
     private static final String LIGHT_LABEL = "Helion Voxel Light Settings";
-    private static final int LIGHT_UNIFORM_SIZE = new Std140SizeCalculator().putMat4f().putVec4().putIVec4().putIVec4().get();
+    private static final int LIGHT_UNIFORM_SIZE = new Std140SizeCalculator().putMat4f().putVec4().putIVec4().putIVec4().putVec4().get();
     private static final String DYNAMIC_LABEL = "Helion Voxel Dynamic Lights";
     private static final int DYNAMIC_UNIFORM_SIZE = dynamicUniformSize();
     private static final float NO_VALUE = 0.0F;
     private static final int VECTORS_PER_ENTRY = 2;
     private static final int UNUSED = 0;
     private static final int BOUNCE = 1;
+    private static final float STEADY = 0.0F;
+    private static final float FLICKERING = 1.0F;
+    private static final double NANOS_PER_SECOND = 1.0e9;
+    private static final double FLICKER_PERIOD_SECONDS = 3600.0;
 
     private final GpuResources resources;
     private final VoxelVolume volume;
@@ -120,7 +124,12 @@ public final class VoxelLightingResources {
             .putMat4f(inverse)
             .putVec4(relativeX, relativeY, relativeZ, VoxelVolumeLayout.VOLUME_SIZE)
             .putIVec4(view.minBlockX(), view.minBlockY(), view.minBlockZ(), view.lightCount())
-            .putIVec4(quality.tracedLights(), quality.resolutionDivisor(), settings.bounce() ? BOUNCE : UNUSED, UNUSED));
+            .putIVec4(quality.tracedLights(), quality.resolutionDivisor(), settings.bounce() ? BOUNCE : UNUSED, UNUSED)
+            .putVec4(flickerSeconds(), NO_VALUE, NO_VALUE, NO_VALUE));
+    }
+
+    private static float flickerSeconds() {
+        return (float) (System.nanoTime() / NANOS_PER_SECOND % FLICKER_PERIOD_SECONDS);
     }
 
     public void useDynamicScene(VoxelDynamicScene scene) {
@@ -141,7 +150,7 @@ public final class VoxelLightingResources {
             if (index < scene.lights().size()) {
                 VoxelDynamicLight light = scene.lights().get(index);
                 builder.putVec4(relative(light.x(), view.minBlockX()), relative(light.y(), view.minBlockY()), relative(light.z(), view.minBlockZ()), light.level());
-                builder.putVec4(light.red(), light.green(), light.blue(), NO_VALUE);
+                builder.putVec4(light.red(), light.green(), light.blue(), light.flickers() ? FLICKERING : STEADY);
             } else {
                 builder.putVec4(NO_VALUE, NO_VALUE, NO_VALUE, NO_VALUE);
                 builder.putVec4(NO_VALUE, NO_VALUE, NO_VALUE, NO_VALUE);

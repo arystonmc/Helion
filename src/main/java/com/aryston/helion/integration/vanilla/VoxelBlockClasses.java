@@ -1,6 +1,7 @@
 package com.aryston.helion.integration.vanilla;
 
 import com.aryston.helion.render.voxel.VoxelClass;
+import it.unimi.dsi.fastutil.objects.Reference2BooleanOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ByteOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
@@ -31,6 +32,7 @@ final class VoxelBlockClasses {
     private final Reference2ByteOpenHashMap<BlockState> classes = new Reference2ByteOpenHashMap<>();
     private final Reference2ObjectOpenHashMap<BlockState, float[]> colors = new Reference2ObjectOpenHashMap<>();
     private final Reference2IntOpenHashMap<BlockState> albedos = new Reference2IntOpenHashMap<>();
+    private final Reference2BooleanOpenHashMap<BlockState> flickering = new Reference2BooleanOpenHashMap<>();
 
     VoxelBlockClasses() {
         classes.defaultReturnValue(UNKNOWN);
@@ -59,10 +61,15 @@ final class VoxelBlockClasses {
         return colors.computeIfAbsent(state, VoxelLightColors::color);
     }
 
+    boolean flickers(BlockState state) {
+        return flickering.computeIfAbsent(state, VoxelLightColors::flickers);
+    }
+
     void clear() {
         classes.clear();
         colors.clear();
         albedos.clear();
+        flickering.clear();
     }
 
     private static int packed(int rgb) {

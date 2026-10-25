@@ -144,8 +144,8 @@ final class VoxelVolume {
             int sectionZ = VoxelVolumeLayout.keyZ(key);
             int slot = VoxelVolumeLayout.slot(sectionX, sectionY, sectionZ);
             collected.clear();
-            source.readSection(sectionX, sectionY, sectionZ, data, colorData, (x, y, z, level, red, green, blue) ->
-                collected.add(new VoxelLight(x, y, z, level, red, green, blue)));
+            source.readSection(sectionX, sectionY, sectionZ, data, colorData, (x, y, z, level, red, green, blue, flickers) ->
+                collected.add(new VoxelLight(x, y, z, level, red, green, blue, flickers)));
             VoxelCoarseLevel.build(data, coarseData);
             if (brickSink != null) {
                 brickSink.brickBuilt(sectionX, sectionY, sectionZ, data);

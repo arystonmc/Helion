@@ -80,7 +80,7 @@ public final class DynamicLightTracker {
             }
             float[] color = source.color();
             lights.add(new VoxelDynamicLight(
-                source.position().x, source.position().y, source.position().z, source.level(), color[RED], color[GREEN], color[BLUE]
+                source.position().x, source.position().y, source.position().z, source.level(), color[RED], color[GREEN], color[BLUE], source.flickers()
             ));
         }
         return lights;
@@ -129,7 +129,7 @@ public final class DynamicLightTracker {
             Vec3 position = entity.getPosition(partialTick).add(0.0, entity.getBbHeight() * HELD_LIGHT_HEIGHT, 0.0);
             double distanceSquared = position.distanceToSqr(camera);
             if (distanceSquared <= MAX_DISTANCE_SQUARED) {
-                SOURCES.add(new Source(position, emission.level(), VoxelLightColors.color(emission.state()), distanceSquared));
+                SOURCES.add(new Source(position, emission.level(), VoxelLightColors.color(emission.state()), VoxelLightColors.flickers(emission.state()), distanceSquared));
             }
         }
         SOURCES.sort(Comparator.comparingDouble(Source::distanceSquared));
@@ -139,6 +139,6 @@ public final class DynamicLightTracker {
         return Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
     }
 
-    private record Source(Vec3 position, float level, float[] color, double distanceSquared) {
+    private record Source(Vec3 position, float level, float[] color, boolean flickers, double distanceSquared) {
     }
 }

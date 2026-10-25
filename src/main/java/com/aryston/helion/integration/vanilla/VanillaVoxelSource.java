@@ -80,7 +80,7 @@ final class VanillaVoxelSource implements VoxelSource {
                     int emission = VoxelBlockClasses.emission(voxel);
                     if (emission > 0) {
                         float[] color = classes.color(state);
-                        lights.light(originX + x, originY + y, originZ + z, emission, color[RED], color[GREEN], color[BLUE]);
+                        lights.light(originX + x, originY + y, originZ + z, emission, color[RED], color[GREEN], color[BLUE], classes.flickers(state));
                     }
                 }
             }

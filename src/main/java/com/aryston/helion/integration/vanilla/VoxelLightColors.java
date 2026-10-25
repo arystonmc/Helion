@@ -8,6 +8,7 @@ import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
@@ -36,6 +37,8 @@ public final class VoxelLightColors implements ResourceManagerReloadListener {
     private static final int GREEN = 1;
     private static final int BLUE = 2;
     private static final double DISPLAY_GAMMA = 2.2;
+    private static final List<String> FIRE_PARTS = List.of("torch", "lantern", "campfire", "fire", "candle", "furnace", "smoker");
+    private static final List<String> STEADY_PARTS = List.of("redstone", "sea_lantern");
 
     private static volatile Map<Identifier, float[]> table = Map.of();
     private static volatile int version;
@@ -48,6 +51,11 @@ public final class VoxelLightColors implements ResourceManagerReloadListener {
 
     static int version() {
         return version;
+    }
+
+    static boolean flickers(BlockState state) {
+        String path = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();
+        return FIRE_PARTS.stream().anyMatch(path::contains) && STEADY_PARTS.stream().noneMatch(path::contains);
     }
 
     static float[] color(BlockState state) {
