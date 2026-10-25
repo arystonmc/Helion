@@ -43,6 +43,7 @@ The sections live in `docs/architecture/`, one file per topic. Read the invarian
 | Ray Tracing | [ray-tracing.md](architecture/ray-tracing.md) | Optional hardware ray tracing layer, experimental setting `rayTracing.enabled` (restart) with water reflections: device features, VMA buffers, per-section bottom levels from the block meshes, per-frame top level, sun shadow validation view. |
 | Rain Wetness | [rain-wetness.md](architecture/rain-wetness.md) | On by default (`reflections.rainWetness`): wet, darker surfaces in rain, puddles with screen space reflections and rain ripples on blocks that hold water, material classes from the block atlas mask. |
 | Dynamic Water | [dynamic-water.md](architecture/dynamic-water.md) | Visual-only interactive water: a scrolling wave height field around the camera fed by entities, splashes and rain drops. |
+| Water Optics | [water-optics.md](architecture/water-optics.md) | Realistic water look: capillary waves with filtered roughness, GGX glints, the cloud sky map for reflections, color and clarity from biome and depth, and the underwater pass. |
 | Sources | [sources.md](architecture/sources.md) | Stages never call vanilla code directly. |
 | Vanilla Coupling | [vanilla-coupling.md](architecture/vanilla-coupling.md) | Places that copy or depend on vanilla internals. |
 | Mixins | [mixins.md](architecture/mixins.md) | Every mixin with its target and why no API is enough. |

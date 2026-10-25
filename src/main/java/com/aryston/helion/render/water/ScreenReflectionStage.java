@@ -106,7 +106,7 @@ public final class ScreenReflectionStage implements RenderStage {
     }
 
     private static boolean reflectsWater(FrameContext frame) {
-        return frame.settings().reflections().screenSpace() && frame.water().surface().isPresent();
+        return (frame.settings().reflections().screenSpace() || frame.settings().reflections().realisticWater()) && frame.water().surface().isPresent();
     }
 
     private static boolean wetsSurfaces(FrameContext frame) {

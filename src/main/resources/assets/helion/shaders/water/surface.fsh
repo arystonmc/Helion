@@ -35,7 +35,6 @@ const float HELION_SECONDS_PER_DAY = 1200.0;
 const float HELION_FLAT_SURFACE = 0.9;
 const float HELION_SPRITE_EDGE = 1.0e-4;
 const vec4 HELION_NO_TINT = vec4(0.0);
-const float HELION_TINT_PRESENT = 1.0;
 const float HELION_SIMULATION_TEXELS = 1024.0;
 const float HELION_SIMULATION_CELLS_PER_BLOCK = 8.0;
 const float HELION_SIMULATION_FADE_START = 44.0;
@@ -44,14 +43,15 @@ const float HELION_SIMULATION_SLOPE_SHARE = 0.85;
 const float HELION_SIMULATION_SLOPE_SCALE = HELION_SIMULATION_CELLS_PER_BLOCK / 2.0 * HELION_SIMULATION_SLOPE_SHARE;
 const float HELION_SIMULATION_ON = 0.5;
 const float HELION_FLOW_SPEED = 1.6;
-const float HELION_FAR_CALM = 0.35;
+const float HELION_FAR_CALM = 0.6;
+const float HELION_CAPILLARY_RAIN = 0.6;
+const float HELION_ROUGHNESS_FROM_VARIANCE = 2.0;
 const float HELION_OCEAN_SHADING = 0.35;
 const float HELION_WATER_RIPPLES = 1.6;
 const float HELION_CALM_FROM = 12.0;
 const float HELION_CALM_TO = 80.0;
 const float HELION_RIPPLE_DETAIL_FROM = 0.08;
 const float HELION_RIPPLE_DETAIL_TO = 0.25;
-const float HELION_FALLING_TINT = 0.5;
 const float HELION_MIN_DETERMINANT = 1.0e-12;
 
 bool helionInside(vec2 uv, vec4 rect) {
@@ -83,12 +83,16 @@ vec2 helionSimulatedSlope(vec2 position, float horizontalDistance) {
     return vec2(right - left, front - back) * HELION_SIMULATION_SLOPE_SCALE * fade;
 }
 
-vec3 helionWaveNormal(vec2 position, float seconds, float horizontalDistance, float footprint) {
+vec3 helionWaveNormal(vec2 position, float seconds, float horizontalDistance, float footprint, out float roughness) {
     float calm = mix(1.0, HELION_FAR_CALM, smoothstep(HELION_CALM_FROM, HELION_CALM_TO, horizontalDistance));
-    vec2 slope = (helionSwellSlope(position, seconds, footprint) + helionOceanSlope(position, seconds) * oceanSwell * HELION_OCEAN_SHADING) * calm;
+    float wind = (1.0 + WaterRain.x * HELION_CAPILLARY_RAIN) * helionCapillaryGust(position, seconds);
+    vec2 capillary = helionCapillarySlope(position, seconds, footprint) * wind;
+    roughness = sqrt(HELION_ROUGHNESS_FROM_VARIANCE * helionCapillaryLostVariance(footprint)) * wind;
+    vec2 ocean = oceanSwell > 0.0 ? helionOceanSlope(position, seconds) * oceanSwell * HELION_OCEAN_SHADING : vec2(0.0);
+    vec2 slope = (helionSwellSlope(position, seconds, footprint) + ocean) * calm;
     vec2 ripples = WaterRain.x > 0.0 ? helionRainRipples(position, WaterRain.y) * WaterRain.x * HELION_WATER_RIPPLES * (1.0 - smoothstep(HELION_RIPPLE_DETAIL_FROM, HELION_RIPPLE_DETAIL_TO, footprint)) : vec2(0.0);
     vec2 simulated = helionSimulatedSlope(position, horizontalDistance);
-    return normalize(vec3(-slope.x * WaveStrength - ripples.x - simulated.x, 1.0, -slope.y * WaveStrength - ripples.y - simulated.y));
+    return normalize(vec3(-slope.x * WaveStrength - capillary.x - ripples.x - simulated.x, 1.0, -slope.y * WaveStrength - capillary.y - ripples.y - simulated.y));
 }
 
 float helionWaterThickness(float sceneDepth) {
@@ -131,11 +135,12 @@ void main() {
     float seconds = GameTime * HELION_SECONDS_PER_DAY;
     vec2 flowing2d = flowing ? flow * seconds * HELION_FLOW_SPEED : vec2(0.0);
     bool falling = flowing && abs(normal.y) < HELION_FLAT_SURFACE;
+    float roughness = 0.0;
     if (normal.y > HELION_FLAT_SURFACE) {
-        normal = helionWaveNormal(wavePosition - flowing2d, seconds, length(cameraRelativePosition.xz), footprint);
+        normal = helionWaveNormal(wavePosition - flowing2d, seconds, length(cameraRelativePosition.xz), footprint, roughness);
     } else if (normal.y < -HELION_FLAT_SURFACE) {
-        normal = -helionWaveNormal(wavePosition, GameTime * HELION_SECONDS_PER_DAY, length(cameraRelativePosition.xz), footprint);
+        normal = -helionWaveNormal(wavePosition, seconds, length(cameraRelativePosition.xz), footprint, roughness);
     }
     waterSurface = vec4(helionEncodeOctahedral(normal), helionWaterThickness(sceneDepth), skyLight);
-    waterTint = vec4(vertexTint, falling ? HELION_FALLING_TINT : HELION_TINT_PRESENT);
+    waterTint = vec4(vertexTint, falling ? HELION_WATER_TINT_FALLING : helionEncodeWaterRoughness(roughness));
 }

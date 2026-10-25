@@ -152,6 +152,7 @@ Real 3D clouds that the sun shines through.
 - Puffy cumulus clouds with flat bases and rounded tops replace the blocky vanilla clouds, high above the terrain
 - Lit by the physical sky: bright silver edges toward the sun, warm orange undersides at sunset, soft shading inside and a faint moonlit glow at night
 - They drift and slowly change shape with the wind, thicken and darken in rain, and fade gently into the distant sky
+- Clear weather leaves plenty of blue sky between the clouds
 - High quality adds a thin layer of high cirrus streaks
 - Drawn at a lower resolution and smoothed over a few frames, so they cost little; Low, Medium and High trade detail for speed
 - Needs the physical sky; turning clouds off in the vanilla video settings turns them off too, and other dimensions keep their own sky
@@ -213,23 +214,24 @@ Water reflects what is on screen on every graphics card, mobs and players includ
 ### Realistic Water
 Water looks like water instead of a flat blue texture.
 
-- Clear water: the bottom of shallow water shows through, bent by the waves; deeper water turns dark blue-green
+- Clear water: the bottom shows through, bent by the waves, and fades into the water color with depth; lakes and shallows are clear turquoise, the deep ocean dark blue
 - Bright sun and moon glints that move with the waves and turn gold at sunset; at night only the moonlit spot shines
 - Realistic moving light patterns (caustics) on the bottom of shallow water by day, from sunlight bent by the waves
 - Rivers carry their waves downstream, and waterfalls are covered in white falling foam
 - Raindrops leave rings on the water without making it choppy
-- Water reflects the clouds
+- Water reflects the clouds, also those outside the screen
+- Fine ripples gently wobble the reflections and break the sun into small sparkles; far away they merge into a soft glittering sun path, and calm and rippled patches drift over larger water
 - Large, soft natural waves that stretch the reflections; deep water blurs the bottom, and water glows when you look toward the sun across it
 - Rain falls in gusts that sweep across water and wet ground
 - From under water you look up through a bright window to the sky and the world above, and the surface around it mirrors the depths
-- Under water you see much farther than in vanilla; the world fades into blue-green with depth, light shafts fall from the surface and caustics dance on the bottom where sunlight reaches, and at night or deep down it turns nearly black
+- Under water you see much farther than in vanilla through a teal haze; soft light shafts slant down from the surface toward the sun, sharp caustics dance on the bottom where sunlight reaches, colors fade to blue-green with depth, and at night or deep down it turns nearly black
 - Lamps, torches and lava leave bright reflections on the water, and the sun only glints where it is not hidden behind terrain
 - Lava: dark crust drifts slowly over the glowing lava with bright cracks between the crust plates, and the air above lava shimmers with heat
-- The color follows the biome: blue oceans, green swamps, the same colors vanilla gives the water
+- The color and clarity follow the biome and the depth: murky green swamps, clear turquoise warm oceans, beaches and lakes, dark blue deep ocean; rain makes water a little cloudier
 - Gentle waves with fine ripples, and rings where raindrops hit the water
 - Open water rolls with a real swell that moves the surface itself, calm near the shore
 - Living water: players, mobs, boats and items leave wakes, things falling in make splash rings, and every raindrop leaves a ring that spreads and fades; waves bounce back from the shore
-- Reflects the sky (with the sun and the moon under the physical sky); with screen space reflections or ray tracing also the world and mobs
+- Reflects the sky (with the sun and the moon under the physical sky) and the world on screen: trees, shores, buildings and mobs mirror in the water even with screen space reflections off; with ray tracing also what is off screen
 - Works on every graphics card
 - Settings: Realistic Water on or off on the Lighting page, on in every preset but Vanilla
 

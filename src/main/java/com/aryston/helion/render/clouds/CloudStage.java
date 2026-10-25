@@ -17,6 +17,7 @@ import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 
 public final class CloudStage implements RenderStage {
@@ -25,6 +26,7 @@ public final class CloudStage implements RenderStage {
     private static final String NOISE_PASS = "cloud_noise";
     private static final String MARCH_PASS = "cloud_march";
     private static final String RESOLVE_PASS = "cloud_resolve";
+    private static final String SKY_MAP_PASS = "cloud_sky_map";
     private static final String TARGET_PREFIX = "helion:";
 
     private final CloudSource source;
@@ -106,7 +108,8 @@ public final class CloudStage implements RenderStage {
                 renderPass.setUniform(CloudPipelines.HISTORY_COLOR_SAMPLER, colorView(previousColor), sampler(FilterMode.LINEAR));
                 renderPass.setUniform(CloudPipelines.HISTORY_DISTANCE_SAMPLER, colorView(previousDistance), sampler(FilterMode.LINEAR));
             })));
-        frame.atmosphere().publishClouds(new Composite(compiled, uniforms, resolvedColor));
+        Optional<ResourceHandle<RenderTarget>> skyMap = reflectsClouds(frame) ? Optional.of(addSkyMapPass(frame, compiled, noise, uniforms)) : Optional.empty();
+        frame.atmosphere().publishClouds(new Composite(compiled, uniforms, resolvedColor, skyMap));
     }
 
     private ResourceHandle<RenderTarget> addNoisePass(FrameContext frame, CloudPrograms compiled, ResourceHandle<RenderTarget> noise) {
@@ -117,6 +120,27 @@ public final class CloudStage implements RenderStage {
             resources.markNoiseWritten();
         }));
         return written;
+    }
+
+    private static boolean reflectsClouds(FrameContext frame) {
+        return frame.settings().reflections().realisticWater() || frame.settings().reflections().screenSpace() || frame.settings().rayTracing().reflectsWater();
+    }
+
+    private ResourceHandle<RenderTarget> addSkyMapPass(FrameContext frame, CloudPrograms compiled, ResourceHandle<RenderTarget> noise, Uniforms uniforms) {
+        FramePass pass = frame.graph().addPass(SKY_MAP_PASS);
+        pass.reads(noise);
+        SkyLight light = Objects.requireNonNull(skyLight);
+        pass.reads(light.irradiance());
+        int size = CloudPipelines.SKY_MAP_SIZE;
+        ResourceHandle<RenderTarget> color = pass.createsInternal(TARGET_PREFIX + "cloud_sky_map", target(size, size, CloudPipelines.COLOR_FORMAT));
+        ResourceHandle<RenderTarget> distance = pass.createsInternal(TARGET_PREFIX + "cloud_sky_map_distance", target(size, size, CloudPipelines.DISTANCE_FORMAT));
+        pass.executes(frame.graph().timed(SKY_MAP_PASS, () -> FullscreenPass.draw(
+            "Helion Cloud Sky Map", List.of(color.get(), distance.get()), compiled.marchSkyMap(), renderPass -> {
+                renderPass.setUniform(CloudPipelines.SETTINGS, uniforms.get());
+                renderPass.setUniform(CloudPipelines.NOISE_SAMPLER, colorView(noise), sampler(FilterMode.LINEAR));
+                renderPass.setUniform(CloudPipelines.SKY_LIGHT_SAMPLER, colorView(light.irradiance()), sampler(FilterMode.NEAREST));
+            })));
+        return color;
     }
 
     private List<ResourceHandle<RenderTarget>> addMarchPass(
@@ -192,16 +216,23 @@ public final class CloudStage implements RenderStage {
         private final CloudPrograms compiled;
         private final Uniforms uniforms;
         private final ResourceHandle<RenderTarget> resolved;
+        private final Optional<ResourceHandle<RenderTarget>> skyMap;
 
-        private Composite(CloudPrograms compiled, Uniforms uniforms, ResourceHandle<RenderTarget> resolved) {
+        private Composite(CloudPrograms compiled, Uniforms uniforms, ResourceHandle<RenderTarget> resolved, Optional<ResourceHandle<RenderTarget>> skyMap) {
             this.compiled = compiled;
             this.uniforms = uniforms;
             this.resolved = resolved;
+            this.skyMap = skyMap;
         }
 
         @Override
         public ResourceHandle<RenderTarget> resolved() {
             return resolved;
+        }
+
+        @Override
+        public Optional<ResourceHandle<RenderTarget>> skyMap() {
+            return skyMap;
         }
 
         @Override

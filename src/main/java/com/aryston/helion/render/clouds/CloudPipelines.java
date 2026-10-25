@@ -26,17 +26,20 @@ public final class CloudPipelines {
     public static final int NOISE_ATLAS_SIZE = 528;
     public static final int COLOR_TARGET = 0;
     public static final int DISTANCE_TARGET = 1;
+    public static final int SKY_MAP_SIZE = 192;
+    private static final String SKY_MAP_DEFINE = "HELION_CLOUD_SKY_MAP";
 
     public static final RenderPipeline NOISE = HelionPipelines.fullscreen("clouds/noise")
         .withColorTargetState(new ColorTargetState(Optional.empty(), NOISE_FORMAT, ColorTargetState.WRITE_ALL))
         .build();
 
     public static final RenderPipeline MARCH = cloudTargets(HelionPipelines.fullscreen("clouds/march")
-        .withBindGroupLayout(BindGroupLayout.builder()
-            .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
-            .withUniform(NOISE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-            .withUniform(SKY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-            .build()))
+        .withBindGroupLayout(marchBindings()))
+        .build();
+
+    public static final RenderPipeline MARCH_SKY_MAP = cloudTargets(HelionPipelines.fullscreen("clouds/march_sky_map", "clouds/march")
+        .withBindGroupLayout(marchBindings()))
+        .withShaderDefine(SKY_MAP_DEFINE)
         .build();
 
     public static final RenderPipeline RESOLVE = cloudTargets(HelionPipelines.fullscreen("clouds/resolve")
@@ -62,7 +65,15 @@ public final class CloudPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(NOISE, MARCH, RESOLVE, COMPOSITE);
+        return List.of(NOISE, MARCH, MARCH_SKY_MAP, RESOLVE, COMPOSITE);
+    }
+
+    private static BindGroupLayout marchBindings() {
+        return BindGroupLayout.builder()
+            .withUniform(SETTINGS, UniformType.UNIFORM_BUFFER)
+            .withUniform(NOISE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(SKY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .build();
     }
 
     private static RenderPipeline.Builder cloudTargets(RenderPipeline.Builder builder) {

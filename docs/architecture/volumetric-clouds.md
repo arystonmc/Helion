@@ -20,3 +20,7 @@ Off by default (`clouds.enabled`, experimental), on in the Experimental preset a
 - **Uniform block `HelionClouds`** (`include/helion_clouds.glsl`), besides the two matrices: `CloudOrigin` xyz the camera position inside the repeating noise period (y is the real height); `CameraMotion` xyz camera position now minus last frame, w 1 when the history can be used; `CloudLight` xyz direction of the light on the clouds, w 1 for the sun and 0 for the moon; `CloudLayer` bottom and top of the cumulus layer, extinction per block, coverage; `CloudQuality` primary steps, light steps, 1 with the cirrus layer, frame index; `CloudWeather` rain strength, time in seconds, maximum distance, distance where the fade starts; `CloudTarget` size of the cloud target and its inverse; `CloudCheckerboard` xy the block pixel marched this frame, zw the size of the march target.
 - **Rain.** Coverage rises toward 85 % and direct light is dimmed.
 - Not part of it yet: cloud shadows on terrain, clouds in the sky light of terrain, and aerial perspective in front of the clouds (they fade out instead).
+
+## Clear Weather and Water Reflections (2026-10-25)
+
+The clear weather coverage is 0.46 (was 0.55). While a water reflection setting is on, the stage also marches a 192 x 192 sky map of the upper hemisphere for the water composite (`cloud_sky_map`, see [water-optics.md](water-optics.md)).

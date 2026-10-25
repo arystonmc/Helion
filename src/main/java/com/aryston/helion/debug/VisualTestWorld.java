@@ -136,6 +136,34 @@ final class VisualTestWorld {
     private static final Volume LAKE_PILLAR = new Volume(new BlockPos(-25, -3, -12), new BlockPos(-25, 0, -12));
     private static final Placement LAKE_TORCH = new Placement(-25, 1, -12, "torch");
     private static final Volume LAKE_BIOME = new Volume(new BlockPos(-41, -4, -31), new BlockPos(-9, 12, 2));
+    static final BlockPos OCEAN_CAMERA = new BlockPos(-44, 0, -62);
+    static final BlockPos OCEAN_UNDER_CAMERA = new BlockPos(-24, -9, -62);
+    static final BlockPos SWAMP_CAMERA = new BlockPos(40, 3, 3);
+    static final BlockPos BEACH_CAMERA = new BlockPos(40, 3, 23);
+    static final BlockPos RIVER_CAMERA = new BlockPos(54, 0, 2);
+    private static final List<WaterArea> WATER_AREAS = List.of(
+        new WaterArea(
+            new Volume(new BlockPos(-44, 0, -82), new BlockPos(-4, 12, -42)), new Volume(new BlockPos(-44, -17, -82), new BlockPos(-4, -1, -42)), CASTER_BLOCK,
+            List.of(new Volume(new BlockPos(-43, -16, -81), new BlockPos(-5, -1, -43))), new Volume(new BlockPos(-44, -16, -82), new BlockPos(-4, 0, -42)), "minecraft:deep_ocean"
+        ),
+        new WaterArea(
+            new Volume(new BlockPos(33, 0, -13), new BlockPos(47, 8, 4)), new Volume(new BlockPos(33, -4, -13), new BlockPos(47, -1, 1)), "mud",
+            List.of(new Volume(new BlockPos(34, -2, -12), new BlockPos(46, -1, 0))), new Volume(new BlockPos(33, -4, -13), new BlockPos(47, 4, 4)), "minecraft:swamp"
+        ),
+        new WaterArea(
+            new Volume(new BlockPos(33, 0, 5), new BlockPos(47, 8, 24)), new Volume(new BlockPos(33, -5, 5), new BlockPos(47, -1, 21)), "sand",
+            List.of(
+                new Volume(new BlockPos(34, -1, 6), new BlockPos(46, -1, 20)),
+                new Volume(new BlockPos(34, -2, 11), new BlockPos(46, -2, 20)),
+                new Volume(new BlockPos(34, -4, 15), new BlockPos(46, -3, 20))
+            ),
+            new Volume(new BlockPos(33, -5, 5), new BlockPos(47, 4, 24)), "minecraft:beach"
+        ),
+        new WaterArea(
+            new Volume(new BlockPos(50, 0, -31), new BlockPos(58, 8, 3)), new Volume(new BlockPos(51, -4, -31), new BlockPos(57, -1, 1)), "dirt",
+            List.of(new Volume(new BlockPos(52, -3, -30), new BlockPos(56, -1, 0))), new Volume(new BlockPos(50, -4, -31), new BlockPos(58, 4, 3)), "minecraft:river"
+        )
+    );
     static final BlockPos LAVA_CAMERA = new BlockPos(23, 0, 18);
     private static final Volume LAVA_AIR = new Volume(new BlockPos(18, 0, 6), new BlockPos(28, 6, 19));
     private static final Volume LAVA_BASIN = new Volume(new BlockPos(18, -3, 6), new BlockPos(28, -1, 19));
@@ -204,6 +232,17 @@ final class VisualTestWorld {
         run(server, fill(origin.offset(LAKE_PILLAR.from()), origin.offset(LAKE_PILLAR.to()), CASTER_BLOCK));
         run(server, LAKE_TORCH.command(origin));
         run(server, "fillbiome " + coordinates(origin.offset(LAKE_BIOME.from())) + " " + coordinates(origin.offset(LAKE_BIOME.to())) + " " + RAIN_BIOME);
+        buildWaterAreas(server, origin);
+    }
+
+    private static void buildWaterAreas(IntegratedServer server, BlockPos origin) {
+        for (WaterArea area : WATER_AREAS) {
+            run(server, killEntities(origin.offset(area.air().from()), origin.offset(area.air().to())));
+            run(server, fill(origin.offset(area.air().from()), origin.offset(area.air().to()), "air"));
+            run(server, fill(origin.offset(area.basin().from()), origin.offset(area.basin().to()), area.basinBlock()));
+            area.water().forEach(water -> run(server, fill(origin.offset(water.from()), origin.offset(water.to()), "water")));
+            run(server, "fillbiome " + coordinates(origin.offset(area.biomeVolume().from())) + " " + coordinates(origin.offset(area.biomeVolume().to())) + " " + area.biome());
+        }
     }
 
     static void placeCamera(IntegratedServer server, Vec3 start, BlockPos origin, BlockPos cameraOffset) {
@@ -266,6 +305,9 @@ final class VisualTestWorld {
     }
 
     private record Fill(Volume volume, String block) {
+    }
+
+    private record WaterArea(Volume air, Volume basin, String basinBlock, List<Volume> water, Volume biomeVolume, String biome) {
     }
 
     private record Placement(int x, int y, int z, String block) {

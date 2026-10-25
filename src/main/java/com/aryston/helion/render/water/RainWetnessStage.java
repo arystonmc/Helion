@@ -34,8 +34,8 @@ public final class RainWetnessStage implements RenderStage {
         if (state.lavaNearby()) {
             frame.water().publishLava();
         }
-        if (state.underwater()) {
-            frame.water().publishUnderwater(state.cameraSkyLight());
+        if (state.underwater().submerged()) {
+            frame.water().publishUnderwater(state.underwater());
         }
         if (!frame.settings().reflections().rainWetness()) {
             resources.footprints().clear();

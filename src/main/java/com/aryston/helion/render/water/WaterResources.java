@@ -13,6 +13,7 @@ import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import java.util.List;
 import java.util.Optional;
 import org.joml.Vector3dc;
+import org.joml.Vector3fc;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -39,9 +40,10 @@ public final class WaterResources {
         .putFloat()
         .putFloat()
         .putVec4()
+        .putVec4()
         .get();
     private static final String UNDERWATER_LABEL = "Helion Underwater Settings";
-    private static final int UNDERWATER_SIZE = new Std140SizeCalculator().putMat4f().putVec4().putVec4().get();
+    private static final int UNDERWATER_SIZE = new Std140SizeCalculator().putMat4f().putVec4().putVec4().putVec4().putVec4().get();
     private static final String HEAT_LABEL = "Helion Heat Shimmer Settings";
     private static final int HEAT_SIZE = new Std140SizeCalculator().putVec4().get();
     private static final String SCREEN_LABEL = "Helion Screen Reflection Settings";
@@ -52,6 +54,11 @@ public final class WaterResources {
     private static final double SECONDS_PERIOD = 3600.0;
     private static final float PRESENT = 1.0F;
     private static final float ABSENT = 0.0F;
+    private static final int RED_SHIFT = 16;
+    private static final int GREEN_SHIFT = 8;
+    private static final int BLUE_SHIFT = 0;
+    private static final int CHANNEL_MASK = 0xFF;
+    private static final float CHANNEL_MAX = 255.0F;
 
     private final GpuResources resources;
     private final RainWetness rainWetness = new RainWetness();
@@ -111,7 +118,7 @@ public final class WaterResources {
         return compiled;
     }
 
-    GpuBuffer reflectionUniforms(HelionCamera camera, boolean traced, boolean screen, boolean realistic, float flash, boolean clouds) {
+    GpuBuffer reflectionUniforms(HelionCamera camera, boolean traced, boolean screen, boolean realistic, float flash, ReflectedClouds clouds, float turbidity) {
         if (reflectionUniforms == null) {
             reflectionUniforms = new UniformRing(REFLECTION_LABEL, REFLECTION_SIZE, resources);
         }
@@ -124,7 +131,8 @@ public final class WaterResources {
             .putFloat(realistic ? PRESENT : ABSENT)
             .putFloat((float) ((System.nanoTime() / NANOS_PER_SECOND) % SECONDS_PERIOD))
             .putFloat(flash)
-            .putVec4((float) (camera.position().x() % NOISE_PERIOD), (float) (camera.position().y() % NOISE_PERIOD), (float) (camera.position().z() % NOISE_PERIOD), clouds ? PRESENT : ABSENT));
+            .putVec4((float) (camera.position().x() % NOISE_PERIOD), (float) (camera.position().y() % NOISE_PERIOD), (float) (camera.position().z() % NOISE_PERIOD), clouds.level())
+            .putVec4(turbidity, ABSENT, ABSENT, ABSENT));
     }
 
     Optional<CompiledRenderPipeline> polishedProgram() {
@@ -170,7 +178,7 @@ public final class WaterResources {
         return calculator.get();
     }
 
-    GpuBuffer underwaterUniforms(HelionCamera camera, float daylight, float skyLight) {
+    GpuBuffer underwaterUniforms(HelionCamera camera, UnderwaterView view, float daylight, Vector3fc light, boolean moonLit, float turbidity) {
         if (underwaterUniforms == null) {
             underwaterUniforms = new UniformRing(UNDERWATER_LABEL, UNDERWATER_SIZE, resources);
         }
@@ -178,7 +186,13 @@ public final class WaterResources {
         return underwaterUniforms.write(builder -> builder
             .putMat4f(camera.levelViewProjection().invert())
             .putVec4((float) (position.x() % NOISE_PERIOD), (float) (position.y() % NOISE_PERIOD), (float) (position.z() % NOISE_PERIOD), daylight)
-            .putVec4((float) ((System.nanoTime() / NANOS_PER_SECOND) % SECONDS_PERIOD), skyLight, ABSENT, ABSENT));
+            .putVec4((float) ((System.nanoTime() / NANOS_PER_SECOND) % SECONDS_PERIOD), view.skyLight(), view.surfaceAbove(), turbidity)
+            .putVec4(light.x(), light.y(), light.z(), moonLit ? PRESENT : ABSENT)
+            .putVec4(channel(view.waterColor(), RED_SHIFT), channel(view.waterColor(), GREEN_SHIFT), channel(view.waterColor(), BLUE_SHIFT), view.floorBelow()));
+    }
+
+    private static float channel(int color, int shift) {
+        return ((color >> shift) & CHANNEL_MASK) / CHANNEL_MAX;
     }
 
     GpuBuffer heatUniforms() {

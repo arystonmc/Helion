@@ -7,6 +7,10 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Realistic water is clear, and its color and clarity follow the biome and the depth: murky green swamps, clear turquoise shallows and lakes, dark blue deep ocean
+- Realistic water: fine ripples gently wobble the reflections and break the sun into small sparkles; far away they merge into a soft glittering sun path
+- Realistic water mirrors the world on screen even with screen space reflections off, and reflects clouds beyond the edge of the screen
+- Under water: a teal haze with soft light shafts slanting down from the surface, sharper caustics on the bottom and colors that fade to blue-green with depth
 - Realistic water reflects the volumetric clouds
 - Realistic water: large crested waves, a depth blurred bottom with a faint color fringe, sun glow through the water and rain gusts
 - Lava: dark crust drifts over glowing lava with bright cracks, and the air shimmers above it
@@ -41,6 +45,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental ray tracing: mobs, players and dropped items show in water reflections, also when they are off screen
 
 ### Changed
+- Volumetric clouds are a little thinner in clear weather
 - Needs NeoForge 26.3.0.95 or newer (NeoForge for Minecraft 26.3 is no longer beta)
 - Physical sky: a small sun of realistic size with a bright halo that turns orange and red as it sets
 - Physical sky: a three-dimensional moon with real phase shadows, seas and craters, drawn larger than the sun

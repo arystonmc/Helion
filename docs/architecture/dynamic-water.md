@@ -109,3 +109,7 @@ The owner found open water artificial (the pool was fine) and the rain film on t
 ## Cloud Reflections (2026-10-25)
 
 The owner noticed that water away from reflected terrain looked like a flat fill: the composite reflected the physical sky without the volumetric clouds. `CloudStage` now runs before the water stages (it needs only the sky light and the published wetness), and the water composite binds its resolved cloud target (`ReflectedCloudSampler`, `WaterCameraPosition.w` flags it): for a sky reflection it projects the reflected direction with the view projection (now in the reflection uniform), samples the clouds there when the point is on screen (faded over the outer 8 %), and blends the tone mapped cloud radiance over the sky by its cover, the same way the cloud composite draws the sky. Reflected directions that leave the screen keep the cloudless sky.
+
+## Water Optics (2026-10-25)
+
+The look of realistic water after the SEUS Renewed comparison (capillary ripples, glints, clouds beyond the screen, color and clarity, the underwater pass) is described in [water-optics.md](water-optics.md).

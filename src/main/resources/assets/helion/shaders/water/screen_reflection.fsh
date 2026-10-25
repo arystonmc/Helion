@@ -69,6 +69,10 @@ const float HELION_FOOT_EDGE = 0.35;
 const float HELION_FOOT_DARKENING = 0.35;
 const float HELION_FOOT_SHEEN = 0.3;
 const float HELION_FOOT_FLAT = 0.9;
+const float HELION_JITTER_SCALE = 52.9829189;
+const vec2 HELION_JITTER_PIXEL = vec2(0.06711056, 0.00583715);
+const float HELION_JITTER_SPEED = 7.0;
+const float HELION_JITTER_FROM = 0.5;
 
 struct HelionScreenPoint {
     bool valid;
@@ -103,14 +107,18 @@ float helionEdgeFade(vec2 uv) {
     return clamp(min(edge.x, edge.y) / HELION_EDGE_FADE, 0.0, 1.0);
 }
 
+float helionMarchJitter() {
+    return HELION_JITTER_FROM + fract(HELION_JITTER_SCALE * fract(dot(gl_FragCoord.xy + Wetness.w * HELION_JITTER_SPEED, HELION_JITTER_PIXEL)));
+}
+
 vec4 helionMarch(vec3 start, vec3 normal, out float distanceToHit, out vec4 skySeen) {
     distanceToHit = 0.0;
     skySeen = vec4(0.0);
     vec3 direction = reflect(normalize(start), normal);
     vec3 origin = start + normal * HELION_SURFACE_LIFT;
     float previous = 0.0;
-    float travelled = HELION_FIRST_STEP;
-    float step = HELION_FIRST_STEP;
+    float step = HELION_FIRST_STEP * helionMarchJitter();
+    float travelled = step;
     for (int index = 0; index < HELION_MARCH_STEPS; index++) {
         vec3 position = origin + direction * travelled;
         HelionScreenPoint point = helionProject(position);

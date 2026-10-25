@@ -4,6 +4,9 @@
 #include <helion:helion_color.glsl>
 #include <helion:helion_cloud_noise.glsl>
 #include <helion:helion_clouds.glsl>
+#ifdef HELION_CLOUD_SKY_MAP
+#include <helion:helion_cloud_sky_map.glsl>
+#endif
 
 uniform sampler2D CloudNoiseSampler;
 uniform sampler2D SkyLightSampler;
@@ -37,6 +40,7 @@ const ivec2 HELION_SUN_TEXEL = ivec2(0, 0);
 const ivec2 HELION_MOON_TEXEL = ivec2(1, 0);
 const ivec2 HELION_HEMISPHERE_TEXEL = ivec2(2, 0);
 const float HELION_NO_CLOUD_DISTANCE = 1.0e5;
+const float HELION_SKY_MAP_STEP_SHARE = 0.6;
 
 float helionHenyeyGreenstein(float cosTheta, float g) {
     float g2 = g * g;
@@ -176,8 +180,15 @@ void helionCirrus(vec3 ray, vec3 light, vec3 lightColor, vec3 ambient, inout vec
 }
 
 void main() {
+    #ifdef HELION_CLOUD_SKY_MAP
+    vec2 pixel = floor(gl_FragCoord.xy);
+    vec3 ray = helionCloudSkyMapDirection((pixel + 0.5) / HELION_CLOUD_SKY_MAP_SIZE);
+    float stepShare = HELION_SKY_MAP_STEP_SHARE;
+    #else
     vec2 pixel = floor(gl_FragCoord.xy) * 2.0 + CloudCheckerboard.xy;
     vec3 ray = helionCloudViewRay((pixel + 0.5) * CloudTarget.zw);
+    float stepShare = 1.0;
+    #endif
     vec3 light = CloudLight.xyz;
     vec3 lightColor = texelFetch(SkyLightSampler, CloudLight.w > 0.5 ? HELION_SUN_TEXEL : HELION_MOON_TEXEL, 0).rgb;
     vec3 ambient = texelFetch(SkyLightSampler, HELION_HEMISPHERE_TEXEL, 0).rgb / HELION_PI * HELION_AMBIENT_STRENGTH;
@@ -197,7 +208,7 @@ void main() {
     float start = max(segment.x, 0.0);
     float end = min(segment.y, CloudWeather.z);
     if (segment.y > 0.0 && end > start) {
-        int steps = int(CloudQuality.x);
+        int steps = int(CloudQuality.x * stepShare);
         float horizontal = 1.0 - abs(ray.y);
         steps = int(float(steps) * mix(1.0, 1.5, horizontal * horizontal));
         float stepLength = (end - start) / float(steps);

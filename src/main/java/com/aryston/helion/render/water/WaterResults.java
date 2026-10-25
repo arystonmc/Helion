@@ -16,9 +16,8 @@ public final class WaterResults {
     private @Nullable ResourceHandle<RenderTarget> tint;
     private @Nullable ResourceHandle<RenderTarget> refraction;
     private @Nullable ResourceHandle<RenderTarget> waves;
-    private boolean underwater;
+    private UnderwaterView underwater = UnderwaterView.ABOVE_WATER;
     private boolean lava;
-    private float underwaterSkyLight;
     private List<Footprint> footprints = List.of();
     private double footprintSeconds;
 
@@ -75,7 +74,7 @@ public final class WaterResults {
         footprintSeconds = seconds;
     }
 
-    boolean underwater() {
+    UnderwaterView underwater() {
         return underwater;
     }
 
@@ -87,13 +86,8 @@ public final class WaterResults {
         lava = true;
     }
 
-    float underwaterSkyLight() {
-        return underwaterSkyLight;
-    }
-
-    void publishUnderwater(float skyLight) {
-        underwater = true;
-        underwaterSkyLight = skyLight;
+    void publishUnderwater(UnderwaterView view) {
+        underwater = view;
     }
 
     void publishWaves(ResourceHandle<RenderTarget> simulated) {

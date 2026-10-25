@@ -37,6 +37,7 @@ public final class WaterPipelines {
     public static final String UNDERWATER_UNIFORM = "HelionUnderwater";
     public static final String HEAT_UNIFORM = "HelionHeat";
     public static final String REFLECTED_CLOUD_SAMPLER = "ReflectedCloudSampler";
+    public static final String SKY_CLOUD_SAMPLER = "SkyCloudSampler";
     public static final String HEAT_SOURCE_SAMPLER = "HeatSourceSampler";
     private static final int POLISHED_TARGET = 1;
     private static final String FOG = "Fog";
@@ -60,11 +61,11 @@ public final class WaterPipelines {
 
     public static final RenderPipeline UNDERWATER = HelionPipelines.fullscreen("water/underwater")
         .withBindGroupLayout(BindGroupLayout.builder()
-            .withUniform(FOG, UniformType.UNIFORM_BUFFER)
             .withUniform(UNDERWATER_UNIFORM, UniformType.UNIFORM_BUFFER)
             .withUniform(SCENE_DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(SCENE_COLOR_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .build())
-        .withColorTargetState(new ColorTargetState(Optional.of(BlendFunction.TRANSLUCENT_PREMULTIPLIED_ALPHA), SCENE_COLOR_FORMAT, ColorTargetState.WRITE_COLOR))
+        .withColorTargetState(new ColorTargetState(Optional.empty(), SCENE_COLOR_FORMAT, ColorTargetState.WRITE_COLOR))
         .build();
 
     public static final RenderPipeline HEAT_SHIMMER = HelionPipelines.fullscreen("water/heat_shimmer")
@@ -127,6 +128,7 @@ public final class WaterPipelines {
                 .withUniform(TINT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .withUniform(REFRACTION_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .withUniform(REFLECTED_CLOUD_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform(SKY_CLOUD_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .build())
             .withColorTargetState(new ColorTargetState(Optional.of(BlendFunction.TRANSLUCENT_PREMULTIPLIED_ALPHA), SCENE_COLOR_FORMAT, ColorTargetState.WRITE_COLOR));
     }

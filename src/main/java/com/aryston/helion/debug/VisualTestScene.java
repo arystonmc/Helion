@@ -34,6 +34,12 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final boolean WET = true;
     private static final String FOOTPRINT_SCENE = "footprints";
     private static final float RAINBOW_PITCH = -15.0F;
+    private static final float OCEAN_PITCH = 10.0F;
+    private static final float GLITTER_PITCH = 6.0F;
+    private static final float OCEAN_UNDER_PITCH = -8.0F;
+    private static final float SWAMP_PITCH = 40.0F;
+    private static final float BEACH_PITCH = 45.0F;
+    private static final float RIVER_PITCH = 15.0F;
 
     static final List<VisualTestScene> ALL = List.of(
         new VisualTestScene("day_sky", NOON, NORTH, -35.0F, BlockPos.ZERO),
@@ -63,6 +69,12 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("water_lake_under_floor", NOON, NORTH, LAKE_FLOOR_PITCH, VisualTestWorld.LAKE_UNDER_CAMERA),
         new VisualTestScene("water_lake_under_night", MIDNIGHT, NORTH, UNDERWATER_PITCH, VisualTestWorld.LAKE_UNDER_CAMERA),
         new VisualTestScene("water_lake_storm", NOON, NORTH, LAKE_PITCH, VisualTestWorld.LAKE_CAMERA, RAIN),
+        new VisualTestScene("water_ocean", NOON, EAST, OCEAN_PITCH, VisualTestWorld.OCEAN_CAMERA),
+        new VisualTestScene("water_ocean_glitter", SUNRISE, EAST, GLITTER_PITCH, VisualTestWorld.OCEAN_CAMERA),
+        new VisualTestScene("water_ocean_under", MORNING, EAST, OCEAN_UNDER_PITCH, VisualTestWorld.OCEAN_UNDER_CAMERA),
+        new VisualTestScene("water_swamp", NOON, NORTH, SWAMP_PITCH, VisualTestWorld.SWAMP_CAMERA),
+        new VisualTestScene("water_beach", NOON, NORTH, BEACH_PITCH, VisualTestWorld.BEACH_CAMERA),
+        new VisualTestScene("water_river", NOON, NORTH, RIVER_PITCH, VisualTestWorld.RIVER_CAMERA),
         new VisualTestScene("water_under", NOON, NORTH, UNDERWATER_PITCH, VisualTestWorld.UNDERWATER_CAMERA),
         new VisualTestScene("water_under_floor", NOON, NORTH, CLOSE_PITCH, VisualTestWorld.UNDERWATER_CAMERA),
         new VisualTestScene("cave_corner", MIDNIGHT, NORTH, CAVE_PITCH, VisualTestWorld.CAVE_CAMERA),

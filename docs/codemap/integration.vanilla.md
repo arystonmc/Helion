@@ -1,6 +1,6 @@
 # Helion Code Map: `com.aryston.helion.integration.vanilla`
 
-Part of the [Helion code map](../CODEMAP.md). Every class of this package has its entry here and nowhere else (rule D1).
+Part of the [Helion code map](../CODEMAP.md). Every class of this package has its entry here or in [integration.vanilla--voxels.md](integration.vanilla--voxels.md) and nowhere else (rule D1).
 
 ### `com.aryston.helion.integration.vanilla`
 
@@ -48,7 +48,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaWeatherSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaWeatherSource.java`
-- Role: `WeatherSource` over the client level: the rain level with the partial tick, the game time in seconds, the lightning flash (`ClientLevelAccessor`, off with the hide lightning flash option), whether the camera is in water, whether the biome at the camera has rain there, the camera sky light minus the sky darkening, and, every 10 frames, whether a section within 2 sections of the camera may hold lava (palette check).
+- Role: `WeatherSource` over the client level: the rain level with the partial tick, the game time in seconds, the lightning flash (`ClientLevelAccessor`, off with the hide lightning flash option), whether the biome at the camera has rain there, the `UnderwaterView` while the camera is in water (camera sky light minus the sky darkening, water surface above and floor below the eye from block scans of up to 48 blocks, the averaged biome water color), and, every 10 frames, whether a section within 2 sections of the camera may hold lava (palette check).
 - Depends on: `WeatherSource`.
 
 #### VanillaGlossyCells
@@ -160,7 +160,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### HelionUnderwaterFog
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/HelionUnderwaterFog.java`
-- Role: Underwater fog extension for realistic water (set each frame by `VanillaWeatherSource`, read by `WaterFogEnvironmentMixin`): three times the vanilla end, at least 72 blocks; expires a second after the last frame.
+- Role: Underwater fog extension for realistic water (set each frame by `VanillaWeatherSource`, read by `WaterFogEnvironmentMixin`): eight times the vanilla end, at least 384 blocks, so the `underwater` pass owns the look; expires a second after the last frame.
 
 #### VanillaTransparencySource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaTransparencySource.java`
@@ -177,25 +177,3 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 #### AmbientLightTracker
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/AmbientLightTracker.java`
 - Role: Sky light that reaches the camera block after the time of day and weather darkening, smoothed over frame time (1.5 s). Feeds `SceneSnapshot.ambientLight`, which raises the bloom threshold in daylight and lowers it in caves and at night.
-
-#### VanillaVoxelSource
-- Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaVoxelSource.java`
-- Role: `VoxelSource` over the client level, on the render thread: reads the 4096 block states of one chunk section (missing chunks, sections outside the build height and all-air sections become empty bricks) through `VoxelBlockClasses` with biome tinted colors from `VoxelBiomeTints`, reports every block with light emission with its color, drains `VoxelSectionChanges`, and raises the level generation on a new level, reloaded light colors or an overflowed change queue so the volume rebuilds. `use(level, enabled)` also switches the change collection on or off. Owned by `VanillaFrameDriver`.
-- Depends on: `VoxelBlockClasses`, `VoxelBiomeTints`, `VoxelSectionChanges`.
-
-#### VoxelBiomeTints
-- Path: `src/main/java/com/aryston/helion/integration/vanilla/VoxelBiomeTints.java`
-- Role: Biome tint of the color atlas entry for blocks with a vanilla tint source on layer 0 (grass, leaves, vines, ferns, sugar cane): the in-world tint color at the block position, scaled to the luminance of the map color, so bounced light off grass and leaves follows the biome. Blocks without a tint source and white tints (water) keep the map color. Caches the tint source per block state.
-
-#### VoxelBlockClasses
-- Path: `src/main/java/com/aryston/helion/integration/vanilla/VoxelBlockClasses.java`
-- Role: Cached `VoxelClass` byte and light color per block state: air and invisible blocks empty, solid render blocks and blocks with full light dampening opaque, water and blocks whose model has translucent material translucent, everything else partial, with the light emission in the high bits; stained glass and panes also get `TINTS_LIGHT` and their dye color, brightest channel scaled to 1, in place of the map color.
-
-#### VoxelSectionChanges
-- Path: `src/main/java/com/aryston/helion/integration/vanilla/VoxelSectionChanges.java`
-- Role: Bounded cross-thread queue of section nodes whose blocks or meshes changed, filled by `LevelExtractorMixin` and `RenderSectionMixin` only while voxel lighting is on, so it costs one volatile read when off. Overflow clears it and asks for a full rebuild.
-- Depends on: nothing of this mod.
-
-#### VoxelLightColors
-- Path: `src/main/java/com/aryston/helion/integration/vanilla/VoxelLightColors.java`
-- Role: Client reload listener for `assets/helion/voxel_light/colors.json` (block id to linear RGB; resource packs can replace it). `color(state)` returns the listed color, else the map color of the block, else warm white, normalized to luminance 1 so every light keeps the vanilla brightness. A reload raises its version so cached colors and the volume are rebuilt.

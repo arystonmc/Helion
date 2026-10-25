@@ -37,7 +37,7 @@ public final class HeatShimmerStage implements RenderStage {
 
     @Override
     public boolean isActive(FrameContext frame) {
-        if (!frame.settings().reflections().realisticWater() || !frame.water().lavaNearby() || frame.water().underwater()
+        if (!frame.settings().reflections().realisticWater() || !frame.water().lavaNearby() || frame.water().underwater().submerged()
             || frame.geometry().targets().isEmpty() || frame.scene().colorFormat() != WaterPipelines.SCENE_COLOR_FORMAT) {
             return false;
         }

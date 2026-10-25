@@ -22,6 +22,7 @@ public final class WaterReflectionStage implements RenderStage {
     private static final String PASS_LABEL = "Helion Water Reflection";
 
     private static final float NO_FLASH = 0.0F;
+    private static final float NO_RAIN = 0.0F;
 
     private final WaterResources resources;
     private @Nullable CompiledRenderPipeline program;
@@ -56,7 +57,8 @@ public final class WaterReflectionStage implements RenderStage {
             frame.water().tint(),
             frame.water().refraction(),
             frame.atmosphere().skyColor(),
-            frame.atmosphere().clouds().map(SceneCloudPass::resolved)
+            frame.atmosphere().clouds().map(SceneCloudPass::resolved),
+            frame.atmosphere().clouds().flatMap(SceneCloudPass::skyMap)
         ));
     }
 
@@ -70,6 +72,7 @@ public final class WaterReflectionStage implements RenderStage {
         private final Optional<ResourceHandle<RenderTarget>> refraction;
         private final Optional<SceneSkyColor> sky;
         private final Optional<ResourceHandle<RenderTarget>> clouds;
+        private final Optional<ResourceHandle<RenderTarget>> skyMap;
 
         private Composite(
             FrameContext frame,
@@ -80,7 +83,8 @@ public final class WaterReflectionStage implements RenderStage {
             Optional<ResourceHandle<RenderTarget>> tint,
             Optional<ResourceHandle<RenderTarget>> refraction,
             Optional<SceneSkyColor> sky,
-            Optional<ResourceHandle<RenderTarget>> clouds
+            Optional<ResourceHandle<RenderTarget>> clouds,
+            Optional<ResourceHandle<RenderTarget>> skyMap
         ) {
             this.frame = frame;
             this.pipeline = pipeline;
@@ -91,6 +95,7 @@ public final class WaterReflectionStage implements RenderStage {
             this.refraction = refraction;
             this.sky = sky;
             this.clouds = clouds;
+            this.skyMap = skyMap;
         }
 
         @Override
@@ -101,6 +106,7 @@ public final class WaterReflectionStage implements RenderStage {
             refraction.ifPresent(pass::reads);
             sky.ifPresent(color -> color.declareReads(pass));
             clouds.ifPresent(pass::reads);
+            skyMap.ifPresent(pass::reads);
         }
 
         @Override
@@ -110,7 +116,7 @@ public final class WaterReflectionStage implements RenderStage {
             FullscreenPass.draw(PASS_LABEL, scene, pipeline, renderPass -> {
                 RenderSystem.bindDefaultUniforms(renderPass);
                 sky.ifPresent(color -> color.bind(renderPass));
-                renderPass.setUniform(WaterPipelines.REFLECTION_UNIFORM, resources.reflectionUniforms(frame.camera(), reflections.isPresent(), screenReflections.isPresent(), refraction.isPresent(), frame.water().wetness().map(Wetness::flash).orElse(NO_FLASH), clouds.isPresent()));
+                renderPass.setUniform(WaterPipelines.REFLECTION_UNIFORM, resources.reflectionUniforms(frame.camera(), reflections.isPresent(), screenReflections.isPresent(), refraction.isPresent(), frame.water().wetness().map(Wetness::flash).orElse(NO_FLASH), reflectedClouds(), frame.water().wetness().map(Wetness::rain).orElse(NO_RAIN)));
                 renderPass.setUniform(WaterPipelines.SURFACE_SAMPLER, Objects.requireNonNull(water.getColorTextureView()), nearest);
                 renderPass.setUniform(WaterPipelines.DEPTH_SAMPLER, Objects.requireNonNull(water.getDepthTextureView()), nearest);
                 GpuTextureView standIn = Objects.requireNonNull(water.getColorTextureView());
@@ -120,8 +126,16 @@ public final class WaterReflectionStage implements RenderStage {
                 renderPass.setUniform(WaterPipelines.TINT_SAMPLER, tint.map(WaterReflectionStage::colorView).orElse(standIn), nearest);
                 renderPass.setUniform(WaterPipelines.REFRACTION_SAMPLER, refraction.map(WaterReflectionStage::colorView).orElse(standIn), linear());
                 renderPass.setUniform(WaterPipelines.REFLECTED_CLOUD_SAMPLER, clouds.map(WaterReflectionStage::colorView).orElse(standIn), linear());
+                renderPass.setUniform(WaterPipelines.SKY_CLOUD_SAMPLER, skyMap.map(WaterReflectionStage::colorView).orElse(standIn), linear());
             });
             resources.finishReflection();
+        }
+
+        private ReflectedClouds reflectedClouds() {
+            if (clouds.isEmpty()) {
+                return ReflectedClouds.NONE;
+            }
+            return skyMap.isPresent() ? ReflectedClouds.SCREEN_AND_SKY_MAP : ReflectedClouds.SCREEN;
         }
     }
 

@@ -9,6 +9,7 @@ import java.util.Optional;
 record CloudPrograms(
     CompiledRenderPipeline noise,
     CompiledRenderPipeline march,
+    CompiledRenderPipeline marchSkyMap,
     CompiledRenderPipeline resolve,
     CompiledRenderPipeline composite
 ) {
@@ -22,6 +23,7 @@ record CloudPrograms(
         return Optional.of(new CloudPrograms(
             get(CloudPipelines.NOISE),
             get(CloudPipelines.MARCH),
+            get(CloudPipelines.MARCH_SKY_MAP),
             get(CloudPipelines.RESOLVE),
             get(CloudPipelines.COMPOSITE)
         ));
