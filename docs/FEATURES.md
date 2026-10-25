@@ -273,6 +273,7 @@ Uses the ray tracing hardware of RTX and similar graphics cards for what shaders
 Blocks cast real shadows that move with the sun through the day.
 
 - Hills, trees, buildings and every solid or cutout block cast shadows from the sun, and from the moon at night; grass and flowers do not, so the ground stays clean instead of speckled
+- Glowing blocks such as glowstone, sea lanterns, froglights, lanterns and torches cast no sun or moon shadow, also with ray traced shadows; a block that shares its texture with a block that does not glow (the pumpkin sides of a jack o'lantern, the sides of a lit furnace) still casts one there
 - Mobs, players, armor stands, chests, item frames and dropped items cast real shadows near you too, and their shadows move with them
 - While these shadows are on, vanilla's round dark spot under mobs and dropped items is gone, so nothing has two shadows
 - Shadows stay sharp near you and reach up to 160 blocks away, then fade out softly

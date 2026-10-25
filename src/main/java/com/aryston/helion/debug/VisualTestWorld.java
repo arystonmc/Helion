@@ -142,6 +142,16 @@ final class VisualTestWorld {
         new Fill(new Volume(new BlockPos(-23, 0, -44), new BlockPos(-20, 2, -44)), "glass_pane"),
         new Fill(new Volume(new BlockPos(-30, 0, -44), new BlockPos(-29, 2, -44)), "light_blue_stained_glass")
     );
+    static final BlockPos EMITTER_CAMERA = new BlockPos(-21, 0, 15);
+    private static final Fill EMITTER_AIR = new Fill(new Volume(new BlockPos(-34, 0, 5), new BlockPos(-8, 8, 18)), "air");
+    private static final Fill EMITTER_FLOOR = new Fill(new Volume(new BlockPos(-34, -1, 5), new BlockPos(-8, -1, 18)), "stone");
+    private static final List<Placement> EMITTER_ROW = List.of(
+        new Placement(-28, 0, 9, "stone"),
+        new Placement(-24, 0, 9, "glowstone"),
+        new Placement(-20, 0, 9, "sea_lantern"),
+        new Placement(-16, 0, 9, "jack_o_lantern[facing=south]"),
+        new Placement(-12, 0, 9, "lantern")
+    );
     private static final Volume LAKE_BIOME = new Volume(new BlockPos(-41, -4, -31), new BlockPos(-9, 12, 2));
     static final BlockPos OCEAN_CAMERA = new BlockPos(-44, 0, -62);
     static final BlockPos OCEAN_UNDER_CAMERA = new BlockPos(-24, -9, -62);
@@ -252,6 +262,8 @@ final class VisualTestWorld {
         run(server, "fillbiome " + coordinates(origin.offset(LAKE_BIOME.from())) + " " + coordinates(origin.offset(LAKE_BIOME.to())) + " " + RAIN_BIOME);
         buildWaterAreas(server, origin);
         GLASS_WINDOW.forEach(pane -> run(server, fill(origin.offset(pane.volume().from()), origin.offset(pane.volume().to()), pane.block())));
+        List.of(EMITTER_AIR, EMITTER_FLOOR).forEach(area -> run(server, fill(origin.offset(area.volume().from()), origin.offset(area.volume().to()), area.block())));
+        EMITTER_ROW.forEach(placement -> run(server, placement.command(origin)));
     }
 
     private static void buildWaterAreas(IntegratedServer server, BlockPos origin) {

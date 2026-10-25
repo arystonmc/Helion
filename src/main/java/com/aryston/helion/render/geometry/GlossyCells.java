@@ -4,6 +4,7 @@ import com.mojang.renderpearl.api.textures.GpuTextureView;
 
 public record GlossyCells(GpuTextureView atlas, int width, int height, byte[] cells) {
     public static final int CELL_SIZE = 16;
+    public static final byte EMISSIVE = (byte) 0x20;
     public static final byte MUDDY = (byte) 0x40;
     public static final byte POROUS = (byte) 0x80;
     public static final byte LAVA_FLOW = (byte) 0x9F;

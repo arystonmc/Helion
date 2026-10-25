@@ -3,11 +3,26 @@ package com.aryston.helion.integration.vanilla;
 import com.aryston.helion.render.geometry.GlossyCells;
 import com.mojang.logging.LogUtils;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Set;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.block.BlockStateModelSet;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.EmptyBlockGetter;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -19,6 +34,7 @@ final class VanillaGlossyCells {
     private static final List<String> GLOSSY_PARTS = List.of("quartz", "prismarine", "glass");
     private static final List<String> GLOSSY_SUFFIXES = List.of("glazed_terracotta", "ice", "smooth_stone");
     private static final String ORE = "ore";
+    private static final long MODEL_SEED = 42L;
     private static final Identifier LAVA_STILL = Identifier.withDefaultNamespace("block/lava_still");
     private static final Identifier LAVA_FLOW = Identifier.withDefaultNamespace("block/lava_flow");
     private static final List<String> DRY_PARTS = List.of("snow", "magma");
@@ -54,14 +70,51 @@ final class VanillaGlossyCells {
         }
         mark(atlas, LAVA_STILL, cells, width, height, GlossyCells.LAVA);
         mark(atlas, LAVA_FLOW, cells, width, height, GlossyCells.LAVA_FLOW);
+        markEmitters(cells, width, height);
         GlossyCells built = new GlossyCells(view, width, height, cells);
         LOGGER.info(
-            "Helion material mask: {} glossy, {} muddy, {} porous, {} dry and {} lava of {} block atlas cells",
+            "Helion material mask: {} glossy, {} muddy, {} porous, {} dry, {} lava and {} emissive of {} block atlas cells",
             count(cells, GlossyCells.GLOSSY), count(cells, GlossyCells.MUDDY), count(cells, GlossyCells.POROUS), count(cells, GlossyCells.DRY),
-            count(cells, GlossyCells.LAVA) + count(cells, GlossyCells.LAVA_FLOW), cells.length
+            count(cells, GlossyCells.LAVA) + count(cells, GlossyCells.LAVA_FLOW), count(cells, GlossyCells.EMISSIVE), cells.length
         );
         cached = built;
         return built;
+    }
+
+    private static void markEmitters(byte[] cells, int width, int height) {
+        BlockStateModelSet models = Minecraft.getInstance().getModelManager().getBlockStateModelSet();
+        Set<TextureAtlasSprite> glowing = Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<TextureAtlasSprite> unlit = Collections.newSetFromMap(new IdentityHashMap<>());
+        List<BlockStateModelPart> parts = new ArrayList<>();
+        RandomSource random = RandomSource.create(MODEL_SEED);
+        for (Block block : BuiltInRegistries.BLOCK) {
+            for (BlockState state : block.getStateDefinition().getPossibleStates()) {
+                if (state.getRenderShape() != RenderShape.MODEL) {
+                    continue;
+                }
+                Set<TextureAtlasSprite> sprites = state.getLightEmission(EmptyBlockGetter.INSTANCE, BlockPos.ZERO) > 0 ? glowing : unlit;
+                parts.clear();
+                random.setSeed(MODEL_SEED);
+                models.get(state).collectParts(random, parts);
+                for (BlockStateModelPart part : parts) {
+                    for (Direction side : Direction.values()) {
+                        collect(part.getQuads(side), sprites);
+                    }
+                    collect(part.getQuads(null), sprites);
+                }
+            }
+        }
+        glowing.removeAll(unlit);
+        glowing.forEach(sprite -> markOrdinary(sprite, cells, width, height, GlossyCells.EMISSIVE));
+    }
+
+    private static void collect(List<BakedQuad> quads, Set<TextureAtlasSprite> sprites) {
+        for (BakedQuad quad : quads) {
+            TextureAtlasSprite sprite = quad.materialInfo().sprite();
+            if (sprite.atlasLocation().equals(TextureAtlas.LOCATION_BLOCKS)) {
+                sprites.add(sprite);
+            }
+        }
     }
 
     private static int count(byte[] cells, byte material) {
@@ -106,13 +159,23 @@ final class VanillaGlossyCells {
         if (sprite == atlas.missingSprite()) {
             return;
         }
+        fill(sprite, cells, width, height, material, false);
+    }
+
+    private static void markOrdinary(TextureAtlasSprite sprite, byte[] cells, int width, int height, byte material) {
+        fill(sprite, cells, width, height, material, true);
+    }
+
+    private static void fill(TextureAtlasSprite sprite, byte[] cells, int width, int height, byte material, boolean onlyOrdinary) {
         int firstX = cell(sprite.getU0(), width);
         int firstY = cell(sprite.getV0(), height);
         int lastX = Math.max(firstX, cell(sprite.getU1(), width) - 1);
         int lastY = Math.max(firstY, cell(sprite.getV1(), height) - 1);
         for (int y = firstY; y <= lastY; y++) {
             for (int x = firstX; x <= lastX; x++) {
-                cells[y * width + x] = material;
+                if (!onlyOrdinary || cells[y * width + x] == GlossyCells.ORDINARY) {
+                    cells[y * width + x] = material;
+                }
             }
         }
     }

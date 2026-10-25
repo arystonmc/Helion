@@ -47,6 +47,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final float AWAY_PITCH = 30.0F;
     private static final float SHORE_PITCH = 25.0F;
     private static final float GLASS_PITCH = 3.0F;
+    private static final float EMITTER_PITCH = 25.0F;
     private static final float SWAMP_UNDER_PITCH = 15.0F;
 
     static final List<VisualTestScene> ALL = List.of(
@@ -91,6 +92,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("water_ocean_shore", NOON, EAST, SHORE_PITCH, VisualTestWorld.OCEAN_SHORE_CAMERA),
         new VisualTestScene("glass_window", NOON, NORTH, GLASS_PITCH, VisualTestWorld.GLASS_CAMERA),
         new VisualTestScene("glass_window_rain", NOON, NORTH, GLASS_PITCH, VisualTestWorld.GLASS_CAMERA, RAIN),
+        new VisualTestScene("emitter_shadow", SUNRISE, NORTH, EMITTER_PITCH, VisualTestWorld.EMITTER_CAMERA),
         new VisualTestScene("water_swamp", NOON, NORTH, SWAMP_PITCH, VisualTestWorld.SWAMP_CAMERA),
         new VisualTestScene("water_swamp_under", NOON, NORTH, SWAMP_UNDER_PITCH, VisualTestWorld.SWAMP_UNDER_CAMERA),
         new VisualTestScene("water_beach", NOON, NORTH, BEACH_PITCH, VisualTestWorld.BEACH_CAMERA),

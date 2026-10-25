@@ -75,7 +75,9 @@ public final class FrameStages {
             new OpaqueGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere(), core.glossy()),
             new EntityGeometryStage(sources.entities()),
             new RtxSceneStage(core.rayTracing()),
-            new ShadowStage(sources.shadowCasters(), core.shadows(), new RtxShadowTracer(core.rayTracing(), sources.terrain())),
+            new ShadowStage(
+                sources.shadowCasters(), sources.terrain(), core.shadows(), core.glossy(), new RtxShadowTracer(core.rayTracing(), sources.terrain(), core.glossy())
+            ),
             new VoxelProbeStage(core.voxelLighting()),
             new VoxelBounceStage(core.voxelLighting()),
             new VoxelLightStage(core.voxelLighting()),

@@ -2,6 +2,7 @@ package com.aryston.helion.render.rtx;
 
 import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.geometry.GeometryBuffer;
+import com.aryston.helion.render.geometry.GlossyMask;
 import com.aryston.helion.render.geometry.TerrainSource;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.shadow.ShadowLight;
@@ -32,10 +33,12 @@ public final class RtxShadowTracer implements TracedShadows {
 
     private final RayTracingResources resources;
     private final TerrainSource terrain;
+    private final GlossyMask glossy;
 
-    public RtxShadowTracer(RayTracingResources resources, TerrainSource terrain) {
+    public RtxShadowTracer(RayTracingResources resources, TerrainSource terrain, GlossyMask glossy) {
         this.resources = resources;
         this.terrain = terrain;
+        this.glossy = glossy;
     }
 
     @Override
@@ -63,13 +66,15 @@ public final class RtxShadowTracer implements TracedShadows {
         RtxBuffer table = scene.surfaceTable();
         pass.executes(frame.graph().timed(NAME, () -> {
             device.memoryBarrier();
+            GpuTextureView materials = glossy.update(terrain.glossyCells());
             List<RtxBinding> bindings = List.of(
                 new RtxBinding.StorageImage(mask.vkImageView()),
                 new RtxBinding.Scene(topLevel),
                 new RtxBinding.Sampled(handle(Objects.requireNonNull(sceneTarget.get().getDepthTextureView()))),
                 new RtxBinding.Sampled(handle(Objects.requireNonNull(geometry.normal().get().getColorTextureView()))),
                 new RtxBinding.Sampled(handle(atlas)),
-                new RtxBinding.StorageBuffer(table.buffer(), WHOLE_BUFFER, table.size())
+                new RtxBinding.StorageBuffer(table.buffer(), WHOLE_BUFFER, table.size()),
+                new RtxBinding.Sampled(handle(materials))
             );
             resources.sunShadow().dispatch(device.commandBuffer(), bindings, constants, mask.width(), mask.height());
             device.memoryBarrier();

@@ -3,6 +3,9 @@ package com.aryston.helion.render.shadow;
 import com.aryston.helion.render.atmosphere.SkyLight;
 import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.geometry.GeometryBuffer;
+import com.aryston.helion.render.geometry.GeometryBufferPipelines;
+import com.aryston.helion.render.geometry.GlossyMask;
+import com.aryston.helion.render.geometry.TerrainSource;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.shader.FullscreenPass;
@@ -40,15 +43,19 @@ public final class ShadowStage implements RenderStage {
     private static final String ENTITY_MAP_LABEL = "Helion Entity Shadow Map #";
 
     private final ShadowCasterSource casters;
+    private final TerrainSource terrain;
     private final ShadowResources resources;
+    private final GlossyMask glossy;
     private final TracedShadows traced;
     private @Nullable CompiledRenderPipeline mask;
     private @Nullable CompiledRenderPipeline tracedMask;
     private @Nullable ShadowLight light;
 
-    public ShadowStage(ShadowCasterSource casters, ShadowResources resources, TracedShadows traced) {
+    public ShadowStage(ShadowCasterSource casters, TerrainSource terrain, ShadowResources resources, GlossyMask glossy, TracedShadows traced) {
         this.casters = casters;
+        this.terrain = terrain;
         this.resources = resources;
+        this.glossy = glossy;
         this.traced = traced;
     }
 
@@ -120,6 +127,7 @@ public final class ShadowStage implements RenderStage {
         List<ResourceHandle<RenderTarget>> maps = new ArrayList<>(imported);
         due.forEach(slot -> maps.set(slot.target(), pass.readsAndWrites(imported.get(slot.target()))));
         pass.executes(frame.graph().timed(NAME, () -> {
+            GpuTextureView materials = glossy.update(terrain.glossyCells());
             for (int order = 0; order < due.size(); order++) {
                 ShadowCascadeCache.Slot slot = due.get(order);
                 RenderPassDescriptor descriptor = RenderPassDescriptor.builder(() -> SHADOW_MAP_LABEL + slot.target())
@@ -130,6 +138,7 @@ public final class ShadowStage implements RenderStage {
                     renderPass.setUniform(
                         ShadowPipelines.PROJECTION, resources.writeProjection(slot.cascade(), cascades.get(slot.cascade()).projection())
                     );
+                    renderPass.setUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, materials, nearest());
                     casters.renderCascade(order, renderPass);
                 }
             }

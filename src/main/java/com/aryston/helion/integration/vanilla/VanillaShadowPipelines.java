@@ -1,10 +1,13 @@
 package com.aryston.helion.integration.vanilla;
 
 import com.aryston.helion.Helion;
+import com.aryston.helion.render.geometry.GeometryBufferPipelines;
 import com.aryston.helion.render.shader.HelionPipelines;
 import com.aryston.helion.render.shadow.ShadowPipelines;
 import com.mojang.logging.LogUtils;
+import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.UniformType;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,7 +61,10 @@ public final class VanillaShadowPipelines {
             .withLocation(Identifier.fromNamespaceAndPath(Helion.MOD_ID, PIPELINE_PREFIX + name))
             .withVertexShader(SHADER)
             .withFragmentShader(SHADER)
-            .withDepthStencilState(ShadowPipelines.CASTER_DEPTH);
+            .withDepthStencilState(ShadowPipelines.CASTER_DEPTH)
+            .withBindGroupLayout(BindGroupLayout.builder()
+                .withUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .build());
         String alphaCutout = vanilla.getShaderDefines().values().get(ALPHA_CUTOUT);
         if (alphaCutout != null) {
             builder.withShaderDefine(ALPHA_CUTOUT, Float.parseFloat(alphaCutout));

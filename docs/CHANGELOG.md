@@ -58,6 +58,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Depth of field focuses on the sky when you look at it, so the sun, the moon and the stars stay sharp
 
 ### Fixed
+- Glowing blocks such as glowstone and sea lanterns no longer cast a sun shadow
 - The world behind stained glass no longer looks like vanilla: water, fog, rain and light shafts show through it
 - Distant water reflections no longer show frozen dotted edges in dry weather
 - Realistic water: lamps and torches reflect visibly, the sun no longer glints behind mountains, the moon glint is brighter, vanilla water no longer shows along the shore, rain no longer makes the water tremble, and distant water no longer sparkles
