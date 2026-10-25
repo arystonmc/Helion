@@ -108,7 +108,10 @@ float helionEdgeFade(vec2 uv) {
 }
 
 float helionMarchJitter() {
-    return HELION_JITTER_FROM + fract(HELION_JITTER_SCALE * fract(dot(gl_FragCoord.xy + Wetness.w * HELION_JITTER_SPEED, HELION_JITTER_PIXEL)));
+    if (FootprintCount.w < HELION_FLAG_SET) {
+        return 1.0;
+    }
+    return HELION_JITTER_FROM + fract(HELION_JITTER_SCALE * fract(dot(gl_FragCoord.xy + FootprintCount.z * HELION_JITTER_SPEED, HELION_JITTER_PIXEL)));
 }
 
 vec4 helionMarch(vec3 start, vec3 normal, out float distanceToHit, out vec4 skySeen) {

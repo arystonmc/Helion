@@ -57,6 +57,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Depth of field focuses on the sky when you look at it, so the sun, the moon and the stars stay sharp
 
 ### Fixed
+- Distant water reflections no longer show frozen dotted edges in dry weather
 - Realistic water: lamps and torches reflect visibly, the sun no longer glints behind mountains, the moon glint is brighter, vanilla water no longer shows along the shore, rain no longer makes the water tremble, and distant water no longer sparkles
 - Realistic water: shore foam removed
 - Realistic water no longer glows all over at night, shows a strong sun glint by day, has smoother waves without a checker pattern and looks right from under water

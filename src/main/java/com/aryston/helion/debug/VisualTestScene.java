@@ -16,6 +16,10 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final float NORTH = 180.0F;
     private static final float EAST = -90.0F;
     private static final float WEST = 90.0F;
+    private static final float SOUTH = 0.0F;
+    private static final float HORIZON_PITCH = 6.0F;
+    private static final float HIGH_PITCH = 12.0F;
+    private static final BlockPos HIGH_ABOVE_START = new BlockPos(0, 15, 0);
     private static final float CAVE_PITCH = 12.0F;
     private static final float WALL_PITCH = 5.0F;
     private static final float TINT_PITCH = 20.0F;
@@ -48,6 +52,13 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("day_sky", NOON, NORTH, -35.0F, BlockPos.ZERO),
         new VisualTestScene("day_sun", SUNRISE, EAST, -20.0F, BlockPos.ZERO),
         new VisualTestScene("day_horizon", NOON, NORTH, 0.0F, BlockPos.ZERO),
+        new VisualTestScene("horizon_east", NOON, EAST, HORIZON_PITCH, BlockPos.ZERO),
+        new VisualTestScene("horizon_south", NOON, SOUTH, HORIZON_PITCH, BlockPos.ZERO),
+        new VisualTestScene("horizon_west", NOON, WEST, HORIZON_PITCH, BlockPos.ZERO),
+        new VisualTestScene("horizon_high_north", NOON, NORTH, HIGH_PITCH, HIGH_ABOVE_START),
+        new VisualTestScene("horizon_high_east", NOON, EAST, HIGH_PITCH, HIGH_ABOVE_START),
+        new VisualTestScene("horizon_high_south", NOON, SOUTH, HIGH_PITCH, HIGH_ABOVE_START),
+        new VisualTestScene("horizon_high_west", NOON, WEST, HIGH_PITCH, HIGH_ABOVE_START),
         new VisualTestScene("day_showcase", NOON, NORTH, 25.0F, BlockPos.ZERO),
         new VisualTestScene("morning_showcase", MORNING, NORTH, 25.0F, BlockPos.ZERO),
         new VisualTestScene("sunset", SUNSET, WEST, -8.0F, BlockPos.ZERO),
