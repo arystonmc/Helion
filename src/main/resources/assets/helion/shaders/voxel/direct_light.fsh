@@ -41,8 +41,11 @@ layout(location = 0) in vec2 texCoord;
 layout(location = 0) out vec4 lightColor;
 layout(location = 1) out vec4 confidence;
 
-const int HELION_BLOCKED_RETRIES = 3;
-const int HELION_MAX_TRACE_ATTEMPTS = 8;
+const int HELION_EXTRA_TRACES = 1;
+const int HELION_MAX_TRACED_LIGHTS = 8;
+const int HELION_CANDIDATES = HELION_LIGHTS_PER_CELL + HELION_VOXEL_DYNAMIC_LIGHTS;
+const float HELION_LIGHT_SPILL = 0.15;
+const float HELION_TRACE_SHARE = 0.35;
 const float HELION_EDGE_FADE_BLOCKS = 16.0;
 const float HELION_UNLIT = 1.0e-5;
 const float HELION_FLICKERING = 0.5;
@@ -91,6 +94,50 @@ bool helionOccluded(vec3 from, vec3 to) {
     return false;
 }
 
+struct HelionLightSum {
+    vec3 hue;
+    float total;
+    float peak;
+};
+
+void helionAddLight(inout HelionLightSum sum, vec3 term) {
+    float luminance = helionLuminance(term);
+    sum.hue += term;
+    sum.total += luminance;
+    sum.peak = max(sum.peak, luminance);
+}
+
+vec3 helionLightTotal(HelionLightSum sum) {
+    float headroom = max(1.0 - sum.peak, 0.0);
+    float luminance = sum.peak + headroom * (1.0 - exp(-(sum.total - sum.peak) * HELION_LIGHT_SPILL));
+    return sum.total > HELION_UNLIT ? sum.hue * (luminance / sum.total) : vec3(0.0);
+}
+
+struct HelionCandidate {
+    vec3 position;
+    vec3 term;
+};
+
+HelionCandidate helionCandidate(ivec3 cell, vec3 surface, int candidate) {
+    vec4 source;
+    vec4 color;
+    uint seed;
+    if (candidate < HELION_LIGHTS_PER_CELL) {
+        int light = helionGridLight(cell, candidate);
+        source = texelFetch(VoxelLightListSampler, ivec2(light, 0), 0);
+        color = texelFetch(VoxelLightListSampler, ivec2(light, 1), 0);
+        seed = helionLightSeed(source.xyz);
+    } else {
+        int index = candidate - HELION_LIGHTS_PER_CELL;
+        source = DynamicLights[index * 2];
+        color = DynamicLights[index * 2 + 1];
+        seed = helionPcg(uint(index) + HELION_FLICKER_DYNAMIC_SEED);
+    }
+    float level = source.w - distance(surface, source.xyz) * HELION_VOXEL_LIGHT_FALLOFF;
+    vec3 term = level > 0.0 ? color.rgb * helionLevelBrightness(level / HELION_LIGHT_LEVELS) * helionFlicker(color.a, seed) : vec3(0.0);
+    return HelionCandidate(source.xyz, term);
+}
+
 void main() {
     lightColor = vec4(0.0, 0.0, 0.0, 1.0);
     confidence = vec4(0.0);
@@ -109,109 +156,75 @@ void main() {
         return;
     }
     ivec3 cell = helionLightCell(block);
-    int traced = min(Trace.x * HELION_BLOCKED_RETRIES, HELION_MAX_TRACE_ATTEMPTS);
-    float weights[HELION_LIGHTS_PER_CELL];
-    vec3 positions[HELION_LIGHTS_PER_CELL];
-    int count = 0;
-    vec3 blended = vec3(0.0);
+    float weights[HELION_CANDIDATES];
+    for (int candidate = 0; candidate < HELION_CANDIDATES; candidate++) {
+        weights[candidate] = 0.0;
+    }
     float strongest = 0.0;
     for (int slot = 0; slot < HELION_LIGHTS_PER_CELL; slot++) {
-        weights[slot] = 0.0;
-        int light = helionGridLight(cell, slot);
-        if (light == HELION_NO_LIGHT) {
+        if (helionGridLight(cell, slot) == HELION_NO_LIGHT) {
             break;
         }
-        count = slot + 1;
-        vec4 source = texelFetch(VoxelLightListSampler, ivec2(light, 0), 0);
-        positions[slot] = source.xyz;
-        vec3 offset = abs(surface - source.xyz);
-        float level = source.w - (offset.x + offset.y + offset.z);
-        if (level <= 0.0) {
-            continue;
-        }
-        vec4 color = texelFetch(VoxelLightListSampler, ivec2(light, 1), 0);
-        vec3 term = color.rgb * helionLevelBrightness(level / HELION_LIGHT_LEVELS) * helionFlicker(color.a, helionLightSeed(source.xyz));
-        weights[slot] = helionLuminance(term);
-        blended += term;
+        weights[slot] = helionLuminance(helionCandidate(cell, surface, slot).term);
         strongest = max(strongest, weights[slot]);
     }
-    float movingWeight = 0.0;
-    float otherMovingWeight = 0.0;
-    vec3 movingPosition = vec3(0.0);
     for (int index = 0; index < HELION_VOXEL_DYNAMIC_LIGHTS; index++) {
         if (index >= DynamicCounts.x) {
             break;
         }
-        vec4 source = DynamicLights[index * 2];
-        float level = source.w - distance(surface, source.xyz);
-        if (level <= 0.0) {
-            continue;
-        }
-        vec4 color = DynamicLights[index * 2 + 1];
-        vec3 term = color.rgb * helionLevelBrightness(level / HELION_LIGHT_LEVELS) * helionFlicker(color.a, helionPcg(uint(index) + HELION_FLICKER_DYNAMIC_SEED));
-        float weight = helionLuminance(term);
-        blended += term;
-        strongest = max(strongest, weight);
-        if (weight > movingWeight) {
-            otherMovingWeight = movingWeight;
-            movingWeight = weight;
-            movingPosition = source.xyz;
-        } else {
-            otherMovingWeight = max(otherMovingWeight, weight);
-        }
+        int candidate = HELION_LIGHTS_PER_CELL + index;
+        weights[candidate] = helionLuminance(helionCandidate(cell, surface, candidate).term);
+        strongest = max(strongest, weights[candidate]);
     }
+    HelionLightSum unshadowed = HelionLightSum(vec3(0.0), 0.0, 0.0);
+    HelionLightSum visible = HelionLightSum(vec3(0.0), 0.0, 0.0);
     bool unknown = false;
-    bool settled = false;
-    vec3 tint = vec3(1.0);
-    for (int attempt = 0; attempt < HELION_MAX_TRACE_ATTEMPTS; attempt++) {
-        if (attempt >= traced) {
+    float tracedWeight = 0.0;
+    float visibleWeight = 0.0;
+    int budget = min(Trace.x + HELION_EXTRA_TRACES, HELION_MAX_TRACED_LIGHTS);
+    for (int attempt = 0; attempt < HELION_MAX_TRACED_LIGHTS; attempt++) {
+        if (attempt >= budget) {
             break;
         }
-        int pick = HELION_NO_LIGHT;
-        for (int slot = 0; slot < HELION_LIGHTS_PER_CELL; slot++) {
-            if (slot < count && weights[slot] > 0.0 && (pick == HELION_NO_LIGHT || weights[slot] > weights[pick])) {
-                pick = slot;
+        int pick = -1;
+        for (int candidate = 0; candidate < HELION_CANDIDATES; candidate++) {
+            if (weights[candidate] > 0.0 && (pick < 0 || weights[candidate] > weights[pick])) {
+                pick = candidate;
             }
         }
-        float pickWeight = pick == HELION_NO_LIGHT ? 0.0 : weights[pick];
-        if (movingWeight > pickWeight) {
-            vec3 movingTint = helionTraceTint(surface, movingPosition, unknown);
-            if (helionLuminance(movingTint) > 0.0 && !helionOccluded(surface, movingPosition)) {
-                tint = movingTint;
-                settled = true;
-                break;
-            }
-            movingWeight = 0.0;
-            continue;
-        }
-        if (pick == HELION_NO_LIGHT) {
-            settled = true;
+        if (pick < 0 || (attempt > 0 && weights[pick] < strongest * HELION_TRACE_SHARE)) {
             break;
         }
-        bool enclosed;
-        vec3 exit = helionLightExit(positions[pick], surface, enclosed);
-        vec3 pickTint = enclosed ? vec3(0.0) : helionTraceTint(surface, exit, unknown);
-        if (helionLuminance(pickTint) > 0.0 && !helionOccluded(surface, exit)) {
-            tint = pickTint;
-            settled = true;
-            break;
+        HelionCandidate light = helionCandidate(cell, surface, pick);
+        vec3 target = light.position;
+        bool enclosed = false;
+        if (pick < HELION_LIGHTS_PER_CELL) {
+            target = helionLightExit(light.position, surface, enclosed);
         }
+        vec3 tint = enclosed ? vec3(0.0) : helionTraceTint(surface, target, unknown);
+        if (helionOccluded(surface, target)) {
+            tint = vec3(0.0);
+        }
+        helionAddLight(unshadowed, light.term);
+        helionAddLight(visible, light.term * tint);
+        tracedWeight += weights[pick];
+        visibleWeight += helionLuminance(light.term * tint);
         weights[pick] = 0.0;
     }
-    if (!settled) {
-        movingWeight = 0.0;
-        otherMovingWeight = 0.0;
-        for (int slot = 0; slot < HELION_LIGHTS_PER_CELL; slot++) {
-            weights[slot] = 0.0;
+    float share = tracedWeight > HELION_UNLIT ? visibleWeight / tracedWeight : 1.0;
+    for (int candidate = 0; candidate < HELION_CANDIDATES; candidate++) {
+        if (weights[candidate] > 0.0) {
+            vec3 term = helionCandidate(cell, surface, candidate).term;
+            helionAddLight(unshadowed, term);
+            helionAddLight(visible, term * share);
         }
     }
-    float visibleStrongest = max(movingWeight, otherMovingWeight);
-    for (int slot = 0; slot < HELION_LIGHTS_PER_CELL; slot++) {
-        visibleStrongest = max(visibleStrongest, slot < count ? weights[slot] : 0.0);
-    }
-    float blendedLuminance = helionLuminance(blended);
-    vec3 unshadowed = blendedLuminance > HELION_UNLIT ? blended * (strongest / blendedLuminance) : vec3(0.0);
-    float visibility = strongest > HELION_UNLIT ? visibleStrongest / strongest : 1.0;
-    lightColor = vec4(unshadowed * tint, visibility);
+    vec3 total = helionLightTotal(unshadowed);
+    vec3 lit = helionLightTotal(visible);
+    float totalLuminance = helionLuminance(total);
+    float litLuminance = helionLuminance(lit);
+    float visibility = totalLuminance > HELION_UNLIT ? litLuminance / totalLuminance : 1.0;
+    vec3 litHue = litLuminance > HELION_UNLIT ? lit * (totalLuminance / litLuminance) : total;
+    lightColor = vec4(litHue, visibility);
     confidence = vec4(unknown ? 0.0 : smoothstep(0.0, HELION_EDGE_FADE_BLOCKS, edge));
 }

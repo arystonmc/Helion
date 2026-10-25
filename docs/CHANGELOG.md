@@ -49,6 +49,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental ray tracing: mobs, players and dropped items show in water reflections, also when they are off screen
 
 ### Changed
+- Experimental voxel lighting: every light casts its own shadow and throws round pools, and colored lights blend smoothly
 - HDR lighting: lights shine stronger close by and fade faster, while unlit places, moonlit nights and caves are darker
 - Volumetric clouds are a little thinner in clear weather
 - Needs NeoForge 26.3.0.95 or newer (NeoForge for Minecraft 26.3 is no longer beta)

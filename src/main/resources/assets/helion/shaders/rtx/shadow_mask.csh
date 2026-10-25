@@ -93,8 +93,7 @@ int helionBrightestLight(vec3 surface, ivec3 cell) {
             break;
         }
         vec4 source = texelFetch(VoxelLightListSampler, ivec2(light, 0), 0);
-        vec3 offset = abs(surface - source.xyz);
-        float level = source.w - (offset.x + offset.y + offset.z);
+        float level = source.w - distance(surface, source.xyz) * HELION_VOXEL_LIGHT_FALLOFF;
         if (level <= 0.0) {
             continue;
         }

@@ -12,6 +12,7 @@ public final class VoxelLightGrid {
     public static final int NO_LIGHT = 0;
 
     private static final float BLOCK_CENTER = 0.5F;
+    private static final float DISTANCE_FALLOFF = 1.25F;
 
     private final List<VoxelLight> lights;
     private final short[] cells;
@@ -63,7 +64,10 @@ public final class VoxelLightGrid {
         for (int cellZ = fromZ; cellZ <= toZ; cellZ++) {
             for (int cellY = fromY; cellY <= toY; cellY++) {
                 for (int cellX = fromX; cellX <= toX; cellX++) {
-                    float distance = axisDistance(x, cellX) + axisDistance(y, cellY) + axisDistance(z, cellZ);
+                    float alongX = axisDistance(x, cellX);
+                    float alongY = axisDistance(y, cellY);
+                    float alongZ = axisDistance(z, cellZ);
+                    float distance = (float) Math.sqrt(alongX * alongX + alongY * alongY + alongZ * alongZ) * DISTANCE_FALLOFF;
                     if (distance < level) {
                         insert(cells, priorities, counts, cellIndex(cellX, cellY, cellZ), index, level - distance);
                     }

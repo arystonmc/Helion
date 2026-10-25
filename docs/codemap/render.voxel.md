@@ -30,7 +30,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VoxelLightGrid
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelLightGrid.java`
-- Role: Pure CPU light grid: keeps the 1024 lights nearest to the camera and lists for every 8 x 8 x 8 cell of the volume (16 x 16 x 16 cells) up to 16 lights whose level reaches the cell by taxicab distance, keeping the strongest when more do.
+- Role: Pure CPU light grid: keeps the 1024 lights nearest to the camera and lists for every 8 x 8 x 8 cell of the volume (16 x 16 x 16 cells) up to 16 lights whose level reaches the cell by straight distance times 1.25 (the falloff of `helion_light_level.glsl`), keeping the strongest when more do.
 
 #### VoxelVolumeLayout
 - Path: `src/main/java/com/aryston/helion/render/voxel/VoxelVolumeLayout.java`

@@ -3,6 +3,7 @@
 
 const float HELION_LIGHT_LEVELS = 15.0;
 const float HELION_BRIGHTNESS_CURVE = 3.0;
+const float HELION_VOXEL_LIGHT_FALLOFF = 1.25;
 
 float helionLevelBrightness(float level) {
     return level / (HELION_BRIGHTNESS_CURVE + 1.0 - HELION_BRIGHTNESS_CURVE * level);

@@ -186,7 +186,8 @@ Carry a torch into a cave and the cave lights up around you.
 Torches, lanterns and every other glowing block light the world in their own color, and walls, pillars and roofs cast real shadows from them.
 
 - Soul lanterns glow cyan, redstone torches red, amethyst purple, sea lanterns and end rods cool white, torches, lava and glowstone warm
-- A pillar next to a torch casts a shadow on the ground behind it; light no longer passes through solid blocks
+- Light travels as rays: every light casts its own shadow, so a pillar between two torches throws two shadows, mobs throw shadows from each lamp, and a window frame throws a pattern of light rays into the room; light no longer passes through solid blocks
+- Round, soft light pools instead of diamond shapes, and colored lights blend smoothly where they overlap, white light included; many lights together glow brighter without blinding
 - Each light reaches as far as in vanilla; close by it is brighter and it fades faster, like the HDR lighting of plain block light
 - Bounced light: torch and lava light bounces off walls, floors and ceilings in their color (grass and leaves in the color of their biome), so it reaches around corners about as far as vanilla light, fills shaded sides and ceilings softly, and never shines through walls (Bounced Light setting, on with voxel lighting; turning it off falls back to a dim 30 % of the vanilla light around corners)
 - Light shining through stained glass takes its color, so a red window throws red light into the room

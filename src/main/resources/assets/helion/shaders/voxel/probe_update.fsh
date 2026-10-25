@@ -100,8 +100,7 @@ HelionProbeHit helionProbeRay(vec3 from, vec3 direction) {
 
 vec3 helionLightTerm(int light, vec3 hitPoint, vec3 faceNormal) {
     vec4 source = texelFetch(VoxelLightListSampler, ivec2(light, 0), 0);
-    vec3 offset = abs(hitPoint - source.xyz);
-    float level = source.w - (offset.x + offset.y + offset.z);
+    float level = source.w - distance(hitPoint, source.xyz) * HELION_VOXEL_LIGHT_FALLOFF;
     if (level <= 0.0 || dot(source.xyz - hitPoint, faceNormal) <= 0.0) {
         return vec3(0.0);
     }
