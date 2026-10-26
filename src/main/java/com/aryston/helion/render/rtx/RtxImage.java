@@ -8,9 +8,10 @@ import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.vulkan.VulkanGpuTextureView;
 
-final class RtxImage {
+public final class RtxImage {
+    public static final int TEXTURE_USAGE_STORAGE = 1 << 16;
     private static final GpuFormat FORMAT = GpuFormat.RGBA8_UNORM;
-    private static final int USAGE = GpuTexture.USAGE_TEXTURE_BINDING | RtxSpike.TEXTURE_USAGE_STORAGE;
+    private static final int USAGE = GpuTexture.USAGE_TEXTURE_BINDING | TEXTURE_USAGE_STORAGE;
     private static final int SINGLE_LAYER = 1;
     private static final int SINGLE_MIP = 1;
 

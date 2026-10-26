@@ -5,17 +5,11 @@ import com.aryston.helion.render.atmosphere.PhysicalSkyPipelines;
 import com.aryston.helion.render.clouds.CloudPipelines;
 import com.aryston.helion.render.lightshaft.LightShaftPipelines;
 import com.aryston.helion.render.geometry.GeometryBufferPipelines;
-import com.aryston.helion.render.lighting.AmbientOcclusionPipelines;
-import com.aryston.helion.render.lighting.DeferredLightingPipelines;
 import com.aryston.helion.render.dof.DepthOfFieldPipelines;
 import com.aryston.helion.render.edge.EdgeSmoothingPipelines;
 import com.aryston.helion.render.motion.MotionBlurPipelines;
 import com.aryston.helion.render.post.ImagePipelines;
-import com.aryston.helion.render.rtx.RtxMaskPipelines;
-import com.aryston.helion.render.shadow.ShadowPipelines;
 import com.aryston.helion.render.temporal.TemporalPipelines;
-import com.aryston.helion.render.voxel.VoxelLightPipelines;
-import com.aryston.helion.render.voxel.VoxelSlicePipelines;
 import com.aryston.helion.render.water.WaterPipelines;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
@@ -35,21 +29,15 @@ public final class HelionPipelines {
 
     public static List<RenderPipeline> all() {
         return Stream.of(
-            AmbientOcclusionPipelines.all(),
-            DeferredLightingPipelines.all(),
             TemporalPipelines.all(),
             PhysicalSkyPipelines.all(),
             CloudPipelines.all(),
             LightShaftPipelines.all(),
-            ShadowPipelines.all(),
             ImagePipelines.all(),
             MotionBlurPipelines.all(),
             DepthOfFieldPipelines.all(),
             EdgeSmoothingPipelines.all(),
             GeometryBufferPipelines.all(),
-            VoxelSlicePipelines.all(),
-            VoxelLightPipelines.all(),
-            RtxMaskPipelines.all(),
             WaterPipelines.all()
         ).flatMap(List::stream).toList();
     }

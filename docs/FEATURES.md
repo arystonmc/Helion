@@ -4,7 +4,7 @@ What the latest version of Helion can do. Written for players and ready to reuse
 
 ## Summary
 
-Helion is a client-side graphics mod for Minecraft built on the new Vulkan renderer. The whole world is drawn through Helion's own render core, which matches vanilla pixel for pixel on its own, and Helion's graphics features are layered on top of it. The first ones are ambient occlusion, bloom with tone mapping and sharpening.
+Helion is a client-side graphics mod for Minecraft built on the new Vulkan renderer. The whole world is drawn through Helion's own render core, which matches vanilla pixel for pixel on its own, and Helion's graphics features are layered on top of it. Its features range from bloom, tone mapping and sharpening to a physical sky, volumetric clouds, realistic water and ray traced reflections. Helion's own light and shadow is being rebuilt as RTX path tracing; until then the world keeps the vanilla light.
 
 ## At a Glance
 
@@ -26,15 +26,6 @@ The world is rendered through Helion's own pipeline on Minecraft's Vulkan render
 - Terrain, entities, particles, sky, clouds, weather, transparency and outlines all pass through Helion's stages
 - Helion draws into its own color and depth buffers before the image reaches the screen
 - Works with both transparency modes, including improved transparency (F3 + X)
-- Since: 1.0
-
-### Ambient Occlusion
-Soft, natural shadows wherever surfaces meet: in corners, under fences and stairs, around doors, beneath mobs and deep in caves.
-
-- Based on GTAO, the technique used in modern games, adapted to Minecraft blocks
-- Bright light sources, lava and glowing blocks stay bright; water, glass and particles are not darkened
-- Fades out with fog and distance so far terrain stays clean
-- Settings: on or off, method (GTAO or Visibility Bitmask, which lets light pass behind thin objects like fences, grass and torches), quality (Low, Medium, High, Ultra), strength, radius in blocks, and a view that shows only the shadows
 - Since: 1.0
 
 ### Bloom and Tone Mapping
@@ -102,19 +93,11 @@ Crisper block textures without the halos of ordinary sharpening filters.
 - Since: 1.0
 
 ### Geometry Buffer (Experimental)
-The foundation for Helion's own lighting, sky and shadows.
+The foundation for Helion's water, rain and reflection effects and its coming path traced light.
 
 - Terrain, mobs, players, items and block entities are drawn by Helion's own shaders, which also record the surface direction, block light, sky light and base color of every pixel
-- The picture stays exactly like vanilla on its own; Helion's lighting builds on top of it
+- The picture stays exactly like vanilla on its own; Helion's effects build on top of it
 - Settings: on or off, and a view that shows each recorded value for checking; off by default while it is experimental
-- Since: 1.0
-
-### HDR Lighting (Experimental)
-Torches, lanterns and lava finally shine brighter than the vanilla light limit.
-
-- Helion lights terrain itself, with block light and sky light computed separately and nothing cut off at full brightness
-- In daylight the world looks like vanilla; at night and in caves lights are a little stronger close by and fade a little faster, so light falls in natural pools; moonlit nights and caves are somewhat darker than vanilla, and only really bright lights glow
-- Settings: on or off, block light intensity, sky light intensity, and a view that shows the light alone; needs the geometry buffer, off by default while it is experimental
 - Since: 1.0
 
 ### Temporal Anti-Aliasing (Experimental)
@@ -123,7 +106,6 @@ Smooth block edges and calm, shimmer-free distant textures.
 - Render scale: draw the world at 77, 67, 59 or 50 % of the screen resolution and let anti-aliasing rebuild the full picture over a few frames, like FSR or TSR, for a large frame rate boost; menus and the hand stay sharp at full resolution
 - Moves the camera by less than a pixel every frame and blends each frame with the previous ones, like modern games do
 - Works while you walk and turn; the picture gets a little softer, which the sharpening option makes up for
-- Also smooths ambient occlusion, which varies its samples every frame while anti-aliasing is on
 - Moving mobs, items and particles stay sharp and leave no trail behind them
 - Settings: on or off; off by default while it is experimental
 - Since: 1.0
@@ -133,7 +115,6 @@ A sky that behaves like real air: deep blue overhead, a bright glow around the s
 
 - The sky color comes from how sunlight and moonlight scatter in an Earth-like atmosphere instead of a single vanilla color, computed across the visible spectrum for natural blues, golden sunrises and red sunsets
 - Distant terrain fades into the real sky color in every direction, so the horizon no longer changes color when you turn your head; clouds fade into the horizon color
-- With HDR lighting on, sunlight, moonlight and skylight tint the terrain: warm on faces toward a low sun, slightly cool in shade, at vanilla brightness and with the vanilla colors of grass, leaves and plants
 - A small sun of realistic size that glows too brightly to show its edge at day, turning orange and red as it sets
 - A three-dimensional moon, larger than the sun: its phases are real light and shadow on a sphere, with dark seas, craters that show relief along the shadow line a faint glow on its dark side and a soft halo of light around it; low moons turn golden. The stars keep their vanilla look
 - Cinematic sunrises and sunsets: an ember to gold glow along the horizon, a rose afterglow after the sun has set and a pink band opposite the sun, in calm, balanced tones
@@ -170,44 +151,10 @@ Rays of sunlight and moonlight in the air.
 - Settings: on or off next to the physical sky; on in the Experimental preset, off elsewhere
 - Since: Unreleased
 
-### Dynamic Lights
-Carry a torch into a cave and the cave lights up around you.
-
-- Torches, lanterns, glowstone, sea lanterns, lava buckets and every other glowing block item light the blocks and mobs around them while you or a mob hold them, in either hand
-- Glowing items you drop on the ground keep shining where they lie
-- Burning mobs and players light the area around them
-- The light follows smoothly as you move, reaches as far as the same block placed in the world, and never changes the world itself
-- Works with HDR lighting, bloom and shadows like any other light
-- Costs nothing when no glowing item is near
-- Settings: on or off on the Lighting page; on in every preset except Vanilla
-- Since: Unreleased
-
-### Voxel Lighting (Experimental)
-Torches, lanterns and every other glowing block light the world in their own color, and walls, pillars and roofs cast real shadows from them.
-
-- Soul lanterns glow cyan, redstone torches red, amethyst purple, sea lanterns and end rods cool white, torches, lava and glowstone warm
-- With ray traced shadows on, block light shadows are traced against the real block shapes, so slabs, fences, leaves and mobs cast exact shadows from torches; torches held in first person shine from the hand
-- Light travels as rays: every light casts its own shadow, so a pillar between two torches throws two shadows, mobs throw shadows from each lamp, and a window frame throws a pattern of light rays into the room; light no longer passes through solid blocks
-- Round, soft light pools instead of diamond shapes, and colored lights blend smoothly where they overlap, white light included; light colors are slightly softened toward white like the eye sees them, so torch and lava light stays warm without washing everything orange
-- Each light reaches as far as in vanilla; close by it is brighter and it fades faster, like the HDR lighting of plain block light
-- Bounced light: torch and lava light bounces off walls, floors and ceilings in their color (grass and leaves in the color of their biome), so it reaches around corners about as far as vanilla light, fills shaded sides and ceilings softly, and never shines through walls (Bounced Light setting, on with voxel lighting; turning it off falls back to a dim 30 % of the vanilla light around corners)
-- Light shining through stained glass takes its color, so a red window throws red light into the room
-- Breaking or placing a block updates the light right away
-- Fire lights (torches, lanterns, campfires, candles, fire, jack o'lanterns, lit furnaces) flicker gently, a few percent, each at its own pace, also when held; glowstone, sea lanterns, redstone lights and other steady lights stay still
-- Torches and lanterns held by you, mobs or players, dropped glowing items and burning mobs light the world in their color and cast shadows too
-- Mobs, players and items are lit by the same colored light as the blocks around them, and sun shadows fall on them too
-- Mobs and players near you cast shadows from torches and other lights
-- Works within 64 blocks of you; farther away the vanilla light stays
-- Resource packs can change the light colors (`assets/helion/voxel_light/colors.json`)
-- The Voxel Slice view of the geometry buffer shows the block map at your height from above
-- Needs HDR lighting
-- Settings: Off or Shader, Low, Medium or High quality, and Bounced Light on the Lighting page; Shader at Medium in the Experimental preset, Off in every other preset and by default, and Off does no work at all
-- Since: Unreleased
-
 ### Screen Space Reflections (Experimental)
 Water reflects what is on screen on every graphics card, mobs and players included.
 
-- Reflections take the same light, shadows and colors as the world you see
+- Reflections take the same light and colors as the world you see
 - Mobs, players and items standing at the water show in it
 - Ice, glass, stained glass and other see-through blocks reflect a little too, more at a glancing angle; where nothing on screen is reflected they show the sky, only as much as daylight reaches them
 - Polished stone, quartz, prismarine, glazed terracotta, smooth stone and packed ice show a faint reflection of what is on screen, strongest when you look along the floor
@@ -255,7 +202,7 @@ Rain makes the world wet instead of only falling past it.
 - A rainbow appears opposite a low sun after the rain, in front of the clouds
 - Players and mobs coming out of the water leave wet footprints that fade
 - Water runs down walls in the rain in darker, glistening streaks
-- Settings: Rain Wetness on or off on the Lighting page, on in every preset but Vanilla; needs Helion lighting
+- Settings: Rain Wetness on or off on the Lighting page, on in every preset but Vanilla; needs the geometry buffer
 
 ### Ray Tracing (Experimental)
 Uses the ray tracing hardware of RTX and similar graphics cards for what shaders cannot do well.
@@ -263,37 +210,19 @@ Uses the ray tracing hardware of RTX and similar graphics cards for what shaders
 - Water reflects the blocks around it, the sky, the sun and the moon, with gentle animated waves
 - Deep water turns dark blue-green so reflections stand out, while you still see the bottom of shallow water
 - Reflections come from the blocks within about 64 blocks of you; farther away the sky is reflected
-- Ray traced shadows: within about 64 blocks, sun and moon shadows follow the exact block shapes, leaves and fences cast shadows with their holes, and shadow edges soften the farther they fall from what casts them
 - Leaves, flowers and fences show their holes in reflections too
-- Mobs, players, armor stands and dropped items cast ray traced shadows too, with their exact shapes
 - Mobs, players, armor stands and dropped items show in ray traced water reflections, even when they are off screen, shaded like in the world and flashing red when hurt (without glowing eyes or armor shine)
 - Glass and ice reflect the world with ray tracing too, and reflected places that lie in shadow are darker
 - Needs a graphics card with hardware ray tracing; on other cards it stays off and nothing changes
-- Settings: on or off (takes effect after restarting the game), water reflections and ray traced shadows on or off; on in the Experimental preset, off otherwise
+- Next: Helion's light and shadow, path traced with real rays, bounces and soft shadows
+- Settings: on or off (takes effect after restarting the game), water reflections on or off; on in the Experimental preset, off otherwise
 - Since: Unreleased
-
-### Sun and Moon Shadows (Experimental)
-Blocks cast real shadows that move with the sun through the day.
-
-- Hills, trees, buildings and every solid or cutout block cast shadows from the sun, and from the moon at night; grass and flowers do not, so the ground stays clean instead of speckled
-- Glowing blocks such as glowstone, sea lanterns, froglights, lanterns and torches cast no sun or moon shadow, also with ray traced shadows; a block that shares its texture with a block that does not glow (the pumpkin sides of a jack o'lantern, the sides of a lit furnace) still casts one there
-- Mobs, players, armor stands, chests, item frames and dropped items cast real shadows near you too, and their shadows move with them
-- While these shadows are on, vanilla's round dark spot under mobs and dropped items is gone, so nothing has two shadows
-- Shadows stay sharp near you and reach up to 160 blocks away, then fade out softly
-- Shadows move smoothly with the sun instead of jumping once a second
-- Shadow edges are smoothed and do not crawl or flicker when you move
-- Shadows are redrawn only when the sun moved, a few times per second, or when you move far enough, so they cost far fewer frames per second
-- Shadows fade in and out gently at sunrise and sunset instead of popping
-- Shade keeps a soft cool light from the sky and some light bounced off the ground, so shadowed areas look natural instead of black or blue
-- Needs the geometry buffer, HDR lighting and the physical sky to be on
-- Settings: on or off, and Low, Medium or High quality for sharper edges; off by default while it is experimental
-- Since: 1.0
 
 ### Safe by Design
 Helion never stands between you and the game.
 
 - On OpenGL, Helion stays inactive and tells you how to switch to Vulkan
-- With Sodium installed, Helion runs in Sodium mode: Sodium draws the world and Helion adds its screen effects (tone mapping, bloom, exposure, sharpening, color grading, depth of field, edge smoothing); shadows, lighting, the sky, ambient occlusion, anti-aliasing and motion blur are off, and a short notice says so
+- With Sodium installed, Helion runs in Sodium mode: Sodium draws the world and Helion adds its screen effects (tone mapping, bloom, exposure, sharpening, color grading, depth of field, edge smoothing); the sky, anti-aliasing and motion blur are off, and a short notice says so
 - With Iris installed, Helion stays inactive to avoid conflicts and tells you why
 - If something goes wrong while rendering, Helion steps aside and the game keeps running with vanilla graphics
 - Since: 1.0
@@ -320,8 +249,8 @@ A clear settings window in the Arkea style, with presets and a live estimate of 
 - Presets: Vanilla, Balanced, Quality and Experimental. Vanilla turns every effect off, including motion blur and depth of field; Quality adds edge smoothing, Experimental adds automatic exposure; motion blur and depth of field otherwise stay as you set them
 - Share your settings: Copy code puts a settings code on the clipboard, Paste code applies a code a friend sent you
 - Every setting has a short description, the full explanation on hover, and a reset button when it differs from its default
-- Before and after previews for ambient occlusion, bloom, shadows and the physical sky
-- Settings that need another one (shadows need HDR lighting and the physical sky) stay disabled until it is on and say why
+- Before and after previews for bloom and the physical sky
+- Settings that need another one (volumetric clouds need the physical sky) stay disabled until it is on and say why
 - Changes wait for Apply; leaving with unapplied changes asks first
 - The GPU impact meter estimates the cost of the current settings
 - Open it from Mods → Helion → Config or from the Arkea options window

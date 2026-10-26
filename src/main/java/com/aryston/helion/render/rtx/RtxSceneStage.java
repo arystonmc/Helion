@@ -3,7 +3,6 @@ package com.aryston.helion.render.rtx;
 import com.aryston.helion.render.HelionRenderCore;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
-import com.aryston.helion.render.voxel.VoxelVolumeLayout;
 import com.mojang.blaze3d.framegraph.FramePass;
 import org.joml.Vector3dc;
 
@@ -49,7 +48,7 @@ public final class RtxSceneStage implements RenderStage {
             device.memoryBarrier();
             scene.recordBottomLevels(device.commandBuffer(), plan);
         });
-        boolean withEntities = frame.settings().rayTracing().tracesShadows() || reflectsEntities(frame);
+        boolean withEntities = reflectsEntities(frame);
         resources.entityDraws().capture(withEntities);
         if (!withEntities) {
             scene.clearEntitySurfaces();
@@ -80,6 +79,6 @@ public final class RtxSceneStage implements RenderStage {
     }
 
     private static int section(double coordinate) {
-        return VoxelVolumeLayout.sectionOf((int) Math.floor(coordinate));
+        return RtxSectionKey.sectionOf((int) Math.floor(coordinate));
     }
 }

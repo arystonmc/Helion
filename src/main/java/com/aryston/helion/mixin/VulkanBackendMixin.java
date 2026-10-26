@@ -19,7 +19,7 @@ abstract class VulkanBackendMixin {
     )
     private static VmaAllocatorCreateInfo helion$allowDeviceAddresses(VmaAllocatorCreateInfo info, @Local(argsOnly = true) VkDevice device) {
         RayTracingStartup.ensureRequested();
-        if (RayTracing.deviceRequested() && device.getCapabilities().VK_KHR_acceleration_structure) {
+        if (RayTracing.requested() && device.getCapabilities().VK_KHR_acceleration_structure) {
             info.flags(info.flags() | Vma.VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT);
         }
         return info;

@@ -17,8 +17,6 @@ import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkDevice;
 
 final class RtxAccelerationStructure {
-    static final int BOX_FLOATS = 6;
-    static final int BOX_STRIDE = BOX_FLOATS * Float.BYTES;
     static final int VERTEX_FLOATS = 3;
     static final int VERTEX_STRIDE = VERTEX_FLOATS * Float.BYTES;
 
@@ -207,10 +205,6 @@ final class RtxAccelerationStructure {
             case INSTANCES -> {
                 described.geometryType(KHRAccelerationStructure.VK_GEOMETRY_TYPE_INSTANCES_KHR);
                 described.geometry().instances().sType$Default().arrayOfPointers(false).data().deviceAddress(geometry.dataAddress());
-            }
-            case BOXES -> {
-                described.geometryType(KHRAccelerationStructure.VK_GEOMETRY_TYPE_AABBS_KHR);
-                described.geometry().aabbs().sType$Default().stride(BOX_STRIDE).data().deviceAddress(geometry.dataAddress());
             }
             case TRIANGLES -> {
                 described.geometryType(KHRAccelerationStructure.VK_GEOMETRY_TYPE_TRIANGLES_KHR);

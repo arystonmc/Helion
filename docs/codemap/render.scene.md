@@ -6,7 +6,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### SceneSnapshot
 - Path: `src/main/java/com/aryston/helion/render/scene/SceneSnapshot.java`
-- Role: Immutable per-frame scene facts: fog color, sky visibility, transparency mode, internal and output size (`size()`), scene color format, smoothed ambient sky light at the camera (0 to 1) and the vanilla light map inputs (`LightEnvironment`).
+- Role: Immutable per-frame scene facts: fog color, sky visibility, transparency mode, internal and output size (`size()`), scene color format, smoothed ambient sky light at the camera (0 to 1).
 
 #### ClearStage
 - Path: `src/main/java/com/aryston/helion/render/scene/ClearStage.java`

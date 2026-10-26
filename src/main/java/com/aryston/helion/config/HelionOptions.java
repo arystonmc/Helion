@@ -10,14 +10,9 @@ import com.aryston.helion.Helion;
 import com.aryston.helion.render.atmosphere.StarDensity;
 import com.aryston.helion.render.clouds.CloudQuality;
 import com.aryston.helion.render.geometry.GeometryBufferView;
-import com.aryston.helion.render.lighting.AmbientOcclusionAlgorithm;
-import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
 import com.aryston.helion.render.post.ColorGrade;
 import com.aryston.helion.render.post.ToneMapper;
-import com.aryston.helion.render.shadow.ShadowQuality;
 import com.aryston.helion.render.temporal.RenderScale;
-import com.aryston.helion.render.voxel.VoxelLightingMode;
-import com.aryston.helion.render.voxel.VoxelLightingQuality;
 import java.util.List;
 import java.util.Locale;
 import net.minecraft.network.chat.Component;
@@ -29,12 +24,9 @@ final class HelionOptions {
     private static final String TOOLTIP_KEY = "helion.configuration.";
     private static final float PREVIEW_ASPECT = 16.0F / 9.0F;
     private static final double STRENGTH_STEP = 0.05;
-    private static final double RADIUS_STEP = 0.25;
     private static final double EXPOSURE_STEP = 0.1;
-    private static final double LIGHT_STEP = 0.1;
     private static final int LOW_COST = 1;
     private static final int MEDIUM_COST = 2;
-    private static final int HIGH_COST = 3;
     private static final Identifier VANILLA_PREVIEW = preview("vanilla");
 
     final ConfigOption<Boolean> enabled;
@@ -46,26 +38,11 @@ final class HelionOptions {
     final ConfigOption<Boolean> lightShafts;
     final ConfigOption<Boolean> clouds;
     final ConfigOption<CloudQuality> cloudQuality;
-    final ConfigOption<Boolean> ambientOcclusion;
-    final ConfigOption<AmbientOcclusionAlgorithm> ambientOcclusionMethod;
-    final ConfigOption<AmbientOcclusionQuality> ambientOcclusionQuality;
-    final ConfigOption<Double> ambientOcclusionStrength;
-    final ConfigOption<Double> ambientOcclusionRadius;
-    final ConfigOption<Boolean> lighting;
-    final ConfigOption<Double> blockLight;
-    final ConfigOption<Double> skyLight;
-    final ConfigOption<Boolean> dynamicLights;
-    final ConfigOption<VoxelLightingMode> voxelLighting;
-    final ConfigOption<VoxelLightingQuality> voxelLightingQuality;
-    final ConfigOption<Boolean> voxelBounce;
     final ConfigOption<Boolean> rayTracing;
     final ConfigOption<Boolean> waterReflections;
-    final ConfigOption<Boolean> rayTracedShadows;
     final ConfigOption<Boolean> screenReflections;
     final ConfigOption<Boolean> rainWetness;
     final ConfigOption<Boolean> realisticWater;
-    final ConfigOption<Boolean> shadows;
-    final ConfigOption<ShadowQuality> shadowQuality;
     final ConfigOption<RenderScale> renderScale;
     final ConfigOption<Boolean> bloom;
     final ConfigOption<Double> bloomIntensity;
@@ -83,10 +60,8 @@ final class HelionOptions {
     final ConfigOption<Boolean> depthOfField;
     final ConfigOption<Double> depthOfFieldStrength;
     final ConfigOption<Boolean> debugMode;
-    final ConfigOption<Boolean> ambientOcclusionView;
     final ConfigOption<Boolean> bloomView;
     final ConfigOption<GeometryBufferView> geometryBufferView;
-    final ConfigOption<Boolean> lightView;
 
     HelionOptions() {
         this.enabled = toggle("enabled", HelionConfig.ENABLED, Icons.POWER, "enabled");
@@ -105,47 +80,16 @@ final class HelionOptions {
             .cost(MEDIUM_COST).requires(this.physicalSky);
         this.cloudQuality = choice("cloudQuality", HelionConfig.CLOUD_QUALITY, CloudQuality.class, Icons.GAUGE, "clouds.quality")
             .style(ChoiceStyle.SEGMENTED).cost(MEDIUM_COST).requires(this.clouds);
-        this.ambientOcclusion = toggle("ambientOcclusion", HelionConfig.AMBIENT_OCCLUSION_ENABLED, Icons.SHADOW, "ambientOcclusion")
-            .cost(MEDIUM_COST).requires(this.enabled).preview(VANILLA_PREVIEW, preview("ambient_occlusion"), PREVIEW_ASPECT);
-        this.ambientOcclusionMethod = choice("ambientOcclusionMethod", HelionConfig.AMBIENT_OCCLUSION_ALGORITHM, AmbientOcclusionAlgorithm.class,
-            Icons.BLEND, "ambientOcclusion.algorithm").requires(this.ambientOcclusion);
-        this.ambientOcclusionQuality = choice("ambientOcclusionQuality", HelionConfig.AMBIENT_OCCLUSION_QUALITY, AmbientOcclusionQuality.class,
-            Icons.GAUGE, "ambientOcclusion.quality").style(ChoiceStyle.SEGMENTED).cost(MEDIUM_COST).requires(this.ambientOcclusion);
-        this.ambientOcclusionStrength = slider("ambientOcclusionStrength", HelionConfig.AMBIENT_OCCLUSION_STRENGTH, HelionConfig.MIN_STRENGTH, HelionConfig.MAX_STRENGTH, STRENGTH_STEP,
-            Icons.CONTRAST, "ambientOcclusion.strength").requires(this.ambientOcclusion);
-        this.ambientOcclusionRadius = slider("ambientOcclusionRadius", HelionConfig.AMBIENT_OCCLUSION_RADIUS, HelionConfig.MIN_RADIUS, HelionConfig.MAX_RADIUS, RADIUS_STEP,
-            Icons.EXPAND, "ambientOcclusion.radius").requires(this.ambientOcclusion);
-        this.lighting = experimental(toggle("lighting", HelionConfig.LIGHTING_ENABLED, Icons.BULB, "lighting"))
-            .cost(MEDIUM_COST).requires(this.enabled, this.geometryBuffer);
-        this.blockLight = slider("blockLight", HelionConfig.BLOCK_LIGHT_INTENSITY, HelionConfig.MIN_BLOCK_LIGHT_INTENSITY,
-            HelionConfig.MAX_BLOCK_LIGHT_INTENSITY, LIGHT_STEP, Icons.BULB, "lighting.blockLightIntensity")
-            .requires(this.lighting);
-        this.skyLight = slider("skyLight", HelionConfig.SKY_LIGHT_INTENSITY, HelionConfig.MIN_SKY_LIGHT_INTENSITY,
-            HelionConfig.MAX_SKY_LIGHT_INTENSITY, LIGHT_STEP, Icons.SUN, "lighting.skyLightIntensity")
-            .requires(this.lighting);
-        this.dynamicLights = toggle("dynamicLights", HelionConfig.DYNAMIC_LIGHTS_ENABLED, Icons.HAND, "dynamicLights")
-            .cost(LOW_COST).requires(this.enabled);
-        this.voxelLighting = choice("voxelLighting", HelionConfig.VOXEL_LIGHTING_MODE, VoxelLightingMode.class, Icons.BULB, "voxelLighting.mode")
-            .style(ChoiceStyle.SEGMENTED).cost(HIGH_COST).tag(Tag.beta(Component.translatable(KEY + "tag.experimental"))).requires(this.lighting);
-        this.voxelLightingQuality = choice("voxelLightingQuality", HelionConfig.VOXEL_LIGHTING_QUALITY, VoxelLightingQuality.class, Icons.GAUGE,
-            "voxelLighting.quality").style(ChoiceStyle.SEGMENTED).cost(HIGH_COST).requires(this.lighting);
-        this.voxelBounce = toggle("voxelBounce", HelionConfig.VOXEL_BOUNCE, Icons.BULB, "voxelLighting.bounce").cost(LOW_COST).requires(this.lighting);
         this.rayTracing = experimental(toggle("rayTracing", HelionConfig.RAY_TRACING_ENABLED, Icons.SPARKLE, "rayTracing.enabled"))
             .cost(MEDIUM_COST).requires(this.enabled);
         this.waterReflections = toggle("waterReflections", HelionConfig.WATER_REFLECTIONS, Icons.CLOUD, "rayTracing.waterReflections")
             .cost(LOW_COST).requires(this.rayTracing);
-        this.shadows = experimental(toggle("shadows", HelionConfig.SHADOWS_ENABLED, Icons.SUN, "shadows"))
-            .cost(HIGH_COST).requires(this.lighting, this.physicalSky).preview(VANILLA_PREVIEW, preview("shadows"), PREVIEW_ASPECT);
-        this.rayTracedShadows = toggle("rayTracedShadows", HelionConfig.RAY_TRACED_SHADOWS, Icons.SUN, "rayTracing.shadows")
-            .cost(LOW_COST).requires(this.rayTracing, this.shadows);
         this.screenReflections = experimental(toggle("screenReflections", HelionConfig.SCREEN_REFLECTIONS, Icons.SPARKLE, "reflections.screenSpace"))
             .cost(MEDIUM_COST).requires(this.enabled);
         this.rainWetness = toggle("rainWetness", HelionConfig.RAIN_WETNESS, Icons.CLOUD, "reflections.rainWetness")
-            .cost(LOW_COST).requires(this.lighting);
+            .cost(LOW_COST).requires(this.geometryBuffer);
         this.realisticWater = toggle("realisticWater", HelionConfig.REALISTIC_WATER, Icons.CLOUD, "reflections.realisticWater")
             .cost(LOW_COST).requires(this.enabled);
-        this.shadowQuality = choice("shadowQuality", HelionConfig.SHADOW_QUALITY, ShadowQuality.class, Icons.GAUGE, "shadows.quality")
-            .style(ChoiceStyle.SEGMENTED).cost(HIGH_COST).requires(this.shadows);
         this.renderScale = choice("renderScale", HelionConfig.RENDER_SCALE, RenderScale.class, Icons.GAUGE, "temporalAntiAliasing.renderScale")
             .style(ChoiceStyle.DROPDOWN).requires(this.temporal);
         this.bloom = toggle("bloom", HelionConfig.BLOOM_ENABLED, Icons.SPARKLE, "image.bloom").cost(LOW_COST).requires(this.enabled)
@@ -175,21 +119,16 @@ final class HelionOptions {
         this.depthOfFieldStrength = slider("depthOfFieldStrength", HelionConfig.DEPTH_OF_FIELD_STRENGTH, HelionConfig.MIN_DEPTH_OF_FIELD_STRENGTH,
             HelionConfig.MAX_DEPTH_OF_FIELD_STRENGTH, STRENGTH_STEP, Icons.EYE, "image.depthOfField.strength").percent().requires(this.depthOfField);
         this.debugMode = toggle("debugMode", HelionConfig.DEBUG_MODE, Icons.CMD, "debugMode");
-        this.ambientOcclusionView = toggle("ambientOcclusionView", HelionConfig.AMBIENT_OCCLUSION_DEBUG_VIEW, Icons.SHADOW, "ambientOcclusion.debugView")
-            .requires(this.ambientOcclusion);
         this.bloomView = toggle("bloomView", HelionConfig.BLOOM_DEBUG_VIEW, Icons.SPARKLE, "image.bloom.debugView").requires(this.bloom);
         this.geometryBufferView = choice("geometryBufferView", HelionConfig.GEOMETRY_BUFFER_VIEW, GeometryBufferView.class, Icons.LAYERS,
             "geometryBuffer.view").style(ChoiceStyle.DROPDOWN).requires(this.geometryBuffer);
-        this.lightView = toggle("lightView", HelionConfig.LIGHT_ONLY_VIEW, Icons.BULB, "lighting.lightOnlyView").requires(this.lighting);
     }
 
     List<ConfigOption<?>> all() {
         return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.starDensity, this.milkyWay, this.lightShafts, this.clouds, this.cloudQuality,
-            this.ambientOcclusion, this.ambientOcclusionMethod,
-            this.ambientOcclusionQuality, this.ambientOcclusionStrength, this.ambientOcclusionRadius, this.lighting, this.blockLight, this.skyLight,
-            this.dynamicLights, this.voxelLighting, this.voxelLightingQuality, this.voxelBounce, this.rayTracing, this.waterReflections, this.rayTracedShadows, this.screenReflections, this.rainWetness, this.realisticWater, this.shadows, this.shadowQuality, this.renderScale, this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.colorGrade, this.edgeSmoothing, this.dither,
-            this.sharpening, this.sharpeningStrength, this.motionBlur, this.motionBlurStrength, this.depthOfField, this.depthOfFieldStrength, this.debugMode, this.ambientOcclusionView,
-            this.bloomView, this.geometryBufferView, this.lightView);
+            this.rayTracing, this.waterReflections, this.screenReflections, this.rainWetness, this.realisticWater, this.renderScale,
+            this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.colorGrade, this.edgeSmoothing, this.dither,
+            this.sharpening, this.sharpeningStrength, this.motionBlur, this.motionBlurStrength, this.depthOfField, this.depthOfFieldStrength, this.debugMode, this.bloomView, this.geometryBufferView);
     }
 
     String key(ConfigOption<?> option) {

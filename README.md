@@ -27,17 +27,16 @@
 
 Unlike traditional shader packs that wrap around legacy OpenGL pipelines, **Helion** runs natively on Minecraft's Vulkan rendering architecture.
 
-With all effects turned off, Helion matches vanilla Minecraft pixel-for-pixel. When enabled, Helion layers modern post-processing and rendering stages on top of the world: Ground Truth Ambient Occlusion, natural adaptive bloom, tone mapping, atmospheric lighting, and block shadows.
+With all effects turned off, Helion matches vanilla Minecraft pixel-for-pixel. When enabled, Helion layers modern post-processing and rendering stages on top of the world: natural adaptive bloom, tone mapping, a physical sky with volumetric clouds, realistic water and ray traced reflections. Helion's own light and shadow is being rebuilt from scratch as RTX path tracing; until then the world keeps the vanilla light.
 
 ## Features
 
-- 🌑 **Ground Truth Ambient Occlusion (GTAO):** Soft, natural contact shadows in corners, under stairs, fences, and around mobs. Light sources and emissive blocks stay bright.
 - 💡 **Physically-Inspired Bloom:** Soft, cinematic glow around torches, lava, lanterns, and beacons that naturally adapts to daylight and darkness.
 - 🎨 **PBR Neutral & Filmic Tone Mapping:** Preserves original Minecraft textures and colors while smoothly compressing bright highlights.
 - 🗡️ **Contrast Adaptive Sharpening:** Restores crisp texture clarity on high-resolution displays without halos.
 - 🌀 **Temporal Anti-Aliasing (Experimental):** Smooth block edges and calm, shimmer-free distant textures.
-- ☀️ **Physical Atmosphere & Dynamic Shadows (Experimental):** Atmospheric scattering model for natural golden sunsets, paired with real sun and moon block shadows.
-- 🔮 **HDR Lighting & Geometry Buffer (Experimental):** Unconstrained emissive lights with per-pixel normals and separate block and sky lighting.
+- ☀️ **Physical Atmosphere (Experimental):** Atmospheric scattering model for natural golden sunsets, a three-dimensional moon, volumetric clouds and light shafts.
+- 🔮 **Geometry Buffer (Experimental):** Per-pixel normals and materials for realistic water, rain wetness and screen space and ray traced reflections.
 - ⚙️ **Arkea-Powered Configuration:** Press **H** to toggle Helion instantly. Configure all settings in-game with Vanilla, Balanced, Quality and Experimental presets, before/after previews and a real-time GPU impact meter.
 - 🛡️ **Safe by Design:** On OpenGL, with Iris, or after a rendering error, Helion steps aside and the game keeps running with vanilla graphics; with Sodium it keeps its screen effects.
 - 🔍 **Debug Mode:** Every Helion value on screen and in `logs/helion-debug.jsonl`, GPU time per render stage, and a pixel-by-pixel parity check against vanilla.
@@ -52,7 +51,6 @@ For full technical and player details, see the [Helion Feature Guide](docs/FEATU
 
 | | |
 |---|---|
-| <img src="branding/gallery/02-shadows.jpg" alt="Sun shadows on every tree, vanilla and Helion"> | <img src="branding/gallery/03-ambient-occlusion.jpg" alt="Ambient occlusion, vanilla and Helion"> |
 | <img src="branding/gallery/04-before-after.jpg" alt="Same world, new light: vanilla and Helion"> | <img src="branding/gallery/05-bloom.jpg" alt="Bloom around the sun"> |
 | <img src="branding/gallery/06-atmosphere.jpg" alt="Physical atmosphere, vanilla and Helion"> | <img src="branding/gallery/07-settings.jpg" alt="Helion settings with presets"> |
 | <img src="branding/gallery/08-every-effect.jpg" alt="Every effect, explained"> |   |
@@ -84,7 +82,7 @@ For development runs and the Arkea source checkout, see [CONTRIBUTING.md](CONTRI
 ## Compatibility & Troubleshooting
 
 - **Server Safe:** 100% client-side. Safe to join any vanilla or modded server.
-- **Sodium:** Helion runs in Sodium mode: Sodium draws the world and Helion adds its screen effects (tone mapping, bloom, exposure, sharpening, color grading, depth of field, edge smoothing); shadows, lighting, the physical sky, ambient occlusion, temporal anti-aliasing and motion blur are off.
+- **Sodium:** Helion runs in Sodium mode: Sodium draws the world and Helion adds its screen effects (tone mapping, bloom, exposure, sharpening, color grading, depth of field, edge smoothing); the physical sky, temporal anti-aliasing and motion blur are off.
 - **Iris:** Helion deactivates itself when Iris is detected to prevent rendering conflicts.
 - **OpenGL Fallback:** If launched under OpenGL, Helion remains inactive and provides instructions on enabling Vulkan.
 - **Startup Crash Workaround:** If the game closes immediately on launch, set `earlyWindowControl = false` in `config/fml.toml`.

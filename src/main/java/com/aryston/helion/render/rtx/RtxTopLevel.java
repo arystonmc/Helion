@@ -2,7 +2,6 @@ package com.aryston.helion.render.rtx;
 
 import com.aryston.helion.render.resource.GpuResources;
 import com.aryston.helion.render.resource.TrackedResource;
-import com.aryston.helion.render.voxel.VoxelVolumeLayout;
 import java.util.List;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.KHRAccelerationStructure;
@@ -78,9 +77,9 @@ final class RtxTopLevel {
             for (int diagonal : DIAGONAL) {
                 transform.matrix(diagonal, ONE);
             }
-            transform.matrix(TRANSLATE_X, (section.position().sectionX() - anchor.sectionX()) * VoxelVolumeLayout.SECTION_SIZE);
-            transform.matrix(TRANSLATE_Y, (section.position().sectionY() - anchor.sectionY()) * VoxelVolumeLayout.SECTION_SIZE);
-            transform.matrix(TRANSLATE_Z, (section.position().sectionZ() - anchor.sectionZ()) * VoxelVolumeLayout.SECTION_SIZE);
+            transform.matrix(TRANSLATE_X, (section.position().sectionX() - anchor.sectionX()) * RtxSectionKey.SECTION_SIZE);
+            transform.matrix(TRANSLATE_Y, (section.position().sectionY() - anchor.sectionY()) * RtxSectionKey.SECTION_SIZE);
+            transform.matrix(TRANSLATE_Z, (section.position().sectionZ() - anchor.sectionZ()) * RtxSectionKey.SECTION_SIZE);
             long entry = table + (long) index * SURFACE_ENTRY_BYTES;
             MemoryUtil.memPutLong(entry, section.surfaceAddress());
             MemoryUtil.memPutInt(entry + SOLID_QUADS_OFFSET, section.solidQuads());

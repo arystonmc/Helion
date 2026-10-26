@@ -4,10 +4,8 @@ import com.aryston.helion.render.atmosphere.AtmosphereResults;
 import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.geometry.GeometryBuffer;
 import com.aryston.helion.render.post.PostResults;
-import com.aryston.helion.render.shadow.ShadowResults;
 import com.aryston.helion.render.scene.SceneSnapshot;
 import com.aryston.helion.render.temporal.TemporalFrame;
-import com.aryston.helion.render.voxel.VoxelLightResults;
 import com.aryston.helion.render.water.WaterResults;
 
 public record FrameContext(
@@ -19,9 +17,7 @@ public record FrameContext(
     GeometryBuffer geometry,
     TemporalFrame temporal,
     AtmosphereResults atmosphere,
-    ShadowResults shadows,
     PostResults post,
-    VoxelLightResults voxels,
     WaterResults water
 ) {
 }

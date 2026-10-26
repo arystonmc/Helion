@@ -10,8 +10,6 @@ import com.mojang.renderpearl.api.pipeline.UniformType;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
@@ -21,23 +19,19 @@ import org.slf4j.Logger;
 public final class VanillaGeometryPipelines {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String PIPELINE_PREFIX = "pipeline/geometry/";
-    private static final String DYNAMIC_LIGHT_SUFFIX = "_dynamic_light";
     private static final Identifier SHADER = Identifier.fromNamespaceAndPath(Helion.MOD_ID, "terrain/geometry");
-    private static final Map<ChunkSectionLayer, LayerPipelines> BY_LAYER = layers("", UnaryOperator.identity());
-    private static final Map<ChunkSectionLayer, LayerPipelines> WITH_DYNAMIC_LIGHTS = layers(
-        DYNAMIC_LIGHT_SUFFIX, VanillaDynamicLightPipelines::withLights
-    );
+    private static final Map<ChunkSectionLayer, LayerPipelines> BY_LAYER = layers();
     private static boolean missingPipelinesReported;
 
     private VanillaGeometryPipelines() {
     }
 
     public static List<RenderPipeline> all() {
-        return Stream.concat(pipelines(BY_LAYER), pipelines(WITH_DYNAMIC_LIGHTS)).toList();
+        return pipelines().toList();
     }
 
     static boolean compiled() {
-        boolean compiled = CompactTerrainVertices.supported() && pipelines(BY_LAYER).allMatch(VanillaGeometryPipelines::isCompiled);
+        boolean compiled = CompactTerrainVertices.supported() && pipelines().allMatch(VanillaGeometryPipelines::isCompiled);
         if (!compiled && !missingPipelinesReported) {
             missingPipelinesReported = true;
             LOGGER.warn("Helion geometry buffer is skipped because its terrain shaders could not be compiled");
@@ -49,34 +43,29 @@ public final class VanillaGeometryPipelines {
         return Objects.requireNonNull(BY_LAYER.get(layer), layer::label);
     }
 
-    static Optional<LayerPipelines> withDynamicLights(ChunkSectionLayer layer) {
-        LayerPipelines pipelines = Objects.requireNonNull(WITH_DYNAMIC_LIGHTS.get(layer), layer::label);
-        return isCompiled(pipelines.direct()) && isCompiled(pipelines.multiDraw()) ? Optional.of(pipelines) : Optional.empty();
-    }
-
-    private static Stream<RenderPipeline> pipelines(Map<ChunkSectionLayer, LayerPipelines> layers) {
-        return layers.values().stream().flatMap(pipelines -> Stream.of(pipelines.direct(), pipelines.multiDraw()));
+    private static Stream<RenderPipeline> pipelines() {
+        return BY_LAYER.values().stream().flatMap(pipelines -> Stream.of(pipelines.direct(), pipelines.multiDraw()));
     }
 
     private static boolean isCompiled(RenderPipeline pipeline) {
         return HelionPipelines.compiled(pipeline).isPresent();
     }
 
-    private static Map<ChunkSectionLayer, LayerPipelines> layers(String suffix, UnaryOperator<RenderPipeline.Builder> variant) {
+    private static Map<ChunkSectionLayer, LayerPipelines> layers() {
         return Map.of(
             ChunkSectionLayer.SOLID, new LayerPipelines(
-                geometry(RenderPipelines.SOLID_TERRAIN, "solid_terrain" + suffix, variant),
-                geometry(RenderPipelines.SOLID_TERRAIN_MULTIDRAW, "solid_terrain_multidraw" + suffix, variant)
+                geometry(RenderPipelines.SOLID_TERRAIN, "solid_terrain"),
+                geometry(RenderPipelines.SOLID_TERRAIN_MULTIDRAW, "solid_terrain_multidraw")
             ),
             ChunkSectionLayer.CUTOUT, new LayerPipelines(
-                geometry(RenderPipelines.CUTOUT_TERRAIN, "cutout_terrain" + suffix, variant),
-                geometry(RenderPipelines.CUTOUT_TERRAIN_MULTIDRAW, "cutout_terrain_multidraw" + suffix, variant)
+                geometry(RenderPipelines.CUTOUT_TERRAIN, "cutout_terrain"),
+                geometry(RenderPipelines.CUTOUT_TERRAIN_MULTIDRAW, "cutout_terrain_multidraw")
             )
         );
     }
 
-    private static RenderPipeline geometry(RenderPipeline vanilla, String name, UnaryOperator<RenderPipeline.Builder> variant) {
-        return variant.apply(vanilla.toBuilder()
+    private static RenderPipeline geometry(RenderPipeline vanilla, String name) {
+        return vanilla.toBuilder()
             .withLocation(Identifier.fromNamespaceAndPath(Helion.MOD_ID, PIPELINE_PREFIX + name))
             .withVertexShader(SHADER)
             .withFragmentShader(SHADER)
@@ -85,7 +74,7 @@ public final class VanillaGeometryPipelines {
             .withColorTargetState(GeometryBufferPipelines.ALBEDO_TARGET, GeometryBufferPipelines.target(GeometryBufferPipelines.ALBEDO_FORMAT))
             .withBindGroupLayout(BindGroupLayout.builder()
                 .withUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-                .build()))
+                .build())
             .build();
     }
 

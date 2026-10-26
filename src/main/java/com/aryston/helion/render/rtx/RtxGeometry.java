@@ -18,10 +18,6 @@ record RtxGeometry(
     private static final int NO_VERTICES = 0;
     private static final int NO_OFFSET = 0;
 
-    static RtxGeometry boxes(long address, int count) {
-        return new RtxGeometry(Kind.BOXES, address, NO_ADDRESS, NO_VERTICES, count, true, RtxAccelerationStructure.BOX_STRIDE, VK10.VK_INDEX_TYPE_UINT32, NO_OFFSET, NO_OFFSET);
-    }
-
     static RtxGeometry triangles(long vertexAddress, long indexAddress, int vertexCount, int triangleCount) {
         return triangles(vertexAddress, indexAddress, vertexCount, triangleCount, true);
     }
@@ -46,7 +42,6 @@ record RtxGeometry(
     }
 
     enum Kind {
-        BOXES,
         TRIANGLES,
         INSTANCES
     }

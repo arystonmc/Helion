@@ -3,7 +3,6 @@ package com.aryston.helion.debug;
 import com.aryston.helion.config.HelionConfig;
 import com.aryston.helion.mixin.LevelRendererAccessor;
 import com.aryston.helion.render.HelionRenderCore;
-import com.aryston.helion.render.voxel.VoxelLightingResources;
 import com.mojang.logging.LogUtils;
 import java.util.Arrays;
 import java.util.List;
@@ -116,10 +115,6 @@ public final class VisualTest {
             return;
         }
         Shot shot = shots.get(nextShot);
-        VoxelLightingResources voxels = HelionRenderCore.get().voxelLighting();
-        if (voxels.active() && voxels.pendingSections() > 0) {
-            return;
-        }
         if (shot.variant().comparesWithVanilla()) {
             if (!parityFinished(shot, server)) {
                 return;

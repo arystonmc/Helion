@@ -1,7 +1,6 @@
 package com.aryston.helion.render.rtx;
 
 import com.aryston.helion.render.resource.GpuResources;
-import com.aryston.helion.render.voxel.VoxelVolumeLayout;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.util.ArrayList;
@@ -160,8 +159,8 @@ final class RtxSectionScene {
             RtxSectionUpdate update = entry.getValue();
             return !center.within(update.sectionX(), update.sectionY(), update.sectionZ(), limit);
         });
-        known.removeIf((long key) -> !center.within(VoxelVolumeLayout.keyX(key), VoxelVolumeLayout.keyY(key), VoxelVolumeLayout.keyZ(key), limit));
-        requested.removeIf((long key) -> !center.within(VoxelVolumeLayout.keyX(key), VoxelVolumeLayout.keyY(key), VoxelVolumeLayout.keyZ(key), limit));
+        known.removeIf((long key) -> !center.within(RtxSectionKey.x(key), RtxSectionKey.y(key), RtxSectionKey.z(key), limit));
+        requested.removeIf((long key) -> !center.within(RtxSectionKey.x(key), RtxSectionKey.y(key), RtxSectionKey.z(key), limit));
     }
 
     private void requestMissing(RtxSectionInbox inbox, RtxSectionPos center) {
@@ -196,6 +195,6 @@ final class RtxSectionScene {
     }
 
     private static long key(int sectionX, int sectionY, int sectionZ) {
-        return VoxelVolumeLayout.sectionKey(sectionX, sectionY, sectionZ);
+        return RtxSectionKey.of(sectionX, sectionY, sectionZ);
     }
 }

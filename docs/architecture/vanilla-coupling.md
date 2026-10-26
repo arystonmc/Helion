@@ -18,7 +18,6 @@ Places that copy or depend on vanilla internals. Check each of them first when M
 | `terrain/geometry.vsh`, `terrain/geometry.fsh` | `core/terrain.vsh`, `core/terrain.fsh` (non-OIT path) |
 | `terrain/dynamic_light.vsh` | `core/terrain.vsh` (non-OIT path) |
 | `VanillaGeometryPipelines` | `RenderPipelines.SOLID_TERRAIN`, `CUTOUT_TERRAIN` and their multi-draw variants |
-| `helion_lighting.glsl`, `VanillaFrameDriver.lightEnvironment` | `core/lightmap.fsh`, `sample_lightmap.glsl`, `Lightmap`, `LightmapRenderStateExtractor` |
 | `GameRendererMixin`, `VanillaFrameDriver` (jittered projection), `helionViewRay` in `helion_sky_color.glsl` | the level projection upload in `GameRenderer.renderLevel`, including the translation and rotation of `bobHurt` and `bobView` |
 | `VanillaAtmosphereSource.skyEnvironment`, `SkyEnvironment.celestialDirection` | `SkyRenderer.extractRenderState` (sun and moon angles, rain), `FogData`, `FogRenderer.setupFog` |
 | `SkyRendererMixin`, `HelionSky`, `VanillaAtmosphereSource.renderSky` and `renderCelestials` | `SkyRenderer.render`, `renderSkyDisc`, `renderSunriseAndSunset`, `renderSunMoonAndStars`: the physical sky relies on the sky disc and sunrise glow being separate methods of `render`; the moon dimming relies on `renderMoon` passing its color to `DynamicGpuData.writeTransform` |
@@ -26,8 +25,6 @@ Places that copy or depend on vanilla internals. Check each of them first when M
 | `TransparentGeometryStage` (fog after OIT) | `CloudRenderer.renderOit` and the OIT setup in `LevelRenderer`: OIT clouds write their depth into the separate `cloud_depth` target, never into scene depth, so cloud pixels read as sky in the fog pass and keep their own cloud fog |
 | `CloudRendererMixin`, `VanillaCloudSource` | `CloudRenderer.render` and `renderOit` (the only places that draw vanilla clouds), the cloud status option, `LevelRenderState.cloudColor` and `customCloudsRenderer` |
 | `VanillaTerrainSource.renderOpaqueGeometry` | `ChunkSectionsToRender.renderGroup` and `renderLayers` |
-| `VanillaShadowCasterSource` | `LevelRenderer.prepareChunkRenders`, `prepareChunkRendersIndirect` and `extractSectionDrawGroups` (which read `visibleSections`), and `DynamicGpuData.writeChunkSections` and `writeChunkSectionsInstanced`, which close each other's storage |
-| `VanillaShadowPipelines`, `shadow/caster.vsh` | `RenderPipelines.TERRAIN_SNIPPET`, `MULTIDRAW_TERRAIN_SNIPPET`, the `ALPHA_CUTOUT` define of `CUTOUT_TERRAIN`, the vertex format and `AERVIUM_COMPACT_VERTICES` define of `SOLID_TERRAIN` and `CUTOUT_TERRAIN`, and the vertex inputs of `core/terrain.vsh` |
 | `helion_terrain_vertex.glsl`, `CompactTerrainVertices` | the compact vertex layout of Aervium's `compactVertices` module (format version 1: position and light as four unsigned shorts, color, texture coordinates as two unsigned shorts over 65536) |
 
 `SkyRenderer` keeps the render target it was created with, so Helion owns a separate `SkyRenderer` bound to the scene target (`SceneSkyRenderer`).

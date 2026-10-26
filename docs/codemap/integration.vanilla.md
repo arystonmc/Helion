@@ -1,6 +1,6 @@
 # Helion Code Map: `com.aryston.helion.integration.vanilla`
 
-Part of the [Helion code map](../CODEMAP.md). Every class of this package has its entry here or in [integration.vanilla--voxels.md](integration.vanilla--voxels.md) and nowhere else (rule D1).
+Part of the [Helion code map](../CODEMAP.md). Every class of this package has its entry here and nowhere else (rule D1).
 
 ### `com.aryston.helion.integration.vanilla`
 
@@ -15,12 +15,12 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### ScreenEffectsDriver, ScreenTargets
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/ScreenEffectsDriver.java`, `src/main/java/com/aryston/helion/integration/vanilla/ScreenTargets.java`
-- Role: Sodium mode. After vanilla and Sodium drew the level into the main target, copies its color and depth into Helion's scene target, builds a frame graph with `ScreenTargets` (scene and output only, no geometry attachments) and runs `FrameStages.buildScreenEffects`: edge smoothing, depth of field, exposure, bloom, sharpening and the image composite (tone mapping, color grade, dither) on the finished image. Sodium replaces the terrain draws `VanillaFrameDriver` uses, so Helion's own terrain passes (shadows, geometry buffer lighting, ambient occlusion, physical sky, temporal anti-aliasing, motion blur) stay off.
-- Depends on: `FrameStages`, `HelionRenderCore`, `VanillaFrameDriver` (camera and light environment helpers), `AmbientLightTracker`.
+- Role: Sodium mode. After vanilla and Sodium drew the level into the main target, copies its color and depth into Helion's scene target, builds a frame graph with `ScreenTargets` (scene and output only, no geometry attachments) and runs `FrameStages.buildScreenEffects`: edge smoothing, depth of field, exposure, bloom, sharpening and the image composite (tone mapping, color grade, dither) on the finished image. Sodium replaces the terrain draws `VanillaFrameDriver` uses, so Helion's own terrain passes (geometry buffer, physical sky, temporal anti-aliasing, motion blur) stay off.
+- Depends on: `FrameStages`, `HelionRenderCore`, `VanillaFrameDriver` (camera helper), `AmbientLightTracker`.
 
 #### VanillaFrameDriver
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaFrameDriver.java`
-- Role: Rebuilds `LevelRenderer.render` with Helion stages: the vanilla sky renderer created as `addSkyPass` does (vanilla extracts the sky state only while it exists), feature preparation, targets, NeoForge frame graph event, chunk draw preparation, the scene snapshot with the light map inputs, the camera with the captured level projection, the temporal frame with the jittered projection uploaded for the level (and put into the camera) and restored afterwards, the frame sources sharing one `SceneFog`, the voxel volume update from `VanillaVoxelSource` with the dynamic lights and entity boxes of the frame and the ray tracing recompile requests before the stages are built, stage building, graph execution, then section compile, upload and occlusion update.
+- Role: Rebuilds `LevelRenderer.render` with Helion stages: the vanilla sky renderer created as `addSkyPass` does (vanilla extracts the sky state only while it exists), feature preparation, targets, NeoForge frame graph event, chunk draw preparation, the scene snapshot, the camera with the captured level projection, the temporal frame with the jittered projection uploaded for the level (and put into the camera) and restored afterwards, the frame sources sharing one `SceneFog`, the ray tracing recompile requests before the stages are built, stage building, graph execution, then section compile, upload and occlusion update.
 - Depends on: every class in this package, `FrameStages`, `HelionRenderCore`.
 - Notes: mirrors vanilla code; see Vanilla Coupling in `docs/ARCHITECTURE.md`.
 
@@ -34,7 +34,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaTerrainSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaTerrainSource.java`
-- Role: `TerrainSource` over vanilla `ChunkSectionsToRender`: fog (the current `SceneFog` buffer, so the physical sky fog reaches terrain), chunk sampler, opaque and translucent layer groups, matching stage events. `renderOpaqueGeometry` draws the solid and cutout layers one by one with the geometry pipelines through `ChunkSectionsToRenderAccessor`; `supportsGeometryBuffer` is false for wireframe terrain or missing shaders. With dynamic lights it binds their uniform and draws every layer with the dynamic light pipelines (`VanillaDynamicLightPipelines`), per layer falling back to vanilla when a variant is missing. `renderWaterSurface` draws the translucent layer with the water surface pipelines and the cutout layer with the glass surface pipelines (plain glass reflects). `textures()` hands the block atlas, the lightmap and the atlas bounds of `block/water_still` and `block/water_flow` to the core; `glossyCells()` the glossy mask cells of the block atlas from `VanillaGlossyCells`.
+- Role: `TerrainSource` over vanilla `ChunkSectionsToRender`: fog (the current `SceneFog` buffer, so the physical sky fog reaches terrain), chunk sampler, opaque and translucent layer groups, matching stage events. `renderOpaqueGeometry` draws the solid and cutout layers one by one with the geometry pipelines through `ChunkSectionsToRenderAccessor`; `supportsGeometryBuffer` is false for wireframe terrain or missing shaders. `renderWaterSurface` draws the translucent layer with the water surface pipelines and the cutout layer with the glass surface pipelines (plain glass reflects). `textures()` hands the block atlas, the lightmap and the atlas bounds of `block/water_still` and `block/water_flow` to the core; `glossyCells()` the glossy mask cells of the block atlas from `VanillaGlossyCells`.
 
 #### VanillaFootprintSource
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaFootprintSource.java`
@@ -56,16 +56,6 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Role: Marks the 16 x 16 cells of the block atlas that hold glossy block textures: every registered block whose id starts with `polished_`, contains `quartz`, `prismarine` or `glass`, or ends with `glazed_terracotta`, `ice` or `smooth_stone` (never ores), and the material of rain wetness: dry blocks (`snow`, `magma`), muddy blocks (ids containing dirt, grass_block, podzol, farmland, mud or mycelium, except dirt_path, bricks and packed mud) and porous blocks that darken but hold no puddles (ids containing sand, gravel, dirt, grass_block, podzol, mycelium, farmland, wool, carpet, moss, leaves, hay_block, sponge, soul_soil, nylium, wart_block or concrete_powder, except sandstone, dirt_path and mossy blocks), looked up as `block/<id>` and its face sprites from their UV bounds (the atlas pads sprites, so `getX()` is not where the UVs start), plus `block/lava_still` (lava) and `block/lava_flow` (flowing lava), and emissive cells: the sprites of the baked models (all sides, seed 42) of every block state with light emission that no state without light emission uses, only on cells without another material. Cached per atlas texture.
 - Depends on: `GlossyCells`.
 
-#### VanillaDynamicLightPipelines
-- Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaDynamicLightPipelines.java`
-- Role: Copies of the vanilla solid, cutout and translucent terrain pipelines (direct and multi-draw) with the vertex shader `helion:terrain/dynamic_light`, the `HELION_DYNAMIC_LIGHTS` defines and the `HelionDynamicLights` uniform; the fragment shader stays vanilla. `withLights` adds the same to any terrain pipeline builder (the geometry pipelines use it). Warns once when a variant did not compile.
-- Depends on: `DynamicLightResources`, `HelionPipelines`, `VanillaGeometryPipelines`.
-
-#### DynamicLightTracker
-- Path: `src/main/java/com/aryston/helion/integration/vanilla/DynamicLightTracker.java`
-- Role: Finds the light sources of a frame: every rendered entity within 64 blocks of the camera that burns or holds or is a glowing item (`DynamicLightEmitters`), at its interpolated position, nearest first, collected once per frame (cached by level, game time and partial tick). Each source keeps the light color of its emitting block (`VoxelLightColors`); `voxelLights` hands the nearest 16 in world coordinates to voxel lighting. `lights` hands the nearest `MAX_LIGHTS` to the frame relative to the camera; `brighten` raises an entity's packed light coordinates to the dynamic level at its light probe position (level minus distance), so mobs, items and the first-person hand are lit too. Does nothing while the core is inactive, in screen effects mode or with the setting off.
-- Depends on: `DynamicLightEmitters`, `DynamicLight`, `DynamicLightResources`, `HelionRenderCore`.
-
 #### VanillaWaterPipelines
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaWaterPipelines.java`
 - Role: Water surface variants of the vanilla translucent terrain pipelines (direct and multi-draw), copied with `toBuilder()` and switched to `helion:water/surface` with one unblended RGBA16_FLOAT target, the `HelionWaterSurface` uniform, the scene depth sampler and the glossy mask. A second pair from the vanilla cutout terrain pipelines adds the define `HELION_GLOSSY_ONLY`: it skips the alpha test and keeps only glossy mask texels, so the see-through center of plain glass is a surface too. Registered as optional pipelines; warns once when they did not compile. Since 2026-10-24 every surface pipeline has a second target, the water tint (RGBA8). Every surface pipeline has a second color target, the water tint (RGBA8).
@@ -75,47 +65,14 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/RtxSectionCapture.java`
 - Role: When ray tracing was requested at startup, copies the quad positions of the solid and cutout layers of a compiled section (vanilla `Position` floats or Aervium's compact `PositionLight`, 1/2048 block steps from -8) into a `RtxSectionUpdate` on the compile worker when the section is near the camera, reports reset sections, and once per frame passes the scene's recompile requests to `LevelExtractor.setSectionDirty`. Warns once and skips terrain in an unknown vertex format. Next to the positions it packs the surface attributes of every vertex: `UV0`, `Color` and `UV2` of the vanilla block format, or `PackedUV0`, `Color` and the light in `PositionLight.w` of the compact format.
 
-#### VanillaVoxelOccluders
-- Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaVoxelOccluders.java`
-- Role: Collects the interpolated bounding boxes of the nearest 8 living entities within 24 blocks of the camera for voxel lighting, leaving out invisible and spectating entities and the camera entity in first person.
-
-#### DynamicLightEmitters
-- Path: `src/main/java/com/aryston/helion/integration/vanilla/DynamicLightEmitters.java`
-- Role: Light an entity gives off as an `Emission` (level and the emitting block state for its color): 15 and fire while it burns, the light emission of the default state of a held or dropped block item (torch 14, lantern 15, glowstone 15, ...) and 15 and lava for a lava bucket; the brightest wins.
-
 #### VanillaGeometryPipelines
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaGeometryPipelines.java`
-- Role: Geometry buffer terrain pipelines per chunk layer (direct and multi-draw), copied from the vanilla terrain pipelines with `toBuilder()` and switched to `helion:terrain/geometry` with three more color targets and the glossy mask sampler. They inherit Aervium's compact terrain vertex format and its `AERVIUM_COMPACT_VERTICES` define with the vanilla pipelines. A second set (`withDynamicLights`) adds the dynamic light uniform and defines. Registered as optional pipelines; warns once when they did not compile or the compact format version is unknown.
+- Role: Geometry buffer terrain pipelines per chunk layer (direct and multi-draw), copied from the vanilla terrain pipelines with `toBuilder()` and switched to `helion:terrain/geometry` with three more color targets and the glossy mask sampler. They inherit Aervium's compact terrain vertex format and its `AERVIUM_COMPACT_VERTICES` define with the vanilla pipelines. Registered as optional pipelines; warns once when they did not compile or the compact format version is unknown.
 - Depends on: `GeometryBufferPipelines`, `HelionPipelines`, `CompactTerrainVertices`.
-
-#### VanillaShadowCasterSource
-- Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaShadowCasterSource.java`
-- Role: `ShadowCasterSource` over vanilla chunk sections. Takes the sections with solid or cutout geometry from `ShadowCasterSections`, keeps those that lie in or toward the light of a cascade drawn this frame, temporarily swaps them into `LevelRenderer.visibleSections` and lets vanilla prepare one `ChunkSectionsToRender` per cascade with the light view, then restores the camera's sections. It prepares through the same path as the camera terrain (multi-draw indirect or direct), because vanilla closes the chunk section buffer of the other path when it switches. Draws the solid and cutout layers with the caster pipelines. `renderEntities` replays `PreparedFrame.executeSolid` of the frame's feature dispatcher, so entities, block entities and items cast shadows with their vanilla pipelines and animation state.
-- Depends on: `ShadowCasterSections`, `VanillaShadowPipelines`, `ChunkSectionsToRenderAccessor`, `LevelRendererAccessor`.
-
-#### ShadowCasterSections
-- Path: `src/main/java/com/aryston/helion/integration/vanilla/ShadowCasterSections.java`
-- Role: Cached list of the render sections within the render distance that hold solid or cutout geometry, the only sections that can cast shadows. Applies changed meshes incrementally and fully scans only a new view area or an overflowed change queue. Owned by `VanillaFrameDriver`, because the caster source is created per frame.
-- Depends on: `ShadowCasterChanges`, `ShadowCasterMember`.
-
-#### ShadowCasterChanges
-- Path: `src/main/java/com/aryston/helion/integration/vanilla/ShadowCasterChanges.java`
-- Role: Bounded cross-thread queue of sections whose meshes changed. Overflow clears the queue and requests one full caster rebuild.
-- Depends on: nothing of this mod.
-
-#### ShadowCasterMember
-- Path: `src/main/java/com/aryston/helion/integration/vanilla/ShadowCasterMember.java`
-- Role: Mixin contract storing a render section's index in the shadow caster list.
-- Depends on: nothing of this mod.
-
-#### VanillaShadowPipelines
-- Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaShadowPipelines.java`
-- Role: Depth-only shadow caster pipelines per chunk layer (direct and multi-draw), built from the vanilla terrain snippets without color targets, with the vanilla alpha cutout define, `helion:shadow/caster` shaders and the caster depth bias. When Aervium switched the vanilla terrain to its compact vertex format, they copy that vertex format and the `AERVIUM_COMPACT_VERTICES` define from the vanilla pipeline, because the snippets keep the vanilla format. Registered as optional pipelines; warns once when they did not compile or the compact format version is unknown.
-- Depends on: `ShadowPipelines`, `HelionPipelines`, `VanillaGeometryPipelines.LayerPipelines`, `CompactTerrainVertices`.
 
 #### CompactTerrainVertices
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/CompactTerrainVertices.java`
-- Role: The shader define contract with Aervium's `compactVertices` module (no shared code, rule S2). `inherit` copies the vertex format of binding 0 and the `AERVIUM_COMPACT_VERTICES` define from a vanilla terrain pipeline to a builder; `supported` is false, with one warning, when the vanilla solid terrain pipeline carries a format version other than 1, so the geometry buffer and shadows turn off instead of reading vertices they do not understand.
+- Role: The shader define contract with Aervium's `compactVertices` module (no shared code, rule S2). `supported` is false, with one warning, when the vanilla solid terrain pipeline carries a format version other than 1, so the geometry buffer turns off instead of reading vertices they do not understand.
 - Depends on: nothing of this mod.
 
 #### VanillaEntitySource

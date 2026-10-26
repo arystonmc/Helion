@@ -10,7 +10,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### FrameContext
 - Path: `src/main/java/com/aryston/helion/render/graph/FrameContext.java`
-- Role: Everything a stage sees for one frame: graph, targets, camera, scene snapshot, render settings, the geometry buffer, the temporal frame (jittered projection, reprojection), the atmosphere results (sky light and fog pass of the physical sky), the shadow results (shadow mask and light), the post results and the water results (water surface, traced reflections, reflection pass) that stages hand to each other.
+- Role: Everything a stage sees for one frame: graph, targets, camera, scene snapshot, render settings, the geometry buffer, the temporal frame (jittered projection, reprojection), the atmosphere results (sky light and fog pass of the physical sky), the post results and the water results (water surface, traced reflections, reflection pass) that stages hand to each other.
 
 #### FrameTargets
 - Path: `src/main/java/com/aryston/helion/render/graph/FrameTargets.java`
@@ -18,8 +18,8 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### RenderSettings
 - Path: `src/main/java/com/aryston/helion/render/graph/RenderSettings.java`
-- Role: Immutable per-frame effect settings. `OFF` is the startup value; `foundation()` turns every effect off for the parity check, deferred lighting, temporal anti-aliasing, the physical sky and shadows included, and voxel lighting, but keeps the geometry buffer (without its view) because it belongs to the core. `screenOnly()` keeps only what works on a finished image (image settings without motion blur) and turns ambient occlusion, the geometry buffer, lighting, temporal anti-aliasing, the physical sky, shadows and volumetric clouds off, for Sodium mode. Ray tracing is off in `OFF`, `screenOnly()` and `foundation()`.
-- Depends on: `AmbientOcclusionSettings`, `ImageSettings`, `GeometryBufferSettings`, `DeferredLightingSettings`, `TemporalSettings`, `PhysicalSkySettings`, `ShadowSettings`, `CloudSettings`, `VoxelLightingSettings`, `RayTracingSettings`, `ReflectionSettings`.
+- Role: Immutable per-frame effect settings. `OFF` is the startup value; `foundation()` turns every effect off for the parity check, temporal anti-aliasing and the physical sky included, but keeps the geometry buffer (without its view) because it belongs to the core. `screenOnly()` keeps only what works on a finished image (image settings without motion blur) and turns the geometry buffer, temporal anti-aliasing, the physical sky and volumetric clouds off, for Sodium mode. Ray tracing is off in `OFF`, `screenOnly()` and `foundation()`.
+- Depends on: `ImageSettings`, `GeometryBufferSettings`, `TemporalSettings`, `PhysicalSkySettings`, `CloudSettings`, `RayTracingSettings`, `ReflectionSettings`.
 
 #### RenderGraph
 - Path: `src/main/java/com/aryston/helion/render/graph/RenderGraph.java`

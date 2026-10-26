@@ -8,11 +8,8 @@ import com.aryston.helion.debug.GpuProfile;
 import com.aryston.helion.debug.VisualTest;
 import com.aryston.helion.integration.vanilla.EntityGeometryPipelines;
 import com.aryston.helion.integration.vanilla.LevelRenderHook;
-import com.aryston.helion.integration.vanilla.VanillaDynamicLightPipelines;
 import com.aryston.helion.integration.vanilla.VanillaGeometryPipelines;
-import com.aryston.helion.integration.vanilla.VanillaShadowPipelines;
 import com.aryston.helion.integration.vanilla.VanillaWaterPipelines;
-import com.aryston.helion.integration.vanilla.VoxelLightColors;
 import com.aryston.helion.render.HelionRenderCore;
 import com.aryston.helion.render.PassiveReason;
 import com.aryston.helion.render.shader.HelionPipelines;
@@ -25,7 +22,6 @@ import net.minecraft.network.chat.Component;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -48,7 +44,6 @@ public final class ClientEvents {
         modBus.addListener(HelionKeys::register);
         modBus.addListener(HelionDebugEntry::register);
         modBus.addListener(ClientEvents::onRegisterPipelines);
-        modBus.addListener(ClientEvents::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(ClientEvents::onClientTick);
         NeoForge.EVENT_BUS.addListener(ClientEvents::onShutdown);
     }
@@ -62,14 +57,10 @@ public final class ClientEvents {
             core.passivate(PassiveReason.INCOMPATIBLE_MOD);
         }
         if (CompatibilityGuard.sodiumLoaded()) {
-            LOGGER.info("Helion runs in Sodium mode: Sodium draws the world and Helion adds only its screen effects; shadows, lighting, sky, ambient occlusion, temporal anti-aliasing and motion blur are off");
+            LOGGER.info("Helion runs in Sodium mode: Sodium draws the world and Helion adds only its screen effects; sky, temporal anti-aliasing and motion blur are off");
             core.useScreenEffectsOnly();
             PassiveModeNotice.queueSodiumMode();
         }
-    }
-
-    private static void onAddReloadListeners(AddClientReloadListenersEvent event) {
-        event.addListener(VoxelLightColors.LISTENER, new VoxelLightColors());
     }
 
     private static void onPassive(PassiveReason reason) {
@@ -84,8 +75,6 @@ public final class ClientEvents {
         VanillaGeometryPipelines.all().forEach(event::registerOptionalPipeline);
         EntityGeometryPipelines.all().forEach(event::registerOptionalPipeline);
         VanillaWaterPipelines.all().forEach(event::registerOptionalPipeline);
-        VanillaShadowPipelines.all().forEach(event::registerOptionalPipeline);
-        VanillaDynamicLightPipelines.all().forEach(event::registerOptionalPipeline);
     }
 
     private static void onConfigLoading(ModConfigEvent.Loading event) {

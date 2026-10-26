@@ -11,7 +11,6 @@
 #endif
 #include <helion:helion_geometry.glsl>
 #include <helion:helion_terrain_vertex.glsl>
-#include <helion:helion_dynamic_light.glsl>
 
 #ifdef MULTIDRAW_TERRAIN
 layout(location = 4) in ivec3 ChunkPosition;
@@ -33,7 +32,7 @@ const float HELION_CHUNK_FULLY_VISIBLE_RANGE = 16.0;
 
 void main() {
     vec3 pos = helion_vertex_position() + (ChunkPosition - CameraBlockPos) + CameraOffset;
-    ivec2 light = helion_dynamic_light(helion_vertex_light(), pos);
+    ivec2 light = helion_vertex_light();
     gl_Position = ProjMat * ModelViewMat * vec4(pos, 1.0);
 
     sphericalVertexDistance = fog_spherical_distance(pos);

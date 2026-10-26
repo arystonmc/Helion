@@ -10,26 +10,18 @@ import com.aryston.helion.render.geometry.GeometryBuffer;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderGraph;
 import com.aryston.helion.render.graph.RenderSettings;
-import com.aryston.helion.render.lighting.LightEnvironment;
 import com.aryston.helion.render.post.PostResults;
-import com.aryston.helion.render.shadow.ShadowResults;
 import com.aryston.helion.render.scene.SceneSnapshot;
 import com.aryston.helion.render.temporal.FrameSize;
 import com.aryston.helion.render.temporal.TemporalFrame;
-import com.aryston.helion.render.voxel.VoxelDynamicScene;
-import com.aryston.helion.render.voxel.VoxelLightResults;
 import com.aryston.helion.render.water.WaterResults;
 import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.ProjectionMatrixBuffer;
@@ -37,7 +29,6 @@ import net.minecraft.client.renderer.SkyRenderer;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
-import net.minecraft.client.renderer.state.LightmapRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.util.Util;
@@ -55,9 +46,6 @@ final class VanillaFrameDriver {
 
     private final SceneSkyRenderer sky = new SceneSkyRenderer();
     private final AmbientLightTracker ambientLight = new AmbientLightTracker();
-    private final ShadowCasterSections shadowCasters = new ShadowCasterSections();
-    private final VanillaVoxelSource voxels = new VanillaVoxelSource();
-    private final VanillaVoxelOccluders occluders = new VanillaVoxelOccluders();
     private final VanillaWaveSource waves = new VanillaWaveSource();
     private final VanillaFootprintSource footprints = new VanillaFootprintSource();
     private @Nullable ProjectionMatrixBuffer jitteredProjection;
@@ -151,29 +139,23 @@ final class VanillaFrameDriver {
                     output.width,
                     output.height,
                     Objects.requireNonNull(scene.getColorTexture()).getFormat(),
-                    ambientLight.update(camera.blockPos),
-                    lightEnvironment(gameRenderer.gameRenderState().lightmapRenderState)
+                    ambientLight.update(camera.blockPos)
                 ),
                 settings,
                 new GeometryBuffer(),
                 temporal,
                 new AtmosphereResults(),
-                new ShadowResults(),
                 new PostResults(),
-                new VoxelLightResults(),
                 new WaterResults()
             );
-            Optional<GpuBuffer> dynamicLights = HelionRenderCore.get().dynamicLights()
-                .upload(DynamicLightTracker.lights(camera.pos, settings.dynamicLights().enabled()));
-            updateVoxels(settings, camera);
+            RtxSectionCapture.requestRecompiles();
             HelionRenderCore.get().recordFrame(frame.camera(), frame.scene());
-            FrameStages.build(frame, sources(request, sections, featureFrame, targets, dynamicLights));
+            FrameStages.build(frame, sources(request, sections, featureFrame, targets));
             profiler.popPush("executeFrameGraph");
             builder.execute(request.resourceAllocator(), new ProfilerInspector(profiler));
             profiler.pop();
         } finally {
             HelionClouds.replaceVanilla(false);
-            HelionRenderCore.get().dynamicLights().finishFrame();
             if (levelProjection != null) {
                 RenderSystem.setProjectionMatrix(levelProjection, levelProjectionType);
             }
@@ -183,23 +165,6 @@ final class VanillaFrameDriver {
                 featureFrame.close();
             }
         }
-    }
-
-    private void updateVoxels(RenderSettings settings, CameraRenderState camera) {
-        ClientLevel level = Minecraft.getInstance().level;
-        if (level == null) {
-            return;
-        }
-        boolean enabled = settings.voxels().enabled();
-        if (enabled) {
-            float partialTick = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
-            HelionRenderCore.get().voxelLighting().useDynamicScene(new VoxelDynamicScene(
-                DynamicLightTracker.voxelLights(settings.dynamicLights().enabled()), occluders.collect(level, camera.pos, partialTick)
-            ));
-        }
-        HelionRenderCore.get().voxelLighting()
-            .update(settings.voxels(), camera.blockPos.getX(), camera.blockPos.getY(), camera.blockPos.getZ(), voxels.use(level, enabled));
-        RtxSectionCapture.requestRecompiles();
     }
 
     private GpuBufferSlice jitteredProjection(TemporalFrame temporal) {
@@ -216,13 +181,12 @@ final class VanillaFrameDriver {
         LevelFrameRequest request,
         ChunkSectionsToRender sections,
         FeatureRenderDispatcher.PreparedFrame featureFrame,
-        VanillaFrameTargets targets,
-        Optional<GpuBuffer> dynamicLights
+        VanillaFrameTargets targets
     ) {
         StageEvents events = new StageEvents(request);
         SceneFog fog = new SceneFog(request.terrainFog());
         return new FrameSources(
-            new VanillaTerrainSource(request, sections, fog, events, dynamicLights),
+            new VanillaTerrainSource(request, sections, fog, events),
             new VanillaEntitySource(request, featureFrame, events),
             new VanillaAtmosphereSource(request, sky, fog, events),
             new VanillaCloudSource(request),
@@ -230,7 +194,6 @@ final class VanillaFrameDriver {
             waves,
             footprints,
             new VanillaTransparencySource(request, sections, featureFrame),
-            new VanillaShadowCasterSource(request, shadowCasters, featureFrame),
             List.of(new VanillaEntityOutlineEffect(request.level(), targets))
         );
     }
@@ -252,21 +215,6 @@ final class VanillaFrameDriver {
         Vector3d position = new Vector3d(camera.pos.x, camera.pos.y, camera.pos.z);
         Matrix4fc levelProjection = HelionRenderCore.get().levelProjection().orElse(camera.projectionMatrix);
         return new HelionCamera(position, camera.viewRotationMatrix, camera.projectionMatrix, levelProjection, zeroToOneDepth);
-    }
-
-    static LightEnvironment lightEnvironment(LightmapRenderState lightmap) {
-        return new LightEnvironment(
-            lightmap.skyFactor,
-            lightmap.blockFactor,
-            lightmap.nightVisionEffectIntensity,
-            lightmap.darknessEffectScale,
-            lightmap.bossOverlayWorldDarkening,
-            lightmap.brightness,
-            lightmap.blockLightTint,
-            lightmap.skyLightColor,
-            lightmap.ambientColor,
-            lightmap.nightVisionColor
-        );
     }
 
     private static void finishLevel(LevelFrameRequest request) {

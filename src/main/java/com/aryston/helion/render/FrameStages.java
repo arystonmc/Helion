@@ -11,8 +11,6 @@ import com.aryston.helion.render.geometry.TranslucentFeatureStage;
 import com.aryston.helion.render.geometry.TransparentGeometryStage;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
-import com.aryston.helion.render.lighting.AmbientOcclusionStage;
-import com.aryston.helion.render.lighting.DeferredLightingStage;
 import com.aryston.helion.render.lightshaft.LightShaftStage;
 import com.aryston.helion.render.dof.DepthOfFieldStage;
 import com.aryston.helion.render.edge.EdgeSmoothingStage;
@@ -23,19 +21,10 @@ import com.aryston.helion.render.post.ImageCompositeStage;
 import com.aryston.helion.render.post.PostProcessingStage;
 import com.aryston.helion.render.post.PresentStage;
 import com.aryston.helion.render.post.SharpeningStage;
-import com.aryston.helion.render.rtx.RtxBlockLightStage;
-import com.aryston.helion.render.rtx.RtxMaskViewStage;
 import com.aryston.helion.render.rtx.RtxReflectionStage;
 import com.aryston.helion.render.rtx.RtxSceneStage;
-import com.aryston.helion.render.rtx.RtxShadowStage;
-import com.aryston.helion.render.rtx.RtxShadowTracer;
 import com.aryston.helion.render.scene.ClearStage;
-import com.aryston.helion.render.shadow.ShadowStage;
 import com.aryston.helion.render.temporal.TemporalStage;
-import com.aryston.helion.render.voxel.VoxelBounceStage;
-import com.aryston.helion.render.voxel.VoxelLightStage;
-import com.aryston.helion.render.voxel.VoxelProbeStage;
-import com.aryston.helion.render.voxel.VoxelSliceStage;
 import com.aryston.helion.render.water.RainWetnessStage;
 import com.aryston.helion.render.water.HeatShimmerStage;
 import com.aryston.helion.render.water.ScreenReflectionStage;
@@ -76,16 +65,6 @@ public final class FrameStages {
             new OpaqueGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere(), core.glossy()),
             new EntityGeometryStage(sources.entities()),
             new RtxSceneStage(core.rayTracing()),
-            new ShadowStage(
-                sources.shadowCasters(), sources.terrain(), core.shadows(), core.glossy(), new RtxShadowTracer(core.rayTracing(), sources.terrain(), core.glossy())
-            ),
-            new VoxelProbeStage(core.voxelLighting()),
-            new VoxelBounceStage(core.voxelLighting()),
-            new VoxelLightStage(core.voxelLighting()),
-            new RtxBlockLightStage(core.rayTracing(), core.voxelLighting(), sources.terrain(), core.glossy()),
-            new RtxShadowStage(core.rtxSpike(), core.voxelLighting()),
-            new DeferredLightingStage(core.lighting()),
-            new AmbientOcclusionStage(core.ambientOcclusion()),
             new SolidFeatureStage(sources.terrain(), sources.entities()),
             new TranslucentFeatureStage(sources.entities()),
             new CloudStage(sources.clouds(), core.clouds()),
@@ -101,10 +80,7 @@ public final class FrameStages {
             new TemporalStage(core.temporal()),
             new PostProcessingStage(postEffects(sources.postEffects(), core)),
             output(frame, core),
-            new GeometryBufferDebugStage(),
-            new VoxelSliceStage(core.voxelLighting()),
-            RtxMaskViewStage.spike(core.rtxSpike()),
-            RtxMaskViewStage.sunShadow(core.rayTracing())
+            new GeometryBufferDebugStage()
         );
     }
 

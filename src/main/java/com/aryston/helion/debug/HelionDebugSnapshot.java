@@ -5,13 +5,10 @@ import com.aryston.helion.render.HelionRenderCore;
 import com.aryston.helion.render.atmosphere.PhysicalSkySettings;
 import com.aryston.helion.render.clouds.CloudSettings;
 import com.aryston.helion.render.backend.GpuDeviceSummary;
-import com.aryston.helion.render.shadow.ShadowSettings;
 import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.camera.HelionFrustum;
 import com.aryston.helion.render.geometry.GeometryBufferSettings;
 import com.aryston.helion.render.graph.RenderSettings;
-import com.aryston.helion.render.lighting.AmbientOcclusionSettings;
-import com.aryston.helion.render.lighting.DeferredLightingSettings;
 import com.aryston.helion.render.post.BloomSettings;
 import com.aryston.helion.render.post.ImageResources;
 import com.aryston.helion.render.post.EyeAdaptation;
@@ -20,9 +17,6 @@ import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.resource.TrackedResource;
 import com.aryston.helion.render.scene.SceneSnapshot;
 import com.aryston.helion.render.temporal.TemporalSettings;
-import com.aryston.helion.render.voxel.VoxelBuildStatistics;
-import com.aryston.helion.render.voxel.VoxelLightingResources;
-import com.aryston.helion.render.voxel.VoxelLightingSettings;
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.platform.Window;
 import java.util.List;
@@ -55,17 +49,13 @@ public final class HelionDebugSnapshot {
         core.device().ifPresent(device -> snapshot.add("device", device(device)));
         snapshot.add("frame", frame(minecraft, core));
         core.lastCamera().ifPresent(camera -> snapshot.add("camera", camera(camera)));
-        snapshot.add("ambientOcclusion", ambientOcclusion(settings.ambientOcclusion()));
         snapshot.add("image", image(settings.image(), core.image().adaptation()));
         snapshot.add("bloom", bloom(settings.image().bloom(), ambientLight));
         snapshot.add("sharpening", sharpening(settings.image().sharpening()));
         snapshot.add("geometryBuffer", geometryBuffer(settings.geometry()));
-        snapshot.add("lighting", lighting(settings.lighting()));
         snapshot.add("temporal", temporal(settings.temporal()));
         snapshot.add("physicalSky", physicalSky(settings.sky()));
-        snapshot.add("shadows", shadows(settings.shadows()));
         snapshot.add("clouds", clouds(settings.clouds()));
-        snapshot.add("voxelLighting", voxelLighting(settings.voxels(), core.voxelLighting()));
         snapshot.add("gpu", gpu(core));
         snapshot.add("gpuStages", gpuStages(core.timings().averageMillis()));
         snapshot.add("resources", resources(core.resources().live()));
@@ -125,17 +115,6 @@ public final class HelionDebugSnapshot {
         return section;
     }
 
-    private static JsonObject ambientOcclusion(AmbientOcclusionSettings settings) {
-        JsonObject section = new JsonObject();
-        section.addProperty("enabled", settings.enabled());
-        section.addProperty("algorithm", settings.algorithm().name());
-        section.addProperty("quality", settings.quality().name());
-        section.addProperty("strength", round(settings.strength()));
-        section.addProperty("radius", round(settings.radius()));
-        section.addProperty("debugView", settings.debugView());
-        return section;
-    }
-
     private static JsonObject image(ImageSettings settings, EyeAdaptation adaptation) {
         JsonObject section = new JsonObject();
         section.addProperty("toneMapper", settings.toneMapper().name());
@@ -174,15 +153,6 @@ public final class HelionDebugSnapshot {
         return section;
     }
 
-    private static JsonObject lighting(DeferredLightingSettings settings) {
-        JsonObject section = new JsonObject();
-        section.addProperty("enabled", settings.enabled());
-        section.addProperty("blockLightIntensity", round(settings.blockLightIntensity()));
-        section.addProperty("skyLightIntensity", round(settings.skyLightIntensity()));
-        section.addProperty("lightOnlyView", settings.lightOnlyView());
-        return section;
-    }
-
     private static JsonObject temporal(TemporalSettings settings) {
         JsonObject section = new JsonObject();
         section.addProperty("enabled", settings.enabled());
@@ -198,39 +168,10 @@ public final class HelionDebugSnapshot {
         return section;
     }
 
-    private static JsonObject shadows(ShadowSettings settings) {
-        JsonObject section = new JsonObject();
-        section.addProperty("enabled", settings.enabled());
-        section.addProperty("quality", settings.quality().name());
-        return section;
-    }
-
     private static JsonObject clouds(CloudSettings settings) {
         JsonObject section = new JsonObject();
         section.addProperty("enabled", settings.enabled());
         section.addProperty("quality", settings.quality().name());
-        return section;
-    }
-
-    private static JsonObject voxelLighting(VoxelLightingSettings settings, VoxelLightingResources resources) {
-        JsonObject section = new JsonObject();
-        VoxelBuildStatistics statistics = resources.statistics();
-        section.addProperty("mode", settings.mode().name());
-        section.addProperty("active", resources.active());
-        section.addProperty("pendingSections", resources.pendingSections());
-        section.addProperty("frameSections", statistics.lastFrameSections());
-        section.addProperty("frameMs", round(statistics.lastFrameMillis()));
-        section.addProperty("averageFrameMs", round(statistics.averageFrameMillis()));
-        section.addProperty("fillCpuMs", round(statistics.lastFillCpuMillis()));
-        section.addProperty("fillWallMs", round(statistics.lastFillWallMillis()));
-        section.addProperty("fillMaxFrameMs", round(statistics.maxFillFrameMillis()));
-        section.addProperty("quality", settings.quality().name());
-        section.addProperty("lights", resources.lightCount());
-        section.addProperty("gridLights", statistics.gridLights());
-        section.addProperty("gridMs", round(statistics.lastGridMillis()));
-        section.addProperty("gridMaxMs", round(statistics.maxGridMillis()));
-        section.addProperty("changeLatencyFrames", statistics.lastChangeLatency());
-        section.addProperty("changeLatencyMaxFrames", statistics.maxChangeLatency());
         return section;
     }
 

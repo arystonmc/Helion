@@ -1,7 +1,5 @@
 package com.aryston.helion.render.rtx;
 
-import com.aryston.helion.render.voxel.VoxelVolumeLayout;
-
 public record RtxSectionPos(int sectionX, int sectionY, int sectionZ) {
     boolean within(int x, int y, int z, int radius) {
         return Math.abs(x - sectionX) <= radius && Math.abs(y - sectionY) <= radius && Math.abs(z - sectionZ) <= radius;
@@ -12,14 +10,14 @@ public record RtxSectionPos(int sectionX, int sectionY, int sectionZ) {
     }
 
     int originX() {
-        return sectionX * VoxelVolumeLayout.SECTION_SIZE;
+        return sectionX * RtxSectionKey.SECTION_SIZE;
     }
 
     int originY() {
-        return sectionY * VoxelVolumeLayout.SECTION_SIZE;
+        return sectionY * RtxSectionKey.SECTION_SIZE;
     }
 
     int originZ() {
-        return sectionZ * VoxelVolumeLayout.SECTION_SIZE;
+        return sectionZ * RtxSectionKey.SECTION_SIZE;
     }
 }

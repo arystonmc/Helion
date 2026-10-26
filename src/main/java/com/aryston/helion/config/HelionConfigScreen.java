@@ -37,13 +37,7 @@ public final class HelionConfigScreen {
                 .section(text("section.antialiasing"), section -> section.add(options.temporal))
                 .fullSection(text("section.sky"), section -> section.add(options.physicalSky).add(options.starDensity).add(options.milkyWay).add(options.lightShafts).add(options.clouds)))
             .page("lighting", text("page.lighting"), Icons.SUN, page -> page
-                .fullSection(text("section.ambientOcclusion"), section -> section.add(options.ambientOcclusion).add(options.ambientOcclusionMethod)
-                    .add(options.ambientOcclusionStrength).add(options.ambientOcclusionRadius))
-                .section(text("section.hdr"), section -> section.add(options.lighting).add(options.blockLight).add(options.skyLight))
-                .section(text("section.shadows"), section -> section.add(options.shadows))
-                .fullSection(text("section.dynamicLights"), section -> section.add(options.dynamicLights))
-                .fullSection(text("section.voxelLighting"), section -> section.add(options.voxelLighting).add(options.voxelLightingQuality).add(options.voxelBounce))
-                .fullSection(text("section.rayTracing"), section -> section.add(options.rayTracing).add(options.waterReflections).add(options.rayTracedShadows))
+                .fullSection(text("section.rayTracing"), section -> section.add(options.rayTracing).add(options.waterReflections))
                 .fullSection(text("section.reflections"), section -> section.add(options.screenReflections).add(options.rainWetness).add(options.realisticWater)))
             .page("effects", text("page.effects"), Icons.SPARKLE, page -> page
                 .section(text("section.bloom"), section -> section.add(options.bloom).add(options.bloomIntensity).add(options.bloomThreshold))
@@ -54,11 +48,11 @@ public final class HelionConfigScreen {
             .group(text("group.system"))
             .page("performance", text("page.performance"), Icons.BOLT, page -> page
                 .notice(text("performance.notice"))
-                .fullSection(text("section.quality"), section -> section.add(options.ambientOcclusionQuality).add(options.shadowQuality).add(options.cloudQuality).add(options.renderScale)))
+                .fullSection(text("section.quality"), section -> section.add(options.cloudQuality).add(options.renderScale)))
             .page("advanced", text("page.advanced"), Icons.CMD, page -> page
                 .fullSection(text("section.debug"), section -> section.add(options.debugMode))
-                .fullSection(text("section.views"), section -> section.collapsible(false).add(options.ambientOcclusionView).add(options.bloomView)
-                    .add(options.geometryBufferView).add(options.lightView)))
+                .fullSection(text("section.views"), section -> section.collapsible(false).add(options.bloomView)
+                    .add(options.geometryBufferView)))
             .build(parent);
     }
 

@@ -7,7 +7,6 @@ import com.aryston.helion.render.geometry.TerrainSource;
 import com.aryston.helion.render.geometry.TerrainTextures;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
-import com.aryston.helion.render.voxel.VoxelVolumeLayout;
 import com.aryston.helion.render.water.Wetness;
 import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -140,7 +139,7 @@ public final class RtxReflectionStage implements RenderStage {
         constants.putFloat((float) (position.x() - center.originX()))
             .putFloat((float) (position.y() - center.originY()))
             .putFloat((float) (position.z() - center.originZ()))
-            .putFloat(RtxSectionInbox.RADIUS * VoxelVolumeLayout.SECTION_SIZE);
+            .putFloat(RtxSectionInbox.RADIUS * RtxSectionKey.SECTION_SIZE);
         constants.putFloat(MAX_DISTANCE).putFloat((float) (position.x() % NOISE_PERIOD)).putFloat((float) (position.z() % NOISE_PERIOD)).putFloat(puddles);
         Optional<Vector3fc> light = sky.map(RtxReflectionStage::shadowLight).filter(direction -> direction.y() > HORIZON);
         Vector3fc direction = light.orElse(NO_LIGHT);

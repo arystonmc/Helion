@@ -8,8 +8,6 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 
 ### Added
 - Glass is smooth with an even tint and carries rain drops that bead up and run down
-- Experimental ray tracing: block light shadows traced against the real block shapes
-- Experimental voxel lighting: torches, lanterns, campfires and other fire lights flicker gently
 - Realistic glass: plain glass slightly bends the view behind it, stained glass tints it like real colored glass, and glass reflects the world
 - Realistic water: waves roll in from open water and break on beaches with white foam that runs up the shore
 - In third person the player, slimes and other see-through mobs mirror in the water and show through it
@@ -38,49 +36,34 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Rain wetness: rain darkens and wets the ground, puddles gather on stone, brick and wood, reflect the world and ripple with the drops
 - Experimental volumetric clouds lit by the physical sky, with Low, Medium and High quality
 - Light shafts: rays of sunlight and moonlight through clouds, leaves and gaps between blocks, with the physical sky
-- Experimental voxel lighting: colored block light with real shadows from walls and pillars, in the Experimental preset
-- Experimental voxel lighting: held and burning lights are colored and cast shadows, and mobs and players cast shadows from lights
 - Experimental screen space reflections: water reflects what is on screen on every graphics card, mobs and players included
 - Ice, stained glass and other see-through blocks reflect their surroundings with the reflection settings
-- Experimental voxel lighting: light through stained glass takes the color of the glass
 - Plain glass and polished blocks such as polished stone, quartz and prismarine reflect their surroundings faintly with screen space reflections
-- Experimental voxel lighting: bounced light carries torch and lava light around corners and into shaded corners in the color of the walls
-- Mobs, players and items are lit like the blocks around them: colored voxel light, sun shadows and ambient occlusion now reach them
 - Experimental ray tracing for RTX and similar cards: water reflects the world, the sky, the sun and the moon, with waves and darker deep water (in the Experimental preset, takes effect after a restart)
-- Experimental ray traced shadows: exact soft sun and moon shadows near you, with leaves and fences casting shadows through their holes, and mobs and players casting exact shadows
 - Experimental ray tracing: mobs, players and dropped items show in water reflections, also when they are off screen
 
 ### Changed
-- Experimental voxel lighting: every light casts its own shadow and throws round pools, and colored lights blend smoothly
-- HDR lighting: a more realistic light balance: lights a little stronger close by, unlit places, moonlit nights and caves somewhat darker, and only really bright lights glow at night
 - Volumetric clouds are a little thinner in clear weather
 - Needs NeoForge 26.3.0.95 or newer (NeoForge for Minecraft 26.3 is no longer beta)
 - Physical sky: a small sun of realistic size with a bright halo that turns orange and red as it sets
 - Physical sky: a three-dimensional moon with real phase shadows, seas and craters, drawn larger than the sun
 - Physical sky: more cinematic sunrises and sunsets with a horizon glow, a rose afterglow and a pink band opposite the sun, and calmer daytime colors
-- Physical sky: terrain takes the warm tones of sunrise and sunset, and moonlit skies look a deeper blue
 - Physical sky: a realistic night sky with round, twinkling stars, a faint Milky Way, planets, shooting stars and rare northern lights in snowy biomes, with settings for star density and the Milky Way
 - Depth of field focuses on the sky when you look at it, so the sun, the moon and the stars stay sharp
 
 ### Fixed
-- Black stripes on grass under ray traced sun shadows
-- Held torches shine from the hand instead of the hip
 - Rooms full of lights no longer blind you: the exposure adapts down in very bright scenes
-- Black stripes on distant ground under moonlight with ray traced shadows
 - Clouds show behind stained glass and glass
 - Waterfalls and water next to glass no longer look like framed blue glass or solid teal blocks
-- Light no longer washes surfaces flat orange near lava and many torches
-- Glowing blocks such as glowstone and sea lanterns no longer cast a sun shadow
 - The world behind stained glass no longer looks like vanilla: water, fog, rain and light shafts show through it
 - Distant water reflections no longer show frozen dotted edges in dry weather
 - Realistic water: lamps and torches reflect visibly, the sun no longer glints behind mountains, the moon glint is brighter, vanilla water no longer shows along the shore, rain no longer makes the water tremble, and distant water no longer sparkles
 - Realistic water: shore foam removed
 - Realistic water no longer glows all over at night, shows a strong sun glint by day, has smoother waves without a checker pattern and looks right from under water
-- Experimental voxel lighting: several lights right behind a wall no longer shine through it
-- Experimental voxel lighting: bounced light no longer makes rooms next to bright lights brighter than vanilla
-- Experimental voxel lighting: High quality costs about a third more than Medium instead of three to four times as much
 - Plain glass and polished blocks really reflect now, with a soft sky sheen when nothing else is reflected
-- Experimental voxel lighting: light bounced off grass and leaves takes the color of the biome
+
+### Removed
+- The whole light and shadow system: ambient occlusion, HDR lighting, sun and moon shadows, dynamic lights, voxel lighting and ray traced shadows. It is being rebuilt from scratch as ray traced (path traced) light; until then the world keeps the vanilla light
 
 ## [1.0] - 2026-10-21
 

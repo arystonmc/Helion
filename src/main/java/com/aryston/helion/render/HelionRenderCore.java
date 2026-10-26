@@ -4,28 +4,19 @@ import com.aryston.helion.render.backend.GpuDeviceSummary;
 import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.geometry.GlossyMask;
 import com.aryston.helion.render.graph.GpuTimings;
-import com.aryston.helion.render.geometry.GlossyMask;
 import com.aryston.helion.render.graph.RenderSettings;
 import com.aryston.helion.render.atmosphere.PhysicalSkyResources;
 import com.aryston.helion.render.clouds.CloudResources;
 import com.aryston.helion.render.lightshaft.LightShaftResources;
-import com.aryston.helion.render.lighting.AmbientOcclusionResources;
-import com.aryston.helion.render.lighting.DeferredLightingResources;
-import com.aryston.helion.render.lighting.DynamicLightResources;
 import com.aryston.helion.render.dof.DepthOfFieldResources;
 import com.aryston.helion.render.motion.MotionBlurResources;
 import com.aryston.helion.render.post.ImageResources;
-import com.aryston.helion.render.shadow.ShadowResources;
 import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalResources;
 import com.aryston.helion.render.resource.GpuResources;
 import com.aryston.helion.render.resource.SceneTargets;
 import com.aryston.helion.render.rtx.RayTracingResources;
-import com.aryston.helion.render.rtx.RayTracingResources;
-import com.aryston.helion.render.rtx.RtxSpike;
-import com.aryston.helion.render.rtx.RtxSpikeResources;
 import com.aryston.helion.render.scene.SceneSnapshot;
-import com.aryston.helion.render.voxel.VoxelLightingResources;
 import com.aryston.helion.render.water.WaterResources;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -43,19 +34,13 @@ public final class HelionRenderCore {
     private final GpuResources resources = new GpuResources();
     private final SceneTargets sceneTargets = new SceneTargets(resources);
     private final GpuTimings timings = new GpuTimings(resources);
-    private final AmbientOcclusionResources ambientOcclusion = new AmbientOcclusionResources(resources);
     private final ImageResources image = new ImageResources(resources);
-    private final DeferredLightingResources lighting = new DeferredLightingResources(resources);
-    private final DynamicLightResources dynamicLights = new DynamicLightResources(resources);
     private final TemporalResources temporal = new TemporalResources(resources);
     private final PhysicalSkyResources sky = new PhysicalSkyResources(resources);
     private final CloudResources clouds = new CloudResources(resources);
     private final LightShaftResources lightShafts = new LightShaftResources(resources);
-    private final ShadowResources shadows = new ShadowResources(resources);
     private final MotionBlurResources motionBlur = new MotionBlurResources(resources);
     private final DepthOfFieldResources depthOfField = new DepthOfFieldResources(resources);
-    private final VoxelLightingResources voxelLighting = new VoxelLightingResources(resources);
-    private final RtxSpikeResources rtxSpike = new RtxSpikeResources(resources);
     private final RayTracingResources rayTracing = new RayTracingResources(resources);
     private final WaterResources water = new WaterResources(resources);
     private final GlossyMask glossy = new GlossyMask(resources);
@@ -73,9 +58,6 @@ public final class HelionRenderCore {
     private volatile RenderSettings settings = RenderSettings.OFF;
 
     private HelionRenderCore() {
-        if (RtxSpike.ENABLED) {
-            voxelLighting.observeBricks(rtxSpike.blocks());
-        }
     }
 
     public static HelionRenderCore get() {
@@ -174,19 +156,13 @@ public final class HelionRenderCore {
         shutDown = true;
         int released = resources.releaseAll();
         timings.close();
-        ambientOcclusion.close();
         image.close();
-        lighting.close();
-        dynamicLights.close();
         temporal.close();
         sky.close();
         clouds.close();
         lightShafts.close();
-        shadows.close();
         motionBlur.close();
         depthOfField.close();
-        voxelLighting.close();
-        rtxSpike.close();
         rayTracing.close();
         water.close();
         glossy.close();
@@ -218,20 +194,8 @@ public final class HelionRenderCore {
         return resources;
     }
 
-    public AmbientOcclusionResources ambientOcclusion() {
-        return ambientOcclusion;
-    }
-
     public ImageResources image() {
         return image;
-    }
-
-    public DeferredLightingResources lighting() {
-        return lighting;
-    }
-
-    public DynamicLightResources dynamicLights() {
-        return dynamicLights;
     }
 
     public TemporalResources temporal() {
@@ -258,14 +222,6 @@ public final class HelionRenderCore {
         return lightShafts;
     }
 
-    public VoxelLightingResources voxelLighting() {
-        return voxelLighting;
-    }
-
-    public RtxSpikeResources rtxSpike() {
-        return rtxSpike;
-    }
-
     public RayTracingResources rayTracing() {
         return rayTracing;
     }
@@ -276,10 +232,6 @@ public final class HelionRenderCore {
 
     public GlossyMask glossy() {
         return glossy;
-    }
-
-    public ShadowResources shadows() {
-        return shadows;
     }
 
     private GpuDeviceSummary detectDevice() {

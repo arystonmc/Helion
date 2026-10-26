@@ -5,8 +5,7 @@ public enum GeometryBufferView {
     NORMALS(1),
     BLOCK_LIGHT(2),
     SKY_LIGHT(3),
-    ALBEDO(4),
-    VOXEL_SLICE(5);
+    ALBEDO(4);
 
     private final int shaderId;
 

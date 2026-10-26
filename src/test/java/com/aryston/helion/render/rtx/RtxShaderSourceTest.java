@@ -15,7 +15,7 @@ class RtxShaderSourceTest {
     private static final String ENTITY_REFLECTION_DEFINE = "HELION_RT_ENTITIES";
 
     @ParameterizedTest
-    @ValueSource(strings = {"shadow_mask.csh", "sun_shadow.csh", REFLECTION})
+    @ValueSource(strings = {REFLECTION})
     void computeShaderCompilesWithRayQueries(String shader) {
         assertCompiles(shader, Set.of());
     }

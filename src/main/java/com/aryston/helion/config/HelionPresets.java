@@ -4,10 +4,6 @@ import com.aryston.arkea.api.config.ConfigPreset;
 import com.aryston.arkea.ui.render.Icon;
 import com.aryston.arkea.ui.render.Icons;
 import com.aryston.helion.render.clouds.CloudQuality;
-import com.aryston.helion.render.lighting.AmbientOcclusionQuality;
-import com.aryston.helion.render.shadow.ShadowQuality;
-import com.aryston.helion.render.voxel.VoxelLightingMode;
-import com.aryston.helion.render.voxel.VoxelLightingQuality;
 import java.util.List;
 import net.minecraft.network.chat.Component;
 
@@ -18,27 +14,21 @@ final class HelionPresets {
     }
 
     static List<ConfigPreset> create(HelionOptions options) {
-        ConfigPreset vanilla = base(options, "vanilla", Icons.CUBE, false, false, false, AmbientOcclusionQuality.LOW);
-        ConfigPreset balanced = base(options, "balanced", Icons.GAUGE, true, true, false, AmbientOcclusionQuality.MEDIUM);
-        ConfigPreset quality = base(options, "quality", Icons.SPARKLE, true, true, true, AmbientOcclusionQuality.HIGH);
-        ConfigPreset experimental = base(options, "experimental", Icons.FLASK, true, true, true, AmbientOcclusionQuality.HIGH)
+        ConfigPreset vanilla = base(options, "vanilla", Icons.CUBE, false, false);
+        ConfigPreset balanced = base(options, "balanced", Icons.GAUGE, true, false);
+        ConfigPreset quality = base(options, "quality", Icons.SPARKLE, true, true);
+        ConfigPreset experimental = base(options, "experimental", Icons.FLASK, true, true)
             .set(options.geometryBuffer, true)
-            .set(options.lighting, true)
             .set(options.physicalSky, true)
             .set(options.lightShafts, true)
             .set(options.clouds, true)
             .set(options.cloudQuality, CloudQuality.MEDIUM)
-            .set(options.shadows, true)
-            .set(options.shadowQuality, ShadowQuality.MEDIUM)
-            .set(options.temporal, true)
-            .set(options.voxelLightingQuality, VoxelLightingQuality.MEDIUM);
+            .set(options.temporal, true);
         for (ConfigPreset preset : List.of(vanilla, balanced, quality)) {
             preset.set(options.geometryBuffer, false)
-                .set(options.lighting, false)
                 .set(options.physicalSky, false)
                 .set(options.lightShafts, false)
                 .set(options.clouds, false)
-                .set(options.shadows, false)
                 .set(options.temporal, false);
         }
         vanilla.set(options.motionBlur, false)
@@ -46,12 +36,8 @@ final class HelionPresets {
         for (ConfigPreset preset : List.of(vanilla, balanced, quality, experimental)) {
             preset.set(options.edgeSmoothing, preset == quality)
                 .set(options.autoExposure, preset == experimental)
-                .set(options.dynamicLights, preset != vanilla)
-                .set(options.voxelLighting, preset == experimental ? VoxelLightingMode.SHADER : VoxelLightingMode.OFF)
-                .set(options.voxelBounce, true)
                 .set(options.rayTracing, preset == experimental)
                 .set(options.waterReflections, true)
-                .set(options.rayTracedShadows, true)
                 .set(options.screenReflections, preset == experimental)
                 .set(options.rainWetness, preset != vanilla)
                 .set(options.realisticWater, preset != vanilla);
@@ -59,12 +45,9 @@ final class HelionPresets {
         return List.of(vanilla, balanced, quality, experimental);
     }
 
-    private static ConfigPreset base(HelionOptions options, String id, Icon icon, boolean ambientOcclusion, boolean bloom, boolean sharpening,
-        AmbientOcclusionQuality occlusionQuality) {
+    private static ConfigPreset base(HelionOptions options, String id, Icon icon, boolean bloom, boolean sharpening) {
         return new ConfigPreset(Component.translatable(KEY + id), Component.translatable(KEY + id + ".description"), icon)
             .set(options.enabled, true)
-            .set(options.ambientOcclusion, ambientOcclusion)
-            .set(options.ambientOcclusionQuality, occlusionQuality)
             .set(options.bloom, bloom)
             .set(options.sharpening, sharpening);
     }

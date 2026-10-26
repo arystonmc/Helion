@@ -16,7 +16,7 @@ abstract class VulkanFeatureSetsMixin {
     @Inject(method = "optionalFeatureSets", at = @At("RETURN"))
     private static void helion$requestRayQuery(CallbackInfoReturnable<Set<FeatureSet>> callback) {
         RayTracingStartup.ensureRequested();
-        if (RayTracing.deviceRequested()) {
+        if (RayTracing.requested()) {
             callback.getReturnValue().add(RtxFeature.FEATURE_SET);
             callback.getReturnValue().add(RtxFeature.ENTITY_TEXTURES);
         }

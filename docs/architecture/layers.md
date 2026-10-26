@@ -12,7 +12,7 @@ integration/vanilla          Minecraft adapter: builds the frame, owns every van
    │  LevelRenderHook → VanillaFrameDriver → Vanilla*Source, VanillaFrameTargets, StageEvents
    ▼
 render/                      Helion render core: stages, graph, resources, camera
-   │  FrameStages: clear → sky → opaque geometry → deferred lighting → ambient occlusion → solid features → transparent geometry → temporal anti-aliasing → post (bloom, sharpen) → present or image composite → geometry buffer view
+   │  FrameStages: clear → sky → opaque geometry → entity geometry → ray tracing scene → solid features → clouds → water → transparent geometry → temporal anti-aliasing → post (bloom, sharpen) → present or image composite → geometry buffer view
    ▼
 renderpearl api + blaze3d    Mojang GPU abstraction (Vulkan backend)
 ```
