@@ -35,7 +35,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### TerrainTextures
 - Path: `src/main/java/com/aryston/helion/render/geometry/TerrainTextures.java`
-- Role: The block atlas, the lightmap and the atlas bounds of the still and flowing water sprites, for the water surface and the traced reflections.
+- Role: The block atlas, the lightmap and the atlas bounds of the still, flowing and overlay water sprites, for the water surface and the traced reflections.
 
 #### GeometryBuffer
 - Path: `src/main/java/com/aryston/helion/render/geometry/GeometryBuffer.java`

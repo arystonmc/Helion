@@ -78,12 +78,6 @@ const float HELION_CAUSTIC_STRENGTH = 0.85;
 const float HELION_CAUSTIC_FADE = 0.25;
 const float HELION_CAUSTIC_NEAR = 24.0;
 const float HELION_CAUSTIC_FAR = 48.0;
-const float HELION_FOAM_SHARPNESS = 8.0;
-const vec2 HELION_FOAM_WARP_FREQUENCY = vec2(1.7, 1.3);
-const vec2 HELION_FOAM_WARP_SPEED = vec2(0.9, -0.7);
-const float HELION_FOAM_WARP = 0.55;
-const vec2 HELION_FOAM_LINES = vec2(2.2, 2.0);
-const vec2 HELION_FOAM_BEND = vec2(1.4, 1.1);
 const float HELION_BRIGHT_FROM = 0.6;
 const float HELION_SKY_BEHIND_MARGIN = 0.01;
 const float HELION_CLOUD_EDGE = 0.08;
@@ -100,12 +94,16 @@ const float HELION_DAYLIGHT_FROM = 0.0;
 const float HELION_DAYLIGHT_TO = 0.25;
 const float HELION_FOG_DAYLIGHT = 0.35;
 const float HELION_FLASH_SKY = 4.0;
-const float HELION_FOAM_FROM = 0.25;
-const float HELION_FOAM_TO = 0.6;
-const float HELION_FALL_FOAM_SCALE = 3.0;
-const float HELION_FALL_FOAM_STRETCH = 0.35;
-const float HELION_FALL_FOAM_SPEED = 4.0;
-const float HELION_FALL_FOAM = 0.85;
+const float HELION_FOAM_FROM = 0.55;
+const float HELION_FOAM_TO = 0.8;
+const float HELION_FALL_FOAM_ACROSS = 4.0;
+const float HELION_FALL_FOAM_ALONG = 0.6;
+const float HELION_FALL_FOAM_SPEED = 2.2;
+const float HELION_FALL_FOAM_DETAIL = 2.3;
+const float HELION_FALL_FOAM_DETAIL_SHARE = 0.35;
+const vec2 HELION_FALL_FOAM_DETAIL_SHIFT = vec2(17.0, 31.0);
+const float HELION_FALL_FOAM = 0.55;
+const float HELION_MIN_DIRECTION_FOAM = 1.0e-4;
 const float HELION_UNDER_GLOW = 0.35;
 const float HELION_UNDER_SUN = 0.6;
 const float HELION_DARK_WATER_BODY = 0.45;
@@ -115,6 +113,7 @@ const float HELION_GLASS_WAVE = 0.0025;
 const float HELION_GLASS_FRAME = 0.9;
 const float HELION_GLASS_TRANSMIT_GAIN = 1.2;
 const float HELION_GLASS_STAIN_STRENGTH = 1.6;
+const float HELION_GLASS_CLOUD_SATURATION = 1.35;
 const float HELION_SHORE_FOAM_STRENGTH = 0.9;
 const float HELION_SHORE_FOAM_LIGHT = 0.9;
 const float HELION_SHORE_NEAR = 44.0;
@@ -219,11 +218,11 @@ vec3 helionCelestialGlint(vec3 view, vec3 normal, float roughness, float skyLigh
     #endif
 }
 
-float helionFoamLayer(vec2 position, float seconds) {
-    vec2 warped = position + sin(position.yx * HELION_FOAM_WARP_FREQUENCY + seconds * HELION_FOAM_WARP_SPEED) * HELION_FOAM_WARP;
-    vec2 waves = sin(warped * HELION_FOAM_LINES + sin(warped.yx * HELION_FOAM_BEND));
-    float lines = abs(waves.x * waves.y);
-    return pow(1.0 - lines, HELION_FOAM_SHARPNESS);
+float helionFallingFoam(vec3 world, vec3 normal, float seconds) {
+    vec2 across = normalize(vec2(-normal.z, normal.x) + vec2(HELION_MIN_DIRECTION_FOAM, 0.0));
+    vec2 position = vec2(dot(world.xz, across) * HELION_FALL_FOAM_ACROSS, world.y * HELION_FALL_FOAM_ALONG + seconds * HELION_FALL_FOAM_SPEED);
+    float streaks = mix(helionNoiseValue(position), helionNoiseValue(position * HELION_FALL_FOAM_DETAIL + HELION_FALL_FOAM_DETAIL_SHIFT), HELION_FALL_FOAM_DETAIL_SHARE);
+    return smoothstep(HELION_FOAM_FROM, HELION_FOAM_TO, streaks);
 }
 
 vec2 helionRefractedScreen(vec2 screen, vec3 normal, float thickness, float distanceToWater) {
@@ -322,6 +321,20 @@ vec3 helionGlassReflection(ivec2 pixel, vec4 glassSurface, vec3 view, vec3 norma
     return mix(rayHit.a > HELION_GEOMETRY_PRESENT_THRESHOLD ? rayHit.rgb : sky, screenHit.rgb, screenHit.a);
 }
 
+vec3 helionCloudsBehindGlass(vec3 behind, vec2 screen) {
+    if (WaterCameraPosition.w < HELION_PRESENT) {
+        return behind;
+    }
+    vec4 clouds = textureLod(ReflectedCloudSampler, screen, 0.0);
+    float cover = 1.0 - clamp(clouds.a, 0.0, 1.0);
+    if (cover <= HELION_MIN_CLOUD_COVER) {
+        return behind;
+    }
+    vec3 radiance = clouds.rgb / cover;
+    radiance = max(mix(vec3(helionLuminance(radiance)), radiance, HELION_GLASS_CLOUD_SATURATION), 0.0);
+    return mix(behind, helionLinearToSrgb(helionNeutral(radiance)), cover);
+}
+
 vec3 helionRealisticGlass(ivec2 pixel, vec2 screen, vec4 glassSurface, vec3 position, vec3 base, vec3 behindPosition, bool alone) {
     vec4 glass = texelFetch(GlassTintSampler, pixel, 0);
     vec3 world = position + WaterCameraPosition.xyz;
@@ -330,7 +343,11 @@ vec3 helionRealisticGlass(ivec2 pixel, vec2 screen, vec4 glassSurface, vec3 posi
             helionNoiseValue(world.xz * HELION_GLASS_WAVE_SCALE + world.y * HELION_GLASS_WAVE_HEIGHT),
             helionNoiseValue(world.zy * HELION_GLASS_WAVE_SCALE - world.x * HELION_GLASS_WAVE_HEIGHT)
         ) * HELION_GLASS_WAVE * (1.0 - glass.a);
-        base = textureLod(RefractionSampler, clamp(screen + wave, vec2(0.0), vec2(1.0)), 0.0).rgb;
+        vec2 bent = clamp(screen + wave, vec2(0.0), vec2(1.0));
+        base = textureLod(RefractionSampler, bent, 0.0).rgb;
+        if (length(behindPosition - position) >= HELION_WATER_MAX_THICKNESS - HELION_SKY_BEHIND_MARGIN) {
+            base = helionCloudsBehindGlass(base, bent);
+        }
     }
     if (glass.a < HELION_GLASS_FRAME && length(behindPosition - position) < HELION_WATER_MAX_THICKNESS - HELION_SKY_BEHIND_MARGIN) {
         base = helionGlassFog(base, behindPosition);
@@ -378,8 +395,7 @@ vec3 helionRealisticWater(ivec2 pixel, vec2 screen, vec4 surface, vec3 normal, v
     vec3 world = position + WaterCameraPosition.xyz;
     float foam = 0.0;
     if (falling) {
-        vec2 fallingPosition = vec2((world.x + world.z) * HELION_FALL_FOAM_SCALE, (world.y + WaterSeconds * HELION_FALL_FOAM_SPEED) * HELION_FALL_FOAM_STRETCH);
-        foam = smoothstep(HELION_FOAM_FROM, HELION_FOAM_TO, helionFoamLayer(fallingPosition, WaterSeconds)) * HELION_FALL_FOAM;
+        foam = helionFallingFoam(world, normal, WaterSeconds) * HELION_FALL_FOAM;
     }
     surfaceColor = mix(surfaceColor, helionSrgbToLinear(helionWaterAmbient()) * light, foam);
     if (WaterEnvironment.z > HELION_PRESENT && !falling) {

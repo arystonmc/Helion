@@ -113,7 +113,7 @@ The foundation for Helion's own lighting, sky and shadows.
 Torches, lanterns and lava finally shine brighter than the vanilla light limit.
 
 - Helion lights terrain itself, with block light and sky light computed separately and nothing cut off at full brightness
-- In daylight the world looks like vanilla; at night and in caves lights are much stronger close by and fade faster with distance, so light falls in clear pools and places without a light stay dark; moonlit nights and caves are darker than vanilla
+- In daylight the world looks like vanilla; at night and in caves lights are a little stronger close by and fade a little faster, so light falls in natural pools; moonlit nights and caves are somewhat darker than vanilla, and only really bright lights glow
 - Settings: on or off, block light intensity, sky light intensity, and a view that shows the light alone; needs the geometry buffer, off by default while it is experimental
 - Since: 1.0
 
@@ -187,7 +187,7 @@ Torches, lanterns and every other glowing block light the world in their own col
 
 - Soul lanterns glow cyan, redstone torches red, amethyst purple, sea lanterns and end rods cool white, torches, lava and glowstone warm
 - Light travels as rays: every light casts its own shadow, so a pillar between two torches throws two shadows, mobs throw shadows from each lamp, and a window frame throws a pattern of light rays into the room; light no longer passes through solid blocks
-- Round, soft light pools instead of diamond shapes, and colored lights blend smoothly where they overlap, white light included; many lights together glow brighter without blinding
+- Round, soft light pools instead of diamond shapes, and colored lights blend smoothly where they overlap, white light included; light colors are slightly softened toward white like the eye sees them, so torch and lava light stays warm without washing everything orange
 - Each light reaches as far as in vanilla; close by it is brighter and it fades faster, like the HDR lighting of plain block light
 - Bounced light: torch and lava light bounces off walls, floors and ceilings in their color (grass and leaves in the color of their biome), so it reaches around corners about as far as vanilla light, fills shaded sides and ceilings softly, and never shines through walls (Bounced Light setting, on with voxel lighting; turning it off falls back to a dim 30 % of the vanilla light around corners)
 - Light shining through stained glass takes its color, so a red window throws red light into the room
@@ -219,7 +219,7 @@ Water looks like water instead of a flat blue texture.
 - Clear water: the bottom shows through, bent by the waves, and fades into the water color with depth; lakes and shallows are clear turquoise, the deep ocean dark blue
 - Bright sun and moon glints that move with the waves and turn gold at sunset; at night only the moonlit spot shines
 - Realistic moving light patterns (caustics) on the bottom of shallow water by day, from sunlight bent by the waves
-- Rivers carry their waves downstream, and waterfalls are covered in white falling foam
+- Rivers carry their waves downstream, and waterfalls are thin, clear sheets with soft white streaks of foam running down
 - Raindrops leave rings on the water without making it choppy
 - Water reflects the clouds, also those outside the screen
 - Fine ripples gently wobble the reflections and break the sun into small sparkles; far away they merge into a soft glittering sun path, and calm and rippled patches drift over larger water
@@ -234,7 +234,7 @@ Water looks like water instead of a flat blue texture.
 - Open water rolls with a real swell that moves the surface itself, calm near the shore
 - Waves roll in from open water toward beaches, grow and steepen in the shallows and break with white foam that runs up the shore; ponds, pools and deep walls stay calm
 - The player in third person and see-through mobs such as slimes mirror in the water and show through it
-- Glass: the world behind glass and stained glass keeps the Helion look, with its water, haze, rain and light shafts; plain glass bends the view a little, stained glass colors it like real tinted glass (dark glass really darkens), and every pane reflects the world, more at a glancing angle
+- Glass: the world behind glass and stained glass keeps the Helion look, with its water, clouds, haze, rain and light shafts; plain glass bends the view a little, stained glass colors it like real tinted glass (dark glass really darkens), and every pane reflects the world, more at a glancing angle
 - Living water: players, mobs, boats and items leave wakes, things falling in make splash rings, and every raindrop leaves a ring that spreads and fades; waves bounce back from the shore
 - Reflects the sky (with the sun and the moon under the physical sky) and the world on screen: trees, shores, buildings and mobs mirror in the water even with screen space reflections off; with ray tracing also what is off screen
 - Works on every graphics card

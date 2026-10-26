@@ -50,7 +50,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 
 ### Changed
 - Experimental voxel lighting: every light casts its own shadow and throws round pools, and colored lights blend smoothly
-- HDR lighting: lights shine stronger close by and fade faster, while unlit places, moonlit nights and caves are darker
+- HDR lighting: a more realistic light balance: lights a little stronger close by, unlit places, moonlit nights and caves somewhat darker, and only really bright lights glow at night
 - Volumetric clouds are a little thinner in clear weather
 - Needs NeoForge 26.3.0.95 or newer (NeoForge for Minecraft 26.3 is no longer beta)
 - Physical sky: a small sun of realistic size with a bright halo that turns orange and red as it sets
@@ -61,6 +61,10 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Depth of field focuses on the sky when you look at it, so the sun, the moon and the stars stay sharp
 
 ### Fixed
+- Black stripes on distant ground under moonlight with ray traced shadows
+- Clouds show behind stained glass and glass
+- Waterfalls and water next to glass no longer look like framed blue glass or solid teal blocks
+- Light no longer washes surfaces flat orange near lava and many torches
 - Glowing blocks such as glowstone and sea lanterns no longer cast a sun shadow
 - The world behind stained glass no longer looks like vanilla: water, fog, rain and light shafts show through it
 - Distant water reflections no longer show frozen dotted edges in dry weather

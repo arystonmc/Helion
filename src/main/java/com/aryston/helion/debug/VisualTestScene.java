@@ -17,6 +17,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final float EAST = -90.0F;
     private static final float WEST = 90.0F;
     private static final float SOUTH = 0.0F;
+    private static final float NORTH_WEST = 135.0F;
     private static final float HORIZON_PITCH = 6.0F;
     private static final float HIGH_PITCH = 12.0F;
     private static final BlockPos HIGH_ABOVE_START = new BlockPos(0, 15, 0);
@@ -48,6 +49,8 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final float SHORE_PITCH = 25.0F;
     private static final float GLASS_PITCH = 3.0F;
     private static final float EMITTER_PITCH = 25.0F;
+    private static final float WATERFALL_PITCH = -5.0F;
+    private static final float WATERFALL_ABOVE_PITCH = 35.0F;
     private static final float SWAMP_UNDER_PITCH = 15.0F;
 
     static final List<VisualTestScene> ALL = List.of(
@@ -59,6 +62,8 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("horizon_west", NOON, WEST, HORIZON_PITCH, BlockPos.ZERO),
         new VisualTestScene("horizon_high_north", NOON, NORTH, HIGH_PITCH, HIGH_ABOVE_START),
         new VisualTestScene("horizon_high_east", NOON, EAST, HIGH_PITCH, HIGH_ABOVE_START),
+        new VisualTestScene("moonlit_terrain", MOONRISE, WEST, HIGH_PITCH, HIGH_ABOVE_START),
+        new VisualTestScene("night_terrain", MIDNIGHT, NORTH, HIGH_PITCH, HIGH_ABOVE_START),
         new VisualTestScene("horizon_high_south", NOON, SOUTH, HIGH_PITCH, HIGH_ABOVE_START),
         new VisualTestScene("horizon_high_west", NOON, WEST, HIGH_PITCH, HIGH_ABOVE_START),
         new VisualTestScene("day_showcase", NOON, NORTH, 25.0F, BlockPos.ZERO),
@@ -93,6 +98,8 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("glass_window", NOON, NORTH, GLASS_PITCH, VisualTestWorld.GLASS_CAMERA),
         new VisualTestScene("glass_window_rain", NOON, NORTH, GLASS_PITCH, VisualTestWorld.GLASS_CAMERA, RAIN),
         new VisualTestScene("emitter_shadow", SUNRISE, NORTH, EMITTER_PITCH, VisualTestWorld.EMITTER_CAMERA),
+        new VisualTestScene("waterfall_close", NOON, NORTH, WATERFALL_PITCH, VisualTestWorld.WATERFALL_CAMERA),
+        new VisualTestScene("waterfall_above", NOON, NORTH_WEST, WATERFALL_ABOVE_PITCH, VisualTestWorld.WATERFALL_ABOVE_CAMERA),
         new VisualTestScene("emitter_night", MIDNIGHT, NORTH, EMITTER_PITCH, VisualTestWorld.EMITTER_CAMERA),
         new VisualTestScene("water_swamp", NOON, NORTH, SWAMP_PITCH, VisualTestWorld.SWAMP_CAMERA),
         new VisualTestScene("water_swamp_under", NOON, NORTH, SWAMP_UNDER_PITCH, VisualTestWorld.SWAMP_UNDER_CAMERA),

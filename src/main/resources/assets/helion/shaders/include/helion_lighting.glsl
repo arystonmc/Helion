@@ -24,15 +24,15 @@ layout(std140) uniform HelionLighting {
 
 const float HELION_BLOCK_TINT_FADE = 0.9;
 const vec3 HELION_BOSS_DARKENING_TINT = vec3(0.7, 0.6, 0.6);
-const float HELION_BLOCK_LIGHT_GAIN = 1.4;
-const float HELION_BLOCK_LIGHT_FALLOFF = 1.5;
+const float HELION_BLOCK_LIGHT_GAIN = 1.15;
+const float HELION_BLOCK_LIGHT_FALLOFF = 1.25;
 const float HELION_DAYLIGHT_FROM = 0.15;
 const float HELION_DAYLIGHT_TO = 0.6;
-const float HELION_AMBIENT_SHARE = 0.5;
-const float HELION_NIGHT_SKY_SHARE = 0.45;
+const float HELION_AMBIENT_SHARE = 0.6;
+const float HELION_NIGHT_SKY_SHARE = 0.5;
 const float HELION_NIGHT_SKY_FROM = 0.3;
 const float HELION_NIGHT_SKY_TO = 0.9;
-const float HELION_BRIGHTNESS_LIFT_SHARE = 0.6;
+const float HELION_BRIGHTNESS_LIFT_SHARE = 0.7;
 
 float helionNightSkyShare() {
     return mix(HELION_NIGHT_SKY_SHARE, 1.0, smoothstep(HELION_NIGHT_SKY_FROM, HELION_NIGHT_SKY_TO, SkyFactor));

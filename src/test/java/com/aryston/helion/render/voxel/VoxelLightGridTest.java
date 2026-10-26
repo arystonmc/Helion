@@ -27,8 +27,8 @@ class VoxelLightGridTest {
     @Test
     void straightDistanceWithFalloffDecidesTheReach() {
         VoxelLightGrid grid = VoxelLightGrid.build(List.of(light(MIN + 20, MIN + 20, MIN + 20, TORCH_LEVEL)), MIN, MIN, MIN, 0, 0, 0);
-        assertEquals(1, grid.lightAt(VoxelLightGrid.cellIndex(3, 3, 3), 0));
-        assertEquals(VoxelLightGrid.NO_LIGHT, grid.lightAt(VoxelLightGrid.cellIndex(4, 2, 2), 0));
+        assertEquals(1, grid.lightAt(VoxelLightGrid.cellIndex(4, 3, 2), 0));
+        assertEquals(VoxelLightGrid.NO_LIGHT, grid.lightAt(VoxelLightGrid.cellIndex(5, 2, 2), 0));
     }
 
     @Test

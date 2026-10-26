@@ -65,6 +65,8 @@ final class VisualTestWorld {
     private static final double BLOCK_CENTER = 0.5;
     static final BlockPos POOL_CAMERA = new BlockPos(-4, 0, 1);
     static final BlockPos POOL_SIDE_CAMERA = new BlockPos(-6, 0, -5);
+    static final BlockPos WATERFALL_CAMERA = new BlockPos(-4, 0, -6);
+    static final BlockPos WATERFALL_ABOVE_CAMERA = new BlockPos(-1, 2, -8);
     static final BlockPos UNDERWATER_CAMERA = new BlockPos(-4, -3, -6);
     static final BlockPos CAVE_CAMERA = new BlockPos(24, -23, -2);
     private static final Volume CAVE_ROCK = new Volume(new BlockPos(12, -26, -18), new BlockPos(32, -12, 4));

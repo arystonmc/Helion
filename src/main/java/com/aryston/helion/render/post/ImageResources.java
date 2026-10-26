@@ -19,7 +19,7 @@ public final class ImageResources {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String LABEL = "Helion Image Settings";
     private static final float EXPOSURE_BASE = 2.0F;
-    private static final float DARK_THRESHOLD_SCALE = 0.5F;
+    private static final float DARK_THRESHOLD_SCALE = 1.5F;
     private static final float DAYLIGHT_THRESHOLD_SCALE = 8.0F;
     private static final float THRESHOLD_KNEE_FRACTION = 0.5F;
     private static final int DITHER_ON = 1;

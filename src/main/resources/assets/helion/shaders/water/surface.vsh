@@ -18,6 +18,7 @@ layout(std140) uniform HelionWaterSurface {
     vec4 WaterFlow;
     vec4 WaterRain;
     float WaveStrength;
+    vec4 WaterOverlay;
 };
 
 #ifdef MULTIDRAW_TERRAIN

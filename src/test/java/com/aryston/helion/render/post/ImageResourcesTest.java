@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 class ImageResourcesTest {
     private static final float TOLERANCE = 1.0e-6F;
     private static final float THRESHOLD = 1.0F;
-    private static final float DARK_SCALE = 0.5F;
+    private static final float DARK_SCALE = 1.5F;
     private static final float DAYLIGHT_SCALE = 8.0F;
     private static final float CAVE = 0.0F;
     private static final float DUSK = 0.5F;

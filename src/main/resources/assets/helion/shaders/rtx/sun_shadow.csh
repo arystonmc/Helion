@@ -28,6 +28,7 @@ layout(push_constant) uniform HelionRaySunShadow {
 
 const float HELION_RT_SKY_DEPTH = 0.0;
 const float HELION_RT_NORMAL_OFFSET = 0.02;
+const float HELION_RT_DISTANCE_OFFSET = 0.002;
 const float HELION_RT_RAY_START = 1.0e-3;
 const float HELION_RT_SECTION_SIZE = 16.0;
 const float HELION_RT_EDGE_FADE = 8.0;
@@ -129,7 +130,8 @@ void main() {
         return;
     }
     vec4 world = InverseViewProjection * vec4(screen * 2.0 - 1.0, depth, 1.0);
-    vec3 origin = world.xyz / world.w + CameraToAnchor.xyz + normal * HELION_RT_NORMAL_OFFSET;
+    vec3 surface = world.xyz / world.w;
+    vec3 origin = surface + CameraToAnchor.xyz + normal * (HELION_RT_NORMAL_OFFSET + length(surface) * HELION_RT_DISTANCE_OFFSET);
     float reach = CameraToAnchor.w;
     vec3 inside = min(origin + reach, vec3(reach + HELION_RT_SECTION_SIZE) - origin);
     float edge = min(inside.x, min(inside.y, inside.z));

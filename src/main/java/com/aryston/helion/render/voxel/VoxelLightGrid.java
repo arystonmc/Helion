@@ -12,7 +12,7 @@ public final class VoxelLightGrid {
     public static final int NO_LIGHT = 0;
 
     private static final float BLOCK_CENTER = 0.5F;
-    private static final float DISTANCE_FALLOFF = 1.25F;
+    private static final float DISTANCE_FALLOFF = 1.1F;
 
     private final List<VoxelLight> lights;
     private final short[] cells;

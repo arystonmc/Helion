@@ -31,6 +31,7 @@ public final class WaterResources {
         .putVec4()
         .putVec4()
         .putFloat()
+        .putVec4()
         .get();
     private static final int REFLECTION_SIZE = new Std140SizeCalculator()
         .putMat4f()
@@ -100,7 +101,8 @@ public final class WaterResources {
             .putVec4(textures.waterStill())
             .putVec4(textures.waterFlow())
             .putVec4(wetness.rain(), wetness.seconds(), dynamicWaves ? PRESENT : ABSENT, glassPass ? PRESENT : ABSENT)
-            .putFloat(WAVE_STRENGTH));
+            .putFloat(WAVE_STRENGTH)
+            .putVec4(textures.waterOverlay()));
     }
 
     WaterWaves waves() {

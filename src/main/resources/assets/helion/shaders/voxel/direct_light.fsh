@@ -134,7 +134,7 @@ HelionCandidate helionCandidate(ivec3 cell, vec3 surface, int candidate) {
         seed = helionPcg(uint(index) + HELION_FLICKER_DYNAMIC_SEED);
     }
     float level = source.w - distance(surface, source.xyz) * HELION_VOXEL_LIGHT_FALLOFF;
-    vec3 term = level > 0.0 ? color.rgb * helionLevelBrightness(level / HELION_LIGHT_LEVELS) * helionFlicker(color.a, seed) : vec3(0.0);
+    vec3 term = level > 0.0 ? helionBalancedLightColor(color.rgb) * helionLevelBrightness(level / HELION_LIGHT_LEVELS) * helionFlicker(color.a, seed) : vec3(0.0);
     return HelionCandidate(source.xyz, term);
 }
 

@@ -19,6 +19,7 @@ layout(std140) uniform HelionWaterSurface {
     vec4 WaterFlow;
     vec4 WaterRain;
     float WaveStrength;
+    vec4 WaterOverlay;
 };
 
 layout(location = 0) in vec2 texCoord0;
@@ -57,6 +58,7 @@ const float HELION_CALM_TO = 80.0;
 const float HELION_RIPPLE_DETAIL_FROM = 0.08;
 const float HELION_RIPPLE_DETAIL_TO = 0.25;
 const float HELION_MIN_DETERMINANT = 1.0e-12;
+const float HELION_FALLING_SHEET = 0.5;
 
 bool helionInside(vec2 uv, vec4 rect) {
     return all(greaterThanEqual(uv, rect.xy - HELION_SPRITE_EDGE)) && all(lessThanEqual(uv, rect.zw + HELION_SPRITE_EDGE));
@@ -131,7 +133,7 @@ void main() {
     if (dot(normal, cameraRelativePosition) > 0.0) {
         normal = -normal;
     }
-    bool waterTexture = helionInside(texCoord0, WaterStill) || helionInside(texCoord0, WaterFlow);
+    bool waterTexture = helionInside(texCoord0, WaterStill) || helionInside(texCoord0, WaterFlow) || helionInside(texCoord0, WaterOverlay);
     if (waterTexture == (WaterRain.w > HELION_GLASS_PASS_ON)) {
         discard;
     }
@@ -144,7 +146,7 @@ void main() {
     float seconds = GameTime * HELION_SECONDS_PER_DAY;
     vec2 flowing2d = flowing ? flow * seconds * HELION_FLOW_SPEED : vec2(0.0);
     bool falling = flowing && abs(normal.y) < HELION_FLAT_SURFACE;
-    float thickness = helionWaterThickness(sceneDepth);
+    float thickness = falling ? min(helionWaterThickness(sceneDepth), HELION_FALLING_SHEET) : helionWaterThickness(sceneDepth);
     float columnDepth = thickness * abs(normalize(cameraRelativePosition).y);
     float roughness = 0.0;
     if (normal.y > HELION_FLAT_SURFACE) {

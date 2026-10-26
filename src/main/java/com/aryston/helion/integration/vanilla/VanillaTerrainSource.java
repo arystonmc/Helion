@@ -33,6 +33,7 @@ final class VanillaTerrainSource implements TerrainSource {
     private static final int NO_ANISOTROPY = 1;
     private static final Identifier WATER_STILL = Identifier.withDefaultNamespace("block/water_still");
     private static final Identifier WATER_FLOW = Identifier.withDefaultNamespace("block/water_flow");
+    private static final Identifier WATER_OVERLAY = Identifier.withDefaultNamespace("block/water_overlay");
 
     private final LevelRendererAccessor level;
     private final ChunkSectionsToRender sections;
@@ -111,7 +112,7 @@ final class VanillaTerrainSource implements TerrainSource {
     @Override
     public TerrainTextures textures() {
         TextureAtlas atlas = level.helion$atlasManager().getAtlasOrThrow(AtlasIds.BLOCKS);
-        return new TerrainTextures(atlas.getTextureView(), level.helion$gameRenderer().lightmap(), bounds(atlas, WATER_STILL), bounds(atlas, WATER_FLOW));
+        return new TerrainTextures(atlas.getTextureView(), level.helion$gameRenderer().lightmap(), bounds(atlas, WATER_STILL), bounds(atlas, WATER_FLOW), bounds(atlas, WATER_OVERLAY));
     }
 
     @Override

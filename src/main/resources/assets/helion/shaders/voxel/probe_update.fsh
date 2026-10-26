@@ -104,7 +104,7 @@ vec3 helionLightTerm(int light, vec3 hitPoint, vec3 faceNormal) {
     if (level <= 0.0 || dot(source.xyz - hitPoint, faceNormal) <= 0.0) {
         return vec3(0.0);
     }
-    return texelFetch(VoxelLightListSampler, ivec2(light, 1), 0).rgb * helionLevelBrightness(level / HELION_LIGHT_LEVELS);
+    return helionBalancedLightColor(texelFetch(VoxelLightListSampler, ivec2(light, 1), 0).rgb) * helionLevelBrightness(level / HELION_LIGHT_LEVELS);
 }
 
 vec3 helionLightTint(int light, vec3 hitPoint) {
