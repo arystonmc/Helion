@@ -3,6 +3,8 @@ package com.aryston.helion.render.rtx;
 import static com.aryston.helion.Helion.LOGGER;
 
 import com.aryston.helion.render.resource.GpuResources;
+import com.aryston.helion.render.resource.TrackedResource;
+import com.mojang.renderpearl.api.GpuFormat;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Objects;
@@ -16,6 +18,14 @@ import org.lwjgl.vulkan.VK10;
 public final class RayTracingResources {
     static final int SUN_SHADOW_CONSTANT_BYTES = 112;
     static final int REFLECTION_CONSTANT_BYTES = 112;
+    static final int BLOCK_LIGHT_CONSTANT_BYTES = 128;
+    static final int BLOCK_LIGHT_DYNAMIC_BYTES = 16 + 16 * 2 * 16;
+    private static final String BLOCK_LIGHT_SOURCE = "/assets/helion/shaders/rtx/block_light.csh";
+    private static final String BLOCK_LIGHT_NAME = "block_light.csh";
+    private static final String BLOCK_LIGHT_PIPELINE_LABEL = "Helion Ray Tracing Block Light Pipeline";
+    private static final String BLOCK_LIGHT_LABEL = "Helion Ray Tracing Block Light";
+    private static final String BLOCK_LIGHT_DYNAMIC_LABEL = "Helion Ray Tracing Dynamic Lights";
+    private static final int BLOCK_LIGHT_FRAMES = 4;
 
     private static final String SUN_SHADOW_SOURCE = "/assets/helion/shaders/rtx/sun_shadow.csh";
     private static final String SUN_SHADOW_NAME = "sun_shadow.csh";
@@ -35,6 +45,21 @@ public final class RayTracingResources {
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    };
+    private static final int[] BLOCK_LIGHT_DESCRIPTORS = {
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        KHRAccelerationStructure.VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     };
     private static final int[] REFLECTION_DESCRIPTORS = {
@@ -84,6 +109,12 @@ public final class RayTracingResources {
     private @Nullable RtxComputePipeline reflection;
     private @Nullable RtxImage reflectionImage;
     private @Nullable ByteBuffer reflectionConstants;
+    private @Nullable RtxComputePipeline blockLight;
+    private @Nullable RtxImage blockLightImage;
+    private @Nullable ByteBuffer blockLightConstants;
+    private RtxBuffer @Nullable [] blockLightDynamic;
+    private @Nullable TrackedResource blockLightDynamicTracked;
+    private int blockLightFrame;
     private boolean checked;
     private boolean reportedComplete;
     private long frame;
@@ -149,6 +180,54 @@ public final class RayTracingResources {
 
     RtxComputePipeline reflectionPipeline() {
         return Objects.requireNonNull(reflection);
+    }
+
+    boolean blockLightAvailable() {
+        return blockLight != null;
+    }
+
+    RtxComputePipeline blockLightPipeline() {
+        return Objects.requireNonNull(blockLight);
+    }
+
+    ByteBuffer blockLightConstants() {
+        if (blockLightConstants == null) {
+            blockLightConstants = MemoryUtil.memAlloc(BLOCK_LIGHT_CONSTANT_BYTES);
+        }
+        return blockLightConstants;
+    }
+
+    RtxImage blockLight(int width, int height) {
+        RtxImage current = blockLightImage;
+        if (current != null && current.fits(width, height)) {
+            return current;
+        }
+        if (current != null) {
+            current.close(resources);
+        }
+        RtxImage created = RtxImage.create(resources, BLOCK_LIGHT_LABEL, width, height, GpuFormat.RGBA16_FLOAT);
+        blockLightImage = created;
+        return created;
+    }
+
+    RtxBuffer nextBlockLightDynamic() {
+        RtxBuffer[] buffers = blockLightDynamic;
+        if (buffers == null) {
+            RtxDevice rtx = device();
+            RtxBuffer[] created = new RtxBuffer[BLOCK_LIGHT_FRAMES];
+            for (int slot = 0; slot < BLOCK_LIGHT_FRAMES; slot++) {
+                created[slot] = RtxBuffer.create(rtx, BLOCK_LIGHT_DYNAMIC_BYTES, VK10.VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, true);
+            }
+            blockLightDynamicTracked = resources.track(BLOCK_LIGHT_DYNAMIC_LABEL, (long) BLOCK_LIGHT_FRAMES * BLOCK_LIGHT_DYNAMIC_BYTES, () -> {
+                for (RtxBuffer buffer : created) {
+                    buffer.destroy();
+                }
+            });
+            blockLightDynamic = created;
+            buffers = created;
+        }
+        blockLightFrame = (blockLightFrame + 1) % BLOCK_LIGHT_FRAMES;
+        return buffers[blockLightFrame];
     }
 
     ByteBuffer reflectionConstants() {
@@ -227,6 +306,19 @@ public final class RayTracingResources {
         if (reflectionConstants != null) {
             MemoryUtil.memFree(reflectionConstants);
         }
+        if (blockLightImage != null) {
+            blockLightImage.close(resources);
+        }
+        if (blockLightConstants != null) {
+            MemoryUtil.memFree(blockLightConstants);
+        }
+        if (blockLightDynamicTracked != null) {
+            resources.release(blockLightDynamicTracked);
+        }
+        blockLightImage = null;
+        blockLightConstants = null;
+        blockLightDynamic = null;
+        blockLightDynamicTracked = null;
         scene = null;
         mask = null;
         constants = null;
@@ -263,6 +355,13 @@ public final class RayTracingResources {
             reflection = traced;
         } catch (IllegalStateException exception) {
             LOGGER.error("Helion ray traced reflections are off: {}", exception.getMessage());
+        }
+        try {
+            RtxComputePipeline lights = RtxComputePipeline.create(rtx, BLOCK_LIGHT_SOURCE, BLOCK_LIGHT_NAME, BLOCK_LIGHT_DESCRIPTORS, BLOCK_LIGHT_CONSTANT_BYTES);
+            resources.track(BLOCK_LIGHT_PIPELINE_LABEL, PIPELINE_BYTES, lights::destroy);
+            blockLight = lights;
+        } catch (IllegalStateException exception) {
+            LOGGER.error("Helion ray traced block light is off: {}", exception.getMessage());
         }
         LOGGER.info("Helion ray tracing is on: section scene within {} sections of the camera", RtxSectionInbox.RADIUS);
     }

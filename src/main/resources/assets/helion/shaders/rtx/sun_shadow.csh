@@ -29,6 +29,7 @@ layout(push_constant) uniform HelionRaySunShadow {
 const float HELION_RT_SKY_DEPTH = 0.0;
 const float HELION_RT_NORMAL_OFFSET = 0.02;
 const float HELION_RT_DISTANCE_OFFSET = 0.002;
+const float HELION_RT_PLANT_START = 0.75;
 const float HELION_RT_RAY_START = 1.0e-3;
 const float HELION_RT_SECTION_SIZE = 16.0;
 const float HELION_RT_EDGE_FADE = 8.0;
@@ -59,9 +60,9 @@ bool helionHitsEmitter(rayQueryEXT query) {
     return helionIsEmissiveCell(helionMaterialCell(textureLod(MaterialSampler, helionCommittedPoint(query).uv, 0.0).r));
 }
 
-bool helionTerrainBlocks(vec3 origin, vec3 direction, float reachable) {
+bool helionTerrainBlocks(vec3 origin, vec3 direction, float reachable, float rayStart) {
     rayQueryEXT query;
-    rayQueryInitializeEXT(query, Scene, gl_RayFlagsTerminateOnFirstHitEXT, HELION_RT_SECTION_INSTANCES, origin, HELION_RT_RAY_START, direction, reachable);
+    rayQueryInitializeEXT(query, Scene, gl_RayFlagsTerminateOnFirstHitEXT, HELION_RT_SECTION_INSTANCES, origin, rayStart, direction, reachable);
     helionTraceCutout(query);
     if (rayQueryGetIntersectionTypeEXT(query, true) == gl_RayQueryCommittedIntersectionNoneEXT) {
         return false;
@@ -69,7 +70,7 @@ bool helionTerrainBlocks(vec3 origin, vec3 direction, float reachable) {
     if (!helionHitsEmitter(query)) {
         return true;
     }
-    float start = HELION_RT_RAY_START;
+    float start = rayStart;
     for (int skip = 0; skip < HELION_RT_EMITTER_SKIPS; skip++) {
         rayQueryEXT nearest;
         rayQueryInitializeEXT(nearest, Scene, gl_RayFlagsNoneEXT, HELION_RT_SECTION_INSTANCES, origin, start, direction, reachable);
@@ -141,6 +142,7 @@ void main() {
     }
     vec3 tangent = normalize(cross(light, abs(light.y) < HELION_RT_UPRIGHT ? HELION_RT_UP : HELION_RT_EAST));
     vec3 bitangent = cross(light, tangent);
+    float rayStart = helionIsCrossPlane(normal) ? HELION_RT_PLANT_START : HELION_RT_RAY_START;
     float rotation = helionInterleavedNoise(pixel) * HELION_RT_TAU;
     float lit = 0.0;
     float decided = 0.0;
@@ -150,7 +152,7 @@ void main() {
         vec3 direction = normalize(light + (tangent * cos(angle) + bitangent * sin(angle)) * radius);
         vec2 exit = helionBoxExit(origin, direction, reach);
         float reachable = min(exit.x, LightDirection.w);
-        if (helionTerrainBlocks(origin, direction, reachable) || helionEntityBlocks(origin, direction, reachable)) {
+        if (helionTerrainBlocks(origin, direction, reachable, rayStart) || helionEntityBlocks(origin, direction, reachable)) {
             decided += 1.0;
         } else if (int(exit.y) == HELION_RT_VERTICAL_AXIS || exit.x >= LightDirection.w) {
             decided += 1.0;

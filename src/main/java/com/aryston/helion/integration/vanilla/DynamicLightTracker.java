@@ -19,6 +19,8 @@ public final class DynamicLightTracker {
     private static final double MAX_DISTANCE = 64.0;
     private static final double MAX_DISTANCE_SQUARED = MAX_DISTANCE * MAX_DISTANCE;
     private static final double HELD_LIGHT_HEIGHT = 0.6;
+    private static final double HAND_REACH = 0.25;
+    private static final double HAND_DROP = 0.25;
     private static final int MAX_LIGHT_LEVEL = 15;
     private static final int RED = 0;
     private static final int GREEN = 1;
@@ -121,12 +123,16 @@ public final class DynamicLightTracker {
 
     private static void collect(ClientLevel level, Vec3 camera, float partialTick) {
         SOURCES.clear();
+        Minecraft minecraft = Minecraft.getInstance();
+        Entity viewer = minecraft.options.getCameraType().isFirstPerson() ? minecraft.getCameraEntity() : null;
         for (Entity entity : level.entitiesForRendering()) {
             DynamicLightEmitters.Emission emission = DynamicLightEmitters.emission(entity);
             if (emission.level() == DynamicLightEmitters.NO_LIGHT) {
                 continue;
             }
-            Vec3 position = entity.getPosition(partialTick).add(0.0, entity.getBbHeight() * HELD_LIGHT_HEIGHT, 0.0);
+            Vec3 position = entity == viewer
+                ? entity.getEyePosition(partialTick).add(entity.getViewVector(partialTick).scale(HAND_REACH)).subtract(0.0, HAND_DROP, 0.0)
+                : entity.getPosition(partialTick).add(0.0, entity.getBbHeight() * HELD_LIGHT_HEIGHT, 0.0);
             double distanceSquared = position.distanceToSqr(camera);
             if (distanceSquared <= MAX_DISTANCE_SQUARED) {
                 SOURCES.add(new Source(position, emission.level(), VoxelLightColors.color(emission.state()), VoxelLightColors.flickers(emission.state()), distanceSquared));

@@ -22,6 +22,12 @@ class EyeAdaptationTest {
     }
 
     @Test
+    void ordinaryDaylightIsNeverDarkened() {
+        assertEquals(0.0F, EyeAdaptation.targetExposure(EyeAdaptation.DARKEN_FROM_LOG2_LUMINANCE - 0.5F), TOLERANCE);
+        assertEquals(-0.5F, EyeAdaptation.targetExposure(EyeAdaptation.DARKEN_FROM_LOG2_LUMINANCE + 0.5F), TOLERANCE);
+    }
+
+    @Test
     void theFirstMeasurementIsAppliedAtOnce() {
         EyeAdaptation adaptation = new EyeAdaptation();
         adaptation.update(EyeAdaptation.TARGET_LOG2_LUMINANCE - 0.5F, 0L);

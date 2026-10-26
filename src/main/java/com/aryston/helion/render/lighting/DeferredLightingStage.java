@@ -65,6 +65,7 @@ public final class DeferredLightingStage implements RenderStage {
     @Override
     public void addTo(FrameContext frame) {
         Optional<VoxelLightResults.Targets> voxel = voxelPrograms == null ? Optional.empty() : frame.voxels().targets();
+        Optional<GpuTextureView> tracedLight = frame.voxels().traced();
         DeferredLightingPrograms compiled = voxel.isPresent() ? Objects.requireNonNull(voxelPrograms) : Objects.requireNonNull(programs);
         GeometryBuffer.Targets geometry = frame.geometry().targets().orElseThrow();
         Optional<SkyLight> skyLight = frame.atmosphere().skyLight();
@@ -106,7 +107,7 @@ public final class DeferredLightingStage implements RenderStage {
                 renderPass.setUniform(DeferredLightingPipelines.GEOMETRY_LIGHT_SAMPLER, colorView(geometry.light()), nearest());
                 skyLight.ifPresent(light -> bindSkyLight(renderPass, geometry, light));
                 shadows.ifPresent(shadow -> renderPass.setUniform(DeferredLightingPipelines.SHADOW_MASK_SAMPLER, colorView(shadow.mask()), nearest()));
-                voxel.ifPresent(voxelTargets -> bindVoxelLight(renderPass, voxelTargets));
+                voxel.ifPresent(voxelTargets -> bindVoxelLight(renderPass, voxelTargets, tracedLight));
             });
             resources.finishFrame();
         }));
@@ -130,9 +131,9 @@ public final class DeferredLightingStage implements RenderStage {
         return compiled.orElse(null);
     }
 
-    private static void bindVoxelLight(RenderPass renderPass, VoxelLightResults.Targets targets) {
+    private static void bindVoxelLight(RenderPass renderPass, VoxelLightResults.Targets targets, Optional<GpuTextureView> tracedLight) {
         GpuSampler linear = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR);
-        renderPass.setUniform(DeferredLightingPipelines.VOXEL_LIGHT_SAMPLER, colorView(targets.light()), linear);
+        renderPass.setUniform(DeferredLightingPipelines.VOXEL_LIGHT_SAMPLER, tracedLight.orElseGet(() -> colorView(targets.light())), linear);
         renderPass.setUniform(DeferredLightingPipelines.VOXEL_CONFIDENCE_SAMPLER, colorView(targets.confidence()), linear);
         renderPass.setUniform(DeferredLightingPipelines.VOXEL_BOUNCE_SAMPLER, colorView(targets.bounce()), linear);
     }

@@ -50,6 +50,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final float GLASS_PITCH = 3.0F;
     private static final float EMITTER_PITCH = 25.0F;
     private static final float WATERFALL_PITCH = -5.0F;
+    private static final float TORCH_ROOM_PITCH = 10.0F;
     private static final float WATERFALL_ABOVE_PITCH = 35.0F;
     private static final float SWAMP_UNDER_PITCH = 15.0F;
 
@@ -101,6 +102,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("waterfall_close", NOON, NORTH, WATERFALL_PITCH, VisualTestWorld.WATERFALL_CAMERA),
         new VisualTestScene("waterfall_above", NOON, NORTH_WEST, WATERFALL_ABOVE_PITCH, VisualTestWorld.WATERFALL_ABOVE_CAMERA),
         new VisualTestScene("emitter_night", MIDNIGHT, NORTH, EMITTER_PITCH, VisualTestWorld.EMITTER_CAMERA),
+        new VisualTestScene("torch_room", MIDNIGHT, NORTH_WEST, TORCH_ROOM_PITCH, VisualTestWorld.TORCH_ROOM_CAMERA),
         new VisualTestScene("water_swamp", NOON, NORTH, SWAMP_PITCH, VisualTestWorld.SWAMP_CAMERA),
         new VisualTestScene("water_swamp_under", NOON, NORTH, SWAMP_UNDER_PITCH, VisualTestWorld.SWAMP_UNDER_CAMERA),
         new VisualTestScene("water_beach", NOON, NORTH, BEACH_PITCH, VisualTestWorld.BEACH_CAMERA),
@@ -108,6 +110,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("water_under", NOON, NORTH, UNDERWATER_PITCH, VisualTestWorld.UNDERWATER_CAMERA),
         new VisualTestScene("water_under_floor", NOON, NORTH, CLOSE_PITCH, VisualTestWorld.UNDERWATER_CAMERA),
         new VisualTestScene("cave_corner", MIDNIGHT, NORTH, CAVE_PITCH, VisualTestWorld.CAVE_CAMERA),
+        new VisualTestScene("cave_noon", NOON, NORTH, CAVE_PITCH, VisualTestWorld.CAVE_CAMERA),
         new VisualTestScene("wall_leak", MIDNIGHT, EAST, WALL_PITCH, VisualTestWorld.WALL_CAMERA),
         new VisualTestScene("tinted_glass", MIDNIGHT, EAST, TINT_PITCH, VisualTestWorld.TINT_CAMERA),
         new VisualTestScene("savanna_room", MIDNIGHT, EAST, SAVANNA_PITCH, VisualTestWorld.SAVANNA_CAMERA),

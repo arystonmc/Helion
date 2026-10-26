@@ -27,9 +27,13 @@ final class RtxImage {
     }
 
     static RtxImage create(GpuResources resources, String label, int width, int height) {
-        GpuTexture texture = RenderSystem.getDevice().createTexture(label, USAGE, FORMAT, width, height, SINGLE_LAYER, SINGLE_MIP);
+        return create(resources, label, width, height, FORMAT);
+    }
+
+    static RtxImage create(GpuResources resources, String label, int width, int height, GpuFormat format) {
+        GpuTexture texture = RenderSystem.getDevice().createTexture(label, USAGE, format, width, height, SINGLE_LAYER, SINGLE_MIP);
         GpuTextureView view = RenderSystem.getDevice().createTextureView(texture);
-        TrackedResource tracked = resources.track(label, (long) width * height * FORMAT.blockSize(), () -> {
+        TrackedResource tracked = resources.track(label, (long) width * height * format.blockSize(), () -> {
             view.close();
             texture.close();
         });

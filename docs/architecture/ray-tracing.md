@@ -63,6 +63,12 @@ Ray traced shadows (visual test `day_showcase` and `morning_showcase`, variant `
 
 Entities (same scenes, about 2,900 entity quads in view across the whole render distance): a full rebuild every frame cost 0.6 ms; with updates `rt_top_level` takes 0.16 ms instead of 0.09 ms without entities.
 
+## Ray Traced Block Light (2026-10-27)
+
+Owner feedback: torch shadows broke on walls and held lights cast strange shadows. `rt_block_light` (see the code map) replaces the visibility of the voxel grid walk with ray queries against the real section meshes and entities, keeping the voxel light list as the light source registry and the voxel walk only for the tint of stained glass. It costs 0.07 to 0.9 ms at Medium in the visual test, on top of `voxel_light`, which still runs for the confidence target. Held lights of the first person player now sit at the hand (eye plus 0.25 blocks forward, 0.25 down) instead of at hip height.
+
+Decision of the owner (2026-10-27): Helion moves to RTX path traced lighting directly instead of improving the voxel volume; cards without ray queries do not get Helion's lighting. This supersedes the 2026-10-22 decision in [voxel-lighting-rtx-spike.md](voxel-lighting-rtx-spike.md).
+
 ## Next
 
 1. Water: reflections seen from under water; ray traced puddles (puddles reflect only the screen and the sky). Done 2026-10-24: refraction of the bottom (realistic water, every card), traced reflections on glass and ice, a sun or moon shadow ray at every reflection hit.

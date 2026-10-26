@@ -154,6 +154,14 @@ final class VisualTestWorld {
         new Placement(-16, 0, 9, "jack_o_lantern[facing=south]"),
         new Placement(-12, 0, 9, "lantern")
     );
+    static final BlockPos TORCH_ROOM_CAMERA = new BlockPos(-27, 1, 27);
+    private static final Volume TORCH_ROOM = new Volume(new BlockPos(-34, -1, 20), new BlockPos(-26, 4, 28));
+    private static final List<Placement> TORCH_ROOM_LIGHTS = List.of(
+        new Placement(-33, 2, 23, "wall_torch[facing=east]"),
+        new Placement(-30, 2, 21, "wall_torch[facing=south]")
+    );
+    private static final BlockPos TORCH_ROOM_ITEM = new BlockPos(-29, 0, 25);
+    private static final BlockPos TORCH_ROOM_PILLAR = new BlockPos(-30, 0, 24);
     private static final Volume LAKE_BIOME = new Volume(new BlockPos(-41, -4, -31), new BlockPos(-9, 12, 2));
     static final BlockPos OCEAN_CAMERA = new BlockPos(-44, 0, -62);
     static final BlockPos OCEAN_UNDER_CAMERA = new BlockPos(-24, -9, -62);
@@ -266,6 +274,17 @@ final class VisualTestWorld {
         GLASS_WINDOW.forEach(pane -> run(server, fill(origin.offset(pane.volume().from()), origin.offset(pane.volume().to()), pane.block())));
         List.of(EMITTER_AIR, EMITTER_FLOOR).forEach(area -> run(server, fill(origin.offset(area.volume().from()), origin.offset(area.volume().to()), area.block())));
         EMITTER_ROW.forEach(placement -> run(server, placement.command(origin)));
+        buildTorchRoom(server, origin);
+    }
+
+    private static void buildTorchRoom(IntegratedServer server, BlockPos origin) {
+        run(server, killEntities(origin.offset(TORCH_ROOM.from()), origin.offset(TORCH_ROOM.to())));
+        run(server, fill(origin.offset(TORCH_ROOM.from()), origin.offset(TORCH_ROOM.to()), CASTER_BLOCK + " hollow"));
+        TORCH_ROOM_LIGHTS.forEach(placement -> run(server, placement.command(origin)));
+        run(server, "setblock " + coordinates(origin.offset(TORCH_ROOM_PILLAR)) + " " + CASTER_BLOCK);
+        BlockPos item = origin.offset(TORCH_ROOM_ITEM);
+        run(server, "summon item " + (item.getX() + BLOCK_CENTER) + " " + item.getY() + " " + (item.getZ() + BLOCK_CENTER)
+            + " {Item:{id:\"minecraft:torch\",count:1},NoGravity:1b,PickupDelay:32767,Age:-32768}");
     }
 
     private static void buildWaterAreas(IntegratedServer server, BlockPos origin) {

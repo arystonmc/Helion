@@ -47,7 +47,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### EyeAdaptation
 - Path: `src/main/java/com/aryston/helion/render/post/EyeAdaptation.java`
-- Role: Adapted exposure in stops: the target is the difference between the calibrated log2 luminance of a noon scene (-4.8) and the metered one, limited to 0 to +0.5 stops, approached exponentially (1 per second brightening, 3 per second darkening, steps longer than 0.25 s cut). The first measurement applies at once.
+- Role: Adapted exposure in stops: the target is the difference between the calibrated log2 luminance of a noon scene (-4.8) and the metered one, limited to 0 to +0.5 stops (and down to -1.5 stops for scenes metered brighter than -3), approached exponentially (1 per second brightening, 3 per second darkening, steps longer than 0.25 s cut). The first measurement applies at once.
 
 #### ColorGrade
 - Path: `src/main/java/com/aryston/helion/render/post/ColorGrade.java`

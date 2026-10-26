@@ -7,6 +7,8 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Glass is smooth with an even tint and carries rain drops that bead up and run down
+- Experimental ray tracing: block light shadows traced against the real block shapes
 - Experimental voxel lighting: torches, lanterns, campfires and other fire lights flicker gently
 - Realistic glass: plain glass slightly bends the view behind it, stained glass tints it like real colored glass, and glass reflects the world
 - Realistic water: waves roll in from open water and break on beaches with white foam that runs up the shore
@@ -61,6 +63,9 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Depth of field focuses on the sky when you look at it, so the sun, the moon and the stars stay sharp
 
 ### Fixed
+- Black stripes on grass under ray traced sun shadows
+- Held torches shine from the hand instead of the hip
+- Rooms full of lights no longer blind you: the exposure adapts down in very bright scenes
 - Black stripes on distant ground under moonlight with ray traced shadows
 - Clouds show behind stained glass and glass
 - Waterfalls and water next to glass no longer look like framed blue glass or solid teal blocks

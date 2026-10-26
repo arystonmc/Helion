@@ -136,6 +136,10 @@ public final class VoxelLightingResources {
         dynamicScene = scene;
     }
 
+    public VoxelDynamicScene dynamicScene() {
+        return dynamicScene;
+    }
+
     GpuBuffer writeDynamicUniforms(VoxelVolumeView view) {
         if (dynamicUniforms == null) {
             dynamicUniforms = new UniformRing(DYNAMIC_LABEL, DYNAMIC_UNIFORM_SIZE, resources);

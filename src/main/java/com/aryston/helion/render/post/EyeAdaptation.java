@@ -2,8 +2,10 @@ package com.aryston.helion.render.post;
 
 public final class EyeAdaptation {
     static final float TARGET_LOG2_LUMINANCE = -4.8F;
-    static final float MIN_EXPOSURE = 0.0F;
+    static final float DARKEN_FROM_LOG2_LUMINANCE = -3.0F;
+    static final float MIN_EXPOSURE = -1.5F;
     static final float MAX_EXPOSURE = 0.5F;
+    private static final float NO_DARKENING = 0.0F;
     static final float BRIGHTEN_RATE = 1.0F;
     static final float DARKEN_RATE = 3.0F;
     private static final float NANOS_PER_SECOND = 1.0e9F;
@@ -43,6 +45,9 @@ public final class EyeAdaptation {
     }
 
     static float targetExposure(float averageLog2Luminance) {
-        return Math.clamp(TARGET_LOG2_LUMINANCE - averageLog2Luminance, MIN_EXPOSURE, MAX_EXPOSURE);
+        if (averageLog2Luminance > DARKEN_FROM_LOG2_LUMINANCE) {
+            return Math.max(DARKEN_FROM_LOG2_LUMINANCE - averageLog2Luminance, MIN_EXPOSURE);
+        }
+        return Math.clamp(TARGET_LOG2_LUMINANCE - averageLog2Luminance, NO_DARKENING, MAX_EXPOSURE);
     }
 }

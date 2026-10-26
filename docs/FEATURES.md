@@ -186,6 +186,7 @@ Carry a torch into a cave and the cave lights up around you.
 Torches, lanterns and every other glowing block light the world in their own color, and walls, pillars and roofs cast real shadows from them.
 
 - Soul lanterns glow cyan, redstone torches red, amethyst purple, sea lanterns and end rods cool white, torches, lava and glowstone warm
+- With ray traced shadows on, block light shadows are traced against the real block shapes, so slabs, fences, leaves and mobs cast exact shadows from torches; torches held in first person shine from the hand
 - Light travels as rays: every light casts its own shadow, so a pillar between two torches throws two shadows, mobs throw shadows from each lamp, and a window frame throws a pattern of light rays into the room; light no longer passes through solid blocks
 - Round, soft light pools instead of diamond shapes, and colored lights blend smoothly where they overlap, white light included; light colors are slightly softened toward white like the eye sees them, so torch and lava light stays warm without washing everything orange
 - Each light reaches as far as in vanilla; close by it is brighter and it fades faster, like the HDR lighting of plain block light
@@ -234,7 +235,7 @@ Water looks like water instead of a flat blue texture.
 - Open water rolls with a real swell that moves the surface itself, calm near the shore
 - Waves roll in from open water toward beaches, grow and steepen in the shallows and break with white foam that runs up the shore; ponds, pools and deep walls stay calm
 - The player in third person and see-through mobs such as slimes mirror in the water and show through it
-- Glass: the world behind glass and stained glass keeps the Helion look, with its water, clouds, haze, rain and light shafts; plain glass bends the view a little, stained glass colors it like real tinted glass (dark glass really darkens), and every pane reflects the world, more at a glancing angle
+- Glass: the world behind glass and stained glass keeps the Helion look, with its water, clouds, haze, rain and light shafts; glass looks smooth with an even tint instead of the pixel streaks of its texture, still shows a soft reflection, and in rain carries drops that bead up and run down the pane; plain glass bends the view a little, stained glass colors it like real tinted glass (dark glass really darkens), and every pane reflects the world, more at a glancing angle
 - Living water: players, mobs, boats and items leave wakes, things falling in make splash rings, and every raindrop leaves a ring that spreads and fades; waves bounce back from the shore
 - Reflects the sky (with the sun and the moon under the physical sky) and the world on screen: trees, shores, buildings and mobs mirror in the water even with screen space reflections off; with ray tracing also what is off screen
 - Works on every graphics card
