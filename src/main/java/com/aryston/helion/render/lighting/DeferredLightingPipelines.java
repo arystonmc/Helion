@@ -21,6 +21,7 @@ public final class DeferredLightingPipelines {
     public static final String VOXEL_LIGHT_SAMPLER = "VoxelLightSampler";
     public static final String VOXEL_CONFIDENCE_SAMPLER = "VoxelConfidenceSampler";
     public static final String VOXEL_BOUNCE_SAMPLER = "VoxelBounceSampler";
+    public static final String PATH_TRACED_SAMPLER = "PathTracedSampler";
     public static final GpuFormat SCENE_COLOR_FORMAT = GpuFormat.RGBA8_UNORM;
     public static final GpuFormat INDIRECT_SHARE_FORMAT = GpuFormat.R8_UNORM;
     private static final int INDIRECT_SHARE_TARGET = 1;
@@ -30,15 +31,18 @@ public final class DeferredLightingPipelines {
     private static final String SHADOWS_DEFINE = "HELION_SHADOWS";
     private static final String VOXEL_LIGHT_DEFINE = "HELION_VOXEL_LIGHT";
     private static final String VOXEL_SUFFIX = "_voxel";
+    private static final String PATH_TRACED_DEFINE = "HELION_PATH_TRACED";
 
     private static final List<RenderPipeline> STANDARD = variants(false);
     private static final List<RenderPipeline> VOXEL = variants(true);
+    static final RenderPipeline PATH_TRACED_SHADING = pipeline("lighting/deferred_shading_path_traced", Variant.PATH_TRACED, false, true);
+    static final RenderPipeline PATH_TRACED_LIGHT_ONLY = pipeline("lighting/light_only_view_path_traced", Variant.PATH_TRACED, true, true);
 
     private DeferredLightingPipelines() {
     }
 
     public static List<RenderPipeline> all() {
-        return Stream.concat(STANDARD.stream(), VOXEL.stream()).toList();
+        return Stream.concat(Stream.concat(STANDARD.stream(), VOXEL.stream()), Stream.of(PATH_TRACED_SHADING, PATH_TRACED_LIGHT_ONLY)).toList();
     }
 
     static List<RenderPipeline> standard() {
@@ -67,7 +71,10 @@ public final class DeferredLightingPipelines {
         if (variant != Variant.PLAIN) {
             builder.withShaderDefine(PHYSICAL_SKY_LIGHT_DEFINE);
         }
-        if (variant == Variant.SHADOWED) {
+        if (variant == Variant.PATH_TRACED) {
+            builder.withShaderDefine(PATH_TRACED_DEFINE);
+        }
+        if (variant == Variant.SHADOWED || variant == Variant.PATH_TRACED) {
             builder.withShaderDefine(SHADOWS_DEFINE)
                 .withColorTargetState(INDIRECT_SHARE_TARGET, new ColorTargetState(Optional.empty(), INDIRECT_SHARE_FORMAT, ColorTargetState.WRITE_ALL));
         }
@@ -90,8 +97,11 @@ public final class DeferredLightingPipelines {
             builder.withUniform(GEOMETRY_NORMAL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .withUniform(SKY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER);
         }
-        if (variant == Variant.SHADOWED) {
+        if (variant == Variant.SHADOWED || variant == Variant.PATH_TRACED) {
             builder.withUniform(SHADOW_MASK_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER);
+        }
+        if (variant == Variant.PATH_TRACED) {
+            builder.withUniform(PATH_TRACED_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER);
         }
         if (voxel) {
             builder.withUniform(VOXEL_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
@@ -104,6 +114,7 @@ public final class DeferredLightingPipelines {
     private enum Variant {
         PLAIN,
         PHYSICAL_SKY,
-        SHADOWED
+        SHADOWED,
+        PATH_TRACED
     }
 }

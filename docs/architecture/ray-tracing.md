@@ -67,14 +67,14 @@ Entities (same scenes, about 2,900 entity quads in view across the whole render 
 
 Owner feedback: torch shadows broke on walls and held lights cast strange shadows. `rt_block_light` (see the code map) replaces the visibility of the voxel grid walk with ray queries against the real section meshes and entities, keeping the voxel light list as the light source registry and the voxel walk only for the tint of stained glass. It costs 0.07 to 0.9 ms at Medium in the visual test, on top of `voxel_light`, which still runs for the confidence target. Held lights of the first person player now sit at the hand (eye plus 0.25 blocks forward, 0.25 down) instead of at hip height.
 
-Decision of the owner (2026-10-27): Helion moves to RTX path traced lighting directly instead of improving the voxel volume; cards without ray queries do not get Helion's lighting. This supersedes the 2026-10-22 decision in [voxel-lighting-rtx-spike.md](voxel-lighting-rtx-spike.md).
+Decision of the owner (2026-10-27): Helion moves to RTX path traced lighting directly instead of improving the voxel volume; cards without ray queries do not get Helion's lighting. This supersedes the 2026-10-22 decision in [voxel-lighting-rtx-spike.md](voxel-lighting-rtx-spike.md). The first step is in [path-tracing.md](path-tracing.md).
 
 ## Next
 
 1. Water: reflections seen from under water; ray traced puddles (puddles reflect only the screen and the sky). Done 2026-10-24: refraction of the bottom (realistic water, every card), traced reflections on glass and ice, a sun or moon shadow ray at every reflection hit.
 2. Entities in reflections: armor glint, emissive layers and translucent entities.
 3. Compaction of the bottom levels and a radius chosen by memory. Weighed on 2026-10-24 and left for later: the whole scene is 31 MiB for 267 sections, compaction would save roughly a third of it but needs a query readback and the destruction of the old structure only after every frame in flight has finished with it.
-4. Bounced light with ray queries. Weighed on 2026-10-24 and left for later: the voxel probes already give bounce on every card at 0.25 to 0.3 ms; ray queries would add exact shapes and texture colors to the probe hits but need a compute probe pass that writes the probe textures of the voxel pass, and the 2026-10-22 spike measured ray queries only 5 % faster than the voxel walk.
+4. Bounced light with ray queries. Done 2026-10-27 as path traced indirect light, see [path-tracing.md](path-tracing.md). Weighed on 2026-10-24 and left for later: the voxel probes already give bounce on every card at 0.25 to 0.3 ms; ray queries would add exact shapes and texture colors to the probe hits but need a compute probe pass that writes the probe textures of the voxel pass, and the 2026-10-22 spike measured ray queries only 5 % faster than the voxel walk.
 
 ## Mobs in Ray Traced Reflections (2026-10-23)
 

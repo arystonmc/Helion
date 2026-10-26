@@ -5,6 +5,7 @@ import com.aryston.helion.render.geometry.GeometryBuffer;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.aryston.helion.render.shader.FullscreenPass;
+import com.aryston.helion.render.shader.HelionPipelines;
 import com.aryston.helion.render.shadow.ShadowLight;
 import com.aryston.helion.render.shadow.ShadowResults;
 import com.aryston.helion.render.voxel.VoxelLightResults;
@@ -93,7 +94,12 @@ public final class DeferredLightingStage implements RenderStage {
         )));
         indirectShare.ifPresent(frame.shadows()::publishIndirectShare);
         boolean lightOnly = frame.settings().lighting().lightOnlyView();
-        CompiledRenderPipeline pipeline = shadingPipeline(compiled, lightOnly, skyLight.isPresent(), shadows.isPresent());
+        Optional<GpuTextureView> pathTraced = voxel.isPresent() && shadows.isPresent() ? frame.voxels().pathTraced() : Optional.empty();
+        Optional<CompiledRenderPipeline> pathTracedPipeline = pathTraced.flatMap(
+            image -> HelionPipelines.compiled(lightOnly ? DeferredLightingPipelines.PATH_TRACED_LIGHT_ONLY : DeferredLightingPipelines.PATH_TRACED_SHADING)
+        );
+        CompiledRenderPipeline pipeline = pathTracedPipeline.orElseGet(() -> shadingPipeline(compiled, lightOnly, skyLight.isPresent(), shadows.isPresent()));
+        Optional<GpuTextureView> boundPathTraced = pathTracedPipeline.isPresent() ? pathTraced : Optional.empty();
         LightEnvironment environment = frame.scene().light();
         DeferredLightingSettings settings = frame.settings().lighting();
         Optional<ShadowLight> shadowLight = shadows.map(ShadowResults.Shadows::light);
@@ -108,6 +114,9 @@ public final class DeferredLightingStage implements RenderStage {
                 skyLight.ifPresent(light -> bindSkyLight(renderPass, geometry, light));
                 shadows.ifPresent(shadow -> renderPass.setUniform(DeferredLightingPipelines.SHADOW_MASK_SAMPLER, colorView(shadow.mask()), nearest()));
                 voxel.ifPresent(voxelTargets -> bindVoxelLight(renderPass, voxelTargets, tracedLight));
+                boundPathTraced.ifPresent(image -> renderPass.setUniform(
+                    DeferredLightingPipelines.PATH_TRACED_SAMPLER, image, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR)
+                ));
             });
             resources.finishFrame();
         }));

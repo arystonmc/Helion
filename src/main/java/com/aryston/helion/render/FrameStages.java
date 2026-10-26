@@ -24,6 +24,7 @@ import com.aryston.helion.render.post.PostProcessingStage;
 import com.aryston.helion.render.post.PresentStage;
 import com.aryston.helion.render.post.SharpeningStage;
 import com.aryston.helion.render.rtx.RtxBlockLightStage;
+import com.aryston.helion.render.rtx.RtxIndirectStage;
 import com.aryston.helion.render.rtx.RtxMaskViewStage;
 import com.aryston.helion.render.rtx.RtxReflectionStage;
 import com.aryston.helion.render.rtx.RtxSceneStage;
@@ -83,6 +84,7 @@ public final class FrameStages {
             new VoxelBounceStage(core.voxelLighting()),
             new VoxelLightStage(core.voxelLighting()),
             new RtxBlockLightStage(core.rayTracing(), core.voxelLighting(), sources.terrain(), core.glossy()),
+            new RtxIndirectStage(core.rayTracing(), sources.terrain(), core.glossy()),
             new RtxShadowStage(core.rtxSpike(), core.voxelLighting()),
             new DeferredLightingStage(core.lighting()),
             new AmbientOcclusionStage(core.ambientOcclusion()),

@@ -46,7 +46,7 @@ const float HELION_RT_RAY_START = 1.0e-3;
 const float HELION_RT_PLANT_START = 0.3;
 const float HELION_RT_SECTION_SIZE = 16.0;
 const float HELION_RT_LIGHT_END = 0.45;
-const float HELION_RT_LIGHT_SPREAD = 0.3;
+const float HELION_RT_LIGHT_SPREAD = 0.0;
 const float HELION_RT_EMITTER_STEP = 1.0e-3;
 const int HELION_RT_EMITTER_SKIPS = 3;
 const uint HELION_RT_SECTION_INSTANCES = 0x01u;
@@ -63,6 +63,7 @@ const float HELION_RT_LIGHT_SPILL = 0.15;
 const float HELION_RT_UNLIT = 1.0e-5;
 const float HELION_RT_WRAP = 0.5;
 const float HELION_RT_TOUCHING = 0.05;
+const float HELION_RT_BLOCK_HALF = 0.5;
 const float HELION_RT_BOX_MARGIN = 0.02;
 const float HELION_RT_POINT_END = 0.3;
 const float HELION_RT_FLICKERING = 0.5;
@@ -138,11 +139,13 @@ HelionCandidate helionCandidate(ivec3 cell, vec3 surface, vec3 normal, int candi
         return HelionCandidate(source.xyz, vec3(0.0));
     }
     bool ownFace = false;
+    vec3 aim = source.xyz;
     if (candidate < HELION_RT_LIGHTS_PER_CELL) {
         vec3 low = floor(source.xyz);
         ownFace = distance(clamp(surface, low, low + 1.0), surface) < HELION_RT_TOUCHING && dot(normal, surface - source.xyz) > 0.0;
+        aim = clamp(source.xyz + normal * HELION_RT_BLOCK_HALF, low, low + 1.0);
     }
-    vec3 toLight = source.xyz - surface;
+    vec3 toLight = aim - surface;
     float distanceToLight = length(toLight);
     float facing = ownFace || distanceToLight <= HELION_RT_TOUCHING ? 1.0 : dot(normal, toLight / distanceToLight);
     float lambert = clamp((facing + HELION_RT_WRAP) / (1.0 + HELION_RT_WRAP), 0.0, 1.0);

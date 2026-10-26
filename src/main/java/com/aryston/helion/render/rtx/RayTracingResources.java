@@ -19,6 +19,16 @@ public final class RayTracingResources {
     static final int SUN_SHADOW_CONSTANT_BYTES = 112;
     static final int REFLECTION_CONSTANT_BYTES = 112;
     static final int BLOCK_LIGHT_CONSTANT_BYTES = 128;
+    static final int INDIRECT_CONSTANT_BYTES = 128;
+    static final int ACCUMULATE_CONSTANT_BYTES = 128;
+    static final int FILTER_CONSTANT_BYTES = 16;
+    private static final String INDIRECT_SOURCE = "/assets/helion/shaders/rtx/indirect.csh";
+    private static final String INDIRECT_NAME = "indirect.csh";
+    private static final String ACCUMULATE_SOURCE = "/assets/helion/shaders/rtx/indirect_accumulate.csh";
+    private static final String ACCUMULATE_NAME = "indirect_accumulate.csh";
+    private static final String FILTER_SOURCE = "/assets/helion/shaders/rtx/indirect_filter.csh";
+    private static final String FILTER_NAME = "indirect_filter.csh";
+    private static final String INDIRECT_PIPELINE_LABEL = "Helion Path Traced Light Pipelines";
     static final int BLOCK_LIGHT_DYNAMIC_BYTES = 16 + 16 * 2 * 16;
     private static final String BLOCK_LIGHT_SOURCE = "/assets/helion/shaders/rtx/block_light.csh";
     private static final String BLOCK_LIGHT_NAME = "block_light.csh";
@@ -59,6 +69,30 @@ public final class RayTracingResources {
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    };
+    private static final int[] INDIRECT_DESCRIPTORS = {
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        KHRAccelerationStructure.VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    };
+    private static final int[] ACCUMULATE_DESCRIPTORS = {
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    };
+    private static final int[] FILTER_DESCRIPTORS = {
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     };
@@ -110,6 +144,13 @@ public final class RayTracingResources {
     private @Nullable RtxImage reflectionImage;
     private @Nullable ByteBuffer reflectionConstants;
     private @Nullable RtxComputePipeline blockLight;
+    private @Nullable RtxComputePipeline indirect;
+    private @Nullable RtxComputePipeline accumulate;
+    private @Nullable RtxComputePipeline filter;
+    private @Nullable RtxIndirectImages indirectImages;
+    private @Nullable ByteBuffer indirectConstants;
+    private @Nullable ByteBuffer accumulateConstants;
+    private @Nullable ByteBuffer filterConstants;
     private @Nullable RtxImage blockLightImage;
     private @Nullable ByteBuffer blockLightConstants;
     private RtxBuffer @Nullable [] blockLightDynamic;
@@ -184,6 +225,56 @@ public final class RayTracingResources {
 
     boolean blockLightAvailable() {
         return blockLight != null;
+    }
+
+    boolean indirectAvailable() {
+        return indirect != null && accumulate != null && filter != null;
+    }
+
+    RtxComputePipeline indirectPipeline() {
+        return Objects.requireNonNull(indirect);
+    }
+
+    RtxComputePipeline accumulatePipeline() {
+        return Objects.requireNonNull(accumulate);
+    }
+
+    RtxComputePipeline filterPipeline() {
+        return Objects.requireNonNull(filter);
+    }
+
+    RtxIndirectImages indirectImages(int width, int height) {
+        RtxIndirectImages current = indirectImages;
+        if (current != null && current.fits(width, height)) {
+            return current;
+        }
+        if (current != null) {
+            current.close(resources);
+        }
+        RtxIndirectImages created = RtxIndirectImages.create(resources, width, height);
+        indirectImages = created;
+        return created;
+    }
+
+    ByteBuffer indirectConstants() {
+        if (indirectConstants == null) {
+            indirectConstants = MemoryUtil.memAlloc(INDIRECT_CONSTANT_BYTES);
+        }
+        return indirectConstants;
+    }
+
+    ByteBuffer accumulateConstants() {
+        if (accumulateConstants == null) {
+            accumulateConstants = MemoryUtil.memAlloc(ACCUMULATE_CONSTANT_BYTES);
+        }
+        return accumulateConstants;
+    }
+
+    ByteBuffer filterConstants() {
+        if (filterConstants == null) {
+            filterConstants = MemoryUtil.memAlloc(FILTER_CONSTANT_BYTES);
+        }
+        return filterConstants;
     }
 
     RtxComputePipeline blockLightPipeline() {
@@ -315,6 +406,18 @@ public final class RayTracingResources {
         if (blockLightDynamicTracked != null) {
             resources.release(blockLightDynamicTracked);
         }
+        if (indirectImages != null) {
+            indirectImages.close(resources);
+        }
+        for (ByteBuffer buffer : new ByteBuffer[] {indirectConstants, accumulateConstants, filterConstants}) {
+            if (buffer != null) {
+                MemoryUtil.memFree(buffer);
+            }
+        }
+        indirectImages = null;
+        indirectConstants = null;
+        accumulateConstants = null;
+        filterConstants = null;
         blockLightImage = null;
         blockLightConstants = null;
         blockLightDynamic = null;
@@ -362,6 +465,21 @@ public final class RayTracingResources {
             blockLight = lights;
         } catch (IllegalStateException exception) {
             LOGGER.error("Helion ray traced block light is off: {}", exception.getMessage());
+        }
+        try {
+            RtxComputePipeline traced = RtxComputePipeline.create(rtx, INDIRECT_SOURCE, INDIRECT_NAME, INDIRECT_DESCRIPTORS, INDIRECT_CONSTANT_BYTES);
+            RtxComputePipeline accumulated = RtxComputePipeline.create(rtx, ACCUMULATE_SOURCE, ACCUMULATE_NAME, ACCUMULATE_DESCRIPTORS, ACCUMULATE_CONSTANT_BYTES);
+            RtxComputePipeline filtered = RtxComputePipeline.create(rtx, FILTER_SOURCE, FILTER_NAME, FILTER_DESCRIPTORS, FILTER_CONSTANT_BYTES);
+            resources.track(INDIRECT_PIPELINE_LABEL, PIPELINE_BYTES, () -> {
+                traced.destroy();
+                accumulated.destroy();
+                filtered.destroy();
+            });
+            indirect = traced;
+            accumulate = accumulated;
+            filter = filtered;
+        } catch (IllegalStateException exception) {
+            LOGGER.error("Helion path traced light is off: {}", exception.getMessage());
         }
         LOGGER.info("Helion ray tracing is on: section scene within {} sections of the camera", RtxSectionInbox.RADIUS);
     }

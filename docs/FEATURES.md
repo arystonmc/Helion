@@ -186,6 +186,8 @@ Carry a torch into a cave and the cave lights up around you.
 Torches, lanterns and every other glowing block light the world in their own color, and walls, pillars and roofs cast real shadows from them.
 
 - Soul lanterns glow cyan, redstone torches red, amethyst purple, sea lanterns and end rods cool white, torches, lava and glowstone warm
+- With ray traced shadows on under the physical sky, light bounces are path traced: sunlight and torch light bounce off walls and floors in the color of the blocks, caves darken naturally and light pours in through openings
+- Glowstone, sea lanterns and other glowing blocks light the floor around them as brightly as lanterns, without dark rings at their base
 - With ray traced shadows on, block light shadows are traced against the real block shapes, so slabs, fences, leaves and mobs cast exact shadows from torches; torches held in first person shine from the hand
 - Light travels as rays: every light casts its own shadow, so a pillar between two torches throws two shadows, mobs throw shadows from each lamp, and a window frame throws a pattern of light rays into the room; light no longer passes through solid blocks
 - Round, soft light pools instead of diamond shapes, and colored lights blend smoothly where they overlap, white light included; light colors are slightly softened toward white like the eye sees them, so torch and lava light stays warm without washing everything orange

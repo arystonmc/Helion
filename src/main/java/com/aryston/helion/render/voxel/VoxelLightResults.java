@@ -12,6 +12,7 @@ public final class VoxelLightResults {
     private List<ResourceHandle<RenderTarget>> probes = List.of();
     private @Nullable ResourceHandle<RenderTarget> bounce;
     private @Nullable GpuTextureView traced;
+    private @Nullable GpuTextureView pathTraced;
 
     public Optional<Targets> targets() {
         return Optional.ofNullable(targets);
@@ -43,6 +44,14 @@ public final class VoxelLightResults {
 
     public Optional<GpuTextureView> traced() {
         return Optional.ofNullable(traced);
+    }
+
+    public void publishPathTraced(GpuTextureView written) {
+        pathTraced = written;
+    }
+
+    public Optional<GpuTextureView> pathTraced() {
+        return Optional.ofNullable(pathTraced);
     }
 
     public record Targets(ResourceHandle<RenderTarget> light, ResourceHandle<RenderTarget> confidence, ResourceHandle<RenderTarget> bounce) {

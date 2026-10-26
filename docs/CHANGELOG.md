@@ -9,6 +9,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ### Added
 - Glass is smooth with an even tint and carries rain drops that bead up and run down
 - Experimental ray tracing: block light shadows traced against the real block shapes
+- Experimental ray tracing: path traced light bounces in the color of the blocks
 - Experimental voxel lighting: torches, lanterns, campfires and other fire lights flicker gently
 - Realistic glass: plain glass slightly bends the view behind it, stained glass tints it like real colored glass, and glass reflects the world
 - Realistic water: waves roll in from open water and break on beaches with white foam that runs up the shore

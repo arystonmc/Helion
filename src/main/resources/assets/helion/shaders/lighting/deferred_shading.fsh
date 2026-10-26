@@ -58,6 +58,9 @@ HelionVoxelBlock helionVoxelBlock(ivec2 pixel, vec4 levels) {
     vec4 traced = texture(VoxelLightSampler, texCoord);
     float trust = texture(VoxelConfidenceSampler, texCoord).r;
     vec4 bounce = texture(VoxelBounceSampler, texCoord);
+    #ifdef HELION_PATH_TRACED
+    bounce = vec4(0.0);
+    #endif
     vec3 floorTerm = vanilla * HELION_VOXEL_VANILLA_FLOOR * bounce.a;
     vec3 tracedLight = traced.rgb * BlockFactor;
     vec3 bounced = helionCappedBounce(bounce.rgb * BlockFactor, vanilla);
@@ -77,6 +80,19 @@ float helionSkyShare(vec4 levels) {
     vec3 base = helionAmbientTerm() + sky;
     vec3 total = base + helionShapedBlockLight(helionInterpolatedBlockTerm(levels.r), base) * BlockLightIntensity;
     return helionLuminance(sky) / max(helionLuminance(total), HELION_MIN_SKY_LUMINANCE);
+}
+#endif
+
+#ifdef HELION_PATH_TRACED
+const float HELION_PATH_TRACED_CONTACT_SHARE = 0.5;
+
+float helionPathTracedOcclusionShare(ivec2 pixel, vec4 levels, vec3 block) {
+    vec2 screen = (vec2(pixel) + 0.5) / vec2(textureSize(GeometryNormalSampler, 0));
+    vec3 traced = pow(max(texture(PathTracedSampler, screen).rgb, vec3(0.0)), vec3(HELION_PATH_TRACED_GAMMA));
+    vec3 base = helionDeferredBase(pixel, levels);
+    vec3 total = base + helionShapedBlockLight(block, base) * BlockLightIntensity;
+    vec3 occluded = helionAmbientTerm() + traced * HELION_PATH_TRACED_CONTACT_SHARE;
+    return clamp(helionLuminance(occluded) / max(helionLuminance(total), HELION_MIN_SKY_LUMINANCE), 0.0, 1.0);
 }
 #endif
 
@@ -106,8 +122,12 @@ void main() {
     #endif
     #ifdef HELION_SHADOWS
     float skyShare = helionSkyShare(levels);
+    #ifdef HELION_PATH_TRACED
+    indirectShare = vec4(helionPathTracedOcclusionShare(pixel, levels, voxelBlock.unshadowed));
+    #else
     surfaceLight *= helionShadowTransmission(pixel, skyShare);
     indirectShare = vec4(helionIndirectShare(pixel, skyShare));
+    #endif
     #endif
     vec3 radiance = helionInverseNeutral(surfaceLight) * max(light.rgb / light.a, vec3(HELION_DISPLAY_LIGHT_LIMIT));
     vec3 color = helionLinearToSrgb(helionNeutral(radiance));
