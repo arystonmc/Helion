@@ -3,7 +3,6 @@ package com.aryston.helion.render.rtx;
 import static com.aryston.helion.Helion.LOGGER;
 
 import com.aryston.helion.render.resource.GpuResources;
-import com.mojang.renderpearl.api.GpuFormat;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Objects;
@@ -17,6 +16,8 @@ import org.lwjgl.vulkan.VK10;
 public final class RayTracingResources {
     static final int REFLECTION_CONSTANT_BYTES = 112;
     static final int PATH_TRACE_CONSTANT_BYTES = 128;
+    static final int ACCUMULATE_CONSTANT_BYTES = 128;
+    static final int FILTER_CONSTANT_BYTES = 16;
     private static final String REFLECTION_SOURCE = "/assets/helion/shaders/rtx/reflection.csh";
     private static final String REFLECTION_NAME = "reflection.csh";
     private static final String REFLECTION_PIPELINE_LABEL = "Helion Ray Tracing Reflection Pipeline";
@@ -24,8 +25,12 @@ public final class RayTracingResources {
     private static final String PATH_TRACE_SOURCE = "/assets/helion/shaders/rtx/path_trace.csh";
     private static final String PATH_TRACE_NAME = "path_trace.csh";
     private static final String PATH_TRACE_PIPELINE_LABEL = "Helion Path Tracing Pipeline";
-    private static final String RADIANCE_LABEL = "Helion Path Traced Radiance";
-    private static final GpuFormat RADIANCE_FORMAT = GpuFormat.RGBA16_FLOAT;
+    private static final String ACCUMULATE_SOURCE = "/assets/helion/shaders/rtx/denoise_accumulate.csh";
+    private static final String ACCUMULATE_NAME = "denoise_accumulate.csh";
+    private static final String ACCUMULATE_PIPELINE_LABEL = "Helion Path Tracing Accumulation Pipeline";
+    private static final String FILTER_SOURCE = "/assets/helion/shaders/rtx/denoise_filter.csh";
+    private static final String FILTER_NAME = "denoise_filter.csh";
+    private static final String FILTER_PIPELINE_LABEL = "Helion Path Tracing Filter Pipeline";
     private static final long PIPELINE_BYTES = 0L;
     private static final long LOG_INTERVAL_FRAMES = 600L;
     private static final long BYTES_PER_MIB = 1L << 20;
@@ -78,6 +83,22 @@ public final class RayTracingResources {
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     };
+    private static final int[] ACCUMULATE_DESCRIPTORS = {
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    };
+    private static final int[] FILTER_DESCRIPTORS = {
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    };
 
     private final GpuResources resources;
     private final RtxSectionInbox inbox = new RtxSectionInbox();
@@ -89,7 +110,11 @@ public final class RayTracingResources {
     private @Nullable ByteBuffer reflectionConstants;
     private @Nullable RtxComputePipeline pathTrace;
     private @Nullable ByteBuffer pathTraceConstants;
-    private @Nullable RtxImage radianceImage;
+    private @Nullable RtxComputePipeline accumulate;
+    private @Nullable ByteBuffer accumulateConstants;
+    private @Nullable RtxComputePipeline filter;
+    private @Nullable ByteBuffer filterConstants;
+    private @Nullable RtxDenoiseImages denoiseImages;
     private boolean checked;
     private boolean reportedComplete;
     private long frame;
@@ -126,9 +151,9 @@ public final class RayTracingResources {
         scene = null;
         inbox.clear();
         entityDraws.capture(false);
-        if (radianceImage != null) {
-            radianceImage.close(resources);
-            radianceImage = null;
+        if (denoiseImages != null) {
+            denoiseImages.close(resources);
+            denoiseImages = null;
         }
         if (reflectionImage != null) {
             reflectionImage.close(resources);
@@ -174,7 +199,7 @@ public final class RayTracingResources {
     }
 
     boolean pathTracingAvailable() {
-        return pathTrace != null;
+        return pathTrace != null && accumulate != null && filter != null;
     }
 
     RtxComputePipeline pathTracePipeline() {
@@ -188,16 +213,38 @@ public final class RayTracingResources {
         return pathTraceConstants;
     }
 
-    RtxImage radiance(int width, int height) {
-        RtxImage current = radianceImage;
+    RtxComputePipeline accumulatePipeline() {
+        return Objects.requireNonNull(accumulate);
+    }
+
+    ByteBuffer accumulateConstants() {
+        if (accumulateConstants == null) {
+            accumulateConstants = MemoryUtil.memAlloc(ACCUMULATE_CONSTANT_BYTES);
+        }
+        return accumulateConstants;
+    }
+
+    RtxComputePipeline filterPipeline() {
+        return Objects.requireNonNull(filter);
+    }
+
+    ByteBuffer filterConstants() {
+        if (filterConstants == null) {
+            filterConstants = MemoryUtil.memAlloc(FILTER_CONSTANT_BYTES);
+        }
+        return filterConstants;
+    }
+
+    RtxDenoiseImages denoiseImages(int width, int height) {
+        RtxDenoiseImages current = denoiseImages;
         if (current != null && current.fits(width, height)) {
             return current;
         }
         if (current != null) {
             current.close(resources);
         }
-        RtxImage created = RtxImage.create(resources, RADIANCE_LABEL, width, height, RADIANCE_FORMAT);
-        radianceImage = created;
+        RtxDenoiseImages created = RtxDenoiseImages.create(resources, width, height);
+        denoiseImages = created;
         return created;
     }
 
@@ -210,10 +257,10 @@ public final class RayTracingResources {
         reportedComplete |= firstComplete;
         lastLogFrame = frame;
         LOGGER.info(
-            "Helion ray tracing: {} sections built ({} MiB), {} pending, {} in the top level; CPU {} ms; GPU bottom levels {} ms, top level {} ms, path tracing {} ms, reflections {} ms",
+            "Helion ray tracing: {} sections built ({} MiB), {} pending, {} in the top level; CPU {} ms; GPU bottom levels {} ms, top level {} ms, path tracing {} ms, denoising {} ms, reflections {} ms",
             plan.builtSections(), plan.builtBytes() / BYTES_PER_MIB, plan.pendingSections(), plan.visibleSections(),
             String.format("%.3f", prepareMillis), millis(gpuMillis, RtxSceneStage.BOTTOM_STAGE), millis(gpuMillis, RtxSceneStage.TOP_STAGE),
-            millis(gpuMillis, RtxPathTracingStage.TRACE_PASS), millis(gpuMillis, RtxReflectionStage.NAME)
+            millis(gpuMillis, RtxPathTracingStage.TRACE_PASS), millis(gpuMillis, RtxPathTracingStage.DENOISE_PASS), millis(gpuMillis, RtxReflectionStage.NAME)
         );
     }
 
@@ -224,8 +271,8 @@ public final class RayTracingResources {
         if (reflectionImage != null) {
             reflectionImage.close(resources);
         }
-        if (radianceImage != null) {
-            radianceImage.close(resources);
+        if (denoiseImages != null) {
+            denoiseImages.close(resources);
         }
         if (reflectionConstants != null) {
             MemoryUtil.memFree(reflectionConstants);
@@ -233,11 +280,19 @@ public final class RayTracingResources {
         if (pathTraceConstants != null) {
             MemoryUtil.memFree(pathTraceConstants);
         }
+        if (accumulateConstants != null) {
+            MemoryUtil.memFree(accumulateConstants);
+        }
+        if (filterConstants != null) {
+            MemoryUtil.memFree(filterConstants);
+        }
         scene = null;
         reflectionImage = null;
         reflectionConstants = null;
         pathTraceConstants = null;
-        radianceImage = null;
+        accumulateConstants = null;
+        filterConstants = null;
+        denoiseImages = null;
     }
 
     private void open() {
@@ -264,7 +319,13 @@ public final class RayTracingResources {
         try {
             RtxComputePipeline traced = RtxComputePipeline.create(rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, PATH_TRACE_DESCRIPTORS, PATH_TRACE_CONSTANT_BYTES);
             resources.track(PATH_TRACE_PIPELINE_LABEL, PIPELINE_BYTES, traced::destroy);
+            RtxComputePipeline accumulated = RtxComputePipeline.create(rtx, ACCUMULATE_SOURCE, ACCUMULATE_NAME, ACCUMULATE_DESCRIPTORS, ACCUMULATE_CONSTANT_BYTES);
+            resources.track(ACCUMULATE_PIPELINE_LABEL, PIPELINE_BYTES, accumulated::destroy);
+            RtxComputePipeline filtered = RtxComputePipeline.create(rtx, FILTER_SOURCE, FILTER_NAME, FILTER_DESCRIPTORS, FILTER_CONSTANT_BYTES);
+            resources.track(FILTER_PIPELINE_LABEL, PIPELINE_BYTES, filtered::destroy);
             pathTrace = traced;
+            accumulate = accumulated;
+            filter = filtered;
         } catch (IllegalStateException exception) {
             LOGGER.error("Helion path traced light is off: {}", exception.getMessage());
         }

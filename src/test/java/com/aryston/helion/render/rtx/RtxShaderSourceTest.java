@@ -13,10 +13,12 @@ class RtxShaderSourceTest {
     private static final String SHADER_ROOT = "/assets/helion/shaders/rtx/";
     private static final String REFLECTION = "reflection.csh";
     private static final String PATH_TRACE = "path_trace.csh";
+    private static final String ACCUMULATE = "denoise_accumulate.csh";
+    private static final String FILTER = "denoise_filter.csh";
     private static final String ENTITY_REFLECTION_DEFINE = "HELION_RT_ENTITIES";
 
     @ParameterizedTest
-    @ValueSource(strings = {REFLECTION, PATH_TRACE})
+    @ValueSource(strings = {REFLECTION, PATH_TRACE, ACCUMULATE, FILTER})
     void computeShaderCompilesWithRayQueries(String shader) {
         assertCompiles(shader, Set.of());
     }

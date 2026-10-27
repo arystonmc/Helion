@@ -15,8 +15,9 @@ Helion's light and shadow, rebuilt from scratch as RTX path tracing (decision of
 1. The geometry pass rasterizes the primary surfaces as before: depth, face normal, light levels with the block material, and albedo with the fog amount (see Geometry Buffer). Primary rays stay rasterized; they are cheaper and already exist.
 2. `RtxSceneStage` builds the section and entity acceleration structures.
 3. `RtxPathTracingStage`, at the frame position where deferred shading ran before the removal:
-   - pass `path_trace` dispatches `rtx/path_trace.csh` over a full resolution RGBA16F radiance image (`RayTracingResources.radiance`), linear HDR radiance for every geometry buffer pixel (see Direct Light);
-   - pass `path_traced_light` encodes it into the RGBA8 scene with the Neutral curve (the same encoding the image composite expands with `helionExpandScene`), then applies the chunk fade (light target blue) and the fog (albedo alpha) as the geometry pass did, only where geometry was written.
+   - pass `path_trace` dispatches `rtx/path_trace.csh` into a full resolution RGBA16F work image (`RtxDenoiseImages`), the demodulated linear HDR irradiance of every geometry buffer pixel (see Direct Light and Denoiser);
+   - pass `path_denoise` accumulates it over frames and filters it (see Denoiser);
+   - pass `path_traced_light` multiplies the result by the unshaded linear albedo and encodes it into the RGBA8 scene with the Neutral curve (the same encoding the image composite expands with `helionExpandScene`), then applies the chunk fade (light target blue) and the fog (albedo alpha) as the geometry pass did, only where geometry was written.
 4. Everything after it (solid features, water, reflections, light shafts, transparency, post effects) is unchanged.
 
 ## Surface Data of Hits
@@ -46,8 +47,20 @@ One path per pixel at full resolution, up to 3 bounces, in the same pass and uni
 - Russian roulette from the third bounce keeps the path with the probability of its brightest throughput channel (at least 0.1). Where a path ends early or at the last bounce, its last hit adds the dome times its sky level raised to 2.2 as the tail of the missing bounces.
 - The indirect light of a pixel is limited to a luminance of 4 against fireflies.
 
-Entities are not hit by bounce rays yet; they still cast direct shadows. There is no accumulation or filter before Phase 5, so the indirect light is noisy, most of all in rooms lit by block light.
+Entities are not hit by bounce rays yet; they still cast direct shadows. The denoiser of Phase 5 smooths the noise of the single path per pixel.
+
+## Denoiser (Phase 5, 2026-10-27)
+
+An SVGF style filter over the demodulated irradiance, at full resolution, in pass `path_denoise`.
+
+- Demodulation: `path_trace.csh` writes the light before the surface albedo (the unshaded linear albedo of `helion_path_tracing.glsl`), so texture detail never blurs; `pathtracing/radiance.fsh` multiplies it back. The alpha carries a signal: 0 no geometry, 1 lit, 2 emissive. Emissive and lava pixels write 1 and are never filtered; pixels near the scene edge write the vanilla light divided by the albedo (at most 4).
+- Accumulation (`rtx/denoise_accumulate.csh`): the pixel position from the scene depth is projected with the previous frame's level view projection, translated by the camera move (`RtxDenoiseImages.reprojection`). The history at that pixel is kept when the previous guide matches: distance within 8 % and normals with a dot product above 0.9. Up to 24 samples blend with weight 1 / count; the luminance moments blend with at least 0.2. The variance comes from the moments, or from the 3x3 neighborhood while a pixel has fewer than 4 samples, and is stored in alpha.
+- Guide: normal and view distance per pixel, in a pair that swaps every frame; emissive pixels store a negative distance so filters skip them.
+- Filter (`rtx/denoise_filter.csh`): five à-trous iterations of a 5x5 B-spline kernel at steps 1, 2, 4, 8 and 16. Each tap is weighted by the normal (power 128), the distance (relative to 3 % of the distance times the step) and the luminance, against 4 standard deviations of the filtered variance; the variance is filtered with squared weights. The output of the first iteration is the next frame's history, as in SVGF.
+- The work images ping-pong: trace into work 0, accumulate into work 1, then work 1, history, work 0, work 1, work 0 and finally work 1, which the radiance pass reads.
+
+Deferred: temporal anti-aliasing of the result, motion vectors of moving entities (the history follows the camera only), and a separate specular signal (Phase 6).
 
 ## Next
 
-1. Phase 5, the denoiser; Phase 6, materials and traced specular; Phase 7, exposure calibration and the finish.
+1. Phase 6, materials and traced specular; Phase 7, exposure calibration and the finish.

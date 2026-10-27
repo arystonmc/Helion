@@ -8,4 +8,4 @@ The render pipelines of the path traced light that need no ray tracing types, so
 
 #### PathTracingPipelines
 - Path: `src/main/java/com/aryston/helion/render/pathtracing/PathTracingPipelines.java`
-- Role: `RADIANCE`, the fullscreen pipeline of `pathtracing/radiance.fsh` that encodes the path traced radiance into the RGBA8 scene target (color only): the `Fog` block and the radiance, albedo and geometry light samplers. Listed in `HelionPipelines.all()`.
+- Role: `RADIANCE`, the fullscreen pipeline of `pathtracing/radiance.fsh` that multiplies the denoised path traced irradiance by the albedo and encodes it into the RGBA8 scene target (color only): the `Fog` block and the irradiance, albedo, geometry light and geometry normal samplers. Listed in `HelionPipelines.all()`.

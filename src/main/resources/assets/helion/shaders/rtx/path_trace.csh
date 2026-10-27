@@ -3,13 +3,12 @@
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_buffer_reference_uvec2 : require
 
-#include <helion:helion_color.glsl>
-#include <helion:helion_geometry.glsl>
+#include <helion:helion_path_tracing.glsl>
 #include <helion:helion_hash.glsl>
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-layout(set = 0, binding = 0, rgba16f) uniform writeonly image2D Radiance;
+layout(set = 0, binding = 0, rgba16f) uniform writeonly image2D Irradiance;
 layout(set = 0, binding = 1) uniform accelerationStructureEXT Scene;
 layout(set = 0, binding = 2) uniform sampler2D AlbedoSampler;
 layout(set = 0, binding = 3) uniform sampler2D GeometryLightSampler;
@@ -56,7 +55,6 @@ const float HELION_LIGHTMAP_LAST_TEXEL = 15.0;
 const ivec2 HELION_SUN_TEXEL = ivec2(0, 0);
 const ivec2 HELION_MOON_TEXEL = ivec2(1, 0);
 const ivec2 HELION_DOME_TEXEL = ivec2(2, 0);
-const vec4 HELION_NO_RADIANCE = vec4(0.0);
 const float HELION_SET = 0.5;
 const float HELION_SKY_DEPTH = 0.0;
 const float HELION_SECTION_SIZE = 16.0;
@@ -72,8 +70,6 @@ const float HELION_SKY_GAMMA = 2.2;
 const float HELION_SKY_GATE_LEVELS = 15.0;
 const float HELION_DOME_GROUND = 0.45;
 const float HELION_MIN_OPEN_SKY = 1.0e-4;
-const vec3 HELION_VANILLA_SHADE = vec3(0.6, 1.0, 0.8);
-const float HELION_VANILLA_SHADE_DOWN = 0.5;
 const int HELION_GRID_RADIUS = 4;
 const int HELION_GRID_SIZE = 2 * HELION_GRID_RADIUS + 1;
 const uint HELION_GRID_CELLS = uint(HELION_GRID_SIZE * HELION_GRID_SIZE * HELION_GRID_SIZE);
@@ -121,15 +117,6 @@ vec3 helionVanillaLight(vec2 levels) {
     vec3 bottom = mix(helionLightmapTexel(low), helionLightmapTexel(low + ivec2(1, 0)), blend.x);
     vec3 top = mix(helionLightmapTexel(low + ivec2(0, 1)), helionLightmapTexel(low + ivec2(1, 1)), blend.x);
     return mix(bottom, top, blend.y);
-}
-
-vec3 helionUnshaded(vec3 albedo, vec3 normal) {
-    if (helionIsCrossPlane(normal)) {
-        return albedo;
-    }
-    vec3 share = normal * normal;
-    float shade = share.x * HELION_VANILLA_SHADE.x + share.z * HELION_VANILLA_SHADE.z + share.y * (normal.y > 0.0 ? HELION_VANILLA_SHADE.y : HELION_VANILLA_SHADE_DOWN);
-    return min(albedo / shade, vec3(1.0));
 }
 
 float helionVisible(vec3 origin, vec3 direction, float reach) {
@@ -342,7 +329,7 @@ vec3 helionIndirect(vec3 origin, vec3 normal, float start, float gate, HelionSky
         start = helionRayStart(normal);
         float skyLevel = clamp(point.light.y / HELION_MAX_LIGHT_COORDINATE, 0.0, 1.0);
         gate = clamp(skyLevel * HELION_SKY_GATE_LEVELS, 0.0, 1.0);
-        throughput *= helionSrgbToLinear(helionUnshaded(textureLod(AtlasSampler, point.uv, 0.0).rgb * point.tint.rgb, normal));
+        throughput *= helionSurfaceAlbedo(textureLod(AtlasSampler, point.uv, 0.0).rgb * point.tint.rgb, normal);
         vec3 light = helionBounceBlockLight(hit, origin, normal) + sky.ambient;
         if (gate > 0.0) {
             light += helionCelestialLight(origin, normal, sky) * gate;
@@ -367,31 +354,32 @@ float helionSceneShare(vec3 origin) {
 
 void main() {
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 size = imageSize(Radiance);
+    ivec2 size = imageSize(Irradiance);
     if (any(greaterThanEqual(pixel, size))) {
         return;
     }
     vec4 levels = texelFetch(GeometryLightSampler, pixel, 0);
     float depth = texelFetch(SceneDepthSampler, pixel, 0).r;
     if (levels.a < HELION_GEOMETRY_PRESENT_THRESHOLD || depth <= HELION_SKY_DEPTH) {
-        imageStore(Radiance, pixel, HELION_NO_RADIANCE);
+        imageStore(Irradiance, pixel, vec4(HELION_PATH_NOTHING));
+        return;
+    }
+    if (helionIsEmissiveGeometry(levels.a)) {
+        imageStore(Irradiance, pixel, vec4(vec3(1.0), HELION_PATH_EMISSIVE));
         return;
     }
     vec3 albedo = texelFetch(AlbedoSampler, pixel, 0).rgb;
-    if (helionIsGeometryMaterial(levels.a, HELION_GEOMETRY_EMISSIVE) || helionIsGeometryMaterial(levels.a, HELION_GEOMETRY_LAVA)) {
-        imageStore(Radiance, pixel, vec4(helionSrgbToLinear(albedo), 1.0));
-        return;
-    }
-    vec3 vanilla = helionSrgbToLinear(albedo * helionVanillaLight(levels.rg));
     vec2 screen = (vec2(pixel) + 0.5) / vec2(size);
     vec4 world = InverseViewProjection * vec4(screen * 2.0 - 1.0, depth, 1.0);
     vec3 view = world.xyz / world.w;
     vec3 normal = normalize(texelFetch(GeometryNormalSampler, pixel, 0).rgb * 2.0 - 1.0);
+    vec3 surface = helionSurfaceAlbedo(albedo, normal);
+    vec3 vanilla = min(helionSrgbToLinear(albedo * helionVanillaLight(levels.rg)) / max(surface, vec3(HELION_PATH_MIN_ALBEDO)), vec3(HELION_PATH_VANILLA_LIMIT));
     vec3 position = view + CameraToAnchor.xyz;
     vec3 origin = position + normal * (HELION_ORIGIN_OFFSET + length(view) * HELION_ORIGIN_DISTANCE_SHARE);
     float traced = helionSceneShare(origin);
     if (traced <= 0.0) {
-        imageStore(Radiance, pixel, vec4(vanilla, 1.0));
+        imageStore(Irradiance, pixel, vec4(vanilla, HELION_PATH_LIT));
         return;
     }
     helionState = helionPcg(uint(pixel.x) ^ helionPcg(uint(pixel.y) ^ helionPcg(floatBitsToUint(Frame.y))));
@@ -406,6 +394,5 @@ void main() {
     HelionSky sky = HelionSky(sunLight * scale, moonLight * scale, dome * scale, ambient);
     vec3 skyLight = helionCelestialLight(origin, normal, sky) * gate + helionIndirect(origin, normal, helionRayStart(normal), gate, sky);
     vec3 block = helionBlockLighting(position, origin, normal) * mix(1.0, 1.0 - clamp(helionLuminance(skyLight), 0.0, 1.0), HELION_BLOCK_DAY_FADE);
-    vec3 lit = helionSrgbToLinear(helionUnshaded(albedo, normal)) * (ambient + skyLight + block);
-    imageStore(Radiance, pixel, vec4(mix(vanilla, lit, traced), 1.0));
+    imageStore(Irradiance, pixel, vec4(mix(vanilla, ambient + skyLight + block, traced), HELION_PATH_LIT));
 }
