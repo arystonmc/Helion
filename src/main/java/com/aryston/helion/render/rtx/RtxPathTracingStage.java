@@ -4,6 +4,7 @@ import com.aryston.helion.render.atmosphere.SkyLight;
 import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.geometry.GeometryBuffer;
 import com.aryston.helion.render.geometry.GeometryBufferPipelines;
+import com.aryston.helion.render.geometry.GlossyMask;
 import com.aryston.helion.render.geometry.TerrainSource;
 import com.aryston.helion.render.geometry.TerrainTextures;
 import com.aryston.helion.render.graph.FrameContext;
@@ -41,13 +42,15 @@ public final class RtxPathTracingStage implements RenderStage {
 
     private final RayTracingResources resources;
     private final TerrainSource terrain;
+    private final GlossyMask glossy;
     private @Nullable CompiledRenderPipeline radiance;
     private @Nullable RtxSectionPos anchor;
     private @Nullable SkyLight skyLight;
 
-    public RtxPathTracingStage(RayTracingResources resources, TerrainSource terrain) {
+    public RtxPathTracingStage(RayTracingResources resources, TerrainSource terrain, GlossyMask glossy) {
         this.resources = resources;
         this.terrain = terrain;
+        this.glossy = glossy;
     }
 
     @Override
@@ -117,7 +120,8 @@ public final class RtxPathTracingStage implements RenderStage {
                 new RtxBinding.Sampled(handle(textures.atlas())),
                 new RtxBinding.StorageBuffer(table.buffer(), WHOLE_BUFFER, table.size()),
                 new RtxBinding.Sampled(handle(colorView(sky.irradiance()))),
-                new RtxBinding.StorageBuffer(lights.buffer(), WHOLE_BUFFER, lights.size())
+                new RtxBinding.StorageBuffer(lights.buffer(), WHOLE_BUFFER, lights.size()),
+                new RtxBinding.Sampled(handle(glossy.update(terrain.glossyCells())))
             ), constants, image.width(), image.height());
             device.memoryBarrier();
         }));

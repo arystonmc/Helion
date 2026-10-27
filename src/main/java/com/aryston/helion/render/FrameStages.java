@@ -66,7 +66,7 @@ public final class FrameStages {
             new OpaqueGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere(), core.glossy()),
             new EntityGeometryStage(sources.entities()),
             new RtxSceneStage(core.rayTracing()),
-            new RtxPathTracingStage(core.rayTracing(), sources.terrain()),
+            new RtxPathTracingStage(core.rayTracing(), sources.terrain(), core.glossy()),
             new SolidFeatureStage(sources.terrain(), sources.entities()),
             new TranslucentFeatureStage(sources.entities()),
             new CloudStage(sources.clouds(), core.clouds()),
