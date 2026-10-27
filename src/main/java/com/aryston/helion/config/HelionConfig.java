@@ -64,6 +64,7 @@ public final class HelionConfig {
     static final ModConfigSpec.EnumValue<GeometryBufferView> GEOMETRY_BUFFER_VIEW;
     static final ModConfigSpec.BooleanValue RAY_TRACING_ENABLED;
     static final ModConfigSpec.BooleanValue WATER_REFLECTIONS;
+    static final ModConfigSpec.BooleanValue PATH_TRACING;
     static final ModConfigSpec.BooleanValue SCREEN_REFLECTIONS;
     static final ModConfigSpec.BooleanValue RAIN_WETNESS;
     static final ModConfigSpec.BooleanValue REALISTIC_WATER;
@@ -153,6 +154,9 @@ public final class HelionConfig {
         WATER_REFLECTIONS = BUILDER
             .translation("helion.configuration.rayTracing.waterReflections")
             .define("waterReflections", true);
+        PATH_TRACING = BUILDER
+            .translation("helion.configuration.rayTracing.pathTracing")
+            .define("pathTracing", false);
         BUILDER.pop();
 
         BUILDER.translation("helion.configuration.reflections").push("reflections");
@@ -213,7 +217,7 @@ public final class HelionConfig {
             new TemporalSettings(TEMPORAL_ENABLED.getAsBoolean(), RENDER_SCALE.get()),
             new PhysicalSkySettings(PHYSICAL_SKY_ENABLED.getAsBoolean(), STAR_DENSITY.get(), MILKY_WAY.getAsBoolean(), LIGHT_SHAFTS.getAsBoolean()),
             new CloudSettings(CLOUDS_ENABLED.getAsBoolean(), CLOUD_QUALITY.get()),
-            new RayTracingSettings(RAY_TRACING_ENABLED.getAsBoolean() || RayTracing.forced(), WATER_REFLECTIONS.getAsBoolean()),
+            new RayTracingSettings(RAY_TRACING_ENABLED.getAsBoolean() || RayTracing.forced(), WATER_REFLECTIONS.getAsBoolean(), PATH_TRACING.getAsBoolean()),
             new ReflectionSettings(SCREEN_REFLECTIONS.getAsBoolean(), RAIN_WETNESS.getAsBoolean(), REALISTIC_WATER.getAsBoolean())
         );
     }

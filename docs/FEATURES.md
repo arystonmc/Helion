@@ -214,8 +214,8 @@ Uses the ray tracing hardware of RTX and similar graphics cards for what shaders
 - Mobs, players, armor stands and dropped items show in ray traced water reflections, even when they are off screen, shaded like in the world and flashing red when hurt (without glowing eyes or armor shine)
 - Glass and ice reflect the world with ray tracing too, and reflected places that lie in shadow are darker
 - Needs a graphics card with hardware ray tracing; on other cards it stays off and nothing changes
-- Next: Helion's light and shadow, path traced with real rays, bounces and soft shadows
-- Settings: on or off (takes effect after restarting the game), water reflections on or off; on in the Experimental preset, off otherwise
+- Path traced light (work in progress): Helion lights the world itself with ray tracing. For now it takes over the vanilla light unchanged; real sunlight, soft shadows, colored block light and bounced light follow step by step
+- Settings: on or off (takes effect after restarting the game), path traced light on or off (needs the geometry buffer), water reflections on or off; on in the Experimental preset, off otherwise
 - Since: Unreleased
 
 ### Safe by Design

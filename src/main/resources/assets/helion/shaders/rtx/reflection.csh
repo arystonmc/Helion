@@ -68,12 +68,12 @@ vec4 helionLitColor(vec3 albedo, vec2 light) {
     return vec4(albedo * textureLod(LightmapSampler, lightmapUv, 0.0).rgb, 1.0);
 }
 
-float helionSkyShadow(vec3 hit, vec3 direction) {
+float helionSkyShadow(vec3 hit, vec3 lift) {
     if (LightDirection.w < HELION_RT_SET) {
         return 1.0;
     }
     rayQueryEXT shadow;
-    vec3 origin = hit - direction * HELION_RT_SHADOW_LIFT + LightDirection.xyz * HELION_RT_SHADOW_LIFT;
+    vec3 origin = hit + lift * HELION_RT_SHADOW_LIFT + LightDirection.xyz * HELION_RT_SHADOW_LIFT;
     rayQueryInitializeEXT(shadow, Scene, gl_RayFlagsTerminateOnFirstHitEXT, HELION_RT_SHADOW_INSTANCES, origin, HELION_RT_RAY_START, LightDirection.xyz, HELION_RT_SHADOW_REACH);
     helionTraceCutout(shadow);
     return rayQueryGetIntersectionTypeEXT(shadow, true) == gl_RayQueryCommittedIntersectionNoneEXT ? 1.0 : HELION_RT_SHADOWED_SKY;
@@ -88,6 +88,16 @@ vec4 helionHitColor(rayQueryEXT query, float skyShadow) {
 #endif
     HelionSurfacePoint point = helionCommittedPoint(query);
     return helionLitColor(textureLod(AtlasSampler, point.uv, 0.0).rgb * point.tint.rgb, point.light * vec2(1.0, skyShadow));
+}
+
+vec3 helionHitLift(rayQueryEXT query, vec3 direction) {
+#ifdef HELION_RT_ENTITIES
+    if (helionIsEntity(rayQueryGetIntersectionInstanceCustomIndexEXT(query, true))) {
+        return -direction;
+    }
+#endif
+    vec3 normal = helionCommittedPoint(query).normal;
+    return dot(normal, direction) < 0.0 ? normal : -normal;
 }
 
 bool helionCandidateHit(rayQueryEXT query) {
@@ -168,5 +178,5 @@ void main() {
         return;
     }
     vec3 hit = origin + direction * rayQueryGetIntersectionTEXT(query, true);
-    imageStore(Reflection, pixel, helionHitColor(query, helionSkyShadow(hit, direction)));
+    imageStore(Reflection, pixel, helionHitColor(query, helionSkyShadow(hit, helionHitLift(query, direction))));
 }

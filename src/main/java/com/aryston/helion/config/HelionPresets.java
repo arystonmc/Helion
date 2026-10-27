@@ -37,6 +37,7 @@ final class HelionPresets {
             preset.set(options.edgeSmoothing, preset == quality)
                 .set(options.autoExposure, preset == experimental)
                 .set(options.rayTracing, preset == experimental)
+                .set(options.pathTracing, preset == experimental)
                 .set(options.waterReflections, true)
                 .set(options.screenReflections, preset == experimental)
                 .set(options.rainWetness, preset != vanilla)

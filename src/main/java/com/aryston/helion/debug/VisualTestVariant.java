@@ -27,7 +27,8 @@ enum VisualTestVariant {
     PHYSICAL_SKY(true, ToneMapper.NEUTRAL, false),
     SCREEN_REFLECTIONS(true, ToneMapper.NEUTRAL, false),
     HYBRID_REFLECTIONS(true, ToneMapper.NEUTRAL, false),
-    PARITY(true, ToneMapper.NEUTRAL, false);
+    PARITY(true, ToneMapper.NEUTRAL, false),
+    PATH_TRACING(true, ToneMapper.NEUTRAL, false);
 
     private static final CloudSettings VOLUMETRIC_CLOUDS = new CloudSettings(true, CloudQuality.MEDIUM);
 
@@ -79,6 +80,7 @@ enum VisualTestVariant {
                 ReflectionSettings.DISABLED
             );
         }
+        boolean pathTracing = this == PATH_TRACING;
         BloomSettings bloom = new BloomSettings(
             true, (float) BloomSettings.DEFAULT_INTENSITY, (float) BloomSettings.DEFAULT_THRESHOLD, bloomOnly
         );
@@ -87,11 +89,11 @@ enum VisualTestVariant {
                 toneMapper, ImageSettings.DEFAULT_EXPOSURE, settings.image().autoExposure(), true, bloom, SharpeningSettings.DISABLED, MotionBlurSettings.DISABLED,
                 settings.image().colorGrade(), settings.image().depthOfField(), settings.image().edgeSmoothing()
             ),
-            settings.geometry(),
+            pathTracing ? new GeometryBufferSettings(true, GeometryBufferView.NONE) : settings.geometry(),
             settings.temporal(),
             settings.sky(),
             settings.clouds(),
-            settings.rayTracing(),
+            pathTracing ? new RayTracingSettings(true, settings.rayTracing().waterReflections(), true) : settings.rayTracing(),
             settings.reflections()
         );
     }

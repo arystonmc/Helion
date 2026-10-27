@@ -39,6 +39,9 @@ public final class RtxSectionCapture {
     private static final int SECOND = 1;
     private static final int THIRD = 2;
     private static final int FOURTH = 3;
+    private static final int NORMAL_INT = 3;
+    private static final float NORMAL_SCALE = 32767.0F;
+    private static final float MIN_AREA = 1.0e-12F;
     private static final int UNKNOWN_FORMAT = -1;
     private static final int NO_QUADS = 0;
     private static volatile boolean unknownFormatReported;
@@ -132,8 +135,51 @@ public final class RtxSectionCapture {
             surface[attribute++] = plain != null
                 ? (data.getShort(base + light.offset()) & BYTE_MASK) | (data.getShort(base + light.offset() + Short.BYTES) & BYTE_MASK) << SECOND_SHIFT
                 : data.getShort(base + light.offset() + FOURTH * Short.BYTES) & COMPACT_MASK;
+            attribute++;
         }
+        writeNormals(positions, surface, firstVertex, vertices);
         return vertices;
+    }
+
+    private static void writeNormals(float[] positions, int[] surface, int firstVertex, int vertices) {
+        for (int quad = firstVertex; quad < firstVertex + vertices; quad += VERTICES_PER_QUAD) {
+            int packed = packNormal(positions, quad);
+            for (int corner = 0; corner < VERTICES_PER_QUAD; corner++) {
+                surface[(quad + corner) * RtxSectionUpdate.SURFACE_INTS_PER_VERTEX + NORMAL_INT] = packed;
+            }
+        }
+    }
+
+    private static int packNormal(float[] positions, int quad) {
+        int a = quad * FLOATS_PER_VERTEX;
+        int b = a + FLOATS_PER_VERTEX;
+        int c = b + FLOATS_PER_VERTEX;
+        int d = c + FLOATS_PER_VERTEX;
+        float ux = positions[c] - positions[a];
+        float uy = positions[c + SECOND] - positions[a + SECOND];
+        float uz = positions[c + THIRD] - positions[a + THIRD];
+        float vx = positions[d] - positions[b];
+        float vy = positions[d + SECOND] - positions[b + SECOND];
+        float vz = positions[d + THIRD] - positions[b + THIRD];
+        float nx = uy * vz - uz * vy;
+        float ny = uz * vx - ux * vz;
+        float nz = ux * vy - uy * vx;
+        float sum = Math.abs(nx) + Math.abs(ny) + Math.abs(nz);
+        if (sum < MIN_AREA) {
+            return 0;
+        }
+        float x = nx / sum;
+        float y = ny / sum;
+        if (nz < 0.0F) {
+            float foldedX = (1.0F - Math.abs(y)) * sign(x);
+            y = (1.0F - Math.abs(x)) * sign(y);
+            x = foldedX;
+        }
+        return (Math.round(x * NORMAL_SCALE) & COMPACT_MASK) | (Math.round(y * NORMAL_SCALE) & COMPACT_MASK) << THIRD_SHIFT;
+    }
+
+    private static float sign(float value) {
+        return value >= 0.0F ? 1.0F : -1.0F;
     }
 
     private static int packUv(float u, float v) {

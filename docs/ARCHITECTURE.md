@@ -26,7 +26,7 @@ The sections live in `docs/architecture/`, one file per topic. Read the invarian
 | Render Settings | [render-settings.md](architecture/render-settings.md) | `RenderSettings` is an immutable snapshot of every effect setting, taken from the client config and carried in `FrameContext`. |
 | Shaders and Pipelines | [shaders-and-pipelines.md](architecture/shaders-and-pipelines.md) | Shaders live in `src/main/resources/assets/helion/shaders/<feature>/*.fsh`, shared code in `shaders/include/helion_*.glsl`, included as ... |
 | Image Pipeline | [image-pipeline.md](architecture/image-pipeline.md) | Why There Is No Real HDR Scene Target |
-| Geometry Buffer | [geometry-buffer.md](architecture/geometry-buffer.md) | Foundation for Helion's own lighting. |
+| Geometry Buffer | [geometry-buffer.md](architecture/geometry-buffer.md) | Foundation for Helion's own lighting and the primary surfaces of the path traced light. |
 | Temporal Anti-Aliasing | [temporal-anti-aliasing.md](architecture/temporal-anti-aliasing.md) | Off by default (`temporalAntiAliasing.enabled`). |
 | Motion Blur | [motion-blur.md](architecture/motion-blur.md) | Off by default (`image.motionBlur.enabled`, experimental). |
 | Edge Smoothing | [edge-smoothing.md](architecture/edge-smoothing.md) | Off by default (`image.edgeSmoothing`). |
@@ -34,7 +34,8 @@ The sections live in `docs/architecture/`, one file per topic. Read the invarian
 | Physical Sky | [physical-sky.md](architecture/physical-sky.md) | Off by default (`physicalSky.enabled`). |
 | Volumetric Clouds | [volumetric-clouds.md](architecture/volumetric-clouds.md) | Off by default (`clouds.enabled`, experimental), on in the Experimental preset at Medium quality. |
 | Light Shafts | [light-shafts.md](architecture/light-shafts.md) | Sun and moon god rays in screen space, on wherever the physical sky runs (`physicalSky.lightShafts`). |
-| Ray Tracing | [ray-tracing.md](architecture/ray-tracing.md) | Optional hardware ray tracing layer, experimental setting `rayTracing.enabled` (restart) with water reflections: device features, VMA buffers, per-section bottom levels from the block meshes, per-frame top level, sun shadow validation view. |
+| Ray Tracing | [ray-tracing.md](architecture/ray-tracing.md) | Optional hardware ray tracing layer, experimental setting `rayTracing.enabled` (restart) with water reflections: device features, VMA buffers, per-section bottom levels from the block meshes, per-frame top level, entities, traced reflections. |
+| Path Tracing | [path-tracing.md](architecture/path-tracing.md) | Helion's light rebuilt as RTX path tracing (`rayTracing.pathTracing`): frame, radiance image, surface data of hits, state of the phases. |
 | Rain Wetness | [rain-wetness.md](architecture/rain-wetness.md) | On by default (`reflections.rainWetness`): wet, darker surfaces in rain, puddles with screen space reflections and rain ripples on blocks that hold water, material classes from the block atlas mask. |
 | Dynamic Water | [dynamic-water.md](architecture/dynamic-water.md) | Visual-only interactive water: a scrolling wave height field around the camera fed by entities, splashes and rain drops. |
 | Water Optics | [water-optics.md](architecture/water-optics.md) | Realistic water look: capillary waves with filtered roughness, GGX glints, the cloud sky map for reflections, color and clarity from biome and depth, and the underwater pass. |

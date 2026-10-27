@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Experimental path traced light (Ray Tracing section): the foundation of Helion's new ray traced light; it takes over the vanilla light for now
 - Glass is smooth with an even tint and carries rain drops that bead up and run down
 - Realistic glass: plain glass slightly bends the view behind it, stained glass tints it like real colored glass, and glass reflects the world
 - Realistic water: waves roll in from open water and break on beaches with white foam that runs up the shore

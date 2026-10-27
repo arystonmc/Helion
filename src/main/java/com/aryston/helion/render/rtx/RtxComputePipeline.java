@@ -25,10 +25,12 @@ import org.lwjgl.vulkan.VkWriteDescriptorSetAccelerationStructureKHR;
 
 final class RtxComputePipeline {
     static final int WORKGROUP_SIZE = 8;
+    static final int NO_CONSTANTS = 0;
 
     private static final int SINGLE = 1;
     private static final int NO_OFFSET = 0;
     private static final int FIRST_SET = 0;
+    private static final ByteBuffer NO_CONSTANT_DATA = ByteBuffer.allocateDirect(NO_CONSTANTS);
 
     private final VkDevice device;
     private final long setLayout;
@@ -69,6 +71,10 @@ final class RtxComputePipeline {
         }
     }
 
+    void dispatch(VkCommandBuffer commandBuffer, List<RtxBinding> bindings, int width, int height) {
+        dispatch(commandBuffer, bindings, NO_CONSTANT_DATA, width, height);
+    }
+
     void dispatch(VkCommandBuffer commandBuffer, List<RtxBinding> bindings, ByteBuffer constants, int width, int height) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             VK10.vkCmdBindPipeline(commandBuffer, VK10.VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
@@ -77,7 +83,9 @@ final class RtxComputePipeline {
                 describe(writes.get(binding), binding, bindings.get(binding), stack);
             }
             KHRPushDescriptor.vkCmdPushDescriptorSetKHR(commandBuffer, VK10.VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, FIRST_SET, writes);
-            VK10.vkCmdPushConstants(commandBuffer, pipelineLayout, VK10.VK_SHADER_STAGE_COMPUTE_BIT, NO_OFFSET, constants);
+            if (constants.hasRemaining()) {
+                VK10.vkCmdPushConstants(commandBuffer, pipelineLayout, VK10.VK_SHADER_STAGE_COMPUTE_BIT, NO_OFFSET, constants);
+            }
             VK10.vkCmdDispatch(commandBuffer, Math.ceilDiv(width, WORKGROUP_SIZE), Math.ceilDiv(height, WORKGROUP_SIZE), SINGLE);
         }
     }
@@ -140,14 +148,15 @@ final class RtxComputePipeline {
 
     private static long createPipelineLayout(VkDevice device, long setLayout, int pushConstantBytes) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            VkPushConstantRange.Buffer constants = VkPushConstantRange.calloc(SINGLE, stack)
-                .stageFlags(VK10.VK_SHADER_STAGE_COMPUTE_BIT)
-                .offset(NO_OFFSET)
-                .size(pushConstantBytes);
             VkPipelineLayoutCreateInfo info = VkPipelineLayoutCreateInfo.calloc(stack)
                 .sType$Default()
-                .pSetLayouts(stack.longs(setLayout))
-                .pPushConstantRanges(constants);
+                .pSetLayouts(stack.longs(setLayout));
+            if (pushConstantBytes > NO_CONSTANTS) {
+                info.pPushConstantRanges(VkPushConstantRange.calloc(SINGLE, stack)
+                    .stageFlags(VK10.VK_SHADER_STAGE_COMPUTE_BIT)
+                    .offset(NO_OFFSET)
+                    .size(pushConstantBytes));
+            }
             LongBuffer handle = stack.mallocLong(1);
             RtxBuffer.check(VK10.vkCreatePipelineLayout(device, info, null, handle), "pipeline layout");
             return handle.get(0);

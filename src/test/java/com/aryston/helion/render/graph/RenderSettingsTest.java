@@ -23,7 +23,7 @@ class RenderSettingsTest {
         new TemporalSettings(true, RenderScale.NATIVE),
         PhysicalSkySettings.enabledWithDefaults(),
         new CloudSettings(true, CloudQuality.HIGH),
-        new RayTracingSettings(true, true),
+        new RayTracingSettings(true, true, true),
         new ReflectionSettings(true, true, true)
     );
 

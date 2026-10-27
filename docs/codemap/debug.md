@@ -41,7 +41,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VisualTestVariant
 - Path: `src/main/java/com/aryston/helion/debug/VisualTestVariant.java`
-- Role: Render variants per scene: vanilla, None, Neutral, Filmic, bloom only, temporal (only temporal anti-aliasing on), physical sky (only the physical sky and volumetric clouds at Medium on), screen reflections and hybrid reflections (geometry buffer, physical sky, volumetric clouds and screen space reflections on, without and with ray tracing), all for comparison with vanilla, and parity, each turning the core on or off and setting default image settings.
+- Role: Render variants per scene: vanilla, None, Neutral, Filmic, bloom only, temporal (only temporal anti-aliasing on), physical sky (only the physical sky and volumetric clouds at Medium on), screen reflections and hybrid reflections (geometry buffer, physical sky, volumetric clouds and screen space reflections on, without and with ray tracing), all for comparison with vanilla, parity, and path tracing (the Neutral settings with the geometry buffer, ray tracing and the path traced light forced on; the device still needs ray tracing at startup, for example `-Dhelion.rayTracing=true`), each turning the core on or off and setting default image settings.
 
 #### VisualTestWorld
 - Path: `src/main/java/com/aryston/helion/debug/VisualTestWorld.java`

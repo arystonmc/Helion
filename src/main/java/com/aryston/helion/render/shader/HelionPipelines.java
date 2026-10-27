@@ -11,6 +11,7 @@ import com.aryston.helion.render.motion.MotionBlurPipelines;
 import com.aryston.helion.render.post.ImagePipelines;
 import com.aryston.helion.render.temporal.TemporalPipelines;
 import com.aryston.helion.render.water.WaterPipelines;
+import com.aryston.helion.render.pathtracing.PathTracingPipelines;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
@@ -38,7 +39,8 @@ public final class HelionPipelines {
             DepthOfFieldPipelines.all(),
             EdgeSmoothingPipelines.all(),
             GeometryBufferPipelines.all(),
-            WaterPipelines.all()
+            WaterPipelines.all(),
+            PathTracingPipelines.all()
         ).flatMap(List::stream).toList();
     }
 

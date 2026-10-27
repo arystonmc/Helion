@@ -21,6 +21,7 @@ import com.aryston.helion.render.post.ImageCompositeStage;
 import com.aryston.helion.render.post.PostProcessingStage;
 import com.aryston.helion.render.post.PresentStage;
 import com.aryston.helion.render.post.SharpeningStage;
+import com.aryston.helion.render.rtx.RtxPathTracingStage;
 import com.aryston.helion.render.rtx.RtxReflectionStage;
 import com.aryston.helion.render.rtx.RtxSceneStage;
 import com.aryston.helion.render.scene.ClearStage;
@@ -65,6 +66,7 @@ public final class FrameStages {
             new OpaqueGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere(), core.glossy()),
             new EntityGeometryStage(sources.entities()),
             new RtxSceneStage(core.rayTracing()),
+            new RtxPathTracingStage(core.rayTracing(), sources.terrain()),
             new SolidFeatureStage(sources.terrain(), sources.entities()),
             new TranslucentFeatureStage(sources.entities()),
             new CloudStage(sources.clouds(), core.clouds()),

@@ -4,7 +4,7 @@ Part of the [Helion architecture](../ARCHITECTURE.md).
 
 ## Geometry Buffer
 
-Foundation for Helion's own lighting, which is being rebuilt as path tracing (see Ray Tracing, Light and Shadows). Off by default (`geometryBuffer.enabled`). Read today by rain wetness, the screen space and ray traced reflections, the heat shimmer and the debug view. Its targets are cleared to zero in the geometry pass, so alpha 0 marks pixels without terrain.
+Foundation for Helion's own lighting, which is being rebuilt as path tracing (see Ray Tracing, Light and Shadows). Off by default (`geometryBuffer.enabled`). Read today by rain wetness, the screen space and ray traced reflections, the heat shimmer, the path traced light and the debug view. Its targets are cleared to zero in the geometry pass, so alpha 0 marks pixels without terrain.
 
 - `VanillaGeometryPipelines` copies the vanilla `SOLID_TERRAIN`, `CUTOUT_TERRAIN` and their multi-draw pipelines with `toBuilder()`, so every define (`ALPHA_CUTOUT`), bind group, vertex format and depth state stays vanilla, and replaces the shaders with `helion:terrain/geometry` plus three more color targets.
 - Aervium's `compactVertices` module can switch the vanilla solid and cutout terrain to a 16-byte vertex format and adds the define `AERVIUM_COMPACT_VERTICES=1`; the geometry pipelines inherit both through `toBuilder()`, and `helion_terrain_vertex.glsl` decodes it to the same position, texture coordinate and light values, so the rest of both terrain shaders is unchanged. The contract is the define, not shared code (rule S2); `CompactTerrainVertices` turns the geometry buffer off with a warning for a format version Helion does not know.

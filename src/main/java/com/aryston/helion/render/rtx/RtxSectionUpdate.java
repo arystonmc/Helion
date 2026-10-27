@@ -5,7 +5,7 @@ import org.jspecify.annotations.Nullable;
 public record RtxSectionUpdate(
     int sectionX, int sectionY, int sectionZ, float @Nullable [] positions, int @Nullable [] surface, int quads, int solidQuads
 ) {
-    public static final int SURFACE_INTS_PER_VERTEX = 3;
+    public static final int SURFACE_INTS_PER_VERTEX = 4;
     private static final int NO_QUADS = 0;
 
     public static RtxSectionUpdate mesh(int sectionX, int sectionY, int sectionZ, float[] positions, int[] surface, int quads, int solidQuads) {

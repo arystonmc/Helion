@@ -4,7 +4,7 @@ Part of the [Helion architecture](../ARCHITECTURE.md).
 
 ## Goal
 
-The foundation for cards with hardware ray tracing. Users today: reflections on water, glass, ice and rain puddles. Next: Helion's whole light and shadow, rebuilt as path tracing (see Light and Shadows below). The experimental setting `rayTracing.enabled` (Lighting page, on in the Experimental preset) turns it on after a restart: the device is created before NeoForge loads the client config, so `RayTracingStartup` reads that line from `helion-client.toml` when the Vulkan mixins first ask, and `-Dhelion.rayTracing=true` forces it for tests. Turning it off in game releases the scene at once (`RayTracingResources.suspend`); turning it on again rebuilds it if the device was created with ray tracing. `rayTracing.waterReflections` switches the water reflections without a restart. With the setting off and no property nothing of it loads and the device is created as before.
+The foundation for cards with hardware ray tracing. Users today: reflections on water, glass, ice and rain puddles, and the first phase of Helion's path traced light (`rayTracing.pathTracing`, see Path Tracing). The experimental setting `rayTracing.enabled` (Lighting page, on in the Experimental preset) turns it on after a restart: the device is created before NeoForge loads the client config, so `RayTracingStartup` reads that line from `helion-client.toml` when the Vulkan mixins first ask, and `-Dhelion.rayTracing=true` forces it for tests. Turning it off in game releases the scene at once (`RayTracingResources.suspend`); turning it on again rebuilds it if the device was created with ray tracing. `rayTracing.waterReflections` switches the water reflections without a restart. With the setting off and no property nothing of it loads and the device is created as before.
 
 ## Device
 
@@ -59,14 +59,14 @@ Entities (same scenes, about 2,900 entity quads in view across the whole render 
 
 ## Light and Shadows (2026-10-27)
 
-Decision of the owner: Helion's light and shadow system is rebuilt from scratch as RTX path tracing. The old system was removed from `main`: vanilla light levels relit in HDR by deferred shading, GTAO ambient occlusion, cascaded shadow maps, dynamic lights, voxel lighting with its traced block light and probe bounce, and the ray traced passes on top of them (sun shadow, block light, the first path traced indirect light). It is kept on the branch `archive/voxel-lighting`, tag `lighting-v1`; read old code with `git show lighting-v1:<path>`. Until the path traced light lands, terrain and entities keep the vanilla light: the geometry pass writes the vanilla color into the scene and nothing relights it. Cards without ray queries will keep vanilla light; water, sky, clouds, reflections and post effects work on every card.
+Decision of the owner: Helion's light and shadow system is rebuilt from scratch as RTX path tracing. The old system was removed from `main`: vanilla light levels relit in HDR by deferred shading, GTAO ambient occlusion, cascaded shadow maps, dynamic lights, voxel lighting with its traced block light and probe bounce, and the ray traced passes on top of them (sun shadow, block light, the first path traced indirect light). It is kept on the branch `archive/voxel-lighting`, tag `lighting-v1`; read old code with `git show lighting-v1:<path>`. Until the path traced light lands, terrain and entities keep the vanilla light: the geometry pass writes the vanilla color into the scene, and with `rayTracing.pathTracing` on the path tracing stage rewrites the same vanilla light from its radiance image (see Path Tracing, State). Cards without ray queries will keep vanilla light; water, sky, clouds, reflections and post effects work on every card.
 
 ## Next
 
 1. Water: reflections seen from under water; ray traced puddles (puddles reflect only the screen and the sky). Done 2026-10-24: refraction of the bottom (realistic water, every card), traced reflections on glass and ice, a sun or moon shadow ray at every reflection hit.
 2. Entities in reflections: armor glint, emissive layers and translucent entities.
 3. Compaction of the bottom levels and a radius chosen by memory. Weighed on 2026-10-24 and left for later: the whole scene is 31 MiB for 267 sections, compaction would save roughly a third of it but needs a query readback and the destruction of the old structure only after every frame in flight has finished with it.
-4. Path traced light: sun and moon next event estimation, ReSTIR for block lights, multi-bounce indirect light and a denoiser, in the phases of the plan.
+4. Path traced light: sun and moon next event estimation, ReSTIR for block lights, multi-bounce indirect light and a denoiser, in the phases of the plan (see Path Tracing, Next).
 
 ## Mobs in Ray Traced Reflections (2026-10-23)
 
