@@ -8,6 +8,7 @@ const float HELION_GEOMETRY_GLOSSY = 0.75;
 const float HELION_GEOMETRY_DRY = 0.625;
 const float HELION_GEOMETRY_MUDDY = 0.5625;
 const float HELION_GEOMETRY_LAVA = 0.6875;
+const float HELION_GEOMETRY_EMISSIVE = 0.8125;
 const float HELION_GEOMETRY_MATERIAL_TOLERANCE = 0.03;
 const float HELION_GLOSSY_CELL = 0.9;
 const float HELION_MATERIAL_CELL_STEPS = 8.0;
@@ -35,6 +36,9 @@ float helionGeometryMaterial(float cell) {
     int material = helionMaterialCell(cell);
     if (helionIsLavaCell(material)) {
         return HELION_GEOMETRY_LAVA;
+    }
+    if (material == HELION_CELL_EMISSIVE) {
+        return HELION_GEOMETRY_EMISSIVE;
     }
     if (material == HELION_CELL_GLOSSY) {
         return HELION_GEOMETRY_GLOSSY;

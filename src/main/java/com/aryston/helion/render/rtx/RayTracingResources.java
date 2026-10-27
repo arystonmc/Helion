@@ -16,6 +16,7 @@ import org.lwjgl.vulkan.VK10;
 
 public final class RayTracingResources {
     static final int REFLECTION_CONSTANT_BYTES = 112;
+    static final int PATH_TRACE_CONSTANT_BYTES = 128;
     private static final String REFLECTION_SOURCE = "/assets/helion/shaders/rtx/reflection.csh";
     private static final String REFLECTION_NAME = "reflection.csh";
     private static final String REFLECTION_PIPELINE_LABEL = "Helion Ray Tracing Reflection Pipeline";
@@ -65,9 +66,16 @@ public final class RayTracingResources {
     private static final String ENTITY_REFLECTION_DEFINE = "HELION_RT_ENTITIES";
     private static final int[] PATH_TRACE_DESCRIPTORS = {
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        KHRAccelerationStructure.VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     };
 
     private final GpuResources resources;
@@ -79,6 +87,7 @@ public final class RayTracingResources {
     private @Nullable RtxImage reflectionImage;
     private @Nullable ByteBuffer reflectionConstants;
     private @Nullable RtxComputePipeline pathTrace;
+    private @Nullable ByteBuffer pathTraceConstants;
     private @Nullable RtxImage radianceImage;
     private boolean checked;
     private boolean reportedComplete;
@@ -171,6 +180,13 @@ public final class RayTracingResources {
         return Objects.requireNonNull(pathTrace);
     }
 
+    ByteBuffer pathTraceConstants() {
+        if (pathTraceConstants == null) {
+            pathTraceConstants = MemoryUtil.memAlloc(PATH_TRACE_CONSTANT_BYTES);
+        }
+        return pathTraceConstants;
+    }
+
     RtxImage radiance(int width, int height) {
         RtxImage current = radianceImage;
         if (current != null && current.fits(width, height)) {
@@ -213,9 +229,13 @@ public final class RayTracingResources {
         if (reflectionConstants != null) {
             MemoryUtil.memFree(reflectionConstants);
         }
+        if (pathTraceConstants != null) {
+            MemoryUtil.memFree(pathTraceConstants);
+        }
         scene = null;
         reflectionImage = null;
         reflectionConstants = null;
+        pathTraceConstants = null;
         radianceImage = null;
     }
 
@@ -241,7 +261,7 @@ public final class RayTracingResources {
             LOGGER.error("Helion ray traced reflections are off: {}", exception.getMessage());
         }
         try {
-            RtxComputePipeline traced = RtxComputePipeline.create(rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, PATH_TRACE_DESCRIPTORS, RtxComputePipeline.NO_CONSTANTS);
+            RtxComputePipeline traced = RtxComputePipeline.create(rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, PATH_TRACE_DESCRIPTORS, PATH_TRACE_CONSTANT_BYTES);
             resources.track(PATH_TRACE_PIPELINE_LABEL, PIPELINE_BYTES, traced::destroy);
             pathTrace = traced;
         } catch (IllegalStateException exception) {

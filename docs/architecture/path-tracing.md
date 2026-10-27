@@ -15,7 +15,7 @@ Helion's light and shadow, rebuilt from scratch as RTX path tracing (decision of
 1. The geometry pass rasterizes the primary surfaces as before: depth, face normal, light levels with the block material, and albedo with the fog amount (see Geometry Buffer). Primary rays stay rasterized; they are cheaper and already exist.
 2. `RtxSceneStage` builds the section and entity acceleration structures.
 3. `RtxPathTracingStage`, at the frame position where deferred shading ran before the removal:
-   - pass `path_trace` dispatches `rtx/path_trace.csh` over a full resolution RGBA16F radiance image (`RayTracingResources.radiance`), linear HDR radiance for every geometry buffer pixel;
+   - pass `path_trace` dispatches `rtx/path_trace.csh` over a full resolution RGBA16F radiance image (`RayTracingResources.radiance`), linear HDR radiance for every geometry buffer pixel (see Direct Light);
    - pass `path_traced_light` encodes it into the RGBA8 scene with the Neutral curve (the same encoding the image composite expands with `helionExpandScene`), then applies the chunk fade (light target blue) and the fog (albedo alpha) as the geometry pass did, only where geometry was written.
 4. Everything after it (solid features, water, reflections, light shafts, transparency, post effects) is unchanged.
 
@@ -23,13 +23,19 @@ Helion's light and shadow, rebuilt from scratch as RTX path tracing (decision of
 
 Each section vertex in the surface buffer has four ints: texture coordinate, vertex color, light coordinates and the octahedral face normal of its quad (see `RtxSectionUpdate`). Hit shading reads the exact normal instead of guessing it. The material class of a hit will be read from the glossy block mask at its texture coordinate, so the capture needs no atlas on the compile workers.
 
-## State (Phase 2 of the plan, 2026-10-27)
+## Direct Light (Phase 3, 2026-10-27)
 
-The foundation: setting, radiance image, both passes and the face normal in the surface data. The radiance is still the vanilla light (albedo times the bilinear lightmap at the stored levels, through the inverse Neutral curve), so the picture matches vanilla; the visual test variant `path_tracing` checks that. The face normal is used by the shadow ray of the traced reflections.
+The stage needs the physical sky (`SkyLight`: sun, moon and dome irradiance in a 3x1 target) and a scene anchor; without the sky terrain keeps the vanilla light.
 
-Moved to Phase 3, where their first user arrives (rule C4): the emitter registry of light emitting blocks per section, the light buffer with its section neighborhood table and the dynamic lights of held and burning things.
+- Units (L-175): linear light where open flat ground under the full sky equals the vanilla full sky light linearized. Every frame the factor `scale` maps sun times its height plus moon times its height plus dome onto the vanilla full sky light minus the vanilla darkest light, which stays as the ambient floor. Day and night brightness therefore follow vanilla while the shape of the light is traced.
+- Albedo: the geometry albedo is divided by the vanilla directional shade of its face (up 1, down 0.5, north and south 0.8, east and west 0.6; cross plants keep theirs) and linearized. The vanilla ambient occlusion in the vertex color stays for now.
+- Sun and moon: one shadow ray each (only above the horizon) toward a direction sampled in a disk of about four times the real angular radius, masks 1 and 2 with the cutout test, from an origin offset along the normal by a constant plus a share of the distance (L-173). A pixel with sky level 0 gets no sun or moon, so rays that leave the scene above a deep cave do not light it.
+- Sky dome: the dome irradiance times the vanilla sky level raised to 2.2, a stand-in for sky occlusion until traced indirect light arrives, and weaker on faces that look down.
+- Block lights: `RtxSectionLights` scans every compiled section for light emitting blocks (box of the shape, `LightColors` color, range and strength from the level); `RtxLightScene` puts the lights of each section and its neighbors into a 9x9x9 cell grid around the anchor (up to 32 per cell). Each candidate is weighed unshadowed with a windowed inverse square falloff from the nearest point of its box and a Lambert term aimed at the face of the light that looks the same way as the surface (L-176). The brightest light gets a shadow ray, and one other light is picked in proportion to its weight with weighted reservoir sampling and traced; its estimate adds only a saturating share (L-171). Shadow rays end where they enter the light box, and faces of the light itself count as lit (L-174). Fire lights flicker. A small share of the vanilla block light stands in for bounced block light, and block light fades by day where the sky lights the pixel (L-170).
+- Emissive texels (glossy mask cell 1, now geometry material `HELION_GEOMETRY_EMISSIVE`, 0.8125) and lava stay full bright. Pixels within 8 blocks of the scene edge blend to the vanilla light.
+
+Deferred: temporal and spatial reservoir reuse (with the reprojection and history of Phase 5), dynamic lights of held and burning things, the stained glass tint, separate diffuse and specular signals (no consumer before Phase 5), GGX and Burley shading (Phase 6 materials), ambient occlusion only on the ambient term, and sun shadows on emissive faces.
 
 ## Next
 
-1. Phase 3, direct light: sun and moon next event estimation with a soft disk, ReSTIR DI for block and dynamic lights, stained glass tint, separate diffuse and specular signals.
-2. Phase 4, multi-bounce indirect light; Phase 5, the denoiser; Phase 6, materials and traced specular; Phase 7, exposure calibration and the finish.
+1. Phase 4, multi-bounce indirect light, which replaces the sky dome stand-in and the block light fill; Phase 5, the denoiser; Phase 6, materials and traced specular; Phase 7, exposure calibration and the finish.

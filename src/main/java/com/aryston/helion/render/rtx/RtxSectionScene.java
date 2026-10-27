@@ -22,6 +22,7 @@ final class RtxSectionScene {
     private final RtxSharedScratch scratch = new RtxSharedScratch();
     private final RtxTopLevel topLevel;
     private final RtxEntityScene entities;
+    private final RtxLightScene lights;
     private final Long2ObjectOpenHashMap<RtxSectionBlas> built = new Long2ObjectOpenHashMap<>();
     private final Long2ObjectOpenHashMap<RtxSectionUpdate> pending = new Long2ObjectOpenHashMap<>();
     private final LongOpenHashSet known = new LongOpenHashSet();
@@ -36,6 +37,7 @@ final class RtxSectionScene {
         this.resources = resources;
         this.topLevel = RtxTopLevel.create(device, resources);
         this.entities = new RtxEntityScene(device, resources);
+        this.lights = RtxLightScene.create(device, resources);
     }
 
     RtxScenePlan prepare(RtxSectionInbox inbox, RtxSectionPos center) {
@@ -53,6 +55,7 @@ final class RtxSectionScene {
             release(built.remove(key));
             RtxSectionBlas blas = RtxSectionBlas.create(device, resources, update, indices.address(device, resources, update.quads()));
             built.put(key, blas);
+            lights.put(key, update.lights());
             builtBytes += blas.bytes();
             known.add(key);
             building.add(blas);
@@ -68,6 +71,7 @@ final class RtxSectionScene {
             }
         }
         topLevel.write(visible, center);
+        lights.write(center);
         return new RtxScenePlan(List.copyOf(building), scratchBase, built.size(), pending.size(), visible.size(), builtBytes);
     }
 
@@ -102,6 +106,10 @@ final class RtxSectionScene {
         return topLevel.surfaceTable();
     }
 
+    RtxBuffer lightBuffer() {
+        return lights.buffer();
+    }
+
     long topLevelHandle() {
         return topLevel.handle();
     }
@@ -120,6 +128,7 @@ final class RtxSectionScene {
         entities.close();
         scratch.close(resources);
         topLevel.release(resources);
+        lights.release(resources);
         builtBytes = NO_BYTES;
     }
 
@@ -130,6 +139,7 @@ final class RtxSectionScene {
                 pending.remove(key);
                 release(built.remove(key));
                 known.remove(key);
+                lights.remove(key);
                 continue;
             }
             if (!center.within(update.sectionX(), update.sectionY(), update.sectionZ(), RADIUS + EVICTION_MARGIN)) {
@@ -139,6 +149,7 @@ final class RtxSectionScene {
                 pending.remove(key);
                 release(built.remove(key));
                 known.add(key);
+                lights.put(key, update.lights());
                 continue;
             }
             pending.put(key, update);
@@ -160,6 +171,7 @@ final class RtxSectionScene {
             return !center.within(update.sectionX(), update.sectionY(), update.sectionZ(), limit);
         });
         known.removeIf((long key) -> !center.within(RtxSectionKey.x(key), RtxSectionKey.y(key), RtxSectionKey.z(key), limit));
+        lights.removeIf((long key) -> !center.within(RtxSectionKey.x(key), RtxSectionKey.y(key), RtxSectionKey.z(key), limit));
         requested.removeIf((long key) -> !center.within(RtxSectionKey.x(key), RtxSectionKey.y(key), RtxSectionKey.z(key), limit));
     }
 

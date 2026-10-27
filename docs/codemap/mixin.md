@@ -86,5 +86,5 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### SectionCompilerMixin
 - Path: `src/main/java/com/aryston/helion/mixin/SectionCompilerMixin.java`
-- Role: Hands the result of every `SectionCompiler.compile` (on the section compile worker) to `RtxSectionCapture`, which copies the solid and cutout quad positions for ray tracing.
+- Role: Hands the result of every `SectionCompiler.compile` (on the section compile worker) to `RtxSectionCapture`, which copies the solid and cutout quad positions for ray tracing, together with the render section region it scans for block lights.
 - Notes: NeoForge's `AddSectionGeometryEvent` adds geometry but never sees the finished meshes; selected with the full descriptor because a shorter overload calls this one.

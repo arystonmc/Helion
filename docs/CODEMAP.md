@@ -30,7 +30,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | Light shafts (god rays) of the sun and moon | `LightShaftStage`, `LightShaftView` (which light, screen position, fades), `LightShaftResources` (tuning), `shaders/light_shafts/`, `shaders/include/helion_light_shafts.glsl` |
 | GPU time of every preset in one run | `GpuProfile`, `HelionPresetSettings` |
 | Ray tracing (setting `rayTracing.enabled`, read at startup) | `RayTracingResources`, `RtxSectionScene`, `RtxSceneStage`, `RtxSectionCapture`, `RtxComputePipeline`, `RtxReflectionStage`, `SectionCompilerMixin`, `VulkanBackendMixin`, `VulkanFeatureSetsMixin`, `shaders/rtx/` |
-| Path traced light (setting `rayTracing.pathTracing`) | `RtxPathTracingStage`, `PathTracingPipelines`, `RayTracingResources`, `shaders/rtx/path_trace.csh`, `shaders/pathtracing/radiance.fsh` |
+| Path traced light (setting `rayTracing.pathTracing`) | `RtxPathTracingStage`, `PathTracingPipelines`, `RayTracingResources`, `RtxLightScene`, `RtxSectionLights`, `LightColors`, `shaders/rtx/path_trace.csh`, `shaders/pathtracing/radiance.fsh` |
 | Shader pipelines | `HelionPipelines`, `TemporalPipelines`, `PhysicalSkyPipelines`, `CloudPipelines`, `LightShaftPipelines`, `ImagePipelines` |
 | How vanilla terrain, entities, sky or OIT are called | `VanillaTerrainSource`, `VanillaEntitySource`, `VanillaAtmosphereSource`, `VanillaTransparencySource` |
 | The rebuilt vanilla `LevelRenderer.render` | `VanillaFrameDriver` |

@@ -6,8 +6,8 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### ClientEvents
 - Path: `src/main/java/com/aryston/helion/integration/ClientEvents.java`
-- Role: Wires every listener: client setup (compatibility check, passive notices), pipeline registration (including the geometry, entity geometry and water terrain pipelines), config loading, toggle and parity keys, notices and the debug log on client tick, the parity tick counter, debug log events for toggles and passive mode, shutdown.
-- Depends on: `HelionRenderCore`, `HelionKeys`, `ParityControl`, `CompatibilityGuard`, `PassiveModeNotice`, `HelionDebugEntry`, `HelionDebugLog`, `VisualTest`, `LevelRenderHook`.
+- Role: Wires every listener: client setup (compatibility check, passive notices), pipeline registration (including the geometry, entity geometry and water terrain pipelines), the `LightColors` reload listener, config loading, toggle and parity keys, notices and the debug log on client tick, the parity tick counter, debug log events for toggles and passive mode, shutdown.
+- Depends on: `HelionRenderCore`, `HelionKeys`, `ParityControl`, `CompatibilityGuard`, `PassiveModeNotice`, `HelionDebugEntry`, `HelionDebugLog`, `VisualTest`, `LevelRenderHook`, `LightColors`.
 
 #### RayTracingStartup
 - Path: `src/main/java/com/aryston/helion/integration/RayTracingStartup.java`

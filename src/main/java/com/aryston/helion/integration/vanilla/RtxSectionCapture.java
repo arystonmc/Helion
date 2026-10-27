@@ -14,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
+import net.minecraft.client.renderer.chunk.RenderSectionRegion;
 import net.minecraft.client.renderer.chunk.SectionCompiler;
 import net.minecraft.core.SectionPos;
 
@@ -49,7 +50,7 @@ public final class RtxSectionCapture {
     private RtxSectionCapture() {
     }
 
-    public static void captured(SectionPos position, SectionCompiler.Results results) {
+    public static void captured(SectionPos position, RenderSectionRegion region, SectionCompiler.Results results) {
         if (!RayTracing.requested()) {
             return;
         }
@@ -80,7 +81,7 @@ public final class RtxSectionCapture {
                 written += copied;
             }
         }
-        inbox.offer(RtxSectionUpdate.mesh(position.x(), position.y(), position.z(), positions, surface, quads, solidQuads));
+        inbox.offer(RtxSectionUpdate.mesh(position.x(), position.y(), position.z(), positions, surface, quads, solidQuads, RtxSectionLights.scan(position, region)));
     }
 
     public static void removed(long sectionNode) {

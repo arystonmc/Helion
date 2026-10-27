@@ -27,6 +27,6 @@ abstract class SectionCompilerMixin {
         List<AddSectionGeometryEvent.AdditionalSectionRenderer> additionalRenderers,
         CallbackInfoReturnable<SectionCompiler.Results> callback
     ) {
-        RtxSectionCapture.captured(position, callback.getReturnValue());
+        RtxSectionCapture.captured(position, region, callback.getReturnValue());
     }
 }

@@ -8,6 +8,7 @@ import com.aryston.helion.debug.GpuProfile;
 import com.aryston.helion.debug.VisualTest;
 import com.aryston.helion.integration.vanilla.EntityGeometryPipelines;
 import com.aryston.helion.integration.vanilla.LevelRenderHook;
+import com.aryston.helion.integration.vanilla.LightColors;
 import com.aryston.helion.integration.vanilla.VanillaGeometryPipelines;
 import com.aryston.helion.integration.vanilla.VanillaWaterPipelines;
 import com.aryston.helion.render.HelionRenderCore;
@@ -22,6 +23,7 @@ import net.minecraft.network.chat.Component;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -44,8 +46,13 @@ public final class ClientEvents {
         modBus.addListener(HelionKeys::register);
         modBus.addListener(HelionDebugEntry::register);
         modBus.addListener(ClientEvents::onRegisterPipelines);
+        modBus.addListener(ClientEvents::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(ClientEvents::onClientTick);
         NeoForge.EVENT_BUS.addListener(ClientEvents::onShutdown);
+    }
+
+    private static void onAddReloadListeners(AddClientReloadListenersEvent event) {
+        event.addListener(LightColors.LISTENER, new LightColors());
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {

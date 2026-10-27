@@ -63,7 +63,17 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### RtxSectionCapture
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/RtxSectionCapture.java`
-- Role: When ray tracing was requested at startup, copies the quad positions of the solid and cutout layers of a compiled section (vanilla `Position` floats or Aervium's compact `PositionLight`, 1/2048 block steps from -8) into a `RtxSectionUpdate` on the compile worker when the section is near the camera, reports reset sections, and once per frame passes the scene's recompile requests to `LevelExtractor.setSectionDirty`. Warns once and skips terrain in an unknown vertex format. Next to the positions it packs the surface attributes of every vertex: `UV0`, `Color` and `UV2` of the vanilla block format, or `PackedUV0`, `Color` and the light in `PositionLight.w` of the compact format.
+- Role: When ray tracing was requested at startup, copies the quad positions of the solid and cutout layers of a compiled section (vanilla `Position` floats or Aervium's compact `PositionLight`, 1/2048 block steps from -8) into a `RtxSectionUpdate` on the compile worker when the section is near the camera, reports reset sections, and once per frame passes the scene's recompile requests to `LevelExtractor.setSectionDirty`. Warns once and skips terrain in an unknown vertex format. Next to the positions it packs the surface attributes of every vertex: `UV0`, `Color` and `UV2` of the vanilla block format, or `PackedUV0`, `Color` and the light in `PositionLight.w` of the compact format. Each quad also carries its octahedral face normal, and the section carries the block lights `RtxSectionLights` found in it.
+
+#### RtxSectionLights
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/RtxSectionLights.java`
+- Role: Scans the 16x16x16 blocks of a compiled section on the compile worker for blocks with a light emission above 0 and writes one record of eight ints per light: the section relative box of its shape (a full block for an empty shape), its `LightColors` color and a half float pair of range (level plus one half) and strength (the level linearized with the power 2.2). Above 32 lights it keeps an even stride of them with a strength raised by the share it dropped.
+- Depends on: `LightColors`, `RtxSectionUpdate`.
+
+#### LightColors
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/LightColors.java`
+- Role: Client reload listener for `light/colors.json`, the color of every light source block. A color is normalized to luminance 1, mixed a quarter toward white and its brightest channel capped at 1.25 (L-172); `packed` returns it as RGB8 over a range of 2 with bit 24 set for fire lights that flicker.
+- Depends on: nothing of this mod.
 
 #### VanillaGeometryPipelines
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaGeometryPipelines.java`
