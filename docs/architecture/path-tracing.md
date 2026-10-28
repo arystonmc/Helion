@@ -61,15 +61,15 @@ An SVGF style filter over the demodulated irradiance, at full resolution, in pas
 
 Deferred: temporal anti-aliasing of the result, motion vectors of moving entities (the history follows the camera only), and a separate specular signal (Phase 6).
 
-## Face Light Cache (spike, 2026-10-28)
+## Face Light Cache (2026-10-28)
 
-On the branch `spike/face-light-cache`, switched on with the JVM property `helion.pathTracing.lightCache=true`; plan and measurements in the workspace `plans/helion-face-light-cache-spike.md`.
+Always on with the path traced light since 2026-10-28, after a spike on the branch `spike/face-light-cache`; plan and measurements in the workspace `plans/helion-face-light-cache-spike.md`.
 
 - Indirect light is kept per face cell in world space (`RtxLightCache`): the key is the face direction, the face plane (1/16 block steps up to level 1, whole blocks beyond), the cell column and row and a level. Level 0 cells are 1/4 block and the level grows by one per doubling of the view distance beyond 12 blocks, up to 16 block cells.
 - Trace: a pixel with an axis aligned normal claims its cell (linear probing over 8 slots, a second hash as the check, entries unused for 600 frames are taken over); the first pixel of the frame in a cell stores its position in the cell and its sky gate and queues the cell. Once the cell has 8 samples the pixel takes the bilinear blend of the four nearest cells on its plane; before that, and for other normals (plants, entities), it traces its own indirect path as before. Direct light stays per pixel.
 - Update, before the trace: one thread per cell queued last frame traces the indirect path from the stored position and blends it in with weight samples / count, up to 64. The two queues swap every frame; the update clears the one the trace fills next.
 - The push constants carry the anchor section and a frame counter instead of the scene reach (now a shader constant) and the random seed.
-- Measured on 2026-10-28 (RTX 4050 Laptop, 1080p, static camera): `path_trace` including the update fell from 2.2 to 5.9 ms to 1.2 to 2.1 ms in the five test scenes, with the same picture; the denoiser (2.8 to 3.9 ms) is now the largest cost of the path traced light.
+- Measured on 2026-10-28 (RTX 4050 Laptop, 1080p, static camera): `path_trace` including the update fell from 2.2 to 5.9 ms to 1.2 to 2.1 ms in the five test scenes, with the same picture; with a moving camera 2.1 against 5.2 ms (day) and 1.5 against 3.5 ms (torch room), and a removed torch loses its light within a second as without the cache; the denoiser (2.8 to 3.9 ms) is now the largest cost of the path traced light.
 
 ## Next
 

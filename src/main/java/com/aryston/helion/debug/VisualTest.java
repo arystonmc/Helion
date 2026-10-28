@@ -44,6 +44,9 @@ public final class VisualTest {
     private static final int WALKER_FIRST_STEP_TICKS = 80;
     private static final int WALKER_STEPS = 6;
     private static final int WALKER_STEP_TICKS = 3;
+    private static final int MOVE_TICKS = 20;
+    private static final double MOVE_STEP = 0.15;
+    private static final int CHANGE_LEAD_TICKS = 20;
     private static final int SCREENSHOT_DOWNSCALE = 2;
     private static final int FULL_SIZE = 1;
     private static final String SCREENSHOT_PREFIX = "helion_";
@@ -101,6 +104,12 @@ public final class VisualTest {
         }
         if (prepared && scene.walks()) {
             walk(server);
+        }
+        if (prepared && scene.moves() && ticksUntilAction < MOVE_TICKS) {
+            VisualTestWorld.slideCamera(server, start, origin, scene.cameraOffset(), (MOVE_TICKS - ticksUntilAction) * MOVE_STEP);
+        }
+        if (prepared && scene.changesBlocks() && ticksUntilAction == CHANGE_LEAD_TICKS) {
+            VisualTestWorld.removeTorchRoomLight(server, origin);
         }
         if (ticksUntilAction > 0) {
             return;

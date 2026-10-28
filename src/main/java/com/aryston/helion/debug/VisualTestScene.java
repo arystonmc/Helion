@@ -38,6 +38,8 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final boolean CLEAR = false;
     private static final boolean WET = true;
     private static final String FOOTPRINT_SCENE = "footprints";
+    private static final String MOVING_SUFFIX = "_moving";
+    private static final String CHANGE_SCENE = "torch_room_change";
     private static final float RAINBOW_PITCH = -15.0F;
     private static final float OCEAN_PITCH = 10.0F;
     private static final float GLITTER_PITCH = 6.0F;
@@ -68,6 +70,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("horizon_high_south", NOON, SOUTH, HIGH_PITCH, HIGH_ABOVE_START),
         new VisualTestScene("horizon_high_west", NOON, WEST, HIGH_PITCH, HIGH_ABOVE_START),
         new VisualTestScene("day_showcase", NOON, NORTH, 25.0F, BlockPos.ZERO),
+        new VisualTestScene("day_showcase_moving", NOON, NORTH, 25.0F, BlockPos.ZERO),
         new VisualTestScene("morning_showcase", MORNING, NORTH, 25.0F, BlockPos.ZERO),
         new VisualTestScene("sunset", SUNSET, WEST, -8.0F, BlockPos.ZERO),
         new VisualTestScene("dusk", DUSK, WEST, -5.0F, BlockPos.ZERO),
@@ -103,6 +106,8 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("waterfall_above", NOON, NORTH_WEST, WATERFALL_ABOVE_PITCH, VisualTestWorld.WATERFALL_ABOVE_CAMERA),
         new VisualTestScene("emitter_night", MIDNIGHT, NORTH, EMITTER_PITCH, VisualTestWorld.EMITTER_CAMERA),
         new VisualTestScene("torch_room", MIDNIGHT, NORTH_WEST, TORCH_ROOM_PITCH, VisualTestWorld.TORCH_ROOM_CAMERA),
+        new VisualTestScene("torch_room_moving", MIDNIGHT, NORTH_WEST, TORCH_ROOM_PITCH, VisualTestWorld.TORCH_ROOM_CAMERA),
+        new VisualTestScene("torch_room_change", MIDNIGHT, NORTH_WEST, TORCH_ROOM_PITCH, VisualTestWorld.TORCH_ROOM_CAMERA),
         new VisualTestScene("water_swamp", NOON, NORTH, SWAMP_PITCH, VisualTestWorld.SWAMP_CAMERA),
         new VisualTestScene("water_swamp_under", NOON, NORTH, SWAMP_UNDER_PITCH, VisualTestWorld.SWAMP_UNDER_CAMERA),
         new VisualTestScene("water_beach", NOON, NORTH, BEACH_PITCH, VisualTestWorld.BEACH_CAMERA),
@@ -133,6 +138,14 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
 
     boolean walks() {
         return FOOTPRINT_SCENE.equals(name);
+    }
+
+    boolean moves() {
+        return name.endsWith(MOVING_SUFFIX);
+    }
+
+    boolean changesBlocks() {
+        return CHANGE_SCENE.equals(name);
     }
 
     VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPos cameraOffset) {

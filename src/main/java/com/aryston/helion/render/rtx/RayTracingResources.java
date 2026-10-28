@@ -27,8 +27,6 @@ public final class RayTracingResources {
     private static final String PATH_TRACE_NAME = "path_trace.csh";
     private static final String PATH_TRACE_PIPELINE_LABEL = "Helion Path Tracing Pipeline";
     private static final String CACHE_UPDATE_PIPELINE_LABEL = "Helion Path Tracing Light Cache Pipeline";
-    private static final String LIGHT_CACHE_PROPERTY = "helion.pathTracing.lightCache";
-    private static final String LIGHT_CACHE_DEFINE = "HELION_LIGHT_CACHE";
     private static final String LIGHT_CACHE_UPDATE_DEFINE = "HELION_LIGHT_CACHE_UPDATE";
     private static final int LIGHT_CACHE_BUFFERS = 3;
     private static final String ACCUMULATE_SOURCE = "/assets/helion/shaders/rtx/denoise_accumulate.csh";
@@ -213,7 +211,7 @@ public final class RayTracingResources {
     }
 
     boolean pathTracingAvailable() {
-        return pathTrace != null && accumulate != null && filter != null;
+        return pathTrace != null && cacheUpdate != null && accumulate != null && filter != null;
     }
 
     RtxComputePipeline pathTracePipeline() {
@@ -230,10 +228,6 @@ public final class RayTracingResources {
     int nextPathTraceFrame() {
         pathTraceFrame++;
         return pathTraceFrame;
-    }
-
-    boolean lightCacheEnabled() {
-        return cacheUpdate != null;
     }
 
     RtxComputePipeline cacheUpdatePipeline() {
@@ -355,20 +349,12 @@ public final class RayTracingResources {
             LOGGER.error("Helion ray traced reflections are off: {}", exception.getMessage());
         }
         try {
-            boolean cached = Boolean.getBoolean(LIGHT_CACHE_PROPERTY);
-            RtxComputePipeline traced = cached
-                ? RtxComputePipeline.create(rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, Set.of(LIGHT_CACHE_DEFINE), LIGHT_CACHE_DESCRIPTORS, singles(LIGHT_CACHE_DESCRIPTORS), PATH_TRACE_CONSTANT_BYTES)
-                : RtxComputePipeline.create(rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, PATH_TRACE_DESCRIPTORS, PATH_TRACE_CONSTANT_BYTES);
+            RtxComputePipeline traced = RtxComputePipeline.create(rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, LIGHT_CACHE_DESCRIPTORS, PATH_TRACE_CONSTANT_BYTES);
             resources.track(PATH_TRACE_PIPELINE_LABEL, PIPELINE_BYTES, traced::destroy);
-            RtxComputePipeline updated = cached
-                ? RtxComputePipeline.create(
-                    rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, Set.of(LIGHT_CACHE_DEFINE, LIGHT_CACHE_UPDATE_DEFINE), LIGHT_CACHE_DESCRIPTORS, singles(LIGHT_CACHE_DESCRIPTORS),
-                    PATH_TRACE_CONSTANT_BYTES
-                )
-                : null;
-            if (updated != null) {
-                resources.track(CACHE_UPDATE_PIPELINE_LABEL, PIPELINE_BYTES, updated::destroy);
-            }
+            RtxComputePipeline updated = RtxComputePipeline.create(
+                rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, Set.of(LIGHT_CACHE_UPDATE_DEFINE), LIGHT_CACHE_DESCRIPTORS, singles(LIGHT_CACHE_DESCRIPTORS), PATH_TRACE_CONSTANT_BYTES
+            );
+            resources.track(CACHE_UPDATE_PIPELINE_LABEL, PIPELINE_BYTES, updated::destroy);
             RtxComputePipeline accumulated = RtxComputePipeline.create(rtx, ACCUMULATE_SOURCE, ACCUMULATE_NAME, ACCUMULATE_DESCRIPTORS, ACCUMULATE_CONSTANT_BYTES);
             resources.track(ACCUMULATE_PIPELINE_LABEL, PIPELINE_BYTES, accumulated::destroy);
             RtxComputePipeline filtered = RtxComputePipeline.create(rtx, FILTER_SOURCE, FILTER_NAME, FILTER_DESCRIPTORS, FILTER_CONSTANT_BYTES);

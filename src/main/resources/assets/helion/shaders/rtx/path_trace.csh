@@ -33,7 +33,6 @@ layout(push_constant) uniform HelionPathTrace {
     ivec4 Frame;
 };
 
-#ifdef HELION_LIGHT_CACHE
 struct HelionCacheEntry {
     uvec4 state;
     ivec4 cell;
@@ -52,7 +51,6 @@ layout(set = 0, binding = 14, std430) coherent buffer HelionCacheNextQueue {
     uint NextCount;
     uint Next[];
 };
-#endif
 
 #include <helion:helion_rt_surface.glsl>
 
@@ -385,7 +383,6 @@ HelionSky helionSky() {
     return HelionSky(sunLight * scale, moonLight * scale, dome * scale, ambient);
 }
 
-#ifdef HELION_LIGHT_CACHE
 const int HELION_CACHE_PROBES = 8;
 const uint HELION_CACHE_EVICT_AGE = 600u;
 const float HELION_CACHE_NEAR = 12.0;
@@ -541,12 +538,6 @@ bool helionCachedIndirect(vec3 position, vec3 normal, float distance, float gate
     indirect /= max(weights, HELION_CACHE_MIN_WEIGHT);
     return weights > 0.0;
 }
-#else
-bool helionCachedIndirect(vec3 position, vec3 normal, float distance, float gate, out vec3 indirect) {
-    indirect = vec3(0.0);
-    return false;
-}
-#endif
 
 #ifdef HELION_LIGHT_CACHE_UPDATE
 void main() {

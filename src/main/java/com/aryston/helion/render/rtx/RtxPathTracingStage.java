@@ -117,12 +117,10 @@ public final class RtxPathTracingStage implements RenderStage {
         RtxBuffer table = scene.surfaceTable();
         RtxBuffer lights = scene.lightBuffer();
         TerrainTextures textures = terrain.textures();
-        RtxLightCache cache = resources.lightCacheEnabled() ? resources.lightCache() : null;
-        List<RtxBinding> cacheTrace = cache == null ? List.of() : List.of(cache.entries(), cache.filling(), cache.queued());
-        List<RtxBinding> cacheUpdate = cache == null ? List.of() : List.of(cache.entries(), cache.queued(), cache.filling());
-        if (cache != null) {
-            cache.advance();
-        }
+        RtxLightCache cache = resources.lightCache();
+        List<RtxBinding> cacheTrace = List.of(cache.entries(), cache.filling(), cache.queued());
+        List<RtxBinding> cacheUpdate = List.of(cache.entries(), cache.queued(), cache.filling());
+        cache.advance();
         pass.executes(frame.graph().timed(TRACE_PASS, () -> {
             List<RtxBinding> bindings = List.of(
                 new RtxBinding.StorageImage(image.vkImageView()),
@@ -139,15 +137,13 @@ public final class RtxPathTracingStage implements RenderStage {
                 new RtxBinding.Sampled(handle(glossy.update(terrain.glossyCells())))
             );
             device.memoryBarrier();
-            if (cache != null) {
-                if (cache.clearIfNew(device.commandBuffer())) {
-                    device.memoryBarrier();
-                }
-                resources.cacheUpdatePipeline().dispatch(
-                    device.commandBuffer(), concat(bindings, cacheUpdate), constants, RtxLightCache.QUEUE_WIDTH, RtxLightCache.QUEUE_ROWS
-                );
+            if (cache.clearIfNew(device.commandBuffer())) {
                 device.memoryBarrier();
             }
+            resources.cacheUpdatePipeline().dispatch(
+                device.commandBuffer(), concat(bindings, cacheUpdate), constants, RtxLightCache.QUEUE_WIDTH, RtxLightCache.QUEUE_ROWS
+            );
+            device.memoryBarrier();
             resources.pathTracePipeline().dispatch(device.commandBuffer(), concat(bindings, cacheTrace), constants, image.width(), image.height());
             device.memoryBarrier();
         }));

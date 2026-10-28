@@ -154,6 +154,7 @@ final class VisualTestWorld {
         new Placement(-16, 0, 9, "jack_o_lantern[facing=south]"),
         new Placement(-12, 0, 9, "lantern")
     );
+    private static final String AIR = "air";
     static final BlockPos TORCH_ROOM_CAMERA = new BlockPos(-27, 1, 27);
     private static final Volume TORCH_ROOM = new Volume(new BlockPos(-34, -1, 20), new BlockPos(-26, 4, 28));
     private static final List<Placement> TORCH_ROOM_LIGHTS = List.of(
@@ -301,6 +302,16 @@ final class VisualTestWorld {
     static void placeCamera(IntegratedServer server, Vec3 start, BlockPos origin, BlockPos cameraOffset) {
         Vec3 position = cameraOffset.equals(BlockPos.ZERO) ? start : Vec3.atBottomCenterOf(origin.offset(cameraOffset));
         run(server, "tp @a " + position.x + " " + position.y + " " + position.z);
+    }
+
+    static void slideCamera(IntegratedServer server, Vec3 start, BlockPos origin, BlockPos cameraOffset, double shift) {
+        Vec3 position = (cameraOffset.equals(BlockPos.ZERO) ? start : Vec3.atBottomCenterOf(origin.offset(cameraOffset))).subtract(shift, 0.0, 0.0);
+        run(server, "tp @a " + position.x + " " + position.y + " " + position.z);
+    }
+
+    static void removeTorchRoomLight(IntegratedServer server, BlockPos origin) {
+        Placement light = TORCH_ROOM_LIGHTS.getFirst();
+        run(server, new Placement(light.x(), light.y(), light.z(), AIR).command(origin));
     }
 
     static void setTime(IntegratedServer server, int dayTime) {
