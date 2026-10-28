@@ -27,10 +27,29 @@ layout(set = 0, binding = 11) uniform sampler2D MaterialSampler;
 
 layout(push_constant) uniform HelionPathTrace {
     mat4 InverseViewProjection;
-    vec4 CameraToAnchor;
+    vec4 Camera;
     vec4 Sun;
     vec4 Moon;
-    vec4 Frame;
+    ivec4 Frame;
+};
+
+struct HelionCacheEntry {
+    uvec4 state;
+    ivec4 cell;
+    vec4 light;
+    vec4 sampleAt;
+};
+
+layout(set = 0, binding = 12, std430) coherent buffer HelionLightCache {
+    HelionCacheEntry Entries[];
+};
+layout(set = 0, binding = 13, std430) coherent buffer HelionCacheQueue {
+    uint QueuedCount;
+    uint Queued[];
+};
+layout(set = 0, binding = 14, std430) coherent buffer HelionCacheNextQueue {
+    uint NextCount;
+    uint Next[];
 };
 
 #include <helion:helion_rt_surface.glsl>
@@ -72,6 +91,7 @@ const float HELION_DOME_GROUND = 0.45;
 const float HELION_MIN_OPEN_SKY = 1.0e-4;
 const int HELION_GRID_RADIUS = 4;
 const int HELION_GRID_SIZE = 2 * HELION_GRID_RADIUS + 1;
+const float HELION_SCENE_REACH = float(HELION_GRID_RADIUS) * HELION_SECTION_SIZE;
 const uint HELION_GRID_CELLS = uint(HELION_GRID_SIZE * HELION_GRID_SIZE * HELION_GRID_SIZE);
 const uint HELION_RECORD_ENTRIES = 2u;
 const uint HELION_NO_LIGHT = 0xFFFFFFFFu;
@@ -164,8 +184,8 @@ float helionFlicker(HelionBlockLight light) {
         return 1.0;
     }
     float phase = float(helionPcg(floatBitsToUint(light.low.x) ^ helionPcg(floatBitsToUint(light.low.y) ^ helionPcg(floatBitsToUint(light.low.z))))) / HELION_HASH_RANGE * HELION_TAU;
-    float slow = 0.5 + 0.5 * sin(Frame.x * HELION_FLICKER_SLOW + phase);
-    float fast = 0.5 + 0.5 * sin(Frame.x * HELION_FLICKER_FAST + phase * HELION_FLICKER_SPREAD);
+    float slow = 0.5 + 0.5 * sin(Camera.w * HELION_FLICKER_SLOW + phase);
+    float fast = 0.5 + 0.5 * sin(Camera.w * HELION_FLICKER_FAST + phase * HELION_FLICKER_SPREAD);
     return 1.0 - HELION_FLICKER_DEPTH * slow * fast;
 }
 
@@ -347,11 +367,212 @@ vec3 helionIndirect(vec3 origin, vec3 normal, float start, float gate, HelionSky
 }
 
 float helionSceneShare(vec3 origin) {
-    float reach = CameraToAnchor.w;
+    float reach = HELION_SCENE_REACH;
     vec3 edges = min(origin + reach, reach + HELION_SECTION_SIZE - origin);
     return clamp(min(min(edges.x, edges.y), edges.z) / HELION_SCENE_FADE, 0.0, 1.0);
 }
 
+HelionSky helionSky() {
+    vec3 sunLight = texelFetch(SkyLightSampler, HELION_SUN_TEXEL, 0).rgb;
+    vec3 moonLight = texelFetch(SkyLightSampler, HELION_MOON_TEXEL, 0).rgb;
+    vec3 dome = texelFetch(SkyLightSampler, HELION_DOME_TEXEL, 0).rgb;
+    vec3 ambient = helionSrgbToLinear(helionLightmapTexel(ivec2(0)));
+    vec3 fullSky = helionSrgbToLinear(helionLightmapTexel(ivec2(0, HELION_LIGHTMAP_LAST_TEXEL)));
+    float openSky = helionLuminance(sunLight) * max(Sun.y, 0.0) + helionLuminance(moonLight) * max(Moon.y, 0.0) + helionLuminance(dome);
+    float scale = max(helionLuminance(fullSky) - helionLuminance(ambient), 0.0) / max(openSky, HELION_MIN_OPEN_SKY);
+    return HelionSky(sunLight * scale, moonLight * scale, dome * scale, ambient);
+}
+
+const int HELION_CACHE_PROBES = 8;
+const uint HELION_CACHE_EVICT_AGE = 600u;
+const float HELION_CACHE_NEAR = 12.0;
+const int HELION_CACHE_TOP_LEVEL = 6;
+const int HELION_CACHE_FINE_LEVELS = 2;
+const float HELION_CACHE_CELLS_PER_BLOCK = 4.0;
+const int HELION_CACHE_SECTION_CELLS = 64;
+const float HELION_CACHE_FINE_PLANE = 16.0;
+const float HELION_CACHE_COARSE_PLANE = 1.0;
+const float HELION_CACHE_AXIS = 0.99;
+const uint HELION_CACHE_READY = 8u;
+const uint HELION_CACHE_MAX_COUNT = 64u;
+const int HELION_CACHE_YOUNG_PATHS = 4;
+const uint HELION_CACHE_CHECK_SALT = 0x9E3779B9u;
+const uint HELION_CACHE_LEVEL_SHIFT = 3u;
+const uint HELION_CACHE_FACE_MASK = 7u;
+const int HELION_NO_SLOT = -1;
+const float HELION_CACHE_MIN_WEIGHT = 1.0e-6;
+
+struct HelionCacheCell {
+    uint face;
+    int level;
+    int axis;
+    int column;
+    int row;
+    float plane;
+    float cellsPerBlock;
+};
+
+HelionCacheCell helionCacheLayout(uint face, int level) {
+    HelionCacheCell cell;
+    cell.face = face;
+    cell.level = level;
+    cell.axis = int(face >> 1u);
+    cell.column = (cell.axis + 1) % 3;
+    cell.row = (cell.axis + 2) % 3;
+    cell.plane = level < HELION_CACHE_FINE_LEVELS ? HELION_CACHE_FINE_PLANE : HELION_CACHE_COARSE_PLANE;
+    cell.cellsPerBlock = HELION_CACHE_CELLS_PER_BLOCK / float(1 << level);
+    return cell;
+}
+
+int helionCachePlaneOrigin(HelionCacheCell cell) {
+    return Frame[cell.axis] * int(HELION_SECTION_SIZE * cell.plane);
+}
+
+int helionCacheOrigin(HelionCacheCell cell, int axis) {
+    return Frame[axis] * (HELION_CACHE_SECTION_CELLS >> cell.level);
+}
+
+uint helionCacheHash(HelionCacheCell cell, int plane, ivec2 coordinates) {
+    return helionPcg((cell.face | uint(cell.level) << HELION_CACHE_LEVEL_SHIFT) ^ helionPcg(uint(plane) ^ helionPcg(uint(coordinates.x) ^ helionPcg(uint(coordinates.y)))));
+}
+
+uint helionCacheCheck(uint hash) {
+    return helionPcg(hash ^ HELION_CACHE_CHECK_SALT) | 1u;
+}
+
+int helionCacheFind(uint hash) {
+    uint check = helionCacheCheck(hash);
+    uint capacity = uint(Entries.length());
+    for (int probe = 0; probe < HELION_CACHE_PROBES; probe++) {
+        uint slot = (hash + uint(probe)) % capacity;
+        uint found = Entries[slot].state.x;
+        if (found == check) {
+            return int(slot);
+        }
+        if (found == 0u) {
+            return HELION_NO_SLOT;
+        }
+    }
+    return HELION_NO_SLOT;
+}
+
+int helionCacheClaim(uint hash) {
+    uint check = helionCacheCheck(hash);
+    uint capacity = uint(Entries.length());
+    for (int probe = 0; probe < HELION_CACHE_PROBES; probe++) {
+        uint slot = (hash + uint(probe)) % capacity;
+        uint seen = Entries[slot].state.x;
+        if (seen == check) {
+            return int(slot);
+        }
+        if (seen != 0u) {
+            continue;
+        }
+        uint found = atomicCompSwap(Entries[slot].state.x, 0u, check);
+        if (found == 0u || found == check) {
+            return int(slot);
+        }
+    }
+    uint frame = uint(Frame.w);
+    for (int probe = 0; probe < HELION_CACHE_PROBES; probe++) {
+        uint slot = (hash + uint(probe)) % capacity;
+        uint old = Entries[slot].state.x;
+        if (frame - Entries[slot].state.y > HELION_CACHE_EVICT_AGE && atomicCompSwap(Entries[slot].state.x, old, check) == old) {
+            Entries[slot].state.z = 0u;
+            return int(slot);
+        }
+    }
+    return HELION_NO_SLOT;
+}
+
+void helionCacheRequest(int slot, HelionCacheCell cell, int plane, ivec2 coordinates, vec2 inside, float gate) {
+    if (Entries[slot].state.y == uint(Frame.w) || atomicExchange(Entries[slot].state.y, uint(Frame.w)) == uint(Frame.w)) {
+        return;
+    }
+    Entries[slot].state.w = cell.face | uint(cell.level) << HELION_CACHE_LEVEL_SHIFT;
+    Entries[slot].cell = ivec4(plane, coordinates, 0);
+    Entries[slot].sampleAt = vec4(inside, 0.0, 0.0);
+    Entries[slot].light.w = gate;
+    uint index = atomicAdd(QueuedCount, 1u);
+    if (index < uint(Queued.length())) {
+        Queued[index] = uint(slot);
+    }
+}
+
+bool helionCachedIndirect(vec3 position, vec3 normal, float distance, float gate, out vec3 indirect) {
+    indirect = vec3(0.0);
+    vec3 magnitude = abs(normal);
+    int axis = magnitude.x > magnitude.y ? (magnitude.x > magnitude.z ? 0 : 2) : (magnitude.y > magnitude.z ? 1 : 2);
+    if (magnitude[axis] < HELION_CACHE_AXIS) {
+        return false;
+    }
+    int level = clamp(int(floor(log2(max(distance / HELION_CACHE_NEAR, 1.0)))), 0, HELION_CACHE_TOP_LEVEL);
+    HelionCacheCell cell = helionCacheLayout(uint(axis * 2) + (normal[axis] < 0.0 ? 1u : 0u), level);
+    int plane = helionCachePlaneOrigin(cell) + int(round(position[axis] * cell.plane));
+    vec2 local = vec2(position[cell.column], position[cell.row]) * cell.cellsPerBlock;
+    ivec2 origin = ivec2(helionCacheOrigin(cell, cell.column), helionCacheOrigin(cell, cell.row));
+    ivec2 own = ivec2(floor(local));
+    int slot = helionCacheClaim(helionCacheHash(cell, plane, origin + own));
+    if (slot == HELION_NO_SLOT) {
+        return false;
+    }
+    helionCacheRequest(slot, cell, plane, origin + own, local - vec2(own), gate);
+    if (Entries[slot].state.z < HELION_CACHE_READY) {
+        return false;
+    }
+    vec2 corner = local - 0.5;
+    ivec2 first = ivec2(floor(corner));
+    vec2 blend = corner - vec2(first);
+    float weights = 0.0;
+    for (int y = 0; y < 2; y++) {
+        for (int x = 0; x < 2; x++) {
+            int found = helionCacheFind(helionCacheHash(cell, plane, origin + first + ivec2(x, y)));
+            if (found == HELION_NO_SLOT || Entries[found].state.z == 0u) {
+                continue;
+            }
+            float weight = (x == 0 ? 1.0 - blend.x : blend.x) * (y == 0 ? 1.0 - blend.y : blend.y);
+            indirect += Entries[found].light.rgb * weight;
+            weights += weight;
+        }
+    }
+    indirect /= max(weights, HELION_CACHE_MIN_WEIGHT);
+    return weights > 0.0;
+}
+
+#ifdef HELION_LIGHT_CACHE_UPDATE
+void main() {
+    uint index = gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x + gl_GlobalInvocationID.x;
+    if (index == 0u) {
+        NextCount = 0u;
+    }
+    if (index >= min(QueuedCount, uint(Queued.length()))) {
+        return;
+    }
+    uint slot = Queued[index];
+    HelionCacheEntry entry = Entries[slot];
+    HelionCacheCell cell = helionCacheLayout(entry.state.w & HELION_CACHE_FACE_MASK, int(entry.state.w >> HELION_CACHE_LEVEL_SHIFT));
+    vec3 normal = vec3(0.0);
+    normal[cell.axis] = (cell.face & 1u) == 0u ? 1.0 : -1.0;
+    vec3 position;
+    position[cell.axis] = float(entry.cell.x - helionCachePlaneOrigin(cell)) / cell.plane;
+    position[cell.column] = (float(entry.cell.y - helionCacheOrigin(cell, cell.column)) + entry.sampleAt.x) / cell.cellsPerBlock;
+    position[cell.row] = (float(entry.cell.z - helionCacheOrigin(cell, cell.row)) + entry.sampleAt.y) / cell.cellsPerBlock;
+    vec3 origin = position + normal * HELION_ORIGIN_OFFSET;
+    if (helionSceneShare(origin) <= 0.0) {
+        return;
+    }
+    helionState = helionPcg(slot ^ helionPcg(uint(Frame.w)));
+    HelionSky sky = helionSky();
+    int paths = entry.state.z < HELION_CACHE_READY ? HELION_CACHE_YOUNG_PATHS : 1;
+    vec3 sum = vec3(0.0);
+    for (int path = 0; path < paths; path++) {
+        sum += helionIndirect(origin, normal, HELION_RAY_START, entry.light.w, sky);
+    }
+    uint count = min(entry.state.z + uint(paths), HELION_CACHE_MAX_COUNT);
+    Entries[slot].light.rgb = mix(entry.light.rgb, sum / float(paths), float(paths) / float(count));
+    Entries[slot].state.z = count;
+}
+#else
 void main() {
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
     ivec2 size = imageSize(Irradiance);
@@ -375,24 +596,23 @@ void main() {
     vec3 normal = normalize(texelFetch(GeometryNormalSampler, pixel, 0).rgb * 2.0 - 1.0);
     vec3 surface = helionSurfaceAlbedo(albedo, normal);
     vec3 vanilla = min(helionSrgbToLinear(albedo * helionVanillaLight(levels.rg)) / max(surface, vec3(HELION_PATH_MIN_ALBEDO)), vec3(HELION_PATH_VANILLA_LIMIT));
-    vec3 position = view + CameraToAnchor.xyz;
-    vec3 origin = position + normal * (HELION_ORIGIN_OFFSET + length(view) * HELION_ORIGIN_DISTANCE_SHARE);
+    vec3 position = view + Camera.xyz;
+    float span = length(view);
+    vec3 origin = position + normal * (HELION_ORIGIN_OFFSET + span * HELION_ORIGIN_DISTANCE_SHARE);
     float traced = helionSceneShare(origin);
     if (traced <= 0.0) {
         imageStore(Irradiance, pixel, vec4(vanilla, HELION_PATH_LIT));
         return;
     }
-    helionState = helionPcg(uint(pixel.x) ^ helionPcg(uint(pixel.y) ^ helionPcg(floatBitsToUint(Frame.y))));
-    vec3 sunLight = texelFetch(SkyLightSampler, HELION_SUN_TEXEL, 0).rgb;
-    vec3 moonLight = texelFetch(SkyLightSampler, HELION_MOON_TEXEL, 0).rgb;
-    vec3 dome = texelFetch(SkyLightSampler, HELION_DOME_TEXEL, 0).rgb;
-    vec3 ambient = helionSrgbToLinear(helionLightmapTexel(ivec2(0)));
-    vec3 fullSky = helionSrgbToLinear(helionLightmapTexel(ivec2(0, HELION_LIGHTMAP_LAST_TEXEL)));
-    float openSky = helionLuminance(sunLight) * max(Sun.y, 0.0) + helionLuminance(moonLight) * max(Moon.y, 0.0) + helionLuminance(dome);
-    float scale = max(helionLuminance(fullSky) - helionLuminance(ambient), 0.0) / max(openSky, HELION_MIN_OPEN_SKY);
+    helionState = helionPcg(uint(pixel.x) ^ helionPcg(uint(pixel.y) ^ helionPcg(uint(Frame.w))));
+    HelionSky sky = helionSky();
     float gate = clamp(levels.g * HELION_SKY_GATE_LEVELS, 0.0, 1.0);
-    HelionSky sky = HelionSky(sunLight * scale, moonLight * scale, dome * scale, ambient);
-    vec3 skyLight = helionCelestialLight(origin, normal, sky) * gate + helionIndirect(origin, normal, helionRayStart(normal), gate, sky);
+    vec3 indirect;
+    if (!helionCachedIndirect(position, normal, span, gate, indirect)) {
+        indirect = helionIndirect(origin, normal, helionRayStart(normal), gate, sky);
+    }
+    vec3 skyLight = helionCelestialLight(origin, normal, sky) * gate + indirect;
     vec3 block = helionBlockLighting(position, origin, normal) * mix(1.0, 1.0 - clamp(helionLuminance(skyLight), 0.0, 1.0), HELION_BLOCK_DAY_FADE);
-    imageStore(Irradiance, pixel, vec4(mix(vanilla, ambient + skyLight + block, traced), HELION_PATH_LIT));
+    imageStore(Irradiance, pixel, vec4(mix(vanilla, sky.ambient + skyLight + block, traced), HELION_PATH_LIT));
 }
+#endif
