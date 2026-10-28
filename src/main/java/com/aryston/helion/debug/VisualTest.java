@@ -3,7 +3,12 @@ package com.aryston.helion.debug;
 import com.aryston.helion.config.HelionConfig;
 import com.aryston.helion.mixin.LevelRendererAccessor;
 import com.aryston.helion.render.HelionRenderCore;
+import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -16,6 +21,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.Util;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.loading.FMLEnvironment;
@@ -42,6 +48,7 @@ public final class VisualTest {
     private static final int FULL_SIZE = 1;
     private static final String SCREENSHOT_PREFIX = "helion_";
     private static final String SCREENSHOT_EXTENSION = ".png";
+    private static final String SNAPSHOT_EXTENSION = ".json";
     private static final boolean DEBUG_MODE_DURING_TEST = true;
 
     private final List<Shot> shots = VisualTestScene.ALL.stream()
@@ -238,7 +245,17 @@ public final class VisualTest {
     private static void capture(Minecraft minecraft, Shot shot) {
         String fileName = SCREENSHOT_PREFIX + shot.name() + SCREENSHOT_EXTENSION;
         Screenshot.grab(minecraft.gameDirectory, fileName, minecraft.gameRenderer.mainRenderTarget(), Boolean.getBoolean(FULL_SIZE_PROPERTY) ? FULL_SIZE : SCREENSHOT_DOWNSCALE, message -> { });
-        LOGGER.info("Helion visual test {}: {}", shot.name(), HelionDebugSnapshot.capture(minecraft));
+        JsonObject snapshot = HelionDebugSnapshot.capture(minecraft);
+        LOGGER.info("Helion visual test {}: {}", shot.name(), snapshot);
+        Path file = minecraft.gameDirectory.toPath().resolve(Screenshot.SCREENSHOT_DIR).resolve(SCREENSHOT_PREFIX + shot.name() + SNAPSHOT_EXTENSION);
+        String text = snapshot.toString();
+        Util.ioPool().execute(() -> {
+            try {
+                Files.writeString(file, text, StandardCharsets.UTF_8);
+            } catch (IOException exception) {
+                LOGGER.warn("Helion visual test could not write {}", file, exception);
+            }
+        });
     }
 
     private void finish(Minecraft minecraft) {
