@@ -44,7 +44,7 @@ public final class RtxPathTracingStage implements RenderStage {
     private static final int TRACED_SLOT = 0;
     private static final int FINAL_SLOT = 1;
     private static final int UNUSED_STEP = 0;
-    private static final int[] FILTER_STEPS = {1, 2, 4, 8, 16};
+    private static final int[] FILTER_STEPS = {1, 2, 4};
 
     private final RayTracingResources resources;
     private final TerrainSource terrain;
@@ -163,7 +163,7 @@ public final class RtxPathTracingStage implements RenderStage {
         RtxImage previousMoments = images.previousMoments();
         RtxImage guide = images.guide();
         RtxImage previousGuide = images.previousGuide();
-        RtxImage[] chain = {accumulated, history, traced, accumulated, traced, accumulated};
+        RtxImage[] chain = {accumulated, history, traced, accumulated};
         FramePass pass = frame.graph().addPass(DENOISE_PASS);
         pass.reads(geometry.normal());
         ResourceHandle<RenderTarget> sceneTarget = frame.targets().scene();

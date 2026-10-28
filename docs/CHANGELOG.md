@@ -44,6 +44,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental ray tracing: mobs, players and dropped items show in water reflections, also when they are off screen
 
 ### Changed
+- Path traced light denoising is faster: fewer filter passes now that the bounced light is smoother
 - Path traced light runs faster: bounced light is kept per block face and reused across frames
 - Volumetric clouds are a little thinner in clear weather
 - Needs NeoForge 26.3.0.95 or newer (NeoForge for Minecraft 26.3 is no longer beta)
