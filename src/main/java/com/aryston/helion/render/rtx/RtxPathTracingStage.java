@@ -22,6 +22,7 @@ import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.vulkan.VulkanGpuTextureView;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -101,7 +102,7 @@ public final class RtxPathTracingStage implements RenderStage {
 
     private void trace(FrameContext frame, GeometryBuffer.Targets geometry, RtxImage image, SkyLight sky) {
         ByteBuffer constants = resources.pathTraceConstants();
-        writeConstants(constants, frame.camera(), Objects.requireNonNull(anchor), sky);
+        writeConstants(constants, frame.camera(), Objects.requireNonNull(anchor), sky, resources.nextPathTraceFrame());
         FramePass pass = frame.graph().addPass(TRACE_PASS);
         pass.reads(geometry.albedo());
         pass.reads(geometry.light());
@@ -116,9 +117,14 @@ public final class RtxPathTracingStage implements RenderStage {
         RtxBuffer table = scene.surfaceTable();
         RtxBuffer lights = scene.lightBuffer();
         TerrainTextures textures = terrain.textures();
+        RtxLightCache cache = resources.lightCacheEnabled() ? resources.lightCache() : null;
+        List<RtxBinding> cacheTrace = cache == null ? List.of() : List.of(cache.entries(), cache.filling(), cache.queued());
+        List<RtxBinding> cacheUpdate = cache == null ? List.of() : List.of(cache.entries(), cache.queued(), cache.filling());
+        if (cache != null) {
+            cache.advance();
+        }
         pass.executes(frame.graph().timed(TRACE_PASS, () -> {
-            device.memoryBarrier();
-            resources.pathTracePipeline().dispatch(device.commandBuffer(), List.of(
+            List<RtxBinding> bindings = List.of(
                 new RtxBinding.StorageImage(image.vkImageView()),
                 new RtxBinding.Scene(topLevel),
                 new RtxBinding.Sampled(handle(colorView(geometry.albedo()))),
@@ -131,7 +137,18 @@ public final class RtxPathTracingStage implements RenderStage {
                 new RtxBinding.Sampled(handle(colorView(sky.irradiance()))),
                 new RtxBinding.StorageBuffer(lights.buffer(), WHOLE_BUFFER, lights.size()),
                 new RtxBinding.Sampled(handle(glossy.update(terrain.glossyCells())))
-            ), constants, image.width(), image.height());
+            );
+            device.memoryBarrier();
+            if (cache != null) {
+                if (cache.clearIfNew(device.commandBuffer())) {
+                    device.memoryBarrier();
+                }
+                resources.cacheUpdatePipeline().dispatch(
+                    device.commandBuffer(), concat(bindings, cacheUpdate), constants, RtxLightCache.QUEUE_WIDTH, RtxLightCache.QUEUE_ROWS
+                );
+                device.memoryBarrier();
+            }
+            resources.pathTracePipeline().dispatch(device.commandBuffer(), concat(bindings, cacheTrace), constants, image.width(), image.height());
             device.memoryBarrier();
         }));
     }
@@ -184,7 +201,7 @@ public final class RtxPathTracingStage implements RenderStage {
         }));
     }
 
-    private static void writeConstants(ByteBuffer constants, HelionCamera camera, RtxSectionPos center, SkyLight sky) {
+    private static void writeConstants(ByteBuffer constants, HelionCamera camera, RtxSectionPos center, SkyLight sky, int frameCount) {
         Vector3dc position = camera.position();
         constants.clear();
         camera.levelViewProjection().invert().get(0, constants);
@@ -192,16 +209,21 @@ public final class RtxPathTracingStage implements RenderStage {
         constants.putFloat((float) (position.x() - center.originX()))
             .putFloat((float) (position.y() - center.originY()))
             .putFloat((float) (position.z() - center.originZ()))
-            .putFloat(RtxSectionInbox.RADIUS * RtxSectionKey.SECTION_SIZE);
+            .putFloat((float) (Math.floorMod(System.nanoTime(), TIME_PERIOD_NANOS) / NANOS_PER_SECOND));
         putLight(constants, sky.sunDirection());
         putLight(constants, sky.moonDirection());
-        long now = System.nanoTime();
-        constants.putFloat((float) (Math.floorMod(now, TIME_PERIOD_NANOS) / NANOS_PER_SECOND)).putInt((int) now).putFloat(UNUSED).putFloat(UNUSED);
+        constants.putInt(center.sectionX()).putInt(center.sectionY()).putInt(center.sectionZ()).putInt(frameCount);
         constants.flip();
     }
 
     private static void putLight(ByteBuffer constants, Vector3fc direction) {
         constants.putFloat(direction.x()).putFloat(direction.y()).putFloat(direction.z()).putFloat(direction.y() > HORIZON ? TRACED : UNUSED);
+    }
+
+    private static List<RtxBinding> concat(List<RtxBinding> first, List<RtxBinding> second) {
+        List<RtxBinding> joined = new ArrayList<>(first);
+        joined.addAll(second);
+        return joined;
     }
 
     private static long handle(GpuTextureView view) {

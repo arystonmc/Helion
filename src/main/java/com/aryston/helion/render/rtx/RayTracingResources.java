@@ -4,6 +4,7 @@ import static com.aryston.helion.Helion.LOGGER;
 
 import com.aryston.helion.render.resource.GpuResources;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,6 +26,11 @@ public final class RayTracingResources {
     private static final String PATH_TRACE_SOURCE = "/assets/helion/shaders/rtx/path_trace.csh";
     private static final String PATH_TRACE_NAME = "path_trace.csh";
     private static final String PATH_TRACE_PIPELINE_LABEL = "Helion Path Tracing Pipeline";
+    private static final String CACHE_UPDATE_PIPELINE_LABEL = "Helion Path Tracing Light Cache Pipeline";
+    private static final String LIGHT_CACHE_PROPERTY = "helion.pathTracing.lightCache";
+    private static final String LIGHT_CACHE_DEFINE = "HELION_LIGHT_CACHE";
+    private static final String LIGHT_CACHE_UPDATE_DEFINE = "HELION_LIGHT_CACHE_UPDATE";
+    private static final int LIGHT_CACHE_BUFFERS = 3;
     private static final String ACCUMULATE_SOURCE = "/assets/helion/shaders/rtx/denoise_accumulate.csh";
     private static final String ACCUMULATE_NAME = "denoise_accumulate.csh";
     private static final String ACCUMULATE_PIPELINE_LABEL = "Helion Path Tracing Accumulation Pipeline";
@@ -83,6 +89,7 @@ public final class RayTracingResources {
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     };
+    private static final int[] LIGHT_CACHE_DESCRIPTORS = withStorageBuffers(PATH_TRACE_DESCRIPTORS, LIGHT_CACHE_BUFFERS);
     private static final int[] ACCUMULATE_DESCRIPTORS = {
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
@@ -110,6 +117,9 @@ public final class RayTracingResources {
     private @Nullable ByteBuffer reflectionConstants;
     private @Nullable RtxComputePipeline pathTrace;
     private @Nullable ByteBuffer pathTraceConstants;
+    private @Nullable RtxComputePipeline cacheUpdate;
+    private @Nullable RtxLightCache lightCache;
+    private int pathTraceFrame;
     private @Nullable RtxComputePipeline accumulate;
     private @Nullable ByteBuffer accumulateConstants;
     private @Nullable RtxComputePipeline filter;
@@ -154,6 +164,10 @@ public final class RayTracingResources {
         if (denoiseImages != null) {
             denoiseImages.close(resources);
             denoiseImages = null;
+        }
+        if (lightCache != null) {
+            lightCache.release(resources);
+            lightCache = null;
         }
         if (reflectionImage != null) {
             reflectionImage.close(resources);
@@ -211,6 +225,26 @@ public final class RayTracingResources {
             pathTraceConstants = MemoryUtil.memAlloc(PATH_TRACE_CONSTANT_BYTES);
         }
         return pathTraceConstants;
+    }
+
+    int nextPathTraceFrame() {
+        pathTraceFrame++;
+        return pathTraceFrame;
+    }
+
+    boolean lightCacheEnabled() {
+        return cacheUpdate != null;
+    }
+
+    RtxComputePipeline cacheUpdatePipeline() {
+        return Objects.requireNonNull(cacheUpdate);
+    }
+
+    RtxLightCache lightCache() {
+        if (lightCache == null) {
+            lightCache = RtxLightCache.create(device(), resources);
+        }
+        return lightCache;
     }
 
     RtxComputePipeline accumulatePipeline() {
@@ -274,6 +308,9 @@ public final class RayTracingResources {
         if (denoiseImages != null) {
             denoiseImages.close(resources);
         }
+        if (lightCache != null) {
+            lightCache.release(resources);
+        }
         if (reflectionConstants != null) {
             MemoryUtil.memFree(reflectionConstants);
         }
@@ -293,6 +330,7 @@ public final class RayTracingResources {
         accumulateConstants = null;
         filterConstants = null;
         denoiseImages = null;
+        lightCache = null;
     }
 
     private void open() {
@@ -317,8 +355,20 @@ public final class RayTracingResources {
             LOGGER.error("Helion ray traced reflections are off: {}", exception.getMessage());
         }
         try {
-            RtxComputePipeline traced = RtxComputePipeline.create(rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, PATH_TRACE_DESCRIPTORS, PATH_TRACE_CONSTANT_BYTES);
+            boolean cached = Boolean.getBoolean(LIGHT_CACHE_PROPERTY);
+            RtxComputePipeline traced = cached
+                ? RtxComputePipeline.create(rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, Set.of(LIGHT_CACHE_DEFINE), LIGHT_CACHE_DESCRIPTORS, singles(LIGHT_CACHE_DESCRIPTORS), PATH_TRACE_CONSTANT_BYTES)
+                : RtxComputePipeline.create(rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, PATH_TRACE_DESCRIPTORS, PATH_TRACE_CONSTANT_BYTES);
             resources.track(PATH_TRACE_PIPELINE_LABEL, PIPELINE_BYTES, traced::destroy);
+            RtxComputePipeline updated = cached
+                ? RtxComputePipeline.create(
+                    rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, Set.of(LIGHT_CACHE_DEFINE, LIGHT_CACHE_UPDATE_DEFINE), LIGHT_CACHE_DESCRIPTORS, singles(LIGHT_CACHE_DESCRIPTORS),
+                    PATH_TRACE_CONSTANT_BYTES
+                )
+                : null;
+            if (updated != null) {
+                resources.track(CACHE_UPDATE_PIPELINE_LABEL, PIPELINE_BYTES, updated::destroy);
+            }
             RtxComputePipeline accumulated = RtxComputePipeline.create(rtx, ACCUMULATE_SOURCE, ACCUMULATE_NAME, ACCUMULATE_DESCRIPTORS, ACCUMULATE_CONSTANT_BYTES);
             resources.track(ACCUMULATE_PIPELINE_LABEL, PIPELINE_BYTES, accumulated::destroy);
             RtxComputePipeline filtered = RtxComputePipeline.create(rtx, FILTER_SOURCE, FILTER_NAME, FILTER_DESCRIPTORS, FILTER_CONSTANT_BYTES);
@@ -326,10 +376,23 @@ public final class RayTracingResources {
             pathTrace = traced;
             accumulate = accumulated;
             filter = filtered;
+            cacheUpdate = updated;
         } catch (IllegalStateException exception) {
             LOGGER.error("Helion path traced light is off: {}", exception.getMessage());
         }
         LOGGER.info("Helion ray tracing is on: section scene within {} sections of the camera", RtxSectionInbox.RADIUS);
+    }
+
+    private static int[] withStorageBuffers(int[] descriptors, int count) {
+        int[] extended = Arrays.copyOf(descriptors, descriptors.length + count);
+        Arrays.fill(extended, descriptors.length, extended.length, VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+        return extended;
+    }
+
+    private static int[] singles(int[] descriptors) {
+        int[] counts = new int[descriptors.length];
+        Arrays.fill(counts, RtxBinding.SINGLE);
+        return counts;
     }
 
     private static String millis(Map<String, Double> gpuMillis, String stage) {

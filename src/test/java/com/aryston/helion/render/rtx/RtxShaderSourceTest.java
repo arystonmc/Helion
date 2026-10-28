@@ -16,6 +16,8 @@ class RtxShaderSourceTest {
     private static final String ACCUMULATE = "denoise_accumulate.csh";
     private static final String FILTER = "denoise_filter.csh";
     private static final String ENTITY_REFLECTION_DEFINE = "HELION_RT_ENTITIES";
+    private static final String LIGHT_CACHE_DEFINE = "HELION_LIGHT_CACHE";
+    private static final String LIGHT_CACHE_UPDATE_DEFINE = "HELION_LIGHT_CACHE_UPDATE";
 
     @ParameterizedTest
     @ValueSource(strings = {REFLECTION, PATH_TRACE, ACCUMULATE, FILTER})
@@ -26,6 +28,12 @@ class RtxShaderSourceTest {
     @Test
     void reflectionCompilesWithEntities() {
         assertCompiles(REFLECTION, Set.of(ENTITY_REFLECTION_DEFINE));
+    }
+
+    @Test
+    void pathTraceCompilesWithTheLightCache() {
+        assertCompiles(PATH_TRACE, Set.of(LIGHT_CACHE_DEFINE));
+        assertCompiles(PATH_TRACE, Set.of(LIGHT_CACHE_DEFINE, LIGHT_CACHE_UPDATE_DEFINE));
     }
 
     private static void assertCompiles(String shader, Set<String> defines) {
