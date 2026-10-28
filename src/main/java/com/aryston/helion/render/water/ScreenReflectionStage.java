@@ -90,7 +90,7 @@ public final class ScreenReflectionStage implements RenderStage {
             FullscreenPass.draw(PASS_LABEL, List.of(reflections.get(), polished.get()), pipeline, renderPass -> {
                 RenderSystem.bindDefaultUniforms(renderPass);
                 sky.ifPresent(color -> color.bind(renderPass));
-                renderPass.setUniform(WaterPipelines.SCREEN_REFLECTION_UNIFORM, resources.screenUniforms(camera, geometry.isPresent(), water, frame.settings().reflections().screenSpace(), waves.isPresent(), wetness, prints, printSeconds, traced.isPresent(), frame.settings().temporal().enabled()));
+                renderPass.setUniform(WaterPipelines.SCREEN_REFLECTION_UNIFORM, resources.screenUniforms(camera, geometry.isPresent(), water, frame.settings().reflections().screenSpace() && !frame.geometry().tracesSpecular(), waves.isPresent(), wetness, prints, printSeconds, traced.isPresent(), frame.settings().temporal().enabled()));
                 renderPass.setUniform(WaterPipelines.SURFACE_SAMPLER, standIn, nearest);
                 renderPass.setUniform(WaterPipelines.DEPTH_SAMPLER, Objects.requireNonNull(waterTarget.getDepthTextureView()), nearest);
                 renderPass.setUniform(WaterPipelines.SCENE_COLOR_SAMPLER, Objects.requireNonNull(lit.getColorTextureView()), linear);

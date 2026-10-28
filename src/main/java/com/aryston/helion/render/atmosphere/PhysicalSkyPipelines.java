@@ -32,8 +32,8 @@ public final class PhysicalSkyPipelines {
     public static final int SKY_VIEW_SCATTERING_TARGET = 0;
     public static final int SKY_VIEW_MIE_TARGET = 1;
     public static final int HORIZON_SIZE = 1;
-    public static final int SKY_LIGHT_WIDTH = 3;
-    public static final int SKY_LIGHT_HEIGHT = 1;
+    public static final int SKY_LIGHT_WIDTH = 16;
+    public static final int SKY_LIGHT_HEIGHT = 9;
     private static final String SKY_VIEW_SHADER = "atmosphere/sky_view";
     private static final String MOON_VIEW_DEFINE = "HELION_MOON_VIEW";
 

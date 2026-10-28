@@ -10,6 +10,9 @@ layout(location = 0) out vec4 fragColor;
 
 const int HELION_SUN_TEXEL = 0;
 const int HELION_MOON_TEXEL = 1;
+const int HELION_DOME_TEXEL = 2;
+const int HELION_SKY_MAP_WIDTH = 16;
+const int HELION_SKY_MAP_ROWS = 8;
 const int HELION_HEMISPHERE_AZIMUTHS = 16;
 const int HELION_HEMISPHERE_ELEVATIONS = 8;
 
@@ -42,15 +45,29 @@ vec3 helionHemisphereLight() {
     return HELION_PI * sum / weights;
 }
 
+vec3 helionSkyMapDirection(ivec2 cell) {
+    float azimuth = 2.0 * HELION_PI * (float(cell.x) + 0.5) / float(HELION_SKY_MAP_WIDTH);
+    float height = (float(cell.y) + 0.5) / float(HELION_SKY_MAP_ROWS) * 2.0 - 1.0;
+    float across = sqrt(max(1.0 - height * height, 0.0));
+    return vec3(cos(azimuth) * across, height, sin(azimuth) * across);
+}
+
 void main() {
     int texel = int(gl_FragCoord.x);
+    int row = int(gl_FragCoord.y);
+    if (row > 0) {
+        fragColor = vec4(helionSkyRadiance(helionSkyMapDirection(ivec2(texel, row - 1))), 1.0);
+        return;
+    }
     vec3 light;
     if (texel == HELION_SUN_TEXEL) {
         light = helionDirectLight(SunDirection, SunIlluminance);
     } else if (texel == HELION_MOON_TEXEL) {
         light = helionDirectLight(MoonDirection, MoonIlluminance);
-    } else {
+    } else if (texel == HELION_DOME_TEXEL) {
         light = helionHemisphereLight();
+    } else {
+        light = vec3(0.0);
     }
     fragColor = vec4(light, 1.0);
 }

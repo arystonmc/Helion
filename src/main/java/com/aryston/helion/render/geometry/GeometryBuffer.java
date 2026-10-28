@@ -9,6 +9,7 @@ public final class GeometryBuffer {
     private @Nullable Targets targets;
     private @Nullable ResourceHandle<RenderTarget> terrainDepth;
     private boolean entities;
+    private boolean specularTraced;
 
     public Optional<Targets> targets() {
         return Optional.ofNullable(targets);
@@ -20,6 +21,14 @@ public final class GeometryBuffer {
 
     public boolean includesEntities() {
         return entities;
+    }
+
+    public boolean tracesSpecular() {
+        return specularTraced;
+    }
+
+    public void publishTracedSpecular() {
+        specularTraced = true;
     }
 
     void publish(Targets written) {

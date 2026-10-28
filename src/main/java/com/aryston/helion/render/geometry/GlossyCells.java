@@ -6,6 +6,7 @@ public record GlossyCells(GpuTextureView atlas, int width, int height, byte[] ce
     public static final int CELL_SIZE = 16;
     public static final byte EMISSIVE = (byte) 0x20;
     public static final byte MUDDY = (byte) 0x40;
+    public static final byte METAL = (byte) 0x60;
     public static final byte POROUS = (byte) 0x80;
     public static final byte LAVA_FLOW = (byte) 0x9F;
     public static final byte DRY = (byte) 0xBF;

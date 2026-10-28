@@ -15,11 +15,12 @@ class RtxShaderSourceTest {
     private static final String PATH_TRACE = "path_trace.csh";
     private static final String ACCUMULATE = "denoise_accumulate.csh";
     private static final String FILTER = "denoise_filter.csh";
+    private static final String SPECULAR = "specular_accumulate.csh";
     private static final String ENTITY_REFLECTION_DEFINE = "HELION_RT_ENTITIES";
     private static final String LIGHT_CACHE_UPDATE_DEFINE = "HELION_LIGHT_CACHE_UPDATE";
 
     @ParameterizedTest
-    @ValueSource(strings = {REFLECTION, PATH_TRACE, ACCUMULATE, FILTER})
+    @ValueSource(strings = {REFLECTION, PATH_TRACE, ACCUMULATE, FILTER, SPECULAR})
     void computeShaderCompilesWithRayQueries(String shader) {
         assertCompiles(shader, Set.of());
     }

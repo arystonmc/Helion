@@ -51,6 +51,7 @@ layout(set = 0, binding = 14, std430) coherent buffer HelionCacheNextQueue {
     uint NextCount;
     uint Next[];
 };
+layout(set = 0, binding = 15, rgba16f) uniform writeonly image2D Specular;
 
 #include <helion:helion_rt_surface.glsl>
 
@@ -539,6 +540,131 @@ bool helionCachedIndirect(vec3 position, vec3 normal, float distance, float gate
     return weights > 0.0;
 }
 
+const float HELION_PI = 3.14159265359;
+const float HELION_GLOSSY_F0 = 0.04;
+const float HELION_GLOSSY_ROUGHNESS = 0.2;
+const float HELION_METAL_ROUGHNESS = 0.35;
+const float HELION_SPECULAR_LIMIT = 8.0;
+const float HELION_GGX_AXIS = 0.999;
+const vec4 HELION_NO_SPECULAR = vec4(0.0);
+const int HELION_SKY_MAP_ROW = 1;
+const int HELION_SKY_MAP_WIDTH = 16;
+const int HELION_SKY_MAP_ROWS = 8;
+
+struct HelionMaterial {
+    vec3 f0;
+    float alpha;
+};
+
+vec3 helionSchlick(vec3 f0, float cosine) {
+    return f0 + (1.0 - f0) * pow(1.0 - clamp(cosine, 0.0, 1.0), 5.0);
+}
+
+float helionSmithG1(float cosine, float alpha) {
+    float squared = alpha * alpha;
+    return 2.0 * cosine / (cosine + sqrt(squared + (1.0 - squared) * cosine * cosine));
+}
+
+float helionGgx(float cosine, float alpha) {
+    float squared = alpha * alpha;
+    float denominator = cosine * cosine * (squared - 1.0) + 1.0;
+    return squared / (HELION_PI * denominator * denominator);
+}
+
+vec3 helionGgxMiddle(vec3 view, vec3 normal, float alpha) {
+    vec3 helper = abs(normal.y) < HELION_GGX_AXIS ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+    vec3 tangent = normalize(cross(helper, normal));
+    vec3 bitangent = cross(normal, tangent);
+    vec3 local = normalize(vec3(alpha * dot(view, tangent), alpha * dot(view, bitangent), dot(view, normal)));
+    float spread = local.x * local.x + local.y * local.y;
+    vec3 first = spread > 0.0 ? vec3(-local.y, local.x, 0.0) * inversesqrt(spread) : vec3(1.0, 0.0, 0.0);
+    vec3 second = cross(local, first);
+    float radius = sqrt(helionRandom());
+    float angle = HELION_TAU * helionRandom();
+    float along = radius * cos(angle);
+    float across = radius * sin(angle);
+    float share = 0.5 * (1.0 + local.z);
+    across = (1.0 - share) * sqrt(max(1.0 - along * along, 0.0)) + share * across;
+    vec3 sampled = along * first + across * second + sqrt(max(1.0 - along * along - across * across, 0.0)) * local;
+    vec3 middle = normalize(vec3(alpha * sampled.x, alpha * sampled.y, max(sampled.z, 0.0)));
+    return tangent * middle.x + bitangent * middle.y + normal * middle.z;
+}
+
+vec3 helionCelestialSpecular(vec3 origin, vec3 normal, vec3 view, HelionMaterial material, vec4 light, float radius, vec3 strength) {
+    if (light.w < HELION_SET) {
+        return vec3(0.0);
+    }
+    vec3 direction = helionConeDirection(light.xyz, radius);
+    float facing = dot(normal, direction);
+    float seen = dot(normal, view);
+    if (facing <= 0.0 || seen <= 0.0) {
+        return vec3(0.0);
+    }
+    vec3 middle = normalize(view + direction);
+    float distribution = helionGgx(max(dot(normal, middle), 0.0), material.alpha);
+    float masking = helionSmithG1(facing, material.alpha) * helionSmithG1(seen, material.alpha);
+    vec3 fresnel = helionSchlick(material.f0, dot(view, middle));
+    return strength * fresnel * (distribution * masking / (4.0 * seen)) * helionVisible(origin, direction, HELION_CELESTIAL_REACH);
+}
+
+vec3 helionSkyMapTexel(int column, int row) {
+    return texelFetch(SkyLightSampler, ivec2((column + HELION_SKY_MAP_WIDTH) % HELION_SKY_MAP_WIDTH, HELION_SKY_MAP_ROW + clamp(row, 0, HELION_SKY_MAP_ROWS - 1)), 0).rgb;
+}
+
+vec3 helionSkyMap(vec3 direction) {
+    float column = fract(atan(direction.z, direction.x) / HELION_TAU) * float(HELION_SKY_MAP_WIDTH) - 0.5;
+    float row = (clamp(direction.y, -1.0, 1.0) * 0.5 + 0.5) * float(HELION_SKY_MAP_ROWS) - 0.5;
+    ivec2 low = ivec2(floor(vec2(column, row)));
+    vec2 blend = vec2(column, row) - vec2(low);
+    vec3 bottom = mix(helionSkyMapTexel(low.x, low.y), helionSkyMapTexel(low.x + 1, low.y), blend.x);
+    vec3 top = mix(helionSkyMapTexel(low.x, low.y + 1), helionSkyMapTexel(low.x + 1, low.y + 1), blend.x);
+    return mix(bottom, top, blend.y);
+}
+
+vec3 helionReflected(vec3 origin, vec3 direction, float gate, HelionSky sky) {
+    rayQueryEXT query;
+    rayQueryInitializeEXT(query, Scene, gl_RayFlagsNoneEXT, HELION_SECTION_INSTANCES, origin, HELION_RAY_START, direction, HELION_BOUNCE_REACH);
+    helionTraceCutout(query);
+    if (rayQueryGetIntersectionTypeEXT(query, true) == gl_RayQueryCommittedIntersectionNoneEXT) {
+        return helionSkyMap(direction) * gate;
+    }
+    HelionSurfacePoint point = helionCommittedPoint(query);
+    vec3 texel = textureLod(AtlasSampler, point.uv, 0.0).rgb * point.tint.rgb;
+    if (helionIsEmissiveCell(helionMaterialCell(textureLod(MaterialSampler, point.uv, 0.0).r))) {
+        return helionSrgbToLinear(texel);
+    }
+    vec3 hit = origin + direction * rayQueryGetIntersectionTEXT(query, true);
+    vec3 normal = dot(point.normal, direction) < 0.0 ? point.normal : -point.normal;
+    vec3 lifted = hit + normal * HELION_HIT_OFFSET;
+    float skyLevel = clamp(point.light.y / HELION_MAX_LIGHT_COORDINATE, 0.0, 1.0);
+    float hitGate = clamp(skyLevel * HELION_SKY_GATE_LEVELS, 0.0, 1.0);
+    vec3 light = helionBounceBlockLight(hit, lifted, normal) + sky.ambient + helionSkyTail(normal, skyLevel, sky);
+    if (hitGate > 0.0) {
+        light += helionCelestialLight(lifted, normal, sky) * hitGate;
+    }
+    return helionSurfaceAlbedo(texel, normal) * light;
+}
+
+vec4 helionSpecular(vec3 origin, vec3 normal, vec3 view, float presence, vec3 albedo, float gate, HelionSky sky) {
+    bool metal = helionIsMetalGeometry(presence);
+    if (!metal && !helionIsGlossyGeometry(presence)) {
+        return HELION_NO_SPECULAR;
+    }
+    float roughness = metal ? HELION_METAL_ROUGHNESS : HELION_GLOSSY_ROUGHNESS;
+    HelionMaterial material = HelionMaterial(metal ? albedo : vec3(HELION_GLOSSY_F0), roughness * roughness);
+    vec3 direct = (helionCelestialSpecular(origin, normal, view, material, Sun, HELION_SUN_RADIUS, sky.sun)
+        + helionCelestialSpecular(origin, normal, view, material, Moon, HELION_MOON_RADIUS, sky.moon)) * gate;
+    vec3 middle = helionGgxMiddle(view, normal, material.alpha);
+    vec3 direction = reflect(-view, middle);
+    float facing = dot(normal, direction);
+    if (facing <= 0.0) {
+        return vec4(direct, 1.0);
+    }
+    vec3 traced = helionSchlick(material.f0, dot(view, middle)) * helionSmithG1(facing, material.alpha) * helionReflected(origin, direction, gate, sky);
+    float luminance = helionLuminance(traced);
+    return vec4(direct + (luminance > HELION_SPECULAR_LIMIT ? traced * (HELION_SPECULAR_LIMIT / luminance) : traced), 1.0);
+}
+
 #ifdef HELION_LIGHT_CACHE_UPDATE
 void main() {
     uint index = gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x + gl_GlobalInvocationID.x;
@@ -583,10 +709,12 @@ void main() {
     float depth = texelFetch(SceneDepthSampler, pixel, 0).r;
     if (levels.a < HELION_GEOMETRY_PRESENT_THRESHOLD || depth <= HELION_SKY_DEPTH) {
         imageStore(Irradiance, pixel, vec4(HELION_PATH_NOTHING));
+        imageStore(Specular, pixel, HELION_NO_SPECULAR);
         return;
     }
     if (helionIsEmissiveGeometry(levels.a)) {
         imageStore(Irradiance, pixel, vec4(vec3(1.0), HELION_PATH_EMISSIVE));
+        imageStore(Specular, pixel, HELION_NO_SPECULAR);
         return;
     }
     vec3 albedo = texelFetch(AlbedoSampler, pixel, 0).rgb;
@@ -602,6 +730,7 @@ void main() {
     float traced = helionSceneShare(origin);
     if (traced <= 0.0) {
         imageStore(Irradiance, pixel, vec4(vanilla, HELION_PATH_LIT));
+        imageStore(Specular, pixel, HELION_NO_SPECULAR);
         return;
     }
     helionState = helionPcg(uint(pixel.x) ^ helionPcg(uint(pixel.y) ^ helionPcg(uint(Frame.w))));
@@ -614,5 +743,7 @@ void main() {
     vec3 skyLight = helionCelestialLight(origin, normal, sky) * gate + indirect;
     vec3 block = helionBlockLighting(position, origin, normal) * mix(1.0, 1.0 - clamp(helionLuminance(skyLight), 0.0, 1.0), HELION_BLOCK_DAY_FADE);
     imageStore(Irradiance, pixel, vec4(mix(vanilla, sky.ambient + skyLight + block, traced), HELION_PATH_LIT));
+    vec4 specular = helionSpecular(origin, normal, -normalize(view), levels.a, surface, gate, sky);
+    imageStore(Specular, pixel, vec4(specular.rgb * traced, specular.a));
 }
 #endif

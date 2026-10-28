@@ -9,11 +9,13 @@ const float HELION_GEOMETRY_DRY = 0.625;
 const float HELION_GEOMETRY_MUDDY = 0.5625;
 const float HELION_GEOMETRY_LAVA = 0.6875;
 const float HELION_GEOMETRY_EMISSIVE = 0.8125;
+const float HELION_GEOMETRY_METAL = 0.9375;
 const float HELION_GEOMETRY_MATERIAL_TOLERANCE = 0.03;
 const float HELION_GLOSSY_CELL = 0.9;
 const float HELION_MATERIAL_CELL_STEPS = 8.0;
 const int HELION_CELL_EMISSIVE = 1;
 const int HELION_CELL_MUDDY = 2;
+const int HELION_CELL_METAL = 3;
 const int HELION_CELL_POROUS = 4;
 const int HELION_CELL_LAVA_FLOW = 5;
 const int HELION_CELL_DRY = 6;
@@ -43,6 +45,9 @@ float helionGeometryMaterial(float cell) {
     if (material == HELION_CELL_GLOSSY) {
         return HELION_GEOMETRY_GLOSSY;
     }
+    if (material == HELION_CELL_METAL) {
+        return HELION_GEOMETRY_METAL;
+    }
     if (material == HELION_CELL_DRY) {
         return HELION_GEOMETRY_DRY;
     }
@@ -62,6 +67,10 @@ bool helionIsDryGeometry(float presence) {
 
 bool helionIsGlossyGeometry(float presence) {
     return helionIsGeometryMaterial(presence, HELION_GEOMETRY_GLOSSY);
+}
+
+bool helionIsMetalGeometry(float presence) {
+    return helionIsGeometryMaterial(presence, HELION_GEOMETRY_METAL);
 }
 const float HELION_MAX_LIGHT_COORDINATE = 240.0;
 

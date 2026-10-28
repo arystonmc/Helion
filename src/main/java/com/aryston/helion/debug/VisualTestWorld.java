@@ -47,6 +47,10 @@ final class VisualTestWorld {
     private static final String PLAIN_GLASS_BLOCK = "glass";
     private static final Volume POLISHED_FLOOR = new Volume(new BlockPos(-1, -1, -5), new BlockPos(0, -1, -4));
     private static final String POLISHED_BLOCK = "polished_andesite";
+    private static final Volume IRON_FLOOR = new Volume(new BlockPos(-1, -1, -7), new BlockPos(-1, -1, -6));
+    private static final String IRON_BLOCK = "iron_block";
+    private static final Volume GOLD_FLOOR = new Volume(new BlockPos(0, -1, -7), new BlockPos(0, -1, -6));
+    private static final String GOLD_BLOCK = "gold_block";
     private static final Volume POOL = new Volume(new BlockPos(-5, -3, -10), new BlockPos(-2, -1, -1));
     private static final int POOL_WALL = 1;
     private static final String CASTER_BLOCK = "stone";
@@ -241,6 +245,8 @@ final class VisualTestWorld {
         run(server, fill(origin.offset(GLASS.from()), origin.offset(GLASS.to()), GLASS_BLOCK));
         run(server, fill(origin.offset(PLAIN_GLASS.from()), origin.offset(PLAIN_GLASS.to()), PLAIN_GLASS_BLOCK));
         run(server, fill(origin.offset(POLISHED_FLOOR.from()), origin.offset(POLISHED_FLOOR.to()), POLISHED_BLOCK));
+        run(server, fill(origin.offset(IRON_FLOOR.from()), origin.offset(IRON_FLOOR.to()), IRON_BLOCK));
+        run(server, fill(origin.offset(GOLD_FLOOR.from()), origin.offset(GOLD_FLOOR.to()), GOLD_BLOCK));
         ENTITIES.forEach(entity -> run(server, entity.command(origin)));
         run(server, killEntities(origin.offset(CAVE_ROCK.from()), origin.offset(CAVE_ROCK.to())));
         run(server, fill(origin.offset(CAVE_ROCK.from()), origin.offset(CAVE_ROCK.to()), CASTER_BLOCK));

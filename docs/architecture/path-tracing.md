@@ -72,6 +72,16 @@ Always on with the path traced light since 2026-10-28, after a spike on the bran
 - Measured on 2026-10-28 (RTX 4050 Laptop, 1080p, static camera): `path_trace` including the update fell from 2.2 to 5.9 ms to 1.2 to 2.1 ms in the five test scenes, with the same picture; with a moving camera 2.1 against 5.2 ms (day) and 1.5 against 3.5 ms (torch room), and a removed torch loses its light within a second as without the cache; the denoiser (2.8 to 3.9 ms) became the largest cost and was cut to three iterations (see Denoiser).
 - Tried and dropped on 2026-10-29: reading the cache at bounce hits (adding the cached indirect light of the hit face and ending the path, the update pass queuing the cells it hits) for infinite bounces. The picture did not change (the three bounces and the sky tail already carry nearly all the light) and the trace got slower: 9.8 instead of 2.2 ms in the cave when every hit refreshed its cell each frame, still 2.0 to 2.9 against 1.3 to 2.2 ms with hit cells of at least one block refreshed every 8 frames. The probing and the four cell reads per hit cost more than the bounces they save.
 
+## Specular and Materials (Phase 6, 2026-10-29)
+
+- Materials: the material mask gained a metal class (0x60, geometry light alpha 0.9375) for iron, gold, netherite and unweathered copper blocks. Glossy blocks (polished stone, quartz, prismarine, glazed terracotta, ice, smooth stone) are a dielectric with F0 0.04 and roughness 0.2; metal blocks use the unshaded linear albedo as F0 with roughness 0.35 and no diffuse light. Every other class has no specular.
+- Trace: for glossy and metal pixels `path_trace.csh` writes a second signal, specular radiance (not demodulated). The sun and the moon add an analytic GGX lobe (Smith masking, Schlick Fresnel) toward a point picked on their disk with a shadow ray, scaled by the sky gate. One reflection ray is sampled from the GGX distribution of visible normals and weighted by Fresnel and the masking of the outgoing direction; a hit is shaded like the last indirect bounce (block light, sun and moon with shadow rays, ambient and the sky tail, times the hit albedo), an emissive texel returns its own linear color, and a miss reads the sky radiance map (rows 1 to 8 of the sky light target, written by `atmosphere/sky_light.fsh` with the visible sky radiance, bilinear) times the sky gate. Sampled specular is limited to luminance 8.
+- Denoise: `rtx/specular_accumulate.csh` reprojects the specular history with the same camera reprojection and guide test as the irradiance, clamps it to 1.5 standard deviations around the 3x3 neighborhood mean and blends up to 16 samples; without history it starts from the neighborhood mean.
+- Composite: the radiance pass adds the accumulated specular to the remodulated diffuse light (diffuse is zero for metal). While the path tracer runs, screen space reflections leave out the polished reflection of glossy blocks; rain wetness stays in screen space reflections.
+- Measured 2026-10-29 (RTX 4050 Laptop, 1080p): `path_trace` 1.5 to 2.4 ms in the test scenes, about 0.1 to 0.2 ms more than before; denoising unchanged within noise.
+
+Not yet: wet surfaces in the path tracer, water and glass folded into it (they keep `RtxReflectionStage`), LabPBR materials.
+
 ## Next
 
-1. Phase 6, materials and traced specular; Phase 7, exposure calibration and the finish.
+1. Phase 7, exposure calibration and the finish.

@@ -39,7 +39,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### GeometryBuffer
 - Path: `src/main/java/com/aryston/helion/render/geometry/GeometryBuffer.java`
-- Role: Per-frame holder of the geometry buffer target handles (normal, light, albedo), empty when the geometry buffer was not written this frame, and of the terrain-only depth copy when temporal anti-aliasing runs. `includesEntities()` tells whether `EntityGeometryStage` drew entities into it.
+- Role: Per-frame holder of the geometry buffer target handles (normal, light, albedo), empty when the geometry buffer was not written this frame, and of the terrain-only depth copy when temporal anti-aliasing runs. `includesEntities()` tells whether `EntityGeometryStage` drew entities into it. `tracesSpecular()` tells whether `RtxPathTracingStage` traced the specular light this frame.
 
 #### GeometryBufferSettings
 - Path: `src/main/java/com/aryston/helion/render/geometry/GeometryBufferSettings.java`
@@ -69,5 +69,5 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### GlossyCells, GlossyMask
 - Path: `src/main/java/com/aryston/helion/render/geometry/GlossyCells.java`, `src/main/java/com/aryston/helion/render/geometry/GlossyMask.java`
-- Role: Block material mask. `GlossyCells` is one byte per 16 x 16 cell of the block atlas (0 ordinary, 0x20 emissive, 0x40 muddy, 0x80 porous, 0x9F flowing lava, 0xBF dry, 0xDF lava, 0xFF glossy; eight steps in the shaders), keyed by the atlas texture view; `GlossyMask` (owned by `HelionRenderCore`) uploads it into an R8_UNORM texture, again only when the atlas changes, outside any render pass. The terrain geometry pass and the water surface pass bind it as `GlossySampler`: opaque terrain writes its material into the alpha of the light target (1 ordinary, 0.875 porous, 0.75 glossy, 0.625 dry, 0.5625 muddy; crossed plant planes count as porous), and the glass surface pipelines keep only glossy texels; the emissive cells mark glowing blocks for the coming path traced light.
+- Role: Block material mask. `GlossyCells` is one byte per 16 x 16 cell of the block atlas (0 ordinary, 0x20 emissive, 0x40 muddy, 0x60 metal, 0x80 porous, 0x9F flowing lava, 0xBF dry, 0xDF lava, 0xFF glossy; eight steps in the shaders), keyed by the atlas texture view; `GlossyMask` (owned by `HelionRenderCore`) uploads it into an R8_UNORM texture, again only when the atlas changes, outside any render pass. The terrain geometry pass and the water surface pass bind it as `GlossySampler`: opaque terrain writes its material into the alpha of the light target (1 ordinary, 0.9375 metal, 0.875 porous, 0.75 glossy, 0.625 dry, 0.5625 muddy; crossed plant planes count as porous), and the glass surface pipelines keep only glossy texels; the emissive cells mark glowing blocks for the coming path traced light.
 - Depends on: `GpuResources`.

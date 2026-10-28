@@ -64,7 +64,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### SkyLight
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/SkyLight.java`
-- Role: Handle of the 3 x 1 sky light target (sun and moon light that reaches the ground through the atmosphere, and the irradiance of the sky dome on an upward surface) with the sun and moon directions and the rain brightness.
+- Role: Handle of the 16 x 9 sky light target: row 0 holds the sun and moon light that reaches the ground through the atmosphere and the irradiance of the sky dome on an upward surface (texels 0 to 2); rows 1 to 8 hold a 16 x 8 map of the sky radiance without sun and moon disks (azimuth across, direction height from -1 to 1 down the rows), which path traced reflections read on a miss with the sun and moon directions and the rain brightness.
 
 #### SceneFogPass
 - Path: `src/main/java/com/aryston/helion/render/atmosphere/SceneFogPass.java`

@@ -81,9 +81,11 @@ public final class RtxPathTracingStage implements RenderStage {
     public void addTo(FrameContext frame) {
         GeometryBuffer.Targets geometry = frame.geometry().targets().orElseThrow();
         RtxDenoiseImages images = resources.denoiseImages(frame.scene().width(), frame.scene().height());
-        trace(frame, geometry, images.work(TRACED_SLOT), Objects.requireNonNull(skyLight));
+        trace(frame, geometry, images.work(TRACED_SLOT), images.specular(), Objects.requireNonNull(skyLight));
         denoise(frame, geometry, images);
+        frame.geometry().publishTracedSpecular();
         RtxImage image = images.work(FINAL_SLOT);
+        RtxImage specular = images.specularHistory();
         CompiledRenderPipeline pipeline = Objects.requireNonNull(radiance);
         FramePass pass = frame.graph().addPass(NAME);
         pass.reads(geometry.albedo());
@@ -94,13 +96,14 @@ public final class RtxPathTracingStage implements RenderStage {
         pass.executes(frame.graph().timed(NAME, () -> FullscreenPass.draw("Helion Path Traced Light", scene.get(), pipeline, renderPass -> {
             RenderSystem.bindDefaultUniforms(renderPass);
             renderPass.setUniform(PathTracingPipelines.IRRADIANCE_SAMPLER, image.view(), nearest());
+            renderPass.setUniform(PathTracingPipelines.SPECULAR_SAMPLER, specular.view(), nearest());
             renderPass.setUniform(PathTracingPipelines.ALBEDO_SAMPLER, colorView(geometry.albedo()), nearest());
             renderPass.setUniform(PathTracingPipelines.GEOMETRY_LIGHT_SAMPLER, colorView(geometry.light()), nearest());
             renderPass.setUniform(PathTracingPipelines.GEOMETRY_NORMAL_SAMPLER, colorView(geometry.normal()), nearest());
         })));
     }
 
-    private void trace(FrameContext frame, GeometryBuffer.Targets geometry, RtxImage image, SkyLight sky) {
+    private void trace(FrameContext frame, GeometryBuffer.Targets geometry, RtxImage image, RtxImage specular, SkyLight sky) {
         ByteBuffer constants = resources.pathTraceConstants();
         writeConstants(constants, frame.camera(), Objects.requireNonNull(anchor), sky, resources.nextPathTraceFrame());
         FramePass pass = frame.graph().addPass(TRACE_PASS);
@@ -118,8 +121,8 @@ public final class RtxPathTracingStage implements RenderStage {
         RtxBuffer lights = scene.lightBuffer();
         TerrainTextures textures = terrain.textures();
         RtxLightCache cache = resources.lightCache();
-        List<RtxBinding> cacheTrace = List.of(cache.entries(), cache.filling(), cache.queued());
-        List<RtxBinding> cacheUpdate = List.of(cache.entries(), cache.queued(), cache.filling());
+        List<RtxBinding> cacheTrace = List.of(cache.entries(), cache.filling(), cache.queued(), new RtxBinding.StorageImage(specular.vkImageView()));
+        List<RtxBinding> cacheUpdate = List.of(cache.entries(), cache.queued(), cache.filling(), new RtxBinding.StorageImage(specular.vkImageView()));
         cache.advance();
         pass.executes(frame.graph().timed(TRACE_PASS, () -> {
             List<RtxBinding> bindings = List.of(
@@ -163,6 +166,9 @@ public final class RtxPathTracingStage implements RenderStage {
         RtxImage previousMoments = images.previousMoments();
         RtxImage guide = images.guide();
         RtxImage previousGuide = images.previousGuide();
+        RtxImage specular = images.specular();
+        RtxImage specularHistory = images.specularHistory();
+        RtxImage previousSpecularHistory = images.previousSpecularHistory();
         RtxImage[] chain = {accumulated, history, traced, accumulated};
         FramePass pass = frame.graph().addPass(DENOISE_PASS);
         pass.reads(geometry.normal());
@@ -179,6 +185,14 @@ public final class RtxPathTracingStage implements RenderStage {
                 new RtxBinding.Sampled(traced.vkImageView()),
                 new RtxBinding.Sampled(history.vkImageView()),
                 new RtxBinding.Sampled(previousMoments.vkImageView()),
+                new RtxBinding.Sampled(previousGuide.vkImageView()),
+                new RtxBinding.Sampled(handle(Objects.requireNonNull(sceneTarget.get().getDepthTextureView()))),
+                new RtxBinding.Sampled(handle(colorView(geometry.normal())))
+            ), constants, images.width(), images.height());
+            resources.specularPipeline().dispatch(device.commandBuffer(), List.of(
+                new RtxBinding.StorageImage(specularHistory.vkImageView()),
+                new RtxBinding.Sampled(specular.vkImageView()),
+                new RtxBinding.Sampled(previousSpecularHistory.vkImageView()),
                 new RtxBinding.Sampled(previousGuide.vkImageView()),
                 new RtxBinding.Sampled(handle(Objects.requireNonNull(sceneTarget.get().getDepthTextureView()))),
                 new RtxBinding.Sampled(handle(colorView(geometry.normal())))

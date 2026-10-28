@@ -35,6 +35,9 @@ public final class RayTracingResources {
     private static final String FILTER_SOURCE = "/assets/helion/shaders/rtx/denoise_filter.csh";
     private static final String FILTER_NAME = "denoise_filter.csh";
     private static final String FILTER_PIPELINE_LABEL = "Helion Path Tracing Filter Pipeline";
+    private static final String SPECULAR_SOURCE = "/assets/helion/shaders/rtx/specular_accumulate.csh";
+    private static final String SPECULAR_NAME = "specular_accumulate.csh";
+    private static final String SPECULAR_PIPELINE_LABEL = "Helion Path Tracing Specular Pipeline";
     private static final long PIPELINE_BYTES = 0L;
     private static final long LOG_INTERVAL_FRAMES = 600L;
     private static final long BYTES_PER_MIB = 1L << 20;
@@ -87,12 +90,20 @@ public final class RayTracingResources {
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     };
-    private static final int[] LIGHT_CACHE_DESCRIPTORS = withStorageBuffers(PATH_TRACE_DESCRIPTORS, LIGHT_CACHE_BUFFERS);
+    private static final int[] TRACE_DESCRIPTORS = withSpecular(withStorageBuffers(PATH_TRACE_DESCRIPTORS, LIGHT_CACHE_BUFFERS));
     private static final int[] ACCUMULATE_DESCRIPTORS = {
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    };
+    private static final int[] SPECULAR_DESCRIPTORS = {
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -121,6 +132,7 @@ public final class RayTracingResources {
     private @Nullable RtxComputePipeline accumulate;
     private @Nullable ByteBuffer accumulateConstants;
     private @Nullable RtxComputePipeline filter;
+    private @Nullable RtxComputePipeline specular;
     private @Nullable ByteBuffer filterConstants;
     private @Nullable RtxDenoiseImages denoiseImages;
     private boolean checked;
@@ -211,7 +223,7 @@ public final class RayTracingResources {
     }
 
     boolean pathTracingAvailable() {
-        return pathTrace != null && cacheUpdate != null && accumulate != null && filter != null;
+        return pathTrace != null && cacheUpdate != null && accumulate != null && filter != null && specular != null;
     }
 
     RtxComputePipeline pathTracePipeline() {
@@ -250,6 +262,10 @@ public final class RayTracingResources {
             accumulateConstants = MemoryUtil.memAlloc(ACCUMULATE_CONSTANT_BYTES);
         }
         return accumulateConstants;
+    }
+
+    RtxComputePipeline specularPipeline() {
+        return Objects.requireNonNull(specular);
     }
 
     RtxComputePipeline filterPipeline() {
@@ -349,19 +365,22 @@ public final class RayTracingResources {
             LOGGER.error("Helion ray traced reflections are off: {}", exception.getMessage());
         }
         try {
-            RtxComputePipeline traced = RtxComputePipeline.create(rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, LIGHT_CACHE_DESCRIPTORS, PATH_TRACE_CONSTANT_BYTES);
+            RtxComputePipeline traced = RtxComputePipeline.create(rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, TRACE_DESCRIPTORS, PATH_TRACE_CONSTANT_BYTES);
             resources.track(PATH_TRACE_PIPELINE_LABEL, PIPELINE_BYTES, traced::destroy);
             RtxComputePipeline updated = RtxComputePipeline.create(
-                rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, Set.of(LIGHT_CACHE_UPDATE_DEFINE), LIGHT_CACHE_DESCRIPTORS, singles(LIGHT_CACHE_DESCRIPTORS), PATH_TRACE_CONSTANT_BYTES
+                rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, Set.of(LIGHT_CACHE_UPDATE_DEFINE), TRACE_DESCRIPTORS, singles(TRACE_DESCRIPTORS), PATH_TRACE_CONSTANT_BYTES
             );
             resources.track(CACHE_UPDATE_PIPELINE_LABEL, PIPELINE_BYTES, updated::destroy);
             RtxComputePipeline accumulated = RtxComputePipeline.create(rtx, ACCUMULATE_SOURCE, ACCUMULATE_NAME, ACCUMULATE_DESCRIPTORS, ACCUMULATE_CONSTANT_BYTES);
             resources.track(ACCUMULATE_PIPELINE_LABEL, PIPELINE_BYTES, accumulated::destroy);
             RtxComputePipeline filtered = RtxComputePipeline.create(rtx, FILTER_SOURCE, FILTER_NAME, FILTER_DESCRIPTORS, FILTER_CONSTANT_BYTES);
             resources.track(FILTER_PIPELINE_LABEL, PIPELINE_BYTES, filtered::destroy);
+            RtxComputePipeline specularAccumulated = RtxComputePipeline.create(rtx, SPECULAR_SOURCE, SPECULAR_NAME, SPECULAR_DESCRIPTORS, ACCUMULATE_CONSTANT_BYTES);
+            resources.track(SPECULAR_PIPELINE_LABEL, PIPELINE_BYTES, specularAccumulated::destroy);
             pathTrace = traced;
             accumulate = accumulated;
             filter = filtered;
+            specular = specularAccumulated;
             cacheUpdate = updated;
         } catch (IllegalStateException exception) {
             LOGGER.error("Helion path traced light is off: {}", exception.getMessage());
@@ -372,6 +391,12 @@ public final class RayTracingResources {
     private static int[] withStorageBuffers(int[] descriptors, int count) {
         int[] extended = Arrays.copyOf(descriptors, descriptors.length + count);
         Arrays.fill(extended, descriptors.length, extended.length, VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+        return extended;
+    }
+
+    private static int[] withSpecular(int[] descriptors) {
+        int[] extended = Arrays.copyOf(descriptors, descriptors.length + 1);
+        extended[descriptors.length] = VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
         return extended;
     }
 

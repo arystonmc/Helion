@@ -12,6 +12,7 @@ import java.util.Optional;
 public final class PathTracingPipelines {
     public static final String FOG = "Fog";
     public static final String IRRADIANCE_SAMPLER = "IrradianceSampler";
+    public static final String SPECULAR_SAMPLER = "SpecularSampler";
     public static final String ALBEDO_SAMPLER = "AlbedoSampler";
     public static final String GEOMETRY_LIGHT_SAMPLER = "GeometryLightSampler";
     public static final String GEOMETRY_NORMAL_SAMPLER = "GeometryNormalSampler";
@@ -20,6 +21,7 @@ public final class PathTracingPipelines {
         .withBindGroupLayout(BindGroupLayout.builder()
             .withUniform(FOG, UniformType.UNIFORM_BUFFER)
             .withUniform(IRRADIANCE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(SPECULAR_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(ALBEDO_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(GEOMETRY_LIGHT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
             .withUniform(GEOMETRY_NORMAL_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)

@@ -34,6 +34,8 @@ final class VanillaGlossyCells {
     private static final List<String> GLOSSY_PARTS = List.of("quartz", "prismarine", "glass");
     private static final List<String> GLOSSY_SUFFIXES = List.of("glazed_terracotta", "ice", "smooth_stone");
     private static final String ORE = "ore";
+    private static final List<String> METAL_SUFFIXES = List.of("iron_block", "gold_block", "netherite_block", "copper_block", "cut_copper", "chiseled_copper");
+    private static final List<String> NOT_METAL_PARTS = List.of("raw_", "exposed", "weathered", "oxidized");
     private static final long MODEL_SEED = 42L;
     private static final Identifier LAVA_STILL = Identifier.withDefaultNamespace("block/lava_still");
     private static final Identifier LAVA_FLOW = Identifier.withDefaultNamespace("block/lava_flow");
@@ -73,8 +75,8 @@ final class VanillaGlossyCells {
         markEmitters(cells, width, height);
         GlossyCells built = new GlossyCells(view, width, height, cells);
         LOGGER.info(
-            "Helion material mask: {} glossy, {} muddy, {} porous, {} dry, {} lava and {} emissive of {} block atlas cells",
-            count(cells, GlossyCells.GLOSSY), count(cells, GlossyCells.MUDDY), count(cells, GlossyCells.POROUS), count(cells, GlossyCells.DRY),
+            "Helion material mask: {} glossy, {} metal, {} muddy, {} porous, {} dry, {} lava and {} emissive of {} block atlas cells",
+            count(cells, GlossyCells.GLOSSY), count(cells, GlossyCells.METAL), count(cells, GlossyCells.MUDDY), count(cells, GlossyCells.POROUS), count(cells, GlossyCells.DRY),
             count(cells, GlossyCells.LAVA) + count(cells, GlossyCells.LAVA_FLOW), count(cells, GlossyCells.EMISSIVE), cells.length
         );
         cached = built;
@@ -132,6 +134,9 @@ final class VanillaGlossyCells {
     }
 
     private static byte material(String path) {
+        if (METAL_SUFFIXES.stream().anyMatch(path::endsWith) && NOT_METAL_PARTS.stream().noneMatch(path::contains)) {
+            return GlossyCells.METAL;
+        }
         if (glossy(path)) {
             return GlossyCells.GLOSSY;
         }
