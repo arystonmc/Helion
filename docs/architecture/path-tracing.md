@@ -70,6 +70,7 @@ Always on with the path traced light since 2026-10-28, after a spike on the bran
 - Update, before the trace: one thread per cell queued last frame traces the indirect path from the stored position and blends it in with weight samples / count, up to 64. The two queues swap every frame; the update clears the one the trace fills next.
 - The push constants carry the anchor section and a frame counter instead of the scene reach (now a shader constant) and the random seed.
 - Measured on 2026-10-28 (RTX 4050 Laptop, 1080p, static camera): `path_trace` including the update fell from 2.2 to 5.9 ms to 1.2 to 2.1 ms in the five test scenes, with the same picture; with a moving camera 2.1 against 5.2 ms (day) and 1.5 against 3.5 ms (torch room), and a removed torch loses its light within a second as without the cache; the denoiser (2.8 to 3.9 ms) became the largest cost and was cut to three iterations (see Denoiser).
+- Tried and dropped on 2026-10-29: reading the cache at bounce hits (adding the cached indirect light of the hit face and ending the path, the update pass queuing the cells it hits) for infinite bounces. The picture did not change (the three bounces and the sky tail already carry nearly all the light) and the trace got slower: 9.8 instead of 2.2 ms in the cave when every hit refreshed its cell each frame, still 2.0 to 2.9 against 1.3 to 2.2 ms with hit cells of at least one block refreshed every 8 frames. The probing and the four cell reads per hit cost more than the bounces they save.
 
 ## Next
 
