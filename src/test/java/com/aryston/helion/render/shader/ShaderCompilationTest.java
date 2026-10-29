@@ -35,8 +35,8 @@ class ShaderCompilationTest {
         new Variant("default", ""),
         new Variant("zero_to_one_depth", "#define RENDERPEARL_DEPTH_IS_ZERO_TO_ONE"),
         new Variant("multidraw_cutout", "#define MULTIDRAW_TERRAIN\n#define ALPHA_CUTOUT 0.5"),
-        new Variant("compact_vertices", "#define AERVIUM_COMPACT_VERTICES 1"),
-        new Variant("compact_vertices_multidraw_cutout", "#define AERVIUM_COMPACT_VERTICES 1\n#define MULTIDRAW_TERRAIN\n#define ALPHA_CUTOUT 0.5")
+        new Variant("compact_vertices", "#define KINETIC_COMPACT_VERTICES 1"),
+        new Variant("compact_vertices_multidraw_cutout", "#define KINETIC_COMPACT_VERTICES 1\n#define MULTIDRAW_TERRAIN\n#define ALPHA_CUTOUT 0.5")
     );
     private static final String VALIDATOR = "glslangValidator";
     private static final long VALIDATOR_TIMEOUT_SECONDS = 60;

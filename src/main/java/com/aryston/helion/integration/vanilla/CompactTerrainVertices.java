@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 
 final class CompactTerrainVertices {
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final String DEFINE = "AERVIUM_COMPACT_VERTICES";
+    private static final String DEFINE = "KINETIC_COMPACT_VERTICES";
     private static final String SUPPORTED_VERSION = "1";
     private static boolean unsupportedReported;
 

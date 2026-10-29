@@ -140,7 +140,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Make shadows faster by redrawing them only when the sun moved or you moved far enough, and the physical sky faster by redrawing its sky tables only when the sun, the moon or your height changed: about a quarter more frames per second with every effect on
 - Depth of field blur fades in softly over a wide range of distances instead of starting at a sharp line
 - Depth of field focuses more steadily, keeps a wider area sharp when you look far away and no longer leaves a halo around sharp objects
-- Draw terrain from Aervium's compact chunk vertices when its compactVertices module is on
+- Draw terrain from Kinetic's compact chunk vertices when its compactVertices module is on
 - Make sun and moon shadows much faster by redrawing far shadows less often
 - Make ambient occlusion smoother while temporal anti-aliasing is on
 - Adopt the Aryston Source-Available License

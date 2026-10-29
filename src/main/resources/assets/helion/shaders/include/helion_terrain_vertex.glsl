@@ -1,7 +1,7 @@
 #ifndef HELION_TERRAIN_VERTEX_GLSL
 #define HELION_TERRAIN_VERTEX_GLSL
 
-#ifdef AERVIUM_COMPACT_VERTICES
+#ifdef KINETIC_COMPACT_VERTICES
 layout(location = 0) in uvec4 PositionLight;
 layout(location = 1) in vec4 Color;
 layout(location = 2) in uvec2 PackedUV0;

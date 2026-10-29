@@ -25,6 +25,6 @@ Places that copy or depend on vanilla internals. Check each of them first when M
 | `TransparentGeometryStage` (fog after OIT) | `CloudRenderer.renderOit` and the OIT setup in `LevelRenderer`: OIT clouds write their depth into the separate `cloud_depth` target, never into scene depth, so cloud pixels read as sky in the fog pass and keep their own cloud fog |
 | `CloudRendererMixin`, `VanillaCloudSource` | `CloudRenderer.render` and `renderOit` (the only places that draw vanilla clouds), the cloud status option, `LevelRenderState.cloudColor` and `customCloudsRenderer` |
 | `VanillaTerrainSource.renderOpaqueGeometry` | `ChunkSectionsToRender.renderGroup` and `renderLayers` |
-| `helion_terrain_vertex.glsl`, `CompactTerrainVertices` | the compact vertex layout of Aervium's `compactVertices` module (format version 1: position and light as four unsigned shorts, color, texture coordinates as two unsigned shorts over 65536) |
+| `helion_terrain_vertex.glsl`, `CompactTerrainVertices` | the compact vertex layout of Kinetic's `compactVertices` module (format version 1: position and light as four unsigned shorts, color, texture coordinates as two unsigned shorts over 65536) |
 
 `SkyRenderer` keeps the render target it was created with, so Helion owns a separate `SkyRenderer` bound to the scene target (`SceneSkyRenderer`).

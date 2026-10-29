@@ -63,7 +63,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### RtxSectionCapture
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/RtxSectionCapture.java`
-- Role: When ray tracing was requested at startup, copies the quad positions of the solid, cutout and translucent layers of a compiled section (vanilla `Position` floats or Aervium's compact `PositionLight`, 1/2048 block steps from -8) into a `RtxSectionUpdate` on the compile worker when the section is near the camera, reports reset sections, and once per frame passes the scene's recompile requests to `LevelExtractor.setSectionDirty`. Warns once and skips terrain in an unknown vertex format. Next to the positions it packs the surface attributes of every vertex: `UV0`, `Color` and `UV2` of the vanilla block format, or `PackedUV0`, `Color` and the light in `PositionLight.w` of the compact format. Each quad also carries its octahedral face normal, and the section carries the block lights `RtxSectionLights` found in it.
+- Role: When ray tracing was requested at startup, copies the quad positions of the solid, cutout and translucent layers of a compiled section (vanilla `Position` floats or Kinetic's compact `PositionLight`, 1/2048 block steps from -8) into a `RtxSectionUpdate` on the compile worker when the section is near the camera, reports reset sections, and once per frame passes the scene's recompile requests to `LevelExtractor.setSectionDirty`. Warns once and skips terrain in an unknown vertex format. Next to the positions it packs the surface attributes of every vertex: `UV0`, `Color` and `UV2` of the vanilla block format, or `PackedUV0`, `Color` and the light in `PositionLight.w` of the compact format. Each quad also carries its octahedral face normal, and the section carries the block lights `RtxSectionLights` found in it.
 
 #### RtxSectionLights
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/RtxSectionLights.java`
@@ -83,12 +83,12 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaGeometryPipelines
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaGeometryPipelines.java`
-- Role: Geometry buffer terrain pipelines per chunk layer (direct and multi-draw), copied from the vanilla terrain pipelines with `toBuilder()` and switched to `helion:terrain/geometry` with three more color targets and the glossy mask sampler. They inherit Aervium's compact terrain vertex format and its `AERVIUM_COMPACT_VERTICES` define with the vanilla pipelines. A third cutout pair with the define `HELION_SEE_THROUGH_GLASS` discards plain glass cells, chosen by `forLayer(layer, seeThroughGlass)`. A translucent pair (`seeThroughTranslucent()`, optional) swaps in `helion:terrain/translucent`, the vanilla translucent terrain shader that also discards plain glass cells. Registered as optional pipelines; warns once when they did not compile or the compact format version is unknown.
+- Role: Geometry buffer terrain pipelines per chunk layer (direct and multi-draw), copied from the vanilla terrain pipelines with `toBuilder()` and switched to `helion:terrain/geometry` with three more color targets and the glossy mask sampler. They inherit Kinetic's compact terrain vertex format and its `KINETIC_COMPACT_VERTICES` define with the vanilla pipelines. A third cutout pair with the define `HELION_SEE_THROUGH_GLASS` discards plain glass cells, chosen by `forLayer(layer, seeThroughGlass)`. A translucent pair (`seeThroughTranslucent()`, optional) swaps in `helion:terrain/translucent`, the vanilla translucent terrain shader that also discards plain glass cells. Registered as optional pipelines; warns once when they did not compile or the compact format version is unknown.
 - Depends on: `GeometryBufferPipelines`, `HelionPipelines`, `CompactTerrainVertices`.
 
 #### CompactTerrainVertices
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/CompactTerrainVertices.java`
-- Role: The shader define contract with Aervium's `compactVertices` module (no shared code, rule S2). `supported` is false, with one warning, when the vanilla solid terrain pipeline carries a format version other than 1, so the geometry buffer turns off instead of reading vertices they do not understand.
+- Role: The shader define contract with Kinetic's `compactVertices` module (no shared code, rule S2). `supported` is false, with one warning, when the vanilla solid terrain pipeline carries a format version other than 1, so the geometry buffer turns off instead of reading vertices they do not understand.
 - Depends on: nothing of this mod.
 
 #### VanillaEntitySource
