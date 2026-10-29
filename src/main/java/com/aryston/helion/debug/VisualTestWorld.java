@@ -54,6 +54,7 @@ final class VisualTestWorld {
     private static final Volume POOL = new Volume(new BlockPos(-5, -3, -10), new BlockPos(-2, -1, -1));
     private static final int POOL_WALL = 1;
     private static final String CASTER_BLOCK = "stone";
+    private static final String CONCRETE_BLOCK = "white_concrete";
     private static final List<Volume> SHADOW_CASTERS = List.of(
         new Volume(new BlockPos(5, 0, -4), new BlockPos(5, 3, -4)),
         new Volume(new BlockPos(-6, 2, -5), new BlockPos(-4, 2, -3))
@@ -144,10 +145,12 @@ final class VisualTestWorld {
     private static final Summon LAKE_SLIME = new Summon(-21, 0, -10, "slime");
     static final BlockPos GLASS_CAMERA = new BlockPos(-24, 0, -42);
     static final BlockPos GLASS_ABOVE_CAMERA = new BlockPos(-22, 2, -43);
+    static final BlockPos GLASS_CLOSE_CAMERA = new BlockPos(-32, 0, -43);
     private static final List<Fill> GLASS_WINDOW = List.of(
         new Fill(new Volume(new BlockPos(-28, 0, -44), new BlockPos(-25, 2, -44)), "black_stained_glass_pane"),
         new Fill(new Volume(new BlockPos(-23, 0, -44), new BlockPos(-20, 2, -44)), "glass_pane"),
-        new Fill(new Volume(new BlockPos(-30, 0, -44), new BlockPos(-29, 2, -44)), "light_blue_stained_glass")
+        new Fill(new Volume(new BlockPos(-30, 0, -44), new BlockPos(-29, 2, -44)), "light_blue_stained_glass"),
+        new Fill(new Volume(new BlockPos(-33, 0, -44), new BlockPos(-31, 2, -44)), PLAIN_GLASS_BLOCK)
     );
     private static final Fill GLASS_LAKE = new Fill(new Volume(new BlockPos(-27, 0, -4), new BlockPos(-24, 0, -3)), GLASS_BLOCK);
     static final BlockPos STAINED_LIGHT_CAMERA = new BlockPos(38, -17, -3);
@@ -278,6 +281,19 @@ final class VisualTestWorld {
         new Spawn(66, -19, -9, "pig", " {NoAI:1b,Invulnerable:1b,Fire:32767s,Rotation:[90f,0f]}")
     );
 
+    static final BlockPos CONCRETE_CAMERA = new BlockPos(77, -19, -2);
+    private static final Volume CONCRETE_ROOM = new Volume(new BlockPos(71, -20, -12), new BlockPos(83, -14, -1));
+    private static final List<Fill> CONCRETE_BLOCKS = List.of(
+        new Fill(new Volume(new BlockPos(73, -19, -7), new BlockPos(82, -15, -7)), CONCRETE_BLOCK),
+        new Fill(new Volume(new BlockPos(74, -19, -6), new BlockPos(74, -19, -6)), "blue_stained_glass_pane"),
+        new Fill(new Volume(new BlockPos(76, -19, -6), new BlockPos(76, -19, -6)), "yellow_stained_glass_pane"),
+        new Fill(new Volume(new BlockPos(78, -19, -6), new BlockPos(78, -19, -6)), "red_stained_glass_pane"),
+        new Fill(new Volume(new BlockPos(80, -19, -6), new BlockPos(80, -19, -6)), "light_blue_stained_glass_pane"),
+        new Fill(new Volume(new BlockPos(75, -19, -10), new BlockPos(75, -19, -10)), "torch"),
+        new Fill(new Volume(new BlockPos(80, -19, -10), new BlockPos(80, -19, -10)), "soul_torch"),
+        new Fill(new Volume(new BlockPos(77, -19, -11), new BlockPos(77, -19, -11)), "sea_lantern")
+    );
+
     private VisualTestWorld() {
     }
 
@@ -358,6 +374,8 @@ final class VisualTestWorld {
         run(server, killEntities(origin.offset(DYNAMIC_ROOM.from()), origin.offset(DYNAMIC_ROOM.to())));
         run(server, fill(origin.offset(DYNAMIC_ROOM.from()), origin.offset(DYNAMIC_ROOM.to()), CASTER_BLOCK + " hollow"));
         DYNAMIC_SPAWNS.forEach(spawn -> run(server, spawn.command(origin)));
+        run(server, fill(origin.offset(CONCRETE_ROOM.from()), origin.offset(CONCRETE_ROOM.to()), CONCRETE_BLOCK + " hollow"));
+        CONCRETE_BLOCKS.forEach(block -> run(server, fill(origin.offset(block.volume().from()), origin.offset(block.volume().to()), block.block())));
     }
 
     private static void buildTorchRoom(IntegratedServer server, BlockPos origin) {

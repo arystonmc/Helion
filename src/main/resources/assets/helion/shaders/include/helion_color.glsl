@@ -11,6 +11,7 @@ const float HELION_SRGB_GAMMA = 2.4;
 
 const float HELION_NEUTRAL_START_COMPRESSION = 0.76;
 const float HELION_NEUTRAL_MAX_PEAK = 16.0;
+const float HELION_ENCODED_STEP = 1.0 / 255.0;
 
 const float HELION_FILM_CONTRAST = 0.25;
 const float HELION_FILM_VIBRANCE = 0.2;
@@ -90,6 +91,10 @@ float helionInterleavedGradientNoise(vec2 pixel) {
 
 float helionTriangularNoise(vec2 pixel) {
     return helionInterleavedGradientNoise(pixel) + helionInterleavedGradientNoise(pixel + HELION_NOISE_SECOND_OFFSET) - 1.0;
+}
+
+vec3 helionDitherEncoded(vec3 encoded, vec2 pixel) {
+    return clamp(encoded + helionTriangularNoise(pixel) * HELION_ENCODED_STEP, 0.0, 1.0);
 }
 
 #endif

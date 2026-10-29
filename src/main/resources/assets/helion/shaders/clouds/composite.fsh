@@ -42,5 +42,5 @@ void main() {
     cover *= 1.0 - helionRainbowWindow(helionCloudViewRay(texCoord));
     vec3 radiance = clouds.rgb / max(1.0 - clamp(clouds.a, 0.0, 1.0), HELION_MIN_COVER);
     radiance = max(mix(vec3(helionLuminance(radiance)), radiance, HELION_CLOUD_SATURATION), 0.0);
-    fragColor = vec4(helionLinearToSrgb(helionNeutral(radiance)), cover);
+    fragColor = vec4(helionDitherEncoded(helionLinearToSrgb(helionNeutral(radiance)), gl_FragCoord.xy), cover);
 }

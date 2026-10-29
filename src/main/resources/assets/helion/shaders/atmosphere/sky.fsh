@@ -8,5 +8,5 @@ layout(location = 0) in vec2 texCoord;
 layout(location = 0) out vec4 fragColor;
 
 void main() {
-    fragColor = vec4(helionSkyColorWithCelestials(helionViewRay(texCoord)), 1.0);
+    fragColor = vec4(helionDitherEncoded(helionSkyColorWithCelestials(helionViewRay(texCoord)), gl_FragCoord.xy), 1.0);
 }

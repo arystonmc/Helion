@@ -27,5 +27,5 @@ void main() {
     vec3 color = helionLinearToSrgb(helionNeutral(surface * texelFetch(IrradianceSampler, pixel, 0).rgb * diffuse + texelFetch(SpecularSampler, pixel, 0).rgb));
     color = mix(FogColor.rgb, color, levels.b);
     color = mix(color, FogColor.rgb, albedo.a * FogColor.a);
-    fragColor = vec4(color, 1.0);
+    fragColor = vec4(helionDitherEncoded(color, gl_FragCoord.xy), 1.0);
 }

@@ -29,5 +29,5 @@ void main() {
     if (amount <= 0.0) {
         discard;
     }
-    fragColor = vec4(helionSkyColor(helionViewRay(texCoord)), amount);
+    fragColor = vec4(helionDitherEncoded(helionSkyColor(helionViewRay(texCoord)), gl_FragCoord.xy), amount);
 }

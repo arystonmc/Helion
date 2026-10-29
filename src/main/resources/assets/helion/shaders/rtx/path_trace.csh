@@ -37,7 +37,7 @@ struct HelionCacheEntry {
     uvec4 state;
     ivec4 cell;
     vec4 light;
-    vec4 sampleAt;
+    vec4 smoothed;
 };
 
 layout(set = 0, binding = 12, std430) coherent buffer HelionLightCache {
@@ -75,6 +75,8 @@ const float HELION_LIGHT_SURFACE = 1.0e-3;
 const float HELION_ENTRY_MARGIN = 0.02;
 const float HELION_MIN_DIRECTION = 1.0e-6;
 const float HELION_BLOCK_DAY_FADE = 0.6;
+const int HELION_TRACED_LIGHTS = 2;
+const int HELION_BOUNCE_TRACED_LIGHTS = 1;
 const float HELION_FLICKER_DEPTH = 0.15;
 const float HELION_FLICKER_SLOW = 7.0;
 const float HELION_FLICKER_FAST = 13.0;
@@ -261,12 +263,17 @@ vec3 helionLightVisible(HelionBlockLight light, vec3 origin, vec3 normal) {
     return dot(outside, outside) > HELION_LIGHT_SURFACE * HELION_LIGHT_SURFACE ? vec3(0.0) : filtered;
 }
 
-vec3 helionBlockLighting(vec3 position, vec3 origin, vec3 normal) {
+vec3 helionTracedBlockLight(vec3 position, vec3 origin, vec3 normal, int traced) {
     uvec4 header = helionLightCell(position);
     uvec4 globals = helionLightGlobals();
-    uint brightest = HELION_NO_LIGHT;
-    float brightestWeight = 0.0;
-    vec3 brightestShare = vec3(0.0);
+    uint kept[HELION_TRACED_LIGHTS];
+    float keptWeight[HELION_TRACED_LIGHTS];
+    vec3 keptShare[HELION_TRACED_LIGHTS];
+    for (int slot = 0; slot < HELION_TRACED_LIGHTS; slot++) {
+        kept[slot] = HELION_NO_LIGHT;
+        keptWeight[slot] = 0.0;
+        keptShare[slot] = vec3(0.0);
+    }
     uint chosen = HELION_NO_LIGHT;
     float chosenWeight = 0.0;
     vec3 chosenShare = vec3(0.0);
@@ -281,13 +288,18 @@ vec3 helionBlockLighting(vec3 position, vec3 origin, vec3 normal) {
         uint candidate = record;
         float candidateWeight = weight;
         vec3 candidateShare = share;
-        if (weight > brightestWeight) {
-            candidate = brightest;
-            candidateWeight = brightestWeight;
-            candidateShare = brightestShare;
-            brightest = record;
-            brightestWeight = weight;
-            brightestShare = share;
+        for (int slot = 0; slot < traced; slot++) {
+            if (candidateWeight > keptWeight[slot]) {
+                uint lower = kept[slot];
+                float lowerWeight = keptWeight[slot];
+                vec3 lowerShare = keptShare[slot];
+                kept[slot] = candidate;
+                keptWeight[slot] = candidateWeight;
+                keptShare[slot] = candidateShare;
+                candidate = lower;
+                candidateWeight = lowerWeight;
+                candidateShare = lowerShare;
+            }
         }
         if (candidateWeight > 0.0) {
             restWeight += candidateWeight;
@@ -298,47 +310,27 @@ vec3 helionBlockLighting(vec3 position, vec3 origin, vec3 normal) {
             }
         }
     }
-    if (brightest == HELION_NO_LIGHT) {
+    if (kept[0] == HELION_NO_LIGHT) {
         return vec3(0.0);
     }
-    vec3 enclosing = helionEnclosingStain(origin, normal);
-    vec3 lit = brightestShare * helionLightVisible(helionBlockLight(brightest), origin, normal);
-    if (chosen == HELION_NO_LIGHT) {
-        return lit * enclosing;
+    vec3 lit = keptShare[0] * helionLightVisible(helionBlockLight(kept[0]), origin, normal);
+    vec3 rest = vec3(0.0);
+    for (int slot = 1; slot < traced && kept[slot] != HELION_NO_LIGHT; slot++) {
+        rest += keptShare[slot] * helionLightVisible(helionBlockLight(kept[slot]), origin, normal);
     }
-    vec3 rest = chosenShare * (restWeight / chosenWeight) * helionLightVisible(helionBlockLight(chosen), origin, normal);
-    return (lit + rest * (HELION_REST_SHARE / (1.0 + helionLuminance(rest)))) * enclosing;
+    if (chosen != HELION_NO_LIGHT) {
+        rest += chosenShare * (restWeight / chosenWeight) * helionLightVisible(helionBlockLight(chosen), origin, normal);
+    }
+    return lit + rest * (HELION_REST_SHARE / (1.0 + helionLuminance(rest)));
+}
+
+vec3 helionBlockLighting(vec3 position, vec3 origin, vec3 normal) {
+    vec3 light = helionTracedBlockLight(position, origin, normal, HELION_TRACED_LIGHTS);
+    return helionLuminance(light) > 0.0 ? light * helionEnclosingStain(origin, normal) : light;
 }
 
 vec3 helionBounceBlockLight(vec3 position, vec3 origin, vec3 normal) {
-    uvec4 header = helionLightCell(position);
-    uvec4 globals = helionLightGlobals();
-    uint chosen = HELION_NO_LIGHT;
-    float chosenWeight = 0.0;
-    vec3 chosenShare = vec3(0.0);
-    float totalWeight = 0.0;
-    float brightestWeight = 0.0;
-    for (uint index = 0u; index < header.y + globals.y; index++) {
-        uint record = helionLightRecord(header, globals, index);
-        vec3 share = helionLightShare(helionBlockLight(record), position, normal);
-        float weight = helionLuminance(share);
-        if (weight <= 0.0) {
-            continue;
-        }
-        totalWeight += weight;
-        brightestWeight = max(brightestWeight, weight);
-        if (helionRandom() * totalWeight < weight) {
-            chosen = record;
-            chosenWeight = weight;
-            chosenShare = share;
-        }
-    }
-    if (chosen == HELION_NO_LIGHT) {
-        return vec3(0.0);
-    }
-    float rest = totalWeight - brightestWeight;
-    float combined = brightestWeight + rest * (HELION_REST_SHARE / (1.0 + rest));
-    return chosenShare * (combined / chosenWeight) * helionLightVisible(helionBlockLight(chosen), origin, normal);
+    return helionTracedBlockLight(position, origin, normal, HELION_BOUNCE_TRACED_LIGHTS);
 }
 
 vec3 helionCelestialLight(vec3 origin, vec3 normal, HelionSky sky) {
@@ -419,13 +411,15 @@ const float HELION_CACHE_FINE_PLANE = 16.0;
 const float HELION_CACHE_COARSE_PLANE = 1.0;
 const float HELION_CACHE_AXIS = 0.99;
 const uint HELION_CACHE_READY = 8u;
-const uint HELION_CACHE_MAX_COUNT = 64u;
-const int HELION_CACHE_YOUNG_PATHS = 4;
+const uint HELION_CACHE_MAX_COUNT = 128u;
+const int HELION_CACHE_PATHS = 2;
 const uint HELION_CACHE_CHECK_SALT = 0x9E3779B9u;
 const uint HELION_CACHE_LEVEL_SHIFT = 3u;
 const uint HELION_CACHE_FACE_MASK = 7u;
 const int HELION_NO_SLOT = -1;
 const float HELION_CACHE_MIN_WEIGHT = 1.0e-6;
+const int HELION_CACHE_FILTER_RADIUS = 2;
+const float HELION_CACHE_FILTER[5] = float[](1.0, 4.0, 6.0, 4.0, 1.0);
 
 struct HelionCacheCell {
     uint face;
@@ -515,8 +509,7 @@ void helionCacheRequest(int slot, HelionCacheCell cell, int plane, ivec2 coordin
         return;
     }
     Entries[slot].state.w = cell.face | uint(cell.level) << HELION_CACHE_LEVEL_SHIFT;
-    Entries[slot].cell = ivec4(plane, coordinates, 0);
-    Entries[slot].sampleAt = vec4(inside, 0.0, 0.0);
+    Entries[slot].cell = ivec4(plane, coordinates, int(packUnorm2x16(inside)));
     Entries[slot].light.w = gate;
     uint index = atomicAdd(QueuedCount, 1u);
     if (index < uint(Queued.length())) {
@@ -556,7 +549,7 @@ bool helionCachedIndirect(vec3 position, vec3 normal, float distance, float gate
                 continue;
             }
             float weight = (x == 0 ? 1.0 - blend.x : blend.x) * (y == 0 ? 1.0 - blend.y : blend.y);
-            indirect += Entries[found].light.rgb * weight;
+            indirect += Entries[found].smoothed.rgb * weight;
             weights += weight;
         }
     }
@@ -703,24 +696,43 @@ void main() {
     HelionCacheCell cell = helionCacheLayout(entry.state.w & HELION_CACHE_FACE_MASK, int(entry.state.w >> HELION_CACHE_LEVEL_SHIFT));
     vec3 normal = vec3(0.0);
     normal[cell.axis] = (cell.face & 1u) == 0u ? 1.0 : -1.0;
+    vec2 inside = unpackUnorm2x16(uint(entry.cell.w));
     vec3 position;
     position[cell.axis] = float(entry.cell.x - helionCachePlaneOrigin(cell)) / cell.plane;
-    position[cell.column] = (float(entry.cell.y - helionCacheOrigin(cell, cell.column)) + entry.sampleAt.x) / cell.cellsPerBlock;
-    position[cell.row] = (float(entry.cell.z - helionCacheOrigin(cell, cell.row)) + entry.sampleAt.y) / cell.cellsPerBlock;
+    position[cell.column] = (float(entry.cell.y - helionCacheOrigin(cell, cell.column)) + inside.x) / cell.cellsPerBlock;
+    position[cell.row] = (float(entry.cell.z - helionCacheOrigin(cell, cell.row)) + inside.y) / cell.cellsPerBlock;
     vec3 origin = position + normal * HELION_ORIGIN_OFFSET;
     if (helionSceneShare(origin) <= 0.0) {
         return;
     }
     helionState = helionPcg(slot ^ helionPcg(uint(Frame.w)));
     HelionSky sky = helionSky();
-    int paths = entry.state.z < HELION_CACHE_READY ? HELION_CACHE_YOUNG_PATHS : 1;
     vec3 sum = vec3(0.0);
-    for (int path = 0; path < paths; path++) {
+    for (int path = 0; path < HELION_CACHE_PATHS; path++) {
         sum += helionIndirect(origin, normal, HELION_RAY_START, entry.light.w, sky);
     }
-    uint count = min(entry.state.z + uint(paths), HELION_CACHE_MAX_COUNT);
-    Entries[slot].light.rgb = mix(entry.light.rgb, sum / float(paths), float(paths) / float(count));
+    uint count = min(entry.state.z + uint(HELION_CACHE_PATHS), HELION_CACHE_MAX_COUNT);
+    vec3 light = mix(entry.light.rgb, sum / float(HELION_CACHE_PATHS), float(HELION_CACHE_PATHS) / float(count));
+    Entries[slot].light.rgb = light;
     Entries[slot].state.z = count;
+    float center = HELION_CACHE_FILTER[HELION_CACHE_FILTER_RADIUS];
+    vec3 smoothed = light * center * center;
+    float weights = center * center;
+    for (int y = -HELION_CACHE_FILTER_RADIUS; y <= HELION_CACHE_FILTER_RADIUS; y++) {
+        for (int x = -HELION_CACHE_FILTER_RADIUS; x <= HELION_CACHE_FILTER_RADIUS; x++) {
+            if (x == 0 && y == 0) {
+                continue;
+            }
+            int found = helionCacheFind(helionCacheHash(cell, entry.cell.x, entry.cell.yz + ivec2(x, y)));
+            if (found == HELION_NO_SLOT || Entries[found].state.z < HELION_CACHE_READY) {
+                continue;
+            }
+            float weight = HELION_CACHE_FILTER[x + HELION_CACHE_FILTER_RADIUS] * HELION_CACHE_FILTER[y + HELION_CACHE_FILTER_RADIUS];
+            smoothed += Entries[found].light.rgb * weight;
+            weights += weight;
+        }
+    }
+    Entries[slot].smoothed = vec4(smoothed / weights, 0.0);
 }
 #else
 void main() {
