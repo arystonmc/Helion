@@ -44,7 +44,7 @@ final class RtxSectionLights {
                     if (level == NO_LIGHT) {
                         continue;
                     }
-                    if (count == MAX_LIGHTS) {
+                    if (count * RtxSectionUpdate.LIGHT_INTS == found.length) {
                         found = Arrays.copyOf(found, found.length * 2);
                     }
                     write(found, count++, x, y, z, state, region, cursor, level);
