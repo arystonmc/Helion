@@ -15,7 +15,7 @@ import org.lwjgl.vulkan.KHRAccelerationStructure;
 import org.lwjgl.vulkan.VK10;
 
 public final class RayTracingResources {
-    static final int REFLECTION_CONSTANT_BYTES = 112;
+    static final int REFLECTION_CONSTANT_BYTES = 128;
     static final int PATH_TRACE_CONSTANT_BYTES = 128;
     static final int ACCUMULATE_CONSTANT_BYTES = 128;
     static final int FILTER_CONSTANT_BYTES = 16;
@@ -53,6 +53,8 @@ public final class RayTracingResources {
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     };
     private static final int[] ENTITY_REFLECTION_DESCRIPTORS = {
@@ -68,12 +70,15 @@ public final class RayTracingResources {
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
     };
     private static final int[] ENTITY_REFLECTION_COUNTS = {
         RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE,
-        RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE, RtxEntitySurfaces.TEXTURE_SLOTS, RtxBinding.SINGLE
+        RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE, RtxBinding.SINGLE,
+        RtxEntitySurfaces.TEXTURE_SLOTS, RtxBinding.SINGLE
     };
     private static final String ENTITY_REFLECTION_DEFINE = "HELION_RT_ENTITIES";
     private static final int[] PATH_TRACE_DESCRIPTORS = {

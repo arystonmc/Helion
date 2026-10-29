@@ -25,10 +25,14 @@ layout(set = 0, binding = 8) uniform sampler2D GeometryNormalSampler;
 layout(set = 0, binding = 9) uniform sampler2D GeometryLightSampler;
 layout(set = 0, binding = 10) uniform sampler2D GlassDepthSampler;
 layout(set = 0, binding = 11) uniform sampler2D GlassSurfaceSampler;
+layout(set = 0, binding = 12, std430) readonly buffer HelionLightGrid {
+    uvec4 Lights[];
+};
+layout(set = 0, binding = 13) uniform sampler2D SkyLightSampler;
 #ifdef HELION_RT_ENTITIES
 const int HELION_RT_ENTITY_TEXTURES = 16;
-layout(set = 0, binding = 12) uniform sampler2D EntityTextures[HELION_RT_ENTITY_TEXTURES];
-layout(set = 0, binding = 13, std430) readonly buffer HelionEntityTable {
+layout(set = 0, binding = 14) uniform sampler2D EntityTextures[HELION_RT_ENTITY_TEXTURES];
+layout(set = 0, binding = 15, std430) readonly buffer HelionEntityTable {
     uvec4 Entities[];
 };
 #endif
@@ -37,10 +41,13 @@ layout(push_constant) uniform HelionRayReflection {
     mat4 InverseViewProjection;
     vec4 CameraToAnchor;
     vec4 Trace;
-    vec4 LightDirection;
+    vec4 Sun;
+    vec4 Moon;
 };
 
 #include <helion:helion_rt_surface.glsl>
+#include <helion:helion_path_tracing.glsl>
+#include <helion:helion_rt_light.glsl>
 #ifdef HELION_RT_ENTITIES
 #include <helion:helion_rt_entity.glsl>
 #endif
@@ -48,6 +55,7 @@ layout(push_constant) uniform HelionRayReflection {
 const float HELION_RT_SKY_DEPTH = 0.0;
 const float HELION_RT_NORMAL_OFFSET = 0.02;
 const float HELION_RT_RAY_START = 1.0e-3;
+const float HELION_RT_REACH = 96.0;
 const float HELION_RT_SECTION_SIZE = 16.0;
 const uint HELION_RT_SECTION_INSTANCES = 0x01u;
 const uint HELION_RT_ENTITY_INSTANCES = 0x04u;
@@ -69,25 +77,57 @@ vec4 helionLitColor(vec3 albedo, vec2 light) {
 }
 
 float helionSkyShadow(vec3 hit, vec3 lift) {
-    if (LightDirection.w < HELION_RT_SET) {
+    vec4 light = Sun.w >= HELION_RT_SET ? Sun : Moon;
+    if (light.w < HELION_RT_SET) {
         return 1.0;
     }
     rayQueryEXT shadow;
-    vec3 origin = hit + lift * HELION_RT_SHADOW_LIFT + LightDirection.xyz * HELION_RT_SHADOW_LIFT;
-    rayQueryInitializeEXT(shadow, Scene, gl_RayFlagsTerminateOnFirstHitEXT, HELION_RT_SHADOW_INSTANCES, origin, HELION_RT_RAY_START, LightDirection.xyz, HELION_RT_SHADOW_REACH);
+    vec3 origin = hit + lift * HELION_RT_SHADOW_LIFT + light.xyz * HELION_RT_SHADOW_LIFT;
+    rayQueryInitializeEXT(shadow, Scene, gl_RayFlagsTerminateOnFirstHitEXT, HELION_RT_SHADOW_INSTANCES, origin, HELION_RT_RAY_START, light.xyz, HELION_RT_SHADOW_REACH);
     helionTraceCutout(shadow);
     return rayQueryGetIntersectionTypeEXT(shadow, true) == gl_RayQueryCommittedIntersectionNoneEXT ? 1.0 : HELION_RT_SHADOWED_SKY;
 }
 
-vec4 helionHitColor(rayQueryEXT query, float skyShadow) {
+vec3 helionTracedBlockLight(vec3 position, vec3 normal, float blockLevel) {
+    uvec4 header = helionLightCell(position);
+    uvec4 globals = helionLightGlobals();
+    float reached = clamp(blockLevel * HELION_LIGHTMAP_LAST_TEXEL, 0.0, 1.0);
+    vec3 brightest = vec3(0.0);
+    vec3 rest = vec3(0.0);
+    for (uint index = 0u; index < header.y + globals.y; index++) {
+        HelionBlockLight light = helionBlockLight(helionLightRecord(header, globals, index));
+        vec3 share = helionLightReach(light, position, normal) * (light.dynamic ? 1.0 : reached);
+        if (helionLuminance(share) > helionLuminance(brightest)) {
+            rest += brightest;
+            brightest = share;
+        } else {
+            rest += share;
+        }
+    }
+    return brightest + rest * (HELION_REST_SHARE / (1.0 + helionLuminance(rest)));
+}
+
+vec4 helionTracedColor(vec3 surface, vec2 light, vec3 position, vec3 normal) {
+    HelionSky sky = helionSky();
+    vec2 levels = clamp(light / HELION_MAX_LIGHT_COORDINATE, 0.0, 1.0);
+    vec3 open = max(helionSrgbToLinear(helionVanillaLight(vec2(0.0, levels.y))) - helionSrgbToLinear(helionLightmapTexel(ivec2(0))), vec3(0.0));
+    vec3 irradiance = sky.ambient + open * sky.vanillaShare + helionTracedBlockLight(position, normal, levels.x);
+    return vec4(helionLinearToSrgb(helionNeutral(surface * irradiance)), 1.0);
+}
+
+vec4 helionHitColor(rayQueryEXT query, vec3 hit, vec3 lift, float skyShadow) {
+    bool traced = Trace.x >= HELION_RT_SET;
 #ifdef HELION_RT_ENTITIES
     if (helionIsEntity(rayQueryGetIntersectionInstanceCustomIndexEXT(query, true))) {
         HelionEntityPoint entity = helionEntityCommittedPoint(query);
-        return helionLitColor(entity.color.rgb, entity.light * vec2(1.0, skyShadow));
+        vec2 entityLight = entity.light * vec2(1.0, skyShadow);
+        return traced ? helionTracedColor(helionSrgbToLinear(entity.color.rgb), entityLight, hit, lift) : helionLitColor(entity.color.rgb, entityLight);
     }
 #endif
     HelionSurfacePoint point = helionCommittedPoint(query);
-    return helionLitColor(textureLod(AtlasSampler, point.uv, 0.0).rgb * point.tint.rgb, point.light * vec2(1.0, skyShadow));
+    vec3 albedo = textureLod(AtlasSampler, point.uv, 0.0).rgb * point.tint.rgb;
+    vec2 light = point.light * vec2(1.0, skyShadow);
+    return traced ? helionTracedColor(helionSurfaceAlbedo(albedo, lift), light, hit, lift) : helionLitColor(albedo, light);
 }
 
 vec3 helionHitLift(rayQueryEXT query, vec3 direction) {
@@ -172,12 +212,13 @@ void main() {
         return;
     }
     rayQueryEXT query;
-    rayQueryInitializeEXT(query, Scene, gl_RayFlagsNoneEXT, helionReflectedInstances(), origin, HELION_RT_RAY_START, direction, Trace.x);
+    rayQueryInitializeEXT(query, Scene, gl_RayFlagsNoneEXT, helionReflectedInstances(), origin, HELION_RT_RAY_START, direction, HELION_RT_REACH);
     helionTraceReflection(query);
     if (rayQueryGetIntersectionTypeEXT(query, true) == gl_RayQueryCommittedIntersectionNoneEXT) {
         imageStore(Reflection, pixel, HELION_RT_MISS);
         return;
     }
     vec3 hit = origin + direction * rayQueryGetIntersectionTEXT(query, true);
-    imageStore(Reflection, pixel, helionHitColor(query, helionSkyShadow(hit, helionHitLift(query, direction))));
+    vec3 lift = helionHitLift(query, direction);
+    imageStore(Reflection, pixel, helionHitColor(query, hit, lift, helionSkyShadow(hit, lift)));
 }

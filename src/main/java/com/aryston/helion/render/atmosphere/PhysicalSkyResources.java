@@ -31,7 +31,6 @@ public final class PhysicalSkyResources {
     static final float MOON_ILLUMINANCE = 0.08F;
     static final float NO_FOG_DISTANCE = 1.0e30F;
     private static final double NANOS_PER_SECOND = 1.0e9;
-    private static final float MIN_MOON_LIGHT = 0.1F;
     private static final float HALF = 0.5F;
     private static final double SKY_TIME_PERIOD_SECONDS = 3600.0;
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -209,8 +208,7 @@ public final class PhysicalSkyResources {
     }
 
     private static float moonLight(float phaseAngle) {
-        float litFraction = (1.0F + (float) Math.cos(phaseAngle)) * HALF;
-        return MIN_MOON_LIGHT + (1.0F - MIN_MOON_LIGHT) * litFraction;
+        return (1.0F + (float) Math.cos(phaseAngle)) * HALF;
     }
 
     private float skyTime() {

@@ -40,7 +40,7 @@ final class RtxSectionScene {
         this.lights = RtxLightScene.create(device, resources);
     }
 
-    RtxScenePlan prepare(RtxSectionInbox inbox, RtxSectionPos center) {
+    RtxScenePlan prepare(RtxSectionInbox inbox, RtxSectionPos center, List<RtxDynamicLight> dynamicLights, float ambientShare) {
         anchor = center;
         inbox.moveTo(center);
         drain(inbox, center);
@@ -71,7 +71,7 @@ final class RtxSectionScene {
             }
         }
         topLevel.write(visible, center);
-        lights.write(center);
+        lights.write(center, dynamicLights, ambientShare);
         return new RtxScenePlan(List.copyOf(building), scratchBase, built.size(), pending.size(), visible.size(), builtBytes);
     }
 

@@ -3,8 +3,10 @@ package com.aryston.helion.render.rtx;
 import com.aryston.helion.render.resource.GpuResources;
 import com.aryston.helion.render.resource.TrackedResource;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.function.LongPredicate;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
@@ -21,7 +23,10 @@ final class RtxLightScene {
     private static final int USAGE = VK10.VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     private static final int ENTRY_INTS = 4;
     private static final int RECORD_ENTRIES = RtxSectionUpdate.LIGHT_INTS / ENTRY_INTS;
-    private static final long SLOT_BYTES = (long) (CELLS + CELLS * LIGHTS_PER_CELL * RECORD_ENTRIES) * ENTRY_INTS * Integer.BYTES;
+    private static final int GLOBAL_ENTRIES = 1;
+    private static final int RECORDS_START = CELLS + GLOBAL_ENTRIES;
+    private static final long SLOT_BYTES = (long) (RECORDS_START + (CELLS * LIGHTS_PER_CELL + RtxLightSource.MAX_LIGHTS) * RECORD_ENTRIES) * ENTRY_INTS * Integer.BYTES;
+    private static final int DYNAMIC_BIT = 1 << 25;
     private static final int[] COORDINATES = {0, 1, 2, 4, 5, 6};
     private static final int[] AXIS = {0, 1, 2, 0, 1, 2};
     private static final int NEIGHBOR_COUNT = 27;
@@ -31,6 +36,7 @@ final class RtxLightScene {
     private final RtxBuffer[] buffers;
     private final TrackedResource tracked;
     private int[] data = new int[0];
+    private int records;
     private @Nullable RtxSectionPos built;
     private boolean dirty = true;
     private int frame;
@@ -62,7 +68,7 @@ final class RtxLightScene {
         dirty |= sections.long2ObjectEntrySet().removeIf(entry -> far.test(entry.getLongKey()));
     }
 
-    void write(RtxSectionPos anchor) {
+    void write(RtxSectionPos anchor, List<RtxDynamicLight> dynamic, float ambientShare) {
         if (dirty || !anchor.equals(built)) {
             data = build(anchor);
             built = anchor;
@@ -70,8 +76,17 @@ final class RtxLightScene {
         }
         frame = (frame + 1) % FRAMES_IN_FLIGHT;
         long target = buffers[frame].mapped();
-        MemoryUtil.memSet(target, 0, (long) CELLS * ENTRY_INTS * Integer.BYTES);
+        MemoryUtil.memSet(target, 0, (long) RECORDS_START * ENTRY_INTS * Integer.BYTES);
         MemoryUtil.memIntBuffer(target, data.length).put(data);
+        int count = Math.min(dynamic.size(), RtxLightSource.MAX_LIGHTS);
+        MemoryUtil.memIntBuffer(target + (long) CELLS * ENTRY_INTS * Integer.BYTES, ENTRY_INTS).put(records).put(count).put(Float.floatToIntBits(ambientShare));
+        IntBuffer lights = MemoryUtil.memIntBuffer(target + (long) (RECORDS_START + records * RECORD_ENTRIES) * ENTRY_INTS * Integer.BYTES, count * RtxSectionUpdate.LIGHT_INTS);
+        for (RtxDynamicLight light : dynamic.subList(0, count)) {
+            lights.put(relative(light.minX(), anchor.originX())).put(relative(light.minY(), anchor.originY())).put(relative(light.minZ(), anchor.originZ()))
+                .put(light.color() | DYNAMIC_BIT)
+                .put(relative(light.maxX(), anchor.originX())).put(relative(light.maxY(), anchor.originY())).put(relative(light.maxZ(), anchor.originZ()))
+                .put(light.levels());
+        }
     }
 
     RtxBuffer buffer() {
@@ -83,10 +98,11 @@ final class RtxLightScene {
     }
 
     private int[] build(RtxSectionPos anchor) {
+        records = 0;
         if (sections.isEmpty()) {
             return new int[0];
         }
-        int[] table = new int[(CELLS + CELLS * LIGHTS_PER_CELL * RECORD_ENTRIES) * ENTRY_INTS];
+        int[] table = new int[(RECORDS_START + CELLS * LIGHTS_PER_CELL * RECORD_ENTRIES) * ENTRY_INTS];
         int record = 0;
         for (int cell = 0; cell < CELLS; cell++) {
             int cellX = cell % GRID_SIZE - GRID_RADIUS;
@@ -107,7 +123,7 @@ final class RtxLightScene {
                     (sectionZ - anchor.sectionZ()) * RtxSectionKey.SECTION_SIZE
                 };
                 for (int light = 0; light < lights.length && record - first < LIGHTS_PER_CELL; light += RtxSectionUpdate.LIGHT_INTS) {
-                    int at = (CELLS + record * RECORD_ENTRIES) * ENTRY_INTS;
+                    int at = (RECORDS_START + record * RECORD_ENTRIES) * ENTRY_INTS;
                     System.arraycopy(lights, light, table, at, RtxSectionUpdate.LIGHT_INTS);
                     for (int coordinate = 0; coordinate < COORDINATES.length; coordinate++) {
                         int slot = at + COORDINATES[coordinate];
@@ -119,7 +135,12 @@ final class RtxLightScene {
             table[cell * ENTRY_INTS] = first;
             table[cell * ENTRY_INTS + 1] = record - first;
         }
-        return Arrays.copyOf(table, (CELLS + record * RECORD_ENTRIES) * ENTRY_INTS);
+        records = record;
+        return Arrays.copyOf(table, (RECORDS_START + record * RECORD_ENTRIES) * ENTRY_INTS);
+    }
+
+    private static int relative(double coordinate, int origin) {
+        return Float.floatToIntBits((float) (coordinate - origin));
     }
 
     private static int[][] neighbors() {

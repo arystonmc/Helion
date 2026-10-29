@@ -30,7 +30,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### EntityRendererMixin
 - Path: `src/main/java/com/aryston/helion/mixin/EntityRendererMixin.java`
-- Role: At the tail of `EntityRenderer.extractShadow` clears the shadow pieces of the render state while `HelionRenderCore.tracesLight()` says the path traced light ran, so mobs, dropped items and every other entity lose the vanilla round blob shadow and keep only the traced shadows.
+- Role: At the tail of `EntityRenderer.extractShadow` clears the shadow pieces of the render state while `HelionRenderCore.tracesLight()` says the path traced light ran, so mobs, dropped items and every other entity lose the vanilla round blob shadow and keep only the traced shadows. At the return of `EntityRenderer.getBlockLightLevel`, also only under path traced light, raises the block light of a dropped light block to its own level (`VanillaLightSource.itemLight`), because items draw with the vanilla light and a dropped glowstone looked black in a dark cave.
 - Notes: the blob shadow is extracted per entity in a private method and drawn only when it has pieces; the `entityShadows` option would also change the player's settings.
 
 #### SkyRendererMixin

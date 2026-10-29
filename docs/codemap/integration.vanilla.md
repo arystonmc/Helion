@@ -67,13 +67,19 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### RtxSectionLights
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/RtxSectionLights.java`
-- Role: Scans the 16x16x16 blocks of a compiled section on the compile worker for blocks with a light emission above 0 and writes one record of eight ints per light: the section relative box of its shape (a full block for an empty shape), its `LightColors` color and a half float pair of range (level plus one half) and strength (the level linearized with the power 2.2). Above 32 lights it keeps an even stride of them with a strength raised by the share it dropped.
+- Role: Scans the 16x16x16 blocks of a compiled section on the compile worker for blocks with a light emission above 0 and writes one record of eight ints per light: the section relative box of its shape (a full block for an empty shape), its `LightColors` color and a half float pair of range (level plus one half) and strength (the level linearized with the power 2.2, times the `LightColors` strength of the block); `levels(state, level)` packs that pair for any light level. Above 32 lights it keeps an even stride of them with a strength raised by the share it dropped.
 - Depends on: `LightColors`, `RtxSectionUpdate`.
 
 #### LightColors
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/LightColors.java`
-- Role: Client reload listener for `light/colors.json`, the color of every light source block. A color is normalized to luminance 1, mixed 6 % toward white and its brightest channel capped at 3.5, so colored lights stay saturated (L-172); `packed` returns it as RGB8 over a range of 4 with bit 24 set for fire lights that flicker.
+- Role: Client reload listener for `light/colors.json`, the color of every light source block. Its `strengths` table scales the light of single blocks (lava 0.3, so a lava pool does not wash a cave out); `strength` is 1 for every other block. A color is normalized to luminance 1, mixed 6 % toward white and its brightest channel capped at 3.5, so colored lights stay saturated (L-172); `packed` returns it as RGB8 over a range of 4 with bit 24 set for fire lights that flicker.
 - Depends on: nothing of this mod.
+
+#### VanillaLightSource
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaLightSource.java`
+- Role: The `RtxLightSource` of the frame. Walks `entitiesForRendering` within 48 blocks of the camera: a burning entity lights its interpolated bounding box like fire, a dropped item that is a light block (or a lava bucket) lights a box of 0.5 centered 0.2 above its center, where the bobbing item draws, and a living entity holding one in either hand lights a box of 0.2 at its hand: 45 % of its height, 0.6 of its width to the side of that hand (the main arm decides which side the main hand is) and 0.25 ahead along its interpolated body rotation, or, for the first person camera entity, 0.35 ahead of and 0.3 below the eye; the brighter hand wins, the main hand on a tie. `itemLight(entity)` is the light level of a dropped light block, read by `EntityRendererMixin`. Colors and strengths come from `LightColors` and `RtxSectionLights.levels`, the 16 nearest are kept. `ambientShare` is 1 without sky light or with night vision on the camera entity, else 0.
+- Depends on: `LightColors`, `RtxSectionLights`, `RtxLightSource`.
+- Notes: public only for `itemLight`.
 
 #### VanillaGeometryPipelines
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaGeometryPipelines.java`

@@ -25,6 +25,8 @@ public final class LightColors implements ResourceManagerReloadListener {
     public static final Identifier LISTENER = Identifier.fromNamespaceAndPath(Helion.MOD_ID, "light_colors");
     private static final Identifier COLORS = Identifier.fromNamespaceAndPath(Helion.MOD_ID, "light/colors.json");
     private static final String COLORS_KEY = "colors";
+    private static final String STRENGTHS_KEY = "strengths";
+    private static final float FULL_STRENGTH = 1.0F;
     private static final float[] WARM_WHITE = {1.0F, 0.8F, 0.6F};
     private static final float RED_WEIGHT = 0.2126F;
     private static final float GREEN_WEIGHT = 0.7152F;
@@ -44,7 +46,7 @@ public final class LightColors implements ResourceManagerReloadListener {
     private static final List<String> FIRE_PARTS = List.of("torch", "lantern", "campfire", "fire", "candle", "furnace", "smoker");
     private static final List<String> STEADY_PARTS = List.of("redstone", "sea_lantern");
 
-    private static volatile Map<Identifier, float[]> table = Map.of();
+    private static volatile Table table = new Table(Map.of(), Map.of());
 
     @Override
     public void onResourceManagerReload(ResourceManager manager) {
@@ -61,13 +63,17 @@ public final class LightColors implements ResourceManagerReloadListener {
         return Math.clamp(Math.round(value / PACKED_RANGE * CHANNEL_SCALE), 0, CHANNEL_MASK);
     }
 
+    static float strength(BlockState state) {
+        return table.strengths().getOrDefault(BuiltInRegistries.BLOCK.getKey(state.getBlock()), FULL_STRENGTH);
+    }
+
     private static boolean flickers(BlockState state) {
         String path = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();
         return FIRE_PARTS.stream().anyMatch(path::contains) && STEADY_PARTS.stream().noneMatch(path::contains);
     }
 
     private static float[] color(BlockState state) {
-        float[] listed = table.get(BuiltInRegistries.BLOCK.getKey(state.getBlock()));
+        float[] listed = table.colors().get(BuiltInRegistries.BLOCK.getKey(state.getBlock()));
         if (listed != null) {
             return normalized(listed);
         }
@@ -82,22 +88,28 @@ public final class LightColors implements ResourceManagerReloadListener {
         });
     }
 
-    private static Map<Identifier, float[]> load(Optional<Resource> resource) {
+    private static Table load(Optional<Resource> resource) {
         if (resource.isEmpty()) {
             Helion.LOGGER.warn("Helion light colors are missing; every light uses its map color");
-            return Map.of();
+            return new Table(Map.of(), Map.of());
         }
         try (Reader reader = resource.get().openAsReader()) {
-            JsonObject colors = JsonParser.parseReader(reader).getAsJsonObject().getAsJsonObject(COLORS_KEY);
-            Map<Identifier, float[]> loaded = new HashMap<>();
-            for (Map.Entry<String, JsonElement> entry : colors.entrySet()) {
+            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            Map<Identifier, float[]> colors = new HashMap<>();
+            for (Map.Entry<String, JsonElement> entry : root.getAsJsonObject(COLORS_KEY).entrySet()) {
                 JsonArray rgb = entry.getValue().getAsJsonArray();
-                loaded.put(Identifier.parse(entry.getKey()), new float[] {rgb.get(RED).getAsFloat(), rgb.get(GREEN).getAsFloat(), rgb.get(BLUE).getAsFloat()});
+                colors.put(Identifier.parse(entry.getKey()), new float[] {rgb.get(RED).getAsFloat(), rgb.get(GREEN).getAsFloat(), rgb.get(BLUE).getAsFloat()});
             }
-            return Map.copyOf(loaded);
+            Map<Identifier, Float> strengths = new HashMap<>();
+            if (root.has(STRENGTHS_KEY)) {
+                for (Map.Entry<String, JsonElement> entry : root.getAsJsonObject(STRENGTHS_KEY).entrySet()) {
+                    strengths.put(Identifier.parse(entry.getKey()), entry.getValue().getAsFloat());
+                }
+            }
+            return new Table(Map.copyOf(colors), Map.copyOf(strengths));
         } catch (IOException | RuntimeException exception) {
             Helion.LOGGER.warn("Helion could not read the light colors: {}", exception.getMessage());
-            return Map.of();
+            return new Table(Map.of(), Map.of());
         }
     }
 
@@ -115,5 +127,8 @@ public final class LightColors implements ResourceManagerReloadListener {
 
     private static float srgbToLinear(float channel) {
         return (float) Math.pow(channel, DISPLAY_GAMMA);
+    }
+
+    private record Table(Map<Identifier, float[]> colors, Map<Identifier, Float> strengths) {
     }
 }

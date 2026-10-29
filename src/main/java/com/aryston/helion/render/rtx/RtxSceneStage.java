@@ -4,6 +4,7 @@ import com.aryston.helion.render.HelionRenderCore;
 import com.aryston.helion.render.graph.FrameContext;
 import com.aryston.helion.render.graph.RenderStage;
 import com.mojang.blaze3d.framegraph.FramePass;
+import java.util.List;
 import org.joml.Vector3dc;
 
 public final class RtxSceneStage implements RenderStage {
@@ -14,9 +15,11 @@ public final class RtxSceneStage implements RenderStage {
     private static final double NANOS_PER_MILLI = 1_000_000.0;
 
     private final RayTracingResources resources;
+    private final RtxLightSource lights;
 
-    public RtxSceneStage(RayTracingResources resources) {
+    public RtxSceneStage(RayTracingResources resources, RtxLightSource lights) {
         this.resources = resources;
+        this.lights = lights;
     }
 
     @Override
@@ -39,7 +42,12 @@ public final class RtxSceneStage implements RenderStage {
         Vector3dc position = frame.camera().position();
         RtxSectionPos center = new RtxSectionPos(section(position.x()), section(position.y()), section(position.z()));
         RtxSectionScene scene = resources.scene();
-        RtxScenePlan plan = scene.prepare(resources.inbox(), center);
+        boolean tracesLight = frame.settings().rayTracing().tracesLight();
+        RtxScenePlan plan = scene.prepare(
+            resources.inbox(), center,
+            tracesLight ? lights.lights(position.x(), position.y(), position.z()) : List.of(),
+            tracesLight ? lights.ambientShare() : 1.0F
+        );
         double prepareMillis = (System.nanoTime() - start) / NANOS_PER_MILLI;
         RtxDevice device = resources.device();
         FramePass pass = frame.graph().addPass(NAME);

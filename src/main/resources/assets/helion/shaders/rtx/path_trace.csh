@@ -54,28 +54,8 @@ layout(set = 0, binding = 14, std430) coherent buffer HelionCacheNextQueue {
 layout(set = 0, binding = 15, rgba16f) uniform writeonly image2D Specular;
 
 #include <helion:helion_rt_surface.glsl>
+#include <helion:helion_rt_light.glsl>
 
-struct HelionSky {
-    vec3 sun;
-    vec3 moon;
-    vec3 dome;
-    vec3 ambient;
-    float vanillaShare;
-};
-
-struct HelionBlockLight {
-    vec3 low;
-    vec3 high;
-    vec3 color;
-    float range;
-    float strength;
-    bool flickers;
-};
-
-const float HELION_LIGHTMAP_LAST_TEXEL = 15.0;
-const ivec2 HELION_SUN_TEXEL = ivec2(0, 0);
-const ivec2 HELION_MOON_TEXEL = ivec2(1, 0);
-const ivec2 HELION_DOME_TEXEL = ivec2(2, 0);
 const float HELION_SET = 0.5;
 const float HELION_SKY_DEPTH = 0.0;
 const float HELION_SECTION_SIZE = 16.0;
@@ -90,24 +70,10 @@ const float HELION_MOON_RADIUS = 0.0186;
 const float HELION_SKY_GAMMA = 2.2;
 const float HELION_SKY_GATE_LEVELS = 15.0;
 const float HELION_DOME_GROUND = 0.45;
-const float HELION_DAYLIGHT_OPEN_SKY = 3.0;
-const float HELION_DAY_FULL_SKY = 1.0;
-const float HELION_MIN_VANILLA_SKY = 1.0e-3;
-const int HELION_GRID_RADIUS = 4;
-const int HELION_GRID_SIZE = 2 * HELION_GRID_RADIUS + 1;
 const float HELION_SCENE_REACH = float(HELION_GRID_RADIUS) * HELION_SECTION_SIZE;
-const uint HELION_GRID_CELLS = uint(HELION_GRID_SIZE * HELION_GRID_SIZE * HELION_GRID_SIZE);
-const uint HELION_RECORD_ENTRIES = 2u;
-const uint HELION_NO_LIGHT = 0xFFFFFFFFu;
-const float HELION_LIGHT_COLOR_RANGE = 4.0;
-const uint HELION_FLICKER_BIT = 1u << 24u;
-const float HELION_BLOCK_STRENGTH = 3.5;
-const float HELION_BLOCK_NEAR = 1.0;
-const float HELION_BLOCK_WRAP = 0.35;
-const float HELION_OWN_FACE = 0.05;
+const float HELION_LIGHT_SURFACE = 1.0e-3;
 const float HELION_ENTRY_MARGIN = 0.02;
 const float HELION_MIN_DIRECTION = 1.0e-6;
-const float HELION_REST_SHARE = 0.35;
 const float HELION_BLOCK_DAY_FADE = 0.6;
 const float HELION_FLICKER_DEPTH = 0.15;
 const float HELION_FLICKER_SLOW = 7.0;
@@ -137,19 +103,6 @@ uint helionState;
 float helionRandom() {
     helionState = helionPcg(helionState);
     return float(helionState) / HELION_HASH_RANGE;
-}
-
-vec3 helionLightmapTexel(ivec2 texel) {
-    return texelFetch(LightmapSampler, clamp(texel, ivec2(0), ivec2(HELION_LIGHTMAP_LAST_TEXEL)), 0).rgb;
-}
-
-vec3 helionVanillaLight(vec2 levels) {
-    vec2 position = clamp(levels * HELION_LIGHTMAP_LAST_TEXEL, vec2(0.0), vec2(HELION_LIGHTMAP_LAST_TEXEL));
-    ivec2 low = ivec2(floor(position));
-    vec2 blend = position - vec2(low);
-    vec3 bottom = mix(helionLightmapTexel(low), helionLightmapTexel(low + ivec2(1, 0)), blend.x);
-    vec3 top = mix(helionLightmapTexel(low + ivec2(0, 1)), helionLightmapTexel(low + ivec2(1, 1)), blend.x);
-    return mix(bottom, top, blend.y);
 }
 
 vec4 helionStainAverage(vec2 uv) {
@@ -264,20 +217,6 @@ vec3 helionCelestial(vec3 origin, vec3 normal, vec4 light, float radius) {
     return facing > 0.0 ? facing * helionVisible(origin, direction, HELION_CELESTIAL_REACH) : vec3(0.0);
 }
 
-HelionBlockLight helionBlockLight(uint record) {
-    uvec4 low = Lights[HELION_GRID_CELLS + record * HELION_RECORD_ENTRIES];
-    uvec4 high = Lights[HELION_GRID_CELLS + record * HELION_RECORD_ENTRIES + 1u];
-    vec2 level = unpackHalf2x16(high.w);
-    return HelionBlockLight(
-        uintBitsToFloat(low.xyz), uintBitsToFloat(high.xyz), unpackUnorm4x8(low.w).zyx * HELION_LIGHT_COLOR_RANGE,
-        level.x, level.y, (low.w & HELION_FLICKER_BIT) != 0u
-    );
-}
-
-vec3 helionLightAim(HelionBlockLight light, vec3 normal) {
-    return (light.low + light.high) * 0.5 + normal * (light.high - light.low) * 0.5;
-}
-
 float helionFlicker(HelionBlockLight light) {
     if (!light.flickers) {
         return 1.0;
@@ -289,16 +228,7 @@ float helionFlicker(HelionBlockLight light) {
 }
 
 vec3 helionLightShare(HelionBlockLight light, vec3 position, vec3 normal) {
-    vec3 extent = (light.high - light.low) * 0.5;
-    float gap = max(length(position - (light.low + light.high) * 0.5) - min(extent.x, min(extent.y, extent.z)), 0.0);
-    if (gap >= light.range) {
-        return vec3(0.0);
-    }
-    float facing = gap < HELION_OWN_FACE ? 1.0 : clamp((dot(normal, normalize(helionLightAim(light, normal) - position)) + HELION_BLOCK_WRAP) / (1.0 + HELION_BLOCK_WRAP), 0.0, 1.0);
-    float reach = gap / light.range;
-    float window = 1.0 - reach * reach * reach * reach;
-    float falloff = window * window / (gap * gap + HELION_BLOCK_NEAR * HELION_BLOCK_NEAR);
-    return light.color * (light.strength * HELION_BLOCK_STRENGTH * falloff * facing * helionFlicker(light));
+    return helionLightReach(light, position, normal) * helionFlicker(light);
 }
 
 vec3 helionSafeDirection(vec3 direction) {
@@ -321,22 +251,19 @@ vec3 helionLightVisible(HelionBlockLight light, vec3 origin, vec3 normal) {
         return vec3(1.0);
     }
     rayQueryEXT query;
-    rayQueryInitializeEXT(query, Scene, gl_RayFlagsNoneEXT, HELION_SHADOW_INSTANCES, origin, HELION_RAY_START, direction, entry + 2.0 * HELION_ENTRY_MARGIN);
+    rayQueryInitializeEXT(query, Scene, gl_RayFlagsNoneEXT, light.dynamic ? HELION_SECTION_INSTANCES : HELION_SHADOW_INSTANCES, origin, HELION_RAY_START, direction, entry + 2.0 * HELION_ENTRY_MARGIN);
     vec3 filtered = helionTraceStained(query);
-    bool blocked = rayQueryGetIntersectionTypeEXT(query, true) != gl_RayQueryCommittedIntersectionNoneEXT && rayQueryGetIntersectionTEXT(query, true) < entry;
-    return blocked ? vec3(0.0) : filtered;
-}
-
-uvec4 helionLightCell(vec3 position) {
-    ivec3 cell = ivec3(floor(position / HELION_SECTION_SIZE)) + HELION_GRID_RADIUS;
-    if (any(lessThan(cell, ivec3(0))) || any(greaterThanEqual(cell, ivec3(HELION_GRID_SIZE)))) {
-        return uvec4(0u);
+    if (rayQueryGetIntersectionTypeEXT(query, true) == gl_RayQueryCommittedIntersectionNoneEXT) {
+        return filtered;
     }
-    return Lights[cell.x + HELION_GRID_SIZE * (cell.y + HELION_GRID_SIZE * cell.z)];
+    vec3 hit = origin + direction * rayQueryGetIntersectionTEXT(query, true);
+    vec3 outside = max(max(light.low - hit, hit - light.high), 0.0);
+    return dot(outside, outside) > HELION_LIGHT_SURFACE * HELION_LIGHT_SURFACE ? vec3(0.0) : filtered;
 }
 
 vec3 helionBlockLighting(vec3 position, vec3 origin, vec3 normal) {
     uvec4 header = helionLightCell(position);
+    uvec4 globals = helionLightGlobals();
     uint brightest = HELION_NO_LIGHT;
     float brightestWeight = 0.0;
     vec3 brightestShare = vec3(0.0);
@@ -344,8 +271,8 @@ vec3 helionBlockLighting(vec3 position, vec3 origin, vec3 normal) {
     float chosenWeight = 0.0;
     vec3 chosenShare = vec3(0.0);
     float restWeight = 0.0;
-    for (uint index = 0u; index < header.y; index++) {
-        uint record = header.x + index;
+    for (uint index = 0u; index < header.y + globals.y; index++) {
+        uint record = helionLightRecord(header, globals, index);
         vec3 share = helionLightShare(helionBlockLight(record), position, normal);
         float weight = helionLuminance(share);
         if (weight <= 0.0) {
@@ -385,13 +312,14 @@ vec3 helionBlockLighting(vec3 position, vec3 origin, vec3 normal) {
 
 vec3 helionBounceBlockLight(vec3 position, vec3 origin, vec3 normal) {
     uvec4 header = helionLightCell(position);
+    uvec4 globals = helionLightGlobals();
     uint chosen = HELION_NO_LIGHT;
     float chosenWeight = 0.0;
     vec3 chosenShare = vec3(0.0);
     float totalWeight = 0.0;
     float brightestWeight = 0.0;
-    for (uint index = 0u; index < header.y; index++) {
-        uint record = header.x + index;
+    for (uint index = 0u; index < header.y + globals.y; index++) {
+        uint record = helionLightRecord(header, globals, index);
         vec3 share = helionLightShare(helionBlockLight(record), position, normal);
         float weight = helionLuminance(share);
         if (weight <= 0.0) {
@@ -478,18 +406,6 @@ float helionSceneShare(vec3 origin) {
     float reach = HELION_SCENE_REACH;
     vec3 edges = min(origin + reach, reach + HELION_SECTION_SIZE - origin);
     return clamp(min(min(edges.x, edges.y), edges.z) / HELION_SCENE_FADE, 0.0, 1.0);
-}
-
-HelionSky helionSky() {
-    vec3 sunLight = texelFetch(SkyLightSampler, HELION_SUN_TEXEL, 0).rgb;
-    vec3 moonLight = texelFetch(SkyLightSampler, HELION_MOON_TEXEL, 0).rgb;
-    vec3 dome = texelFetch(SkyLightSampler, HELION_DOME_TEXEL, 0).rgb;
-    vec3 ambient = helionSrgbToLinear(helionLightmapTexel(ivec2(0)));
-    float openSky = helionLuminance(sunLight) * max(Sun.y, 0.0) + helionLuminance(moonLight) * max(Moon.y, 0.0) + helionLuminance(dome);
-    float scale = max(HELION_DAY_FULL_SKY - helionLuminance(ambient), 0.0) / max(openSky, HELION_DAYLIGHT_OPEN_SKY);
-    float vanillaSky = helionLuminance(helionSrgbToLinear(helionLightmapTexel(ivec2(0, HELION_LIGHTMAP_LAST_TEXEL))));
-    float vanillaShare = clamp((helionLuminance(ambient) + openSky * scale) / max(vanillaSky, HELION_MIN_VANILLA_SKY), 0.0, 1.0);
-    return HelionSky(sunLight * scale, moonLight * scale, dome * scale, ambient, vanillaShare);
 }
 
 const int HELION_CACHE_PROBES = 8;

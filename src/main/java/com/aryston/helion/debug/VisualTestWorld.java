@@ -151,6 +151,10 @@ final class VisualTestWorld {
     );
     private static final Fill GLASS_LAKE = new Fill(new Volume(new BlockPos(-27, 0, -4), new BlockPos(-24, 0, -3)), GLASS_BLOCK);
     static final BlockPos STAINED_LIGHT_CAMERA = new BlockPos(38, -17, -3);
+    private static final List<Placement> GLASS_OVER_LIGHT = List.of(
+        new Placement(36, -20, -8, "sea_lantern"),
+        new Placement(36, -19, -8, "red_stained_glass")
+    );
     private static final Volume STAINED_LIGHT_ROOM = new Volume(new BlockPos(34, -20, -10), new BlockPos(42, -14, -2));
     private static final String STAINED_LIGHT_GLASS = "red_stained_glass";
     private static final List<Placement> STAINED_LIGHT_CAGE = List.of(
@@ -234,6 +238,46 @@ final class VisualTestWorld {
         new Placement(23, -17, -6, "sea_lantern")
     );
 
+    static final BlockPos PANE_ROOM_CAMERA = new BlockPos(64, 0, 34);
+    private static final Volume PANE_ROOM_AIR = new Volume(new BlockPos(55, 0, 25), new BlockPos(69, 20, 39));
+    private static final Volume PANE_ROOM_FLOOR = new Volume(new BlockPos(55, -1, 25), new BlockPos(69, -1, 39));
+    private static final List<Fill> PANE_ROOM_BLOCKS = List.of(
+        new Fill(new Volume(new BlockPos(60, 0, 30), new BlockPos(66, 2, 30)), "glass_pane"),
+        new Fill(new Volume(new BlockPos(60, 0, 36), new BlockPos(66, 2, 36)), "glass_pane"),
+        new Fill(new Volume(new BlockPos(60, 0, 31), new BlockPos(60, 2, 35)), "glass_pane"),
+        new Fill(new Volume(new BlockPos(66, 0, 31), new BlockPos(66, 2, 35)), "glass_pane"),
+        new Fill(new Volume(new BlockPos(56, 0, 26), new BlockPos(68, 4, 26)), CANOPY_BLOCK),
+        new Fill(new Volume(new BlockPos(56, 0, 27), new BlockPos(56, 4, 38)), CANOPY_BLOCK),
+        new Fill(new Volume(new BlockPos(62, 0, 33), new BlockPos(62, 0, 33)), "torch")
+    );
+    static final BlockPos LEAK_CAMERA = new BlockPos(50, -19, 0);
+    private static final Volume LEAK_ROOM = new Volume(new BlockPos(44, -20, -12), new BlockPos(56, -14, 2));
+    private static final List<Fill> LEAK_BLOCKS = List.of(
+        new Fill(new Volume(new BlockPos(52, -19, -6), new BlockPos(52, -18, -6)), CASTER_BLOCK),
+        new Fill(new Volume(new BlockPos(51, -19, -5), new BlockPos(51, -18, -5)), CASTER_BLOCK),
+        new Fill(new Volume(new BlockPos(50, -19, -4), new BlockPos(50, -18, -4)), CASTER_BLOCK),
+        new Fill(new Volume(new BlockPos(49, -19, -5), new BlockPos(49, -18, -5)), CASTER_BLOCK),
+        new Fill(new Volume(new BlockPos(48, -19, -6), new BlockPos(48, -18, -6)), CASTER_BLOCK),
+        new Fill(new Volume(new BlockPos(49, -19, -7), new BlockPos(49, -18, -7)), CASTER_BLOCK),
+        new Fill(new Volume(new BlockPos(50, -19, -8), new BlockPos(50, -18, -8)), CASTER_BLOCK),
+        new Fill(new Volume(new BlockPos(51, -19, -7), new BlockPos(51, -18, -7)), CASTER_BLOCK),
+        new Fill(new Volume(new BlockPos(48, -17, -8), new BlockPos(52, -17, -4)), CASTER_BLOCK),
+        new Fill(new Volume(new BlockPos(50, -19, -6), new BlockPos(50, -19, -6)), "glowstone")
+    );
+    static final BlockPos LAVA_CAVE_CAMERA = new BlockPos(49, -19, 13);
+    private static final Volume LAVA_CAVE = new Volume(new BlockPos(44, -20, 4), new BlockPos(54, -14, 14));
+    private static final List<Fill> LAVA_CAVE_BLOCKS = List.of(
+        new Fill(new Volume(new BlockPos(47, -21, 7), new BlockPos(51, -21, 11)), CASTER_BLOCK),
+        new Fill(new Volume(new BlockPos(48, -20, 8), new BlockPos(50, -20, 10)), "lava")
+    );
+    static final BlockPos DYNAMIC_CAMERA = new BlockPos(63, -19, -3);
+    private static final Volume DYNAMIC_ROOM = new Volume(new BlockPos(58, -20, -12), new BlockPos(68, -14, -1));
+    private static final List<Spawn> DYNAMIC_SPAWNS = List.of(
+        new Spawn(60, -19, -9, "armor_stand", " {NoGravity:1b,ShowArms:1b,Rotation:[0f,0f],equipment:{mainhand:{id:\"minecraft:torch\",count:1}}}"),
+        new Spawn(63, -19, -10, "item", " {Item:{id:\"minecraft:glowstone\",count:1},NoGravity:1b,PickupDelay:32767,Age:-32768}"),
+        new Spawn(66, -19, -9, "pig", " {NoAI:1b,Invulnerable:1b,Fire:32767s,Rotation:[90f,0f]}")
+    );
+
     private VisualTestWorld() {
     }
 
@@ -295,9 +339,25 @@ final class VisualTestWorld {
         run(server, fill(origin.offset(GLASS_LAKE.volume().from()), origin.offset(GLASS_LAKE.volume().to()), GLASS_LAKE.block()));
         run(server, fill(origin.offset(STAINED_LIGHT_ROOM.from()), origin.offset(STAINED_LIGHT_ROOM.to()), CASTER_BLOCK + " hollow"));
         STAINED_LIGHT_CAGE.forEach(placement -> run(server, placement.command(origin)));
+        GLASS_OVER_LIGHT.forEach(placement -> run(server, placement.command(origin)));
         List.of(EMITTER_AIR, EMITTER_FLOOR).forEach(area -> run(server, fill(origin.offset(area.volume().from()), origin.offset(area.volume().to()), area.block())));
         EMITTER_ROW.forEach(placement -> run(server, placement.command(origin)));
         buildTorchRoom(server, origin);
+        buildLightRooms(server, origin);
+    }
+
+    private static void buildLightRooms(IntegratedServer server, BlockPos origin) {
+        run(server, killEntities(origin.offset(PANE_ROOM_AIR.from()), origin.offset(PANE_ROOM_AIR.to())));
+        run(server, fill(origin.offset(PANE_ROOM_AIR.from()), origin.offset(PANE_ROOM_AIR.to()), "air"));
+        run(server, fill(origin.offset(PANE_ROOM_FLOOR.from()), origin.offset(PANE_ROOM_FLOOR.to()), "grass_block"));
+        PANE_ROOM_BLOCKS.forEach(block -> run(server, fill(origin.offset(block.volume().from()), origin.offset(block.volume().to()), block.block())));
+        run(server, fill(origin.offset(LEAK_ROOM.from()), origin.offset(LEAK_ROOM.to()), CASTER_BLOCK + " hollow"));
+        LEAK_BLOCKS.forEach(block -> run(server, fill(origin.offset(block.volume().from()), origin.offset(block.volume().to()), block.block())));
+        run(server, fill(origin.offset(LAVA_CAVE.from()), origin.offset(LAVA_CAVE.to()), CASTER_BLOCK + " hollow"));
+        LAVA_CAVE_BLOCKS.forEach(block -> run(server, fill(origin.offset(block.volume().from()), origin.offset(block.volume().to()), block.block())));
+        run(server, killEntities(origin.offset(DYNAMIC_ROOM.from()), origin.offset(DYNAMIC_ROOM.to())));
+        run(server, fill(origin.offset(DYNAMIC_ROOM.from()), origin.offset(DYNAMIC_ROOM.to()), CASTER_BLOCK + " hollow"));
+        DYNAMIC_SPAWNS.forEach(spawn -> run(server, spawn.command(origin)));
     }
 
     private static void buildTorchRoom(IntegratedServer server, BlockPos origin) {
@@ -399,6 +459,13 @@ final class VisualTestWorld {
     private record Placement(int x, int y, int z, String block) {
         String command(BlockPos origin) {
             return "setblock " + coordinates(origin.offset(x, y, z)) + " " + block;
+        }
+    }
+
+    private record Spawn(int x, int y, int z, String entity, String data) {
+        String command(BlockPos origin) {
+            BlockPos position = origin.offset(x, y, z);
+            return "summon " + entity + " " + (position.getX() + BLOCK_CENTER) + " " + position.getY() + " " + (position.getZ() + BLOCK_CENTER) + data;
         }
     }
 

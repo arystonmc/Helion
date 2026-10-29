@@ -6,6 +6,7 @@ import com.aryston.helion.render.geometry.EntitySource;
 import com.aryston.helion.render.geometry.TerrainSource;
 import com.aryston.helion.render.geometry.TransparencySource;
 import com.aryston.helion.render.graph.RenderStage;
+import com.aryston.helion.render.rtx.RtxLightSource;
 import com.aryston.helion.render.water.FootprintSource;
 import com.aryston.helion.render.water.WaveSource;
 import com.aryston.helion.render.water.WeatherSource;
@@ -19,6 +20,7 @@ public record FrameSources(
     WeatherSource weather,
     WaveSource waves,
     FootprintSource footprints,
+    RtxLightSource lights,
     TransparencySource transparency,
     List<RenderStage> postEffects
 ) {

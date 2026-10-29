@@ -230,5 +230,8 @@
       1.0,
       0.6
     ]
+  },
+  "strengths": {
+    "minecraft:lava": 0.3
   }
 }

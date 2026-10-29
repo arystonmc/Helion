@@ -27,7 +27,6 @@ public final class RtxReflectionStage implements RenderStage {
     static final String NAME = "rt_reflection";
 
     private static final int MATRIX_BYTES = 16 * Float.BYTES;
-    private static final float MAX_DISTANCE = 96.0F;
     private static final long WHOLE_BUFFER = 0L;
     private static final float UNUSED = 0.0F;
     private static final float TRACED = 1.0F;
@@ -66,13 +65,15 @@ public final class RtxReflectionStage implements RenderStage {
         ByteBuffer constants = resources.reflectionConstants();
         Optional<GeometryBuffer.Targets> geometry = frame.geometry().targets();
         float puddles = geometry.isPresent() ? frame.water().wetness().map(Wetness::puddles).orElse(NO_PUDDLES) : NO_PUDDLES;
-        writeConstants(constants, frame.camera(), center, frame.atmosphere().skyLight(), puddles);
+        Optional<SkyLight> sky = frame.atmosphere().skyLight();
+        writeConstants(constants, frame.camera(), center, sky, puddles, resources.pathTraced() && sky.isPresent());
         ResourceHandle<RenderTarget> surface = frame.water().surface().orElseThrow();
         TerrainTextures textures = terrain.textures();
         FramePass pass = frame.graph().addPass(NAME);
         pass.reads(surface);
         Optional<ResourceHandle<RenderTarget>> glassSurface = frame.water().glassSurface();
         glassSurface.ifPresent(pass::reads);
+        sky.ifPresent(light -> pass.reads(light.irradiance()));
         ResourceHandle<RenderTarget> sceneTarget = frame.targets().scene();
         pass.reads(sceneTarget);
         geometry.ifPresent(targets -> {
@@ -84,6 +85,7 @@ public final class RtxReflectionStage implements RenderStage {
         RtxSectionScene scene = resources.scene();
         long topLevel = scene.topLevelHandle();
         RtxBuffer table = scene.surfaceTable();
+        RtxBuffer lights = scene.lightBuffer();
         pass.executes(frame.graph().timed(NAME, () -> {
             device.memoryBarrier();
             RenderTarget water = surface.get();
@@ -100,7 +102,9 @@ public final class RtxReflectionStage implements RenderStage {
                 new RtxBinding.Sampled(geometry.map(targets -> handle(colorView(targets.normal()))).orElse(handle(Objects.requireNonNull(water.getColorTextureView())))),
                 new RtxBinding.Sampled(geometry.map(targets -> handle(colorView(targets.light()))).orElse(handle(Objects.requireNonNull(water.getColorTextureView())))),
                 new RtxBinding.Sampled(handle(Objects.requireNonNull(glass.getDepthTextureView()))),
-                new RtxBinding.Sampled(handle(Objects.requireNonNull(glass.getColorTextureView())))
+                new RtxBinding.Sampled(handle(Objects.requireNonNull(glass.getColorTextureView()))),
+                new RtxBinding.StorageBuffer(lights.buffer(), WHOLE_BUFFER, lights.size()),
+                new RtxBinding.Sampled(sky.map(light -> handle(colorView(light.irradiance()))).orElse(handle(Objects.requireNonNull(water.getColorTextureView()))))
             ));
             if (device.entityTextures()) {
                 bindings.addAll(entityBindings(scene.entitySurfaces(), handle(textures.atlas())));
@@ -119,10 +123,6 @@ public final class RtxReflectionStage implements RenderStage {
         );
     }
 
-    private static Vector3fc shadowLight(SkyLight sky) {
-        return sky.sunDirection().y() > HORIZON ? sky.sunDirection() : sky.moonDirection();
-    }
-
     private static long handle(GpuTextureView view) {
         return ((VulkanGpuTextureView) view).vkImageView();
     }
@@ -131,7 +131,7 @@ public final class RtxReflectionStage implements RenderStage {
         return Objects.requireNonNull(handle.get().getColorTextureView());
     }
 
-    private static void writeConstants(ByteBuffer constants, HelionCamera camera, RtxSectionPos center, Optional<SkyLight> sky, float puddles) {
+    private static void writeConstants(ByteBuffer constants, HelionCamera camera, RtxSectionPos center, Optional<SkyLight> sky, float puddles, boolean traced) {
         Vector3dc position = camera.position();
         constants.clear();
         camera.levelViewProjection().invert().get(0, constants);
@@ -140,10 +140,13 @@ public final class RtxReflectionStage implements RenderStage {
             .putFloat((float) (position.y() - center.originY()))
             .putFloat((float) (position.z() - center.originZ()))
             .putFloat(RtxSectionInbox.RADIUS * RtxSectionKey.SECTION_SIZE);
-        constants.putFloat(MAX_DISTANCE).putFloat((float) (position.x() % NOISE_PERIOD)).putFloat((float) (position.z() % NOISE_PERIOD)).putFloat(puddles);
-        Optional<Vector3fc> light = sky.map(RtxReflectionStage::shadowLight).filter(direction -> direction.y() > HORIZON);
-        Vector3fc direction = light.orElse(NO_LIGHT);
-        constants.putFloat(direction.x()).putFloat(direction.y()).putFloat(direction.z()).putFloat(light.isPresent() ? TRACED : UNUSED);
+        constants.putFloat(traced ? TRACED : UNUSED).putFloat((float) (position.x() % NOISE_PERIOD)).putFloat((float) (position.z() % NOISE_PERIOD)).putFloat(puddles);
+        putLight(constants, sky.map(SkyLight::sunDirection).orElse(NO_LIGHT), sky.isPresent());
+        putLight(constants, sky.map(SkyLight::moonDirection).orElse(NO_LIGHT), sky.isPresent());
         constants.flip();
+    }
+
+    private static void putLight(ByteBuffer constants, Vector3fc direction, boolean present) {
+        constants.putFloat(direction.x()).putFloat(direction.y()).putFloat(direction.z()).putFloat(present && direction.y() > HORIZON ? TRACED : UNUSED);
     }
 }

@@ -65,7 +65,7 @@ public final class FrameStages {
             sky(frame, sources, core),
             new OpaqueGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere(), core.glossy()),
             new EntityGeometryStage(sources.entities()),
-            new RtxSceneStage(core.rayTracing()),
+            new RtxSceneStage(core.rayTracing(), sources.lights()),
             new RtxPathTracingStage(core.rayTracing(), sources.terrain(), core.glossy()),
             new SolidFeatureStage(sources.terrain(), sources.entities()),
             new TranslucentFeatureStage(sources.entities()),

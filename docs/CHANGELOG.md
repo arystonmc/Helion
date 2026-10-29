@@ -7,6 +7,8 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Path traced light: dynamic lights; a torch or other light block in hand, a dropped light block and a burning mob light up their surroundings
+- Path traced light: true darkness; caves and other places without any light, and nights without a moon, are fully dark, so only light sources light them
 - Path traced light: nights are dark, lit by the moon in its real strength instead of the vanilla night brightness, so torches and lanterns matter; torches and other light blocks shine stronger
 - Plain glass and glass panes are clear real glass with a faint green tint, without the vanilla frame and streaks
 - Rain on glass looks like a real wet window: clear drops of two sizes act as lenses with an upside down view, also of water behind the glass, and wavy streaks run down; only glass that rain can reach gets wet
@@ -50,6 +52,10 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental ray tracing: mobs, players and dropped items show in water reflections, also when they are off screen
 
 ### Changed
+- Path traced light: lava glows softer, so a lava pool no longer floods a cave with harsh contrast
+- Path traced light: a new moon gives no light at all
+- Path traced light: glass and water reflections take the path traced light, so glass panes no longer show bright beige vanilla lit reflections at night
+- Stained glass colors what is behind it fully, so a light under red glass looks red instead of pale pink
 - Automatic exposure adapts further in dark places: caves get up to one and a half stops brighter, while nights stay dark
 - Path traced light denoising is faster: fewer filter passes now that the bounced light is smoother
 - Path traced light runs faster: bounced light is kept per block face and reused across frames
@@ -62,6 +68,8 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Depth of field focuses on the sky when you look at it, so the sun, the moon and the stars stay sharp
 
 ### Fixed
+- Path traced light no longer leaks through the gap where two blocks touch only at an edge or a corner
+- Rain drops on glass no longer look like dark dirt from a distance
 - Rain drops on glass no longer turn into dark flickering specks at glancing angles and along the edge of a pane
 - The floor under stained glass next to a light is no longer lit in white
 - Light through stained glass no longer shows lines from the glass texture and the seams between blocks, and its color is stronger and even

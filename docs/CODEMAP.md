@@ -30,7 +30,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | Light shafts (god rays) of the sun and moon | `LightShaftStage`, `LightShaftView` (which light, screen position, fades), `LightShaftResources` (tuning), `shaders/light_shafts/`, `shaders/include/helion_light_shafts.glsl` |
 | GPU time of every preset in one run | `GpuProfile`, `HelionPresetSettings` |
 | Ray tracing (setting `rayTracing.enabled`, read at startup) | `RayTracingResources`, `RtxSectionScene`, `RtxSceneStage`, `RtxSectionCapture`, `RtxComputePipeline`, `RtxReflectionStage`, `SectionCompilerMixin`, `VulkanBackendMixin`, `VulkanFeatureSetsMixin`, `shaders/rtx/` |
-| Path traced light (setting `rayTracing.pathTracing`) | `RtxPathTracingStage`, `PathTracingPipelines`, `RayTracingResources`, `RtxDenoiseImages`, `RtxLightScene`, `RtxSectionLights`, `LightColors`, `shaders/rtx/path_trace.csh`, `shaders/rtx/denoise_accumulate.csh`, `shaders/rtx/denoise_filter.csh`, `shaders/pathtracing/radiance.fsh` |
+| Path traced light (setting `rayTracing.pathTracing`) | `RtxPathTracingStage`, `PathTracingPipelines`, `RayTracingResources`, `RtxDenoiseImages`, `RtxLightScene`, `RtxSectionLights`, `LightColors`, `RtxLightSource` and `VanillaLightSource` (dynamic lights, true darkness), `shaders/rtx/path_trace.csh`, `shaders/rtx/denoise_accumulate.csh`, `shaders/rtx/denoise_filter.csh`, `shaders/pathtracing/radiance.fsh` |
 | Shader pipelines | `HelionPipelines`, `TemporalPipelines`, `PhysicalSkyPipelines`, `CloudPipelines`, `LightShaftPipelines`, `ImagePipelines` |
 | How vanilla terrain, entities, sky or OIT are called | `VanillaTerrainSource`, `VanillaEntitySource`, `VanillaAtmosphereSource`, `VanillaTransparencySource` |
 | The rebuilt vanilla `LevelRenderer.render` | `VanillaFrameDriver` |
@@ -65,7 +65,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | `com.aryston.helion.config` | [config.md](codemap/config.md) | 8 | Config spec, presets, settings screen and share codes. |
 | `com.aryston.helion.debug` | [debug.md](codemap/debug.md) | 13 | Debug overlay, GPU profile, visual test and pixel parity tools. |
 | `com.aryston.helion.integration` | [integration.md](codemap/integration.md) | 6 | Event wiring, key bindings, parity control and the Sodium and Iris guard. |
-| `com.aryston.helion.integration.vanilla` | [integration.vanilla.md](codemap/integration.vanilla.md) | 30 | Bridges to vanilla frame, terrain, entity, atmosphere, water and ray tracing capture sources. |
+| `com.aryston.helion.integration.vanilla` | [integration.vanilla.md](codemap/integration.vanilla.md) | 31 | Bridges to vanilla frame, terrain, entity, atmosphere, water, dynamic light and ray tracing capture sources. |
 | `com.aryston.helion.mixin` | [mixin.md](codemap/mixin.md) | 20 | Mixins and accessors on vanilla renderers and, for ray tracing, on the renderpearl Vulkan backend. |
 | `com.aryston.helion.render.atmosphere` | [render.atmosphere.md](codemap/render.atmosphere.md) | 15 | Physical sky, atmosphere spectrum, sky light and scene fog. |
 | `com.aryston.helion.render.clouds` | [render.clouds.md](codemap/render.clouds.md) | 9 | Volumetric clouds stage, resources, settings and pipelines. |
@@ -83,7 +83,7 @@ A class of package `P` is documented only in `codemap/P.md`, or in `codemap/P--<
 | `com.aryston.helion.render.scene` | [render.scene.md](codemap/render.scene.md) | 2 | Scene snapshot and clear stage. |
 | `com.aryston.helion.render.shader` | [render.shader.md](codemap/render.shader.md) | 2 | Shared pipelines and the fullscreen pass. |
 | `com.aryston.helion.render.water` | [render.water.md](codemap/render.water.md) | 25 | Water surface target, wave normals, screen space reflections, rain wetness and the reflection composite. |
-| `com.aryston.helion.render.rtx` | [render.rtx.md](codemap/render.rtx.md) | 28 | Hardware ray tracing: optional ray query features, VMA device address buffers, per-section bottom levels and a per-frame top level from the real block meshes, entities, raw compute passes and the traced reflections and the path traced light. |
+| `com.aryston.helion.render.rtx` | [render.rtx.md](codemap/render.rtx.md) | 30 | Hardware ray tracing: optional ray query features, VMA device address buffers, per-section bottom levels and a per-frame top level from the real block meshes, entities, raw compute passes and the traced reflections and the path traced light. |
 | `com.aryston.helion.render.pathtracing` | [render.pathtracing.md](codemap/render.pathtracing.md) | 1 | Render pipelines of the path traced light that need no ray tracing types. |
 | `com.aryston.helion.render.temporal` | [render.temporal.md](codemap/render.temporal.md) | 11 | Temporal anti-aliasing, jitter, history, previous view and render scale. |
 

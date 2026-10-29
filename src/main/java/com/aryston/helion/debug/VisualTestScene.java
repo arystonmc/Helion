@@ -58,6 +58,10 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final float TORCH_ROOM_PITCH = 10.0F;
     private static final float WATERFALL_ABOVE_PITCH = 35.0F;
     private static final float SWAMP_UNDER_PITCH = 15.0F;
+    private static final float PANE_ROOM_PITCH = 10.0F;
+    private static final float LEAK_PITCH = 30.0F;
+    private static final float LAVA_CAVE_PITCH = 25.0F;
+    private static final float DYNAMIC_PITCH = 20.0F;
 
     static final List<VisualTestScene> ALL = List.of(
         new VisualTestScene("day_sky", NOON, NORTH, -35.0F, BlockPos.ZERO),
@@ -125,6 +129,10 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("tinted_glass", MIDNIGHT, EAST, TINT_PITCH, VisualTestWorld.TINT_CAMERA),
         new VisualTestScene("stained_light", MIDNIGHT, NORTH, STAINED_LIGHT_PITCH, VisualTestWorld.STAINED_LIGHT_CAMERA),
         new VisualTestScene("stained_light_rain", MIDNIGHT, NORTH, STAINED_LIGHT_PITCH, VisualTestWorld.STAINED_LIGHT_CAMERA, RAIN),
+        new VisualTestScene("glass_pane_room_rain", MIDNIGHT, NORTH_WEST, PANE_ROOM_PITCH, VisualTestWorld.PANE_ROOM_CAMERA, RAIN),
+        new VisualTestScene("corner_leak", MIDNIGHT, NORTH, LEAK_PITCH, VisualTestWorld.LEAK_CAMERA),
+        new VisualTestScene("lava_cave", MIDNIGHT, NORTH, LAVA_CAVE_PITCH, VisualTestWorld.LAVA_CAVE_CAMERA),
+        new VisualTestScene("dynamic_lights", MIDNIGHT, NORTH, DYNAMIC_PITCH, VisualTestWorld.DYNAMIC_CAMERA),
         new VisualTestScene("savanna_room", MIDNIGHT, EAST, SAVANNA_PITCH, VisualTestWorld.SAVANNA_CAMERA),
         new VisualTestScene("rain_yard", NOON, NORTH, SHOWCASE_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),
         new VisualTestScene("rain_yard_low", NOON, NORTH, POOL_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),

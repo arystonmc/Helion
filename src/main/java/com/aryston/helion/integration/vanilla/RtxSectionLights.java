@@ -65,7 +65,11 @@ final class RtxSectionLights {
         lights[at + MAX_X] = Float.floatToIntBits((float) (x + box.maxX));
         lights[at + MAX_Y] = Float.floatToIntBits((float) (y + box.maxY));
         lights[at + MAX_Z] = Float.floatToIntBits((float) (z + box.maxZ));
-        lights[at + LEVEL] = levels(level + RANGE_MARGIN, (float) Math.pow(level / MAX_LEVEL, LIGHT_GAMMA));
+        lights[at + LEVEL] = levels(state, level);
+    }
+
+    static int levels(BlockState state, int level) {
+        return levels(level + RANGE_MARGIN, (float) Math.pow(level / MAX_LEVEL, LIGHT_GAMMA) * LightColors.strength(state));
     }
 
     private static int[] thinned(int[] lights, int count) {

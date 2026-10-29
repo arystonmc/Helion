@@ -48,6 +48,7 @@ final class VanillaFrameDriver {
     private final AmbientLightTracker ambientLight = new AmbientLightTracker();
     private final VanillaWaveSource waves = new VanillaWaveSource();
     private final VanillaFootprintSource footprints = new VanillaFootprintSource();
+    private final VanillaLightSource lights = new VanillaLightSource();
     private @Nullable ProjectionMatrixBuffer jitteredProjection;
 
     void render(LevelFrameRequest request, RenderSettings settings) {
@@ -193,6 +194,7 @@ final class VanillaFrameDriver {
             new VanillaWeatherSource(),
             waves,
             footprints,
+            lights,
             new VanillaTransparencySource(request, sections, featureFrame),
             List.of(new VanillaEntityOutlineEffect(request.level(), targets))
         );
