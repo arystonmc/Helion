@@ -11,7 +11,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Path traced light: true darkness; caves and other places without any light, and nights without a moon, are fully dark, so only light sources light them
 - Path traced light: nights are dark, lit by the moon in its real strength instead of the vanilla night brightness, so torches and lanterns matter; torches and other light blocks shine stronger
 - Plain glass and glass panes are clear real glass with a faint green tint, without the vanilla frame and streaks
-- Rain on glass looks like a real wet window: clear drops of two sizes act as lenses with an upside down view, also of water behind the glass, and streaks run straight down; only glass that rain can reach gets wet
+- Rain on glass looks like a real wet window: the pane mists over, clear drops of two sizes slightly magnify the view behind them, also water behind the glass, and streaks run straight down; only glass that rain can reach gets wet
 - Path traced light: every light source shines in its own strong color, stained glass colors the light passing through it, also the sky light that lights a room through a stained window, and light fades smoothly and round instead of a hard bright patch
 - Path traced light: mobs, dropped items and other entities no longer have the vanilla round black shadow under them; the ray traced shadows replace it
 - Path traced light: polished blocks get glossy ray traced reflections, and iron, gold, netherite and copper blocks reflect like real metal
@@ -68,6 +68,9 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Depth of field focuses on the sky when you look at it, so the sun, the moon and the stars stay sharp
 
 ### Fixed
+- Rain drops on glass no longer shimmer; the wet pane also mists over again
+- Rain no longer ripples water or wets the floor under a roof, also under a glass roof
+- White walls under path traced light no longer show fine speckles
 - Path traced light: white and other bright walls lit by bounced light no longer show a dirt-like pattern of colored blotches
 - The sky, the sun and its glow no longer show sharp color bands at noon
 - Rain drops on glass no longer turn into large speckled discs up close or at a glancing angle

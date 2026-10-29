@@ -102,6 +102,7 @@ public final class ScreenReflectionStage implements RenderStage {
                 renderPass.setUniform(WaterPipelines.REFLECTION_SAMPLER, traced.orElse(standIn), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
                 renderPass.setUniform(WaterPipelines.GLASS_SURFACE_SAMPLER, Objects.requireNonNull(glassTarget.getColorTextureView()), nearest);
                 renderPass.setUniform(WaterPipelines.GLASS_DEPTH_SAMPLER, Objects.requireNonNull(glassTarget.getDepthTextureView()), nearest);
+                renderPass.setUniform(WaterPipelines.RAIN_COVER_SAMPLER, resources.rainCover().view().orElse(standIn), nearest);
             });
             resources.finishScreen();
         }));

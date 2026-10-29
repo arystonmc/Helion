@@ -20,6 +20,9 @@ uniform sampler2D WaveSampler;
 uniform sampler2D ReflectionSampler;
 uniform sampler2D GlassSurfaceSampler;
 uniform sampler2D GlassDepthSampler;
+uniform sampler2D RainCoverSampler;
+
+#include <helion:helion_rain_cover.glsl>
 
 layout(std140) uniform HelionScreenReflection {
     mat4 ReflectionViewProjection;
@@ -216,7 +219,8 @@ vec4 helionSurfaceSheen(ivec2 pixel, vec2 screen) {
     vec3 worldPosition = start + WetnessOrigin.xyz;
     bool simulated = ReflectionFlags.w > HELION_FLAG_SET;
     vec2 waveSlope = simulated ? helionPuddleWaveSlope(worldPosition.xz) : vec2(0.0);
-    HelionWetSurface wet = helionWetSurface(light, surfaceNormal, worldPosition, Wetness, waveSlope, simulated);
+    vec4 reached = vec4(Wetness.xyz * helionRainReaches(worldPosition, surfaceNormal, length(start)), Wetness.w);
+    HelionWetSurface wet = helionWetSurface(light, surfaceNormal, worldPosition, reached, waveSlope, simulated);
     float footprint = surfaceNormal.y > HELION_FOOT_FLAT && !helionIsDryGeometry(light.a) ? helionFootprints(worldPosition.xz) : 0.0;
     wet.darkening = min(wet.darkening + footprint * HELION_FOOT_DARKENING, 1.0);
     wet.sheen = max(wet.sheen, footprint * HELION_FOOT_SHEEN);

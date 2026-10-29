@@ -136,6 +136,8 @@ public final class WaterSurfaceStage implements RenderStage {
         pass.setUniform(WaterPipelines.SHORE_SAMPLER, Objects.requireNonNull(shoreView), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
         GpuTextureView distanceView = waves.flatMap(ignored -> resources.waves().shore().distanceView()).orElse(scene.getColorTextureView());
         pass.setUniform(WaterPipelines.SHORE_DISTANCE_SAMPLER, Objects.requireNonNull(distanceView), RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR));
+        GpuTextureView coverView = resources.rainCover().view().orElse(scene.getColorTextureView());
+        pass.setUniform(WaterPipelines.RAIN_COVER_SAMPLER, Objects.requireNonNull(coverView), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
         return pass;
     }
 }

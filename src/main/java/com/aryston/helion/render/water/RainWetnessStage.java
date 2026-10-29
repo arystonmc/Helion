@@ -9,11 +9,13 @@ public final class RainWetnessStage implements RenderStage {
 
     private final WeatherSource weather;
     private final FootprintSource footprints;
+    private final WaveSource waves;
     private final WaterResources resources;
 
-    public RainWetnessStage(WeatherSource weather, FootprintSource footprints, WaterResources resources) {
+    public RainWetnessStage(WeatherSource weather, FootprintSource footprints, WaveSource waves, WaterResources resources) {
         this.weather = weather;
         this.footprints = footprints;
+        this.waves = waves;
         this.resources = resources;
     }
 
@@ -49,6 +51,7 @@ public final class RainWetnessStage implements RenderStage {
         }
         Wetness wetness = resources.rainWetness().update(state);
         if (wetness.visible()) {
+            resources.rainCover().refresh(waves, frame.camera().position().x(), frame.camera().position().z());
             frame.water().publishWetness(wetness);
         }
     }

@@ -55,3 +55,5 @@ The film now reflects from F0 0.2, and the ripple normal brightens its reflectio
 
 - Rain exposure from a height map instead of the sky light, so glass roofs keep the floor dry and the biome is checked per pixel instead of at the camera.
 - Wet entities beyond the porous darkening, drips from roof edges, puddles that evaporate unevenly.
+
+Covered rain (2026-10-29, owner report: rain rippled water indoors and a wet film lay on the floor under a glass roof): wetness and water ripples followed the vanilla sky light, which passes through glass. `WaterRainCover` (refreshed by `RainWetnessStage` while wetness is published) is now also bound to the water surface pass, whose rain ripples and rain-driven capillary waves scale by `helionRainReaches` for the cell above the water, and to the screen reflection pass, which scales the wet, puddle and rain terms of `Wetness` by `helionRainReaches` for the cell in front of the surface (`include/helion_rain_cover.glsl`, within 28 blocks of the camera, rain always reaches beyond). Visual test: `covered_rain`.

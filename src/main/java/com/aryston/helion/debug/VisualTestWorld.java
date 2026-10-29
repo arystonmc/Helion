@@ -251,7 +251,10 @@ final class VisualTestWorld {
         new Fill(new Volume(new BlockPos(66, 0, 31), new BlockPos(66, 2, 35)), "glass_pane"),
         new Fill(new Volume(new BlockPos(56, 0, 26), new BlockPos(68, 4, 26)), CANOPY_BLOCK),
         new Fill(new Volume(new BlockPos(56, 0, 27), new BlockPos(56, 4, 38)), CANOPY_BLOCK),
-        new Fill(new Volume(new BlockPos(62, 0, 33), new BlockPos(62, 0, 33)), "torch")
+        new Fill(new Volume(new BlockPos(62, 0, 33), new BlockPos(62, 0, 33)), "torch"),
+        new Fill(new Volume(new BlockPos(61, 3, 31), new BlockPos(65, 3, 33)), PLAIN_GLASS_BLOCK),
+        new Fill(new Volume(new BlockPos(63, -1, 31), new BlockPos(64, -1, 32)), "water"),
+        new Fill(new Volume(new BlockPos(61, -1, 34), new BlockPos(62, -1, 35)), "water")
     );
     static final BlockPos LEAK_CAMERA = new BlockPos(50, -19, 0);
     private static final Volume LEAK_ROOM = new Volume(new BlockPos(44, -20, -12), new BlockPos(56, -14, 2));

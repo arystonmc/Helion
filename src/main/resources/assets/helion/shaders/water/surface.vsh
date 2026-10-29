@@ -33,6 +33,7 @@ layout(location = 3) out float vertexAlpha;
 layout(location = 4) out float skyLight;
 layout(location = 5) out vec3 vertexTint;
 layout(location = 6) out float oceanSwell;
+layout(location = 7) out vec3 worldPosition;
 
 const int HELION_WAVE_WRAP = 1023;
 const float HELION_SECONDS_PER_DAY = 1200.0;
@@ -50,6 +51,7 @@ void main() {
     vec3 pos = local + (ChunkPosition - CameraBlockPos) + CameraOffset;
     texCoord0 = helion_vertex_uv();
     wavePosition = vec2(ChunkPosition.xz & HELION_WAVE_WRAP) + local.xz;
+    worldPosition = vec3(ChunkPosition) + local;
     bool water = helionInsideSprite(texCoord0, WaterStill) || helionInsideSprite(texCoord0, WaterFlow);
     float far = smoothstep(HELION_SWELL_NEAR, HELION_SWELL_FAR, length(pos.xz));
     bool simulated = water && WaterRain.z > HELION_SIMULATION_ON;

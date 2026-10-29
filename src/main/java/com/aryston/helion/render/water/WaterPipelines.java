@@ -120,6 +120,7 @@ public final class WaterPipelines {
                 .withUniform(REFLECTION_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .withUniform(GLASS_SURFACE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .withUniform(GLASS_DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform(RAIN_COVER_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .build())
             .withColorTargetState(new ColorTargetState(Optional.empty(), SCREEN_REFLECTION_FORMAT, ColorTargetState.WRITE_ALL))
             .withColorTargetState(POLISHED_TARGET, new ColorTargetState(Optional.empty(), SCREEN_REFLECTION_FORMAT, ColorTargetState.WRITE_ALL));
