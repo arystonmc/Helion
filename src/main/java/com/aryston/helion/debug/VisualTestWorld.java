@@ -143,6 +143,7 @@ final class VisualTestWorld {
     private static final Placement LAKE_TORCH = new Placement(-25, 1, -12, "torch");
     private static final Summon LAKE_SLIME = new Summon(-21, 0, -10, "slime");
     static final BlockPos GLASS_CAMERA = new BlockPos(-24, 0, -42);
+    static final BlockPos GLASS_ABOVE_CAMERA = new BlockPos(-22, 2, -43);
     private static final List<Fill> GLASS_WINDOW = List.of(
         new Fill(new Volume(new BlockPos(-28, 0, -44), new BlockPos(-25, 2, -44)), "black_stained_glass_pane"),
         new Fill(new Volume(new BlockPos(-23, 0, -44), new BlockPos(-20, 2, -44)), "glass_pane"),

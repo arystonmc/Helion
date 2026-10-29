@@ -129,6 +129,7 @@ const int HELION_STAIN_TAPS = 4;
 const float HELION_MIN_STAIN_ALPHA = 1.0e-3;
 const int HELION_STAIN_LAYERS = 4;
 const float HELION_STAIN_UNREACHED = 1.0e30;
+const float HELION_ENCLOSING_REACH = 2.0;
 const float HELION_MIN_STAIN_PEAK = 1.0e-3;
 
 uint helionState;
@@ -218,6 +219,30 @@ vec3 helionTraceStained(rayQueryEXT query) {
         }
     }
     return filtered;
+}
+
+vec3 helionEnclosingStain(vec3 origin, vec3 normal) {
+    rayQueryEXT query;
+    rayQueryInitializeEXT(query, Scene, gl_RayFlagsNoneEXT, HELION_SECTION_INSTANCES, origin, HELION_RAY_START, normal, HELION_ENCLOSING_REACH);
+    float nearest = HELION_STAIN_UNREACHED;
+    vec3 stain = vec3(1.0);
+    while (rayQueryProceedEXT(query)) {
+        if (rayQueryGetIntersectionTypeEXT(query, false) != gl_RayQueryCandidateIntersectionTriangleEXT) {
+            continue;
+        }
+        HelionSurfacePoint point = helionCandidatePoint(query);
+        float distance = rayQueryGetIntersectionTEXT(query, false);
+        if (uint(rayQueryGetIntersectionGeometryIndexEXT(query, false)) != HELION_RT_TRANSLUCENT_GEOMETRY) {
+            if (textureLod(AtlasSampler, point.uv, 0.0).a >= HELION_RT_CUTOUT_ALPHA) {
+                rayQueryConfirmIntersectionEXT(query);
+            }
+        } else if (distance < nearest && helionMaterialCell(textureLod(MaterialSampler, point.uv, 0.0).r) == HELION_CELL_GLOSSY) {
+            nearest = distance;
+            stain = dot(point.normal, normal) > 0.0 ? helionStainFilter(helionStainAverage(point.uv) * point.tint) : vec3(1.0);
+        }
+    }
+    bool blocked = rayQueryGetIntersectionTypeEXT(query, true) != gl_RayQueryCommittedIntersectionNoneEXT && rayQueryGetIntersectionTEXT(query, true) < nearest;
+    return blocked ? vec3(1.0) : stain;
 }
 
 vec3 helionConeDirection(vec3 axis, float radius) {
@@ -349,12 +374,13 @@ vec3 helionBlockLighting(vec3 position, vec3 origin, vec3 normal) {
     if (brightest == HELION_NO_LIGHT) {
         return vec3(0.0);
     }
+    vec3 enclosing = helionEnclosingStain(origin, normal);
     vec3 lit = brightestShare * helionLightVisible(helionBlockLight(brightest), origin, normal);
     if (chosen == HELION_NO_LIGHT) {
-        return lit;
+        return lit * enclosing;
     }
     vec3 rest = chosenShare * (restWeight / chosenWeight) * helionLightVisible(helionBlockLight(chosen), origin, normal);
-    return lit + rest * (HELION_REST_SHARE / (1.0 + helionLuminance(rest)));
+    return (lit + rest * (HELION_REST_SHARE / (1.0 + helionLuminance(rest)))) * enclosing;
 }
 
 vec3 helionBounceBlockLight(vec3 position, vec3 origin, vec3 normal) {

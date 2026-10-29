@@ -62,6 +62,8 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Depth of field focuses on the sky when you look at it, so the sun, the moon and the stars stay sharp
 
 ### Fixed
+- Rain drops on glass no longer turn into dark flickering specks at glancing angles and along the edge of a pane
+- The floor under stained glass next to a light is no longer lit in white
 - Light through stained glass no longer shows lines from the glass texture and the seams between blocks, and its color is stronger and even
 - Water and glass reflections no longer show stained glass and water as solid vanilla blocks
 - Glass underground and under roofs no longer gets rain drops

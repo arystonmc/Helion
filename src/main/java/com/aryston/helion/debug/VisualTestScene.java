@@ -52,6 +52,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final float GLASS_PITCH = 3.0F;
     private static final float STAINED_LIGHT_PITCH = 50.0F;
     private static final float GLASS_LAKE_PITCH = 35.0F;
+    private static final float GLASS_ABOVE_PITCH = 60.0F;
     private static final float EMITTER_PITCH = 25.0F;
     private static final float WATERFALL_PITCH = -5.0F;
     private static final float TORCH_ROOM_PITCH = 10.0F;
@@ -103,6 +104,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("water_ocean_shore", NOON, EAST, SHORE_PITCH, VisualTestWorld.OCEAN_SHORE_CAMERA),
         new VisualTestScene("glass_window", NOON, NORTH, GLASS_PITCH, VisualTestWorld.GLASS_CAMERA),
         new VisualTestScene("glass_window_rain", NOON, NORTH, GLASS_PITCH, VisualTestWorld.GLASS_CAMERA, RAIN),
+        new VisualTestScene("glass_window_rain_above", NOON, NORTH, GLASS_ABOVE_PITCH, VisualTestWorld.GLASS_ABOVE_CAMERA, RAIN),
         new VisualTestScene("glass_lake_rain", DUSK, NORTH, GLASS_LAKE_PITCH, VisualTestWorld.LAKE_CAMERA, RAIN),
         new VisualTestScene("emitter_shadow", SUNRISE, NORTH, EMITTER_PITCH, VisualTestWorld.EMITTER_CAMERA),
         new VisualTestScene("waterfall_close", NOON, NORTH, WATERFALL_PITCH, VisualTestWorld.WATERFALL_CAMERA),

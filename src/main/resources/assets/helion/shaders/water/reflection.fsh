@@ -163,11 +163,12 @@ const float HELION_GLASS_DROP_HIGHLIGHT_SIZE = 0.22;
 const float HELION_GLASS_DROP_RIM_FROM = 0.6;
 const float HELION_GLASS_DROP_CAUSTIC_FROM = 0.45;
 const float HELION_GLASS_DROP_MIN_EDGE = 0.05;
-const float HELION_GLASS_DROP_MIN_PIXELS = 1.2;
-const float HELION_GLASS_DROP_FULL_PIXELS = 3.0;
-const float HELION_GLASS_GLINT_PIXELS = 5.0;
+const float HELION_GLASS_DROP_MIN_PIXELS = 1.5;
+const float HELION_GLASS_DROP_FULL_PIXELS = 4.0;
+const float HELION_GLASS_GLINT_PIXELS = 6.0;
 const float HELION_GLASS_GLINT_LIFT = 1.3;
 const float HELION_GLASS_MIN_FOOTPRINT = 1.0e-5;
+const float HELION_GLASS_MIN_FACING = 1.0e-4;
 const float HELION_GLASS_DROP_NEAR = 1.0;
 const float HELION_GLASS_UPRIGHT = 0.5;
 const vec2 HELION_GLASS_SEED_A = vec2(17.3, 5.1);
@@ -512,16 +513,28 @@ vec3 helionGlassHue(vec3 color) {
     return peak > HELION_GLASS_MIN_CHANNEL ? color / peak : vec3(1.0);
 }
 
-HelionGlassDrops helionWindowDrops(ivec2 pixel, vec4 glassSurface, vec3 position) {
+vec3 helionOnGlassPlane(vec2 screen, float depth, vec3 position, vec3 normal) {
+    vec3 ray = helionPositionAt(screen, depth);
+    float facing = dot(ray, normal);
+    return ray * (dot(position, normal) / (abs(facing) > HELION_GLASS_MIN_FACING ? facing : HELION_GLASS_MIN_FACING));
+}
+
+float helionGlassFootprint(vec2 screen, float depth, vec3 position, vec3 normal) {
+    vec2 texel = 1.0 / vec2(textureSize(WaterDepthSampler, 0));
+    vec3 across = helionOnGlassPlane(screen + vec2(texel.x, 0.0), depth, position, normal) - position;
+    vec3 up = helionOnGlassPlane(screen + vec2(0.0, texel.y), depth, position, normal) - position;
+    return max(length(across), length(up));
+}
+
+HelionGlassDrops helionWindowDrops(ivec2 pixel, vec2 screen, float depth, vec4 glassSurface, vec3 position) {
     vec3 world = position + WaterCameraPosition.xyz;
     vec3 normal = helionDecodeOctahedral(glassSurface.xy);
     vec2 plane = helionGlassPlane(world, normal);
-    vec2 slope = fwidth(plane);
     float rain = WaterEnvironment.x * helionGlassWetted(world, normal, length(position));
     if (rain <= 0.0 || texelFetch(GlassTintSampler, pixel, 0).a >= HELION_GLASS_FRAME) {
         return HelionGlassDrops(vec2(0.0), 0.0, 0.0, 0.0);
     }
-    return helionGlassDrops(plane, max(slope.x, slope.y), abs(normal.y) <= HELION_GLASS_UPRIGHT, WaterSeconds, rain);
+    return helionGlassDrops(plane, helionGlassFootprint(screen, depth, position, normal), abs(normal.y) <= HELION_GLASS_UPRIGHT, WaterSeconds, rain);
 }
 
 vec2 helionDropBent(vec2 screen, HelionGlassDrops drops, vec3 position) {
@@ -684,7 +697,7 @@ void main() {
         return;
     }
     vec3 glassPosition = helionPositionAt(screen, glassDepth);
-    HelionGlassDrops drops = glassInFront ? helionWindowDrops(pixel, glassSurface, glassPosition) : HelionGlassDrops(vec2(0.0), 0.0, 0.0, 0.0);
+    HelionGlassDrops drops = glassInFront ? helionWindowDrops(pixel, screen, glassDepth, glassSurface, glassPosition) : HelionGlassDrops(vec2(0.0), 0.0, 0.0, 0.0);
     vec3 color;
     if (water) {
         vec2 waterScreen = helionDropBent(screen, drops, glassPosition);
