@@ -121,36 +121,62 @@ const float HELION_GLASS_DARK_SHADE = 0.55;
 const float HELION_GLASS_FRAME_SHARE = 0.3;
 const float HELION_GLASS_MIN_REFLECTANCE = 0.08;
 const float HELION_GLASS_RAIN_SKY = 0.85;
-const float HELION_GLASS_BEAD_CELLS = 12.0;
-const float HELION_GLASS_BEAD_DENSITY = 0.45;
-const float HELION_GLASS_MIST_CELLS = 30.0;
-const float HELION_GLASS_MIST_DENSITY = 0.4;
-const float HELION_GLASS_BEAD_OFFSET = 0.4;
-const float HELION_GLASS_BEAD_SMALL = 0.18;
-const float HELION_GLASS_BEAD_LARGE = 0.34;
+const float HELION_GLASS_LARGE_CELLS = 7.0;
+const float HELION_GLASS_LARGE_DENSITY = 0.4;
+const float HELION_GLASS_MEDIUM_CELLS = 16.0;
+const float HELION_GLASS_MEDIUM_DENSITY = 0.7;
+const float HELION_GLASS_SMALL_CELLS = 40.0;
+const float HELION_GLASS_SMALL_DENSITY = 0.85;
+const float HELION_GLASS_BEAD_SMALL = 0.14;
+const float HELION_GLASS_BEAD_LARGE = 0.32;
 const float HELION_GLASS_BEAD_SQUASH = 0.85;
-const float HELION_GLASS_RUN_CELLS = 5.0;
-const float HELION_GLASS_RUN_DENSITY = 0.45;
-const float HELION_GLASS_RUN_PERIOD = 3.0;
-const float HELION_GLASS_RUN_SLOW = 0.35;
-const float HELION_GLASS_RUN_FAST = 0.9;
-const float HELION_GLASS_RUN_WANDER = 0.35;
-const vec2 HELION_GLASS_RUN_HEAD = vec2(0.035, 0.045);
-const float HELION_GLASS_TRAIL_LENGTH = 1.0;
-const float HELION_GLASS_TRAIL_WIDTH = 0.012;
-const float HELION_GLASS_TRAIL_SHARE = 0.3;
-const float HELION_GLASS_DROP_BEND = 1.2;
-const float HELION_GLASS_DROP_SHADE = 0.35;
-const float HELION_GLASS_DROP_GLINT = 0.6;
-const vec2 HELION_GLASS_DROP_HIGHLIGHT = vec2(-0.3, 0.4);
-const float HELION_GLASS_DROP_HIGHLIGHT_SIZE = 0.3;
-const float HELION_GLASS_DROP_RIM_FROM = 0.55;
+const float HELION_GLASS_BEAD_WOBBLE = 0.12;
+const float HELION_GLASS_BEAD_LOBES = 3.0;
+const float HELION_GLASS_RUN_CELLS = 6.0;
+const float HELION_GLASS_RUN_DENSITY = 0.75;
+const float HELION_GLASS_RUN_PERIOD = 4.0;
+const float HELION_GLASS_RUN_SLOW = 0.25;
+const float HELION_GLASS_RUN_FAST = 0.7;
+const float HELION_GLASS_RUN_WANDER = 0.3;
+const float HELION_GLASS_RUN_WIGGLE = 0.025;
+const float HELION_GLASS_RUN_WIGGLE_RATE = 7.0;
+const float HELION_GLASS_RUN_MEANDER = 0.05;
+const float HELION_GLASS_RUN_MEANDER_RATE = 1.7;
+const vec2 HELION_GLASS_RUN_HEAD = vec2(0.03, 0.04);
+const float HELION_GLASS_TRAIL_LENGTH = 2.5;
+const float HELION_GLASS_TRAIL_WIDTH = 0.015;
+const float HELION_GLASS_TRAIL_THIN = 0.4;
+const float HELION_GLASS_TRAIL_SWELL = 0.9;
+const float HELION_GLASS_TRAIL_SWELL_RATE = 5.0;
+const float HELION_GLASS_TRAIL_BEND = 2.0;
+const float HELION_GLASS_TRAIL_CORE = 0.35;
+const float HELION_GLASS_TRAIL_RIM_FROM = 0.4;
+const float HELION_GLASS_TRAIL_GLINT_SIZE = 0.25;
+const float HELION_GLASS_DROP_BEND = 3.5;
+const float HELION_GLASS_DROP_SHADE = 0.6;
+const float HELION_GLASS_DROP_GLINT = 0.5;
+const float HELION_GLASS_DROP_CAUSTIC = 0.6;
+const vec2 HELION_GLASS_DROP_HIGHLIGHT = vec2(-0.3, 0.45);
+const float HELION_GLASS_DROP_HIGHLIGHT_SIZE = 0.22;
+const float HELION_GLASS_DROP_RIM_FROM = 0.6;
+const float HELION_GLASS_DROP_CAUSTIC_FROM = 0.45;
 const float HELION_GLASS_DROP_MIN_EDGE = 0.05;
+const float HELION_GLASS_DROP_MIN_PIXELS = 1.2;
+const float HELION_GLASS_DROP_FULL_PIXELS = 3.0;
+const float HELION_GLASS_MIN_FOOTPRINT = 1.0e-5;
 const float HELION_GLASS_DROP_NEAR = 1.0;
+const float HELION_GLASS_MIST = 0.5;
+const float HELION_GLASS_MIST_BLUR = 0.035;
+const float HELION_GLASS_MIST_MAX_BLUR = 0.03;
+const int HELION_GLASS_MIST_TAPS = 10;
+const float HELION_GLASS_MIST_GRAY = 0.15;
+const float HELION_GLASS_MIST_LIFT = 0.12;
 const float HELION_GLASS_UPRIGHT = 0.5;
 const vec2 HELION_GLASS_SEED_A = vec2(17.3, 5.1);
 const vec2 HELION_GLASS_SEED_B = vec2(41.7, 23.9);
 const vec2 HELION_GLASS_SEED_C = vec2(7.1, 61.3);
+const vec2 HELION_GLASS_SEED_D = vec2(29.3, 13.7);
+const float HELION_GLASS_TURN = 6.2831853;
 const float HELION_GLASS_SEED_COLUMN = 3.1;
 const float HELION_GLASS_SEED_SPEED = 9.7;
 const float HELION_GLASS_SEED_SHIFT = 5.3;
@@ -380,6 +406,8 @@ struct HelionGlassDrops {
     vec2 bend;
     float cover;
     float glint;
+    float caustic;
+    float clear;
 };
 
 vec2 helionGlassPlane(vec3 world, vec3 normal) {
@@ -390,16 +418,22 @@ vec2 helionGlassPlane(vec3 world, vec3 normal) {
     return vec2(dot(world.xz, across), world.y);
 }
 
-void helionAddDrop(inout HelionGlassDrops drops, vec2 local, float size, float footprint) {
-    float distance = length(local);
-    float edge = max(footprint / size, HELION_GLASS_DROP_MIN_EDGE);
-    float cover = 1.0 - smoothstep(1.0 - edge, 1.0, distance);
+void helionAddDrop(inout HelionGlassDrops drops, vec2 local, float size, float footprint, float shape) {
+    float pixels = size / max(footprint, HELION_GLASS_MIN_FOOTPRINT);
+    float visible = smoothstep(HELION_GLASS_DROP_MIN_PIXELS, HELION_GLASS_DROP_FULL_PIXELS, pixels);
+    if (visible <= 0.0) {
+        return;
+    }
+    float distance = length(local) * (1.0 + HELION_GLASS_BEAD_WOBBLE * sin(atan(local.y, local.x) * HELION_GLASS_BEAD_LOBES + shape * HELION_GLASS_TURN));
+    float edge = max(1.0 / pixels, HELION_GLASS_DROP_MIN_EDGE);
+    float cover = (1.0 - smoothstep(1.0 - edge, 1.0, distance)) * visible;
     if (cover <= 0.0) {
         return;
     }
-    float dome = sqrt(max(1.0 - distance * distance, 0.0));
-    drops.bend -= local * dome * size * cover;
+    drops.bend -= local * size * cover;
+    drops.clear = max(drops.clear, cover);
     drops.cover = max(drops.cover, cover * smoothstep(HELION_GLASS_DROP_RIM_FROM, 1.0, distance));
+    drops.caustic = max(drops.caustic, cover * smoothstep(HELION_GLASS_DROP_CAUSTIC_FROM, 1.0, distance) * max(-local.y, 0.0));
     float highlight = 1.0 - smoothstep(0.0, HELION_GLASS_DROP_HIGHLIGHT_SIZE + edge, length(local - HELION_GLASS_DROP_HIGHLIGHT));
     drops.glint = max(drops.glint, highlight * cover);
 }
@@ -410,38 +444,71 @@ void helionAddBeads(inout HelionGlassDrops drops, vec2 plane, float cells, float
     if (helionHash(cell) >= density) {
         return;
     }
-    vec2 offset = (vec2(helionHash(cell + HELION_GLASS_SEED_A), helionHash(cell + HELION_GLASS_SEED_B)) - 0.5) * HELION_GLASS_BEAD_OFFSET;
     float radius = mix(HELION_GLASS_BEAD_SMALL, HELION_GLASS_BEAD_LARGE, helionHash(cell + HELION_GLASS_SEED_C));
+    vec2 offset = (vec2(helionHash(cell + HELION_GLASS_SEED_A), helionHash(cell + HELION_GLASS_SEED_B)) - 0.5) * (1.0 - 2.0 * radius * (1.0 + HELION_GLASS_BEAD_WOBBLE));
     vec2 local = (fract(beads) - 0.5 - offset) / radius;
     local.y /= HELION_GLASS_BEAD_SQUASH;
-    helionAddDrop(drops, local, radius / cells, footprint);
+    helionAddDrop(drops, local, radius / cells, footprint, helionHash(cell + HELION_GLASS_SEED_D));
+}
+
+void helionAddRun(inout HelionGlassDrops drops, vec2 plane, float footprint, float seconds, float amount) {
+    float column = floor(plane.x * HELION_GLASS_RUN_CELLS);
+    float seed = helionHash(vec2(column, HELION_GLASS_SEED_COLUMN));
+    if (seed >= amount * HELION_GLASS_RUN_DENSITY) {
+        return;
+    }
+    float speed = mix(HELION_GLASS_RUN_SLOW, HELION_GLASS_RUN_FAST, helionHash(vec2(column, HELION_GLASS_SEED_SPEED)));
+    float path = sin(plane.y * HELION_GLASS_RUN_WIGGLE_RATE + seed * HELION_GLASS_TURN) * HELION_GLASS_RUN_WIGGLE
+        + helionNoiseValue(vec2(column, plane.y * HELION_GLASS_RUN_MEANDER_RATE)) * HELION_GLASS_RUN_MEANDER;
+    float across = (fract(plane.x * HELION_GLASS_RUN_CELLS) - 0.5) / HELION_GLASS_RUN_CELLS
+        - (helionHash(vec2(column, HELION_GLASS_SEED_SHIFT)) - 0.5) * HELION_GLASS_RUN_WANDER / HELION_GLASS_RUN_CELLS - path;
+    float along = mod(plane.y + seconds * speed + seed * HELION_GLASS_RUN_PERIOD, HELION_GLASS_RUN_PERIOD) - HELION_GLASS_RUN_PERIOD * 0.5;
+    vec2 head = vec2(across, along) / HELION_GLASS_RUN_HEAD;
+    if (dot(head, head) < 1.0) {
+        helionAddDrop(drops, head, HELION_GLASS_RUN_HEAD.x, footprint, seed);
+        return;
+    }
+    if (along <= 0.0 || along >= HELION_GLASS_TRAIL_LENGTH) {
+        return;
+    }
+    float fade = 1.0 - along / HELION_GLASS_TRAIL_LENGTH;
+    float swell = 1.0 + HELION_GLASS_TRAIL_SWELL * helionNoiseValue(vec2(plane.y * HELION_GLASS_TRAIL_SWELL_RATE, column));
+    float width = HELION_GLASS_TRAIL_WIDTH * mix(HELION_GLASS_TRAIL_THIN, 1.0, fade) * max(swell, HELION_GLASS_TRAIL_THIN);
+    float visible = smoothstep(HELION_GLASS_DROP_MIN_PIXELS, HELION_GLASS_DROP_FULL_PIXELS, width / max(footprint, HELION_GLASS_MIN_FOOTPRINT));
+    float inside = across / width;
+    float trail = (1.0 - smoothstep(1.0 - max(footprint / width, HELION_GLASS_DROP_MIN_EDGE), 1.0, abs(inside))) * visible;
+    if (trail <= 0.0) {
+        return;
+    }
+    drops.bend.x -= inside * width * HELION_GLASS_TRAIL_BEND * trail;
+    drops.clear = max(drops.clear, max(trail, fade * visible * (1.0 - smoothstep(1.0, 3.0, abs(inside)))));
+    drops.cover = max(drops.cover, trail * mix(HELION_GLASS_TRAIL_CORE, 1.0, smoothstep(HELION_GLASS_TRAIL_RIM_FROM, 1.0, abs(inside))));
+    drops.glint = max(drops.glint, trail * (1.0 - smoothstep(0.0, HELION_GLASS_TRAIL_GLINT_SIZE, abs(inside - HELION_GLASS_DROP_HIGHLIGHT.x))));
 }
 
 HelionGlassDrops helionGlassDrops(vec2 plane, float footprint, bool upright, float seconds, float amount) {
-    HelionGlassDrops drops = HelionGlassDrops(vec2(0.0), 0.0, 0.0);
-    helionAddBeads(drops, plane, HELION_GLASS_BEAD_CELLS, amount * HELION_GLASS_BEAD_DENSITY, footprint);
-    helionAddBeads(drops, plane + HELION_GLASS_SEED_B, HELION_GLASS_MIST_CELLS, amount * HELION_GLASS_MIST_DENSITY, footprint);
-    if (!upright) {
-        return drops;
-    }
-    float column = floor(plane.x * HELION_GLASS_RUN_CELLS);
-    float seed = helionHash(vec2(column, HELION_GLASS_SEED_COLUMN));
-    if (seed < amount * HELION_GLASS_RUN_DENSITY) {
-        float speed = mix(HELION_GLASS_RUN_SLOW, HELION_GLASS_RUN_FAST, helionHash(vec2(column, HELION_GLASS_SEED_SPEED)));
-        float across = (fract(plane.x * HELION_GLASS_RUN_CELLS) - 0.5) / HELION_GLASS_RUN_CELLS
-            - (helionHash(vec2(column, HELION_GLASS_SEED_SHIFT)) - 0.5) * HELION_GLASS_RUN_WANDER / HELION_GLASS_RUN_CELLS;
-        float along = mod(plane.y + seconds * speed + seed * HELION_GLASS_RUN_PERIOD, HELION_GLASS_RUN_PERIOD) - HELION_GLASS_RUN_PERIOD * 0.5;
-        vec2 head = vec2(across, along) / HELION_GLASS_RUN_HEAD;
-        if (dot(head, head) < 1.0) {
-            helionAddDrop(drops, head, HELION_GLASS_RUN_HEAD.x, footprint);
-        } else if (along > 0.0 && along < HELION_GLASS_TRAIL_LENGTH) {
-            float width = max(HELION_GLASS_TRAIL_WIDTH, footprint);
-            float trail = (1.0 - smoothstep(0.0, width, abs(across))) * (1.0 - along / HELION_GLASS_TRAIL_LENGTH) * HELION_GLASS_TRAIL_SHARE;
-            drops.bend.x -= across / width * HELION_GLASS_TRAIL_WIDTH * trail;
-            drops.cover = max(drops.cover, trail * HELION_GLASS_TRAIL_SHARE);
-        }
+    HelionGlassDrops drops = HelionGlassDrops(vec2(0.0), 0.0, 0.0, 0.0, 0.0);
+    helionAddBeads(drops, plane, HELION_GLASS_LARGE_CELLS, amount * HELION_GLASS_LARGE_DENSITY, footprint);
+    helionAddBeads(drops, plane + HELION_GLASS_SEED_A, HELION_GLASS_MEDIUM_CELLS, amount * HELION_GLASS_MEDIUM_DENSITY, footprint);
+    helionAddBeads(drops, plane + HELION_GLASS_SEED_B, HELION_GLASS_SMALL_CELLS, amount * HELION_GLASS_SMALL_DENSITY, footprint);
+    if (upright) {
+        helionAddRun(drops, plane, footprint, seconds, amount);
     }
     return drops;
+}
+
+vec3 helionGlassMist(vec2 screen, float distance) {
+    vec2 size = vec2(textureSize(RefractionSampler, 0));
+    vec2 radius = min(HELION_GLASS_MIST_BLUR / max(distance, HELION_GLASS_DROP_NEAR), HELION_GLASS_MIST_MAX_BLUR) * vec2(size.y / size.x, 1.0);
+    vec3 blurred = vec3(0.0);
+    for (int tap = 0; tap < HELION_GLASS_MIST_TAPS; tap++) {
+        float angle = float(tap) * HELION_BLUR_GOLDEN;
+        float reach = sqrt((float(tap) + 0.5) / float(HELION_GLASS_MIST_TAPS));
+        blurred += textureLod(RefractionSampler, clamp(screen + vec2(cos(angle), sin(angle)) * reach * radius, vec2(0.0), vec2(1.0)), 0.0).rgb;
+    }
+    blurred /= float(HELION_GLASS_MIST_TAPS);
+    vec3 gray = mix(blurred, vec3(helionLuminance(blurred)), HELION_GLASS_MIST_GRAY);
+    return min(gray * (1.0 + HELION_GLASS_MIST_LIFT), vec3(1.0));
 }
 
 vec3 helionGlassHue(vec3 color) {
@@ -459,7 +526,7 @@ vec3 helionRealisticGlass(ivec2 pixel, vec2 screen, vec4 glassSurface, vec3 posi
     float rain = glassSurface.w > HELION_GLASS_RAIN_SKY ? WaterEnvironment.x : 0.0;
     vec2 plane = helionGlassPlane(world, normal);
     vec2 slope = fwidth(plane);
-    HelionGlassDrops drops = HelionGlassDrops(vec2(0.0), 0.0, 0.0);
+    HelionGlassDrops drops = HelionGlassDrops(vec2(0.0), 0.0, 0.0, 0.0, 0.0);
     if (rain > 0.0 && !frame) {
         drops = helionGlassDrops(plane, max(slope.x, slope.y), abs(normal.y) <= HELION_GLASS_UPRIGHT, WaterSeconds, rain);
     }
@@ -470,6 +537,10 @@ vec3 helionRealisticGlass(ivec2 pixel, vec2 screen, vec4 glassSurface, vec3 posi
         ) * HELION_GLASS_WAVE;
         vec2 bent = clamp(screen + wave + drops.bend * HELION_GLASS_DROP_BEND / max(length(position), HELION_GLASS_DROP_NEAR), vec2(0.0), vec2(1.0));
         base = textureLod(RefractionSampler, bent, 0.0).rgb;
+        float mist = rain * HELION_GLASS_MIST * (1.0 - drops.clear);
+        if (mist > 0.0) {
+            base = mix(base, helionGlassMist(bent, length(position)), mist);
+        }
         if (skyBehind) {
             base = helionCloudsBehindGlass(base, bent);
         }
@@ -491,7 +562,7 @@ vec3 helionRealisticGlass(ivec2 pixel, vec2 screen, vec4 glassSurface, vec3 posi
     float fresnel = max(helionGlassFresnel(view, normal), HELION_GLASS_MIN_REFLECTANCE);
     vec3 surface = mix(transmitted, reflected, fresnel);
     surface *= 1.0 - drops.cover * HELION_GLASS_DROP_SHADE;
-    surface += reflected * drops.glint * HELION_GLASS_DROP_GLINT;
+    surface += transmitted * drops.caustic * HELION_GLASS_DROP_CAUSTIC + reflected * drops.glint * HELION_GLASS_DROP_GLINT;
     return helionLinearToSrgb(surface);
 }
 
