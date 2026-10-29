@@ -123,7 +123,9 @@ const float HELION_GROUND_SHARE = 0.3;
 const float HELION_HIT_OFFSET = 0.01;
 const float HELION_PLANT_START = 0.3;
 const float HELION_INDIRECT_LIMIT = 4.0;
-const float HELION_STAIN_STRENGTH = 0.85;
+const float HELION_STAIN_STRENGTH = 1.6;
+const int HELION_STAIN_LAYERS = 4;
+const float HELION_STAIN_UNREACHED = 1.0e30;
 const float HELION_MIN_STAIN_PEAK = 1.0e-3;
 
 uint helionState;
@@ -174,6 +176,33 @@ vec3 helionVisible(vec3 origin, vec3 direction, float reach) {
     return rayQueryGetIntersectionTypeEXT(shadow, true) == gl_RayQueryCommittedIntersectionNoneEXT ? filtered : vec3(0.0);
 }
 
+vec3 helionTraceStained(rayQueryEXT query) {
+    vec4 stains[HELION_STAIN_LAYERS];
+    int count = 0;
+    while (rayQueryProceedEXT(query)) {
+        if (rayQueryGetIntersectionTypeEXT(query, false) != gl_RayQueryCandidateIntersectionTriangleEXT) {
+            continue;
+        }
+        HelionSurfacePoint point = helionCandidatePoint(query);
+        vec4 texel = textureLod(AtlasSampler, point.uv, 0.0);
+        if (uint(rayQueryGetIntersectionGeometryIndexEXT(query, false)) != HELION_RT_TRANSLUCENT_GEOMETRY) {
+            if (texel.a >= HELION_RT_CUTOUT_ALPHA) {
+                rayQueryConfirmIntersectionEXT(query);
+            }
+        } else if (count < HELION_STAIN_LAYERS && helionMaterialCell(textureLod(MaterialSampler, point.uv, 0.0).r) == HELION_CELL_GLOSSY) {
+            stains[count] = vec4(helionStainFilter(texel * point.tint), rayQueryGetIntersectionTEXT(query, false));
+            count++;
+        }
+    }
+    float reach = rayQueryGetIntersectionTypeEXT(query, true) == gl_RayQueryCommittedIntersectionNoneEXT ? HELION_STAIN_UNREACHED : rayQueryGetIntersectionTEXT(query, true);
+    vec3 filtered = vec3(1.0);
+    for (int layer = 0; layer < count; layer++) {
+        if (stains[layer].w < reach) {
+            filtered *= stains[layer].rgb;
+        }
+    }
+    return filtered;
+}
 
 vec3 helionConeDirection(vec3 axis, float radius) {
     float cosTheta = 1.0 - helionRandom() * (1.0 - cos(radius));
@@ -364,7 +393,7 @@ vec3 helionIndirect(vec3 origin, vec3 normal, float start, float gate, HelionSky
         vec3 direction = helionCosineDirection(normal);
         rayQueryEXT query;
         rayQueryInitializeEXT(query, Scene, gl_RayFlagsNoneEXT, HELION_SECTION_INSTANCES, origin, start, direction, HELION_BOUNCE_REACH);
-        helionTraceCutout(query);
+        throughput *= helionTraceStained(query);
         if (rayQueryGetIntersectionTypeEXT(query, true) == gl_RayQueryCommittedIntersectionNoneEXT) {
             radiance += throughput * sky.dome * (gate * (direction.y > 0.0 ? 1.0 : HELION_GROUND_SHARE));
             break;

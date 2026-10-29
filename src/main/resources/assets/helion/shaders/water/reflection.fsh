@@ -155,7 +155,7 @@ const float HELION_GLASS_TRAIL_CORE = 0.35;
 const float HELION_GLASS_TRAIL_RIM_FROM = 0.4;
 const float HELION_GLASS_TRAIL_GLINT_SIZE = 0.25;
 const float HELION_GLASS_DROP_BEND = 3.5;
-const float HELION_GLASS_DROP_SHADE = 0.7;
+const float HELION_GLASS_DROP_SHADE = 0.35;
 const float HELION_GLASS_DROP_GLINT = 0.7;
 const float HELION_GLASS_DROP_CAUSTIC = 0.6;
 const vec2 HELION_GLASS_DROP_HIGHLIGHT = vec2(-0.3, 0.45);
@@ -165,7 +165,8 @@ const float HELION_GLASS_DROP_CAUSTIC_FROM = 0.45;
 const float HELION_GLASS_DROP_MIN_EDGE = 0.05;
 const float HELION_GLASS_DROP_MIN_PIXELS = 1.2;
 const float HELION_GLASS_DROP_FULL_PIXELS = 3.0;
-const float HELION_GLASS_GLINT_PIXELS = 8.0;
+const float HELION_GLASS_GLINT_PIXELS = 5.0;
+const float HELION_GLASS_GLINT_LIFT = 1.3;
 const float HELION_GLASS_MIN_FOOTPRINT = 1.0e-5;
 const float HELION_GLASS_DROP_NEAR = 1.0;
 const float HELION_GLASS_MIST = 0.6;
@@ -565,7 +566,7 @@ vec3 helionRealisticGlass(ivec2 pixel, vec2 screen, vec4 glassSurface, vec3 posi
     float fresnel = max(helionGlassFresnel(view, normal), HELION_GLASS_MIN_REFLECTANCE);
     vec3 surface = mix(transmitted, reflected, fresnel);
     surface *= 1.0 - drops.cover * HELION_GLASS_DROP_SHADE;
-    surface += transmitted * drops.caustic * HELION_GLASS_DROP_CAUSTIC + reflected * drops.glint * HELION_GLASS_DROP_GLINT;
+    surface += transmitted * drops.caustic * HELION_GLASS_DROP_CAUSTIC + max(reflected, vec3(helionLuminance(transmitted) * HELION_GLASS_GLINT_LIFT)) * drops.glint * HELION_GLASS_DROP_GLINT;
     return helionLinearToSrgb(surface);
 }
 

@@ -10,7 +10,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Path traced light: nights are dark, lit by the moon in its real strength instead of the vanilla night brightness, so torches and lanterns matter; torches and other light blocks shine stronger
 - Plain glass and glass panes are clear real glass with a faint green tint, without the vanilla frame and streaks
 - Rain on glass looks like a real wet window: the pane mists over, drops of three sizes act as lenses with an upside down view, and wavy streaks run down and clear the mist
-- Path traced light: every light source shines in its own strong color, stained glass colors the light passing through it, and light fades smoothly and round instead of a hard bright patch
+- Path traced light: every light source shines in its own strong color, stained glass colors the light passing through it, also the sky light that lights a room through a stained window, and light fades smoothly and round instead of a hard bright patch
 - Path traced light: mobs, dropped items and other entities no longer have the vanilla round black shadow under them; the ray traced shadows replace it
 - Path traced light: polished blocks get glossy ray traced reflections, and iron, gold, netherite and copper blocks reflect like real metal
 - Experimental path traced light (Ray Tracing section): Helion's new ray traced light, with ray traced sun and moon shadows with soft edges, colored block light with ray traced shadows from every light block, and light that bounces up to three times between surfaces and the sky, cleaned up by a denoiser that keeps edges and textures sharp
