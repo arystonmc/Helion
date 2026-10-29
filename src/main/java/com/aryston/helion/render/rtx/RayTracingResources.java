@@ -129,6 +129,7 @@ public final class RayTracingResources {
     private @Nullable RtxComputePipeline cacheUpdate;
     private @Nullable RtxLightCache lightCache;
     private int pathTraceFrame;
+    private volatile boolean pathTraced;
     private @Nullable RtxComputePipeline accumulate;
     private @Nullable ByteBuffer accumulateConstants;
     private @Nullable RtxComputePipeline filter;
@@ -235,6 +236,14 @@ public final class RayTracingResources {
             pathTraceConstants = MemoryUtil.memAlloc(PATH_TRACE_CONSTANT_BYTES);
         }
         return pathTraceConstants;
+    }
+
+    public boolean pathTraced() {
+        return pathTraced;
+    }
+
+    void recordPathTraced(boolean traced) {
+        pathTraced = traced;
     }
 
     int nextPathTraceFrame() {

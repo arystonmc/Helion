@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Path traced light: mobs, dropped items and other entities no longer have the vanilla round black shadow under them; the ray traced shadows replace it
 - Path traced light: polished blocks get glossy ray traced reflections, and iron, gold, netherite and copper blocks reflect like real metal
 - Experimental path traced light (Ray Tracing section): Helion's new ray traced light, with ray traced sun and moon shadows with soft edges, colored block light with ray traced shadows from every light block, and light that bounces up to three times between surfaces and the sky, cleaned up by a denoiser that keeps edges and textures sharp
 - Glass is smooth with an even tint and carries rain drops that bead up and run down

@@ -68,13 +68,16 @@ public final class RtxPathTracingStage implements RenderStage {
     public boolean isActive(FrameContext frame) {
         if (!frame.settings().rayTracing().tracesLight() || frame.geometry().targets().isEmpty()
             || frame.scene().colorFormat() != GeometryBufferPipelines.OUTPUT_FORMAT || !resources.available() || !resources.pathTracingAvailable()) {
+            resources.recordPathTraced(false);
             return false;
         }
         anchor = resources.scene().anchor();
         skyLight = frame.atmosphere().skyLight().orElse(null);
         Optional<CompiledRenderPipeline> compiled = HelionPipelines.compiled(PathTracingPipelines.RADIANCE);
         radiance = compiled.orElse(null);
-        return compiled.isPresent() && anchor != null && skyLight != null;
+        boolean traced = compiled.isPresent() && anchor != null && skyLight != null;
+        resources.recordPathTraced(traced);
+        return traced;
     }
 
     @Override

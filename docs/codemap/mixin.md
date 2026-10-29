@@ -28,6 +28,11 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Role: Cancels `CloudRenderer.render` and `renderOit` while `HelionClouds` says the volumetric clouds replace the vanilla clouds this frame.
 - Notes: the vanilla clouds are drawn inside the vanilla transparency code, in the order independent path too; no event or option skips them for one frame.
 
+#### EntityRendererMixin
+- Path: `src/main/java/com/aryston/helion/mixin/EntityRendererMixin.java`
+- Role: At the tail of `EntityRenderer.extractShadow` clears the shadow pieces of the render state while `HelionRenderCore.tracesLight()` says the path traced light ran, so mobs, dropped items and every other entity lose the vanilla round blob shadow and keep only the traced shadows.
+- Notes: the blob shadow is extracted per entity in a private method and drawn only when it has pieces; the `entityShadows` option would also change the player's settings.
+
 #### SkyRendererMixin
 - Path: `src/main/java/com/aryston/helion/mixin/SkyRendererMixin.java`
 - Role: Cancels `SkyRenderer.renderSkyDisc`, `renderSunriseAndSunset`, `renderSun`, `renderMoon` and `renderStars` while `HelionSky` draws only the celestial bodies, so only the vanilla dark disc is drawn over the physical sky (which draws its own sun, moon, stars and twilight glow), and dims the color of `renderMoon` through `HelionSky.moonColor` whenever Helion draws the sky.

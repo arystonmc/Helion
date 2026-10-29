@@ -222,6 +222,10 @@ public final class HelionRenderCore {
         return lightShafts;
     }
 
+    public boolean tracesLight() {
+        return !shutDown && passiveReason == null && enabled && rayTracing.pathTraced();
+    }
+
     public RayTracingResources rayTracing() {
         return rayTracing;
     }
