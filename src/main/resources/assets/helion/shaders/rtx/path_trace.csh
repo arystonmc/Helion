@@ -99,10 +99,11 @@ const float HELION_SCENE_REACH = float(HELION_GRID_RADIUS) * HELION_SECTION_SIZE
 const uint HELION_GRID_CELLS = uint(HELION_GRID_SIZE * HELION_GRID_SIZE * HELION_GRID_SIZE);
 const uint HELION_RECORD_ENTRIES = 2u;
 const uint HELION_NO_LIGHT = 0xFFFFFFFFu;
-const float HELION_LIGHT_COLOR_RANGE = 2.0;
+const float HELION_LIGHT_COLOR_RANGE = 4.0;
 const uint HELION_FLICKER_BIT = 1u << 24u;
-const float HELION_BLOCK_STRENGTH = 3.0;
+const float HELION_BLOCK_STRENGTH = 3.5;
 const float HELION_BLOCK_NEAR = 1.0;
+const float HELION_BLOCK_WRAP = 0.35;
 const float HELION_OWN_FACE = 0.05;
 const float HELION_ENTRY_MARGIN = 0.02;
 const float HELION_MIN_DIRECTION = 1.0e-6;
@@ -122,6 +123,8 @@ const float HELION_GROUND_SHARE = 0.3;
 const float HELION_HIT_OFFSET = 0.01;
 const float HELION_PLANT_START = 0.3;
 const float HELION_INDIRECT_LIMIT = 4.0;
+const float HELION_STAIN_STRENGTH = 0.85;
+const float HELION_MIN_STAIN_PEAK = 1.0e-3;
 
 uint helionState;
 
@@ -143,12 +146,34 @@ vec3 helionVanillaLight(vec2 levels) {
     return mix(bottom, top, blend.y);
 }
 
-float helionVisible(vec3 origin, vec3 direction, float reach) {
+vec3 helionStainFilter(vec4 texel) {
+    vec3 color = helionSrgbToLinear(texel.rgb);
+    float peak = max(color.r, max(color.g, color.b));
+    vec3 hue = peak > HELION_MIN_STAIN_PEAK ? color / peak : vec3(1.0);
+    return mix(vec3(1.0), hue, clamp(texel.a * HELION_STAIN_STRENGTH, 0.0, 1.0));
+}
+
+vec3 helionVisible(vec3 origin, vec3 direction, float reach) {
     rayQueryEXT shadow;
     rayQueryInitializeEXT(shadow, Scene, gl_RayFlagsTerminateOnFirstHitEXT, HELION_SHADOW_INSTANCES, origin, HELION_RAY_START, direction, reach);
-    helionTraceCutout(shadow);
-    return rayQueryGetIntersectionTypeEXT(shadow, true) == gl_RayQueryCommittedIntersectionNoneEXT ? 1.0 : 0.0;
+    vec3 filtered = vec3(1.0);
+    while (rayQueryProceedEXT(shadow)) {
+        if (rayQueryGetIntersectionTypeEXT(shadow, false) != gl_RayQueryCandidateIntersectionTriangleEXT) {
+            continue;
+        }
+        HelionSurfacePoint point = helionCandidatePoint(shadow);
+        vec4 texel = textureLod(AtlasSampler, point.uv, 0.0);
+        if (uint(rayQueryGetIntersectionGeometryIndexEXT(shadow, false)) != HELION_RT_TRANSLUCENT_GEOMETRY) {
+            if (texel.a >= HELION_RT_CUTOUT_ALPHA) {
+                rayQueryConfirmIntersectionEXT(shadow);
+            }
+        } else if (helionMaterialCell(textureLod(MaterialSampler, point.uv, 0.0).r) == HELION_CELL_GLOSSY) {
+            filtered *= helionStainFilter(texel * point.tint);
+        }
+    }
+    return rayQueryGetIntersectionTypeEXT(shadow, true) == gl_RayQueryCommittedIntersectionNoneEXT ? filtered : vec3(0.0);
 }
+
 
 vec3 helionConeDirection(vec3 axis, float radius) {
     float cosTheta = 1.0 - helionRandom() * (1.0 - cos(radius));
@@ -160,13 +185,13 @@ vec3 helionConeDirection(vec3 axis, float radius) {
     return normalize(axis * cosTheta + (tangent * cos(phi) + bitangent * sin(phi)) * sinTheta);
 }
 
-float helionCelestial(vec3 origin, vec3 normal, vec4 light, float radius) {
+vec3 helionCelestial(vec3 origin, vec3 normal, vec4 light, float radius) {
     if (light.w < HELION_SET) {
-        return 0.0;
+        return vec3(0.0);
     }
     vec3 direction = helionConeDirection(light.xyz, radius);
     float facing = dot(normal, direction);
-    return facing > 0.0 ? facing * helionVisible(origin, direction, HELION_CELESTIAL_REACH) : 0.0;
+    return facing > 0.0 ? facing * helionVisible(origin, direction, HELION_CELESTIAL_REACH) : vec3(0.0);
 }
 
 HelionBlockLight helionBlockLight(uint record) {
@@ -194,14 +219,15 @@ float helionFlicker(HelionBlockLight light) {
 }
 
 vec3 helionLightShare(HelionBlockLight light, vec3 position, vec3 normal) {
-    float gap = length(clamp(position, light.low, light.high) - position);
+    vec3 extent = (light.high - light.low) * 0.5;
+    float gap = max(length(position - (light.low + light.high) * 0.5) - min(extent.x, min(extent.y, extent.z)), 0.0);
     if (gap >= light.range) {
         return vec3(0.0);
     }
-    float facing = gap < HELION_OWN_FACE ? 1.0 : clamp(dot(normal, normalize(helionLightAim(light, normal) - position)), 0.0, 1.0);
+    float facing = gap < HELION_OWN_FACE ? 1.0 : clamp((dot(normal, normalize(helionLightAim(light, normal) - position)) + HELION_BLOCK_WRAP) / (1.0 + HELION_BLOCK_WRAP), 0.0, 1.0);
     float reach = gap / light.range;
     float window = 1.0 - reach * reach * reach * reach;
-    float falloff = window * window / max(gap * gap, HELION_BLOCK_NEAR * HELION_BLOCK_NEAR);
+    float falloff = window * window / (gap * gap + HELION_BLOCK_NEAR * HELION_BLOCK_NEAR);
     return light.color * (light.strength * HELION_BLOCK_STRENGTH * falloff * facing * helionFlicker(light));
 }
 
@@ -209,11 +235,11 @@ vec3 helionSafeDirection(vec3 direction) {
     return mix(direction, sign(direction + HELION_MIN_DIRECTION) * HELION_MIN_DIRECTION, lessThan(abs(direction), vec3(HELION_MIN_DIRECTION)));
 }
 
-float helionLightVisible(HelionBlockLight light, vec3 origin, vec3 normal) {
+vec3 helionLightVisible(HelionBlockLight light, vec3 origin, vec3 normal) {
     vec3 toward = helionLightAim(light, normal) - origin;
     float span = length(toward);
     if (span < HELION_OWN_FACE) {
-        return 1.0;
+        return vec3(1.0);
     }
     vec3 direction = toward / span;
     vec3 inverted = 1.0 / helionSafeDirection(direction);
@@ -221,7 +247,7 @@ float helionLightVisible(HelionBlockLight light, vec3 origin, vec3 normal) {
     vec3 far = (light.high - origin) * inverted;
     vec3 entries = min(near, far);
     float entry = clamp(max(max(entries.x, entries.y), entries.z), 0.0, span) - HELION_ENTRY_MARGIN;
-    return entry <= HELION_RAY_START ? 1.0 : helionVisible(origin, direction, entry);
+    return entry <= HELION_RAY_START ? vec3(1.0) : helionVisible(origin, direction, entry);
 }
 
 uvec4 helionLightCell(vec3 position) {

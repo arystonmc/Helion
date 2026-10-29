@@ -37,9 +37,9 @@ public final class LightColors implements ResourceManagerReloadListener {
     private static final int GREEN = 1;
     private static final int BLUE = 2;
     private static final double DISPLAY_GAMMA = 2.2;
-    private static final float WHITE_SHARE = 0.25F;
-    private static final float CHANNEL_LIMIT = 1.25F;
-    private static final float PACKED_RANGE = 2.0F;
+    private static final float WHITE_SHARE = 0.06F;
+    private static final float CHANNEL_LIMIT = 3.5F;
+    private static final float PACKED_RANGE = 4.0F;
     private static final int FLICKER_BIT = 1 << 24;
     private static final List<String> FIRE_PARTS = List.of("torch", "lantern", "campfire", "fire", "candle", "furnace", "smoker");
     private static final List<String> STEADY_PARTS = List.of("redstone", "sea_lantern");

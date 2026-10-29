@@ -13,6 +13,7 @@ struct HelionSurfacePoint {
 };
 
 const uint HELION_RT_CUTOUT_GEOMETRY = 1u;
+const uint HELION_RT_TRANSLUCENT_GEOMETRY = 2u;
 const uint HELION_RT_INTS_PER_VERTEX = 4u;
 const uint HELION_RT_NORMAL_INT = 3u;
 const uint HELION_RT_VERTICES_PER_QUAD = 4u;
@@ -37,7 +38,7 @@ HelionSurfacePoint helionSurfacePoint(uvec4 section, uint geometry, uint primiti
     HelionSurface surface = HelionSurface(section.xy);
     vec3 weights = vec3(1.0 - barycentrics.x - barycentrics.y, barycentrics.x, barycentrics.y);
     uvec3 corners = (primitive & 1u) == 0u ? uvec3(0u, 1u, 2u) : uvec3(2u, 3u, 0u);
-    uint quad = (primitive >> 1u) + (geometry == HELION_RT_CUTOUT_GEOMETRY ? section.z : 0u);
+    uint quad = (primitive >> 1u) + (geometry == HELION_RT_CUTOUT_GEOMETRY ? section.z : geometry == HELION_RT_TRANSLUCENT_GEOMETRY ? section.w : 0u);
     uvec3 vertices = quad * HELION_RT_VERTICES_PER_QUAD + corners;
     HelionSurfacePoint point = HelionSurfacePoint(vec2(0.0), vec4(0.0), vec2(0.0), helionUnpackNormal(surface.values[vertices.x * HELION_RT_INTS_PER_VERTEX + HELION_RT_NORMAL_INT]));
     for (int corner = 0; corner < 3; corner++) {
@@ -72,6 +73,7 @@ HelionSurfacePoint helionCandidatePoint(rayQueryEXT query) {
 void helionTraceCutout(rayQueryEXT query) {
     while (rayQueryProceedEXT(query)) {
         if (rayQueryGetIntersectionTypeEXT(query, false) == gl_RayQueryCandidateIntersectionTriangleEXT
+            && uint(rayQueryGetIntersectionGeometryIndexEXT(query, false)) != HELION_RT_TRANSLUCENT_GEOMETRY
             && textureLod(AtlasSampler, helionCandidatePoint(query).uv, 0.0).a >= HELION_RT_CUTOUT_ALPHA) {
             rayQueryConfirmIntersectionEXT(query);
         }

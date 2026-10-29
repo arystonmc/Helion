@@ -24,6 +24,7 @@ final class RtxTopLevel {
     private static final int ENTITY_INSTANCES = 2;
     private static final int SURFACE_ENTRY_BYTES = 4 * Integer.BYTES;
     private static final int SOLID_QUADS_OFFSET = Long.BYTES;
+    private static final int TRANSLUCENT_FROM_OFFSET = SOLID_QUADS_OFFSET + Integer.BYTES;
     private static final int[] DIAGONAL = {0, 5, 10};
     private static final int TRANSLATE_X = 3;
     private static final int TRANSLATE_Y = 7;
@@ -83,6 +84,7 @@ final class RtxTopLevel {
             long entry = table + (long) index * SURFACE_ENTRY_BYTES;
             MemoryUtil.memPutLong(entry, section.surfaceAddress());
             MemoryUtil.memPutInt(entry + SOLID_QUADS_OFFSET, section.solidQuads());
+            MemoryUtil.memPutInt(entry + TRANSLUCENT_FROM_OFFSET, section.translucentFrom());
             instance.instanceCustomIndex(index)
                 .mask(SECTION_RAYS)
                 .flags(KHRAccelerationStructure.VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR)

@@ -29,6 +29,7 @@ final class RtxSectionBlas {
     private final TrackedResource tracked;
     private final RtxBuffer surface;
     private final int solidQuads;
+    private final int translucentFrom;
     private final TrackedResource trackedSurface;
     private @Nullable TrackedResource vertices;
     private @Nullable RtxBuffer upload;
@@ -41,6 +42,7 @@ final class RtxSectionBlas {
         TrackedResource vertices,
         RtxBuffer surface,
         int solidQuads,
+        int translucentFrom,
         TrackedResource trackedSurface,
         RtxBuffer upload,
         TrackedResource trackedUpload
@@ -51,6 +53,7 @@ final class RtxSectionBlas {
         this.vertices = vertices;
         this.surface = surface;
         this.solidQuads = solidQuads;
+        this.translucentFrom = translucentFrom;
         this.trackedSurface = trackedSurface;
         this.upload = upload;
         this.trackedUpload = trackedUpload;
@@ -71,17 +74,22 @@ final class RtxSectionBlas {
         RtxBuffer surface = RtxBuffer.create(device, surfaceBytes, SURFACE_USAGE, false);
         TrackedResource trackedSurface = resources.track(SURFACE_LABEL, surface.size(), surface::destroy);
         int solidVertices = mesh.solidQuads() * VERTICES_PER_QUAD;
+        int translucentVertices = mesh.translucentFrom() * VERTICES_PER_QUAD;
         List<RtxGeometry> geometries = List.of(
             RtxGeometry.triangles(vertexBuffer.address(), indexAddress, solidVertices, mesh.solidQuads() * TRIANGLES_PER_QUAD, true),
             RtxGeometry.triangles(
                 vertexBuffer.address() + (long) solidVertices * RtxAccelerationStructure.VERTEX_STRIDE, indexAddress,
-                vertexCount - solidVertices, (mesh.quads() - mesh.solidQuads()) * TRIANGLES_PER_QUAD, false
+                translucentVertices - solidVertices, (mesh.translucentFrom() - mesh.solidQuads()) * TRIANGLES_PER_QUAD, false
+            ),
+            RtxGeometry.triangles(
+                vertexBuffer.address() + (long) translucentVertices * RtxAccelerationStructure.VERTEX_STRIDE, indexAddress,
+                vertexCount - translucentVertices, (mesh.quads() - mesh.translucentFrom()) * TRIANGLES_PER_QUAD, false
             )
         );
         RtxAccelerationStructure structure = RtxAccelerationStructure.createForSharedScratch(device, geometries);
         TrackedResource tracked = resources.track(LABEL, structure.bytes(), () -> structure.destroy(device.vkDevice()));
         return new RtxSectionBlas(
-            new RtxSectionPos(mesh.sectionX(), mesh.sectionY(), mesh.sectionZ()), structure, tracked, vertices, surface, mesh.solidQuads(), trackedSurface, upload, trackedUpload
+            new RtxSectionPos(mesh.sectionX(), mesh.sectionY(), mesh.sectionZ()), structure, tracked, vertices, surface, mesh.solidQuads(), mesh.translucentFrom(), trackedSurface, upload, trackedUpload
         );
     }
 
@@ -115,6 +123,10 @@ final class RtxSectionBlas {
 
     int solidQuads() {
         return solidQuads;
+    }
+
+    int translucentFrom() {
+        return translucentFrom;
     }
 
     long bytes() {

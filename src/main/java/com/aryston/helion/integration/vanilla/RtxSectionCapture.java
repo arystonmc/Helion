@@ -19,7 +19,7 @@ import net.minecraft.client.renderer.chunk.SectionCompiler;
 import net.minecraft.core.SectionPos;
 
 public final class RtxSectionCapture {
-    private static final List<ChunkSectionLayer> SOLID_LAYERS = List.of(ChunkSectionLayer.SOLID, ChunkSectionLayer.CUTOUT);
+    private static final List<ChunkSectionLayer> LAYERS = List.of(ChunkSectionLayer.SOLID, ChunkSectionLayer.CUTOUT, ChunkSectionLayer.TRANSLUCENT);
     private static final String POSITION = "Position";
     private static final String COMPACT_POSITION = "PositionLight";
     private static final String COLOR = "Color";
@@ -60,18 +60,21 @@ public final class RtxSectionCapture {
         }
         int quads = 0;
         int solidQuads = 0;
-        for (ChunkSectionLayer layer : SOLID_LAYERS) {
+        int translucentFrom = 0;
+        for (ChunkSectionLayer layer : LAYERS) {
             MeshData mesh = results.renderedLayers.get(layer);
             quads += mesh == null ? NO_QUADS : mesh.drawState().vertexCount() / VERTICES_PER_QUAD;
             if (layer == ChunkSectionLayer.SOLID) {
                 solidQuads = quads;
+            } else if (layer == ChunkSectionLayer.CUTOUT) {
+                translucentFrom = quads;
             }
         }
         int vertices = quads * VERTICES_PER_QUAD;
         float[] positions = new float[vertices * FLOATS_PER_VERTEX];
         int[] surface = new int[vertices * RtxSectionUpdate.SURFACE_INTS_PER_VERTEX];
         int written = 0;
-        for (ChunkSectionLayer layer : SOLID_LAYERS) {
+        for (ChunkSectionLayer layer : LAYERS) {
             MeshData mesh = results.renderedLayers.get(layer);
             if (mesh != null) {
                 int copied = decode(mesh, positions, surface, written);
@@ -81,7 +84,7 @@ public final class RtxSectionCapture {
                 written += copied;
             }
         }
-        inbox.offer(RtxSectionUpdate.mesh(position.x(), position.y(), position.z(), positions, surface, quads, solidQuads, RtxSectionLights.scan(position, region)));
+        inbox.offer(RtxSectionUpdate.mesh(position.x(), position.y(), position.z(), positions, surface, quads, solidQuads, translucentFrom, RtxSectionLights.scan(position, region)));
     }
 
     public static void removed(long sectionNode) {
