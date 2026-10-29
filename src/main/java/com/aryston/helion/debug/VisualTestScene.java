@@ -50,6 +50,8 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
     private static final float AWAY_PITCH = 30.0F;
     private static final float SHORE_PITCH = 25.0F;
     private static final float GLASS_PITCH = 3.0F;
+    private static final float STAINED_LIGHT_PITCH = 50.0F;
+    private static final float GLASS_LAKE_PITCH = 35.0F;
     private static final float EMITTER_PITCH = 25.0F;
     private static final float WATERFALL_PITCH = -5.0F;
     private static final float TORCH_ROOM_PITCH = 10.0F;
@@ -101,6 +103,7 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("water_ocean_shore", NOON, EAST, SHORE_PITCH, VisualTestWorld.OCEAN_SHORE_CAMERA),
         new VisualTestScene("glass_window", NOON, NORTH, GLASS_PITCH, VisualTestWorld.GLASS_CAMERA),
         new VisualTestScene("glass_window_rain", NOON, NORTH, GLASS_PITCH, VisualTestWorld.GLASS_CAMERA, RAIN),
+        new VisualTestScene("glass_lake_rain", DUSK, NORTH, GLASS_LAKE_PITCH, VisualTestWorld.LAKE_CAMERA, RAIN),
         new VisualTestScene("emitter_shadow", SUNRISE, NORTH, EMITTER_PITCH, VisualTestWorld.EMITTER_CAMERA),
         new VisualTestScene("waterfall_close", NOON, NORTH, WATERFALL_PITCH, VisualTestWorld.WATERFALL_CAMERA),
         new VisualTestScene("waterfall_above", NOON, NORTH_WEST, WATERFALL_ABOVE_PITCH, VisualTestWorld.WATERFALL_ABOVE_CAMERA),
@@ -118,6 +121,8 @@ record VisualTestScene(String name, int dayTime, float yaw, float pitch, BlockPo
         new VisualTestScene("cave_noon", NOON, NORTH, CAVE_PITCH, VisualTestWorld.CAVE_CAMERA),
         new VisualTestScene("wall_leak", MIDNIGHT, EAST, WALL_PITCH, VisualTestWorld.WALL_CAMERA),
         new VisualTestScene("tinted_glass", MIDNIGHT, EAST, TINT_PITCH, VisualTestWorld.TINT_CAMERA),
+        new VisualTestScene("stained_light", MIDNIGHT, NORTH, STAINED_LIGHT_PITCH, VisualTestWorld.STAINED_LIGHT_CAMERA),
+        new VisualTestScene("stained_light_rain", MIDNIGHT, NORTH, STAINED_LIGHT_PITCH, VisualTestWorld.STAINED_LIGHT_CAMERA, RAIN),
         new VisualTestScene("savanna_room", MIDNIGHT, EAST, SAVANNA_PITCH, VisualTestWorld.SAVANNA_CAMERA),
         new VisualTestScene("rain_yard", NOON, NORTH, SHOWCASE_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),
         new VisualTestScene("rain_yard_low", NOON, NORTH, POOL_PITCH, VisualTestWorld.RAIN_CAMERA, RAIN),

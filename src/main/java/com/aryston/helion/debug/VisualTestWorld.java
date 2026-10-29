@@ -148,6 +148,18 @@ final class VisualTestWorld {
         new Fill(new Volume(new BlockPos(-23, 0, -44), new BlockPos(-20, 2, -44)), "glass_pane"),
         new Fill(new Volume(new BlockPos(-30, 0, -44), new BlockPos(-29, 2, -44)), "light_blue_stained_glass")
     );
+    private static final Fill GLASS_LAKE = new Fill(new Volume(new BlockPos(-27, 0, -4), new BlockPos(-24, 0, -3)), GLASS_BLOCK);
+    static final BlockPos STAINED_LIGHT_CAMERA = new BlockPos(38, -17, -3);
+    private static final Volume STAINED_LIGHT_ROOM = new Volume(new BlockPos(34, -20, -10), new BlockPos(42, -14, -2));
+    private static final String STAINED_LIGHT_GLASS = "red_stained_glass";
+    private static final List<Placement> STAINED_LIGHT_CAGE = List.of(
+        new Placement(38, -19, -6, "glowstone"),
+        new Placement(37, -19, -6, STAINED_LIGHT_GLASS),
+        new Placement(39, -19, -6, STAINED_LIGHT_GLASS),
+        new Placement(38, -19, -7, STAINED_LIGHT_GLASS),
+        new Placement(38, -19, -5, STAINED_LIGHT_GLASS),
+        new Placement(38, -18, -6, STAINED_LIGHT_GLASS)
+    );
     static final BlockPos EMITTER_CAMERA = new BlockPos(-21, 0, 15);
     private static final Fill EMITTER_AIR = new Fill(new Volume(new BlockPos(-34, 0, 5), new BlockPos(-8, 8, 18)), "air");
     private static final Fill EMITTER_FLOOR = new Fill(new Volume(new BlockPos(-34, -1, 5), new BlockPos(-8, -1, 18)), "stone");
@@ -279,6 +291,9 @@ final class VisualTestWorld {
         run(server, "fillbiome " + coordinates(origin.offset(LAKE_BIOME.from())) + " " + coordinates(origin.offset(LAKE_BIOME.to())) + " " + RAIN_BIOME);
         buildWaterAreas(server, origin);
         GLASS_WINDOW.forEach(pane -> run(server, fill(origin.offset(pane.volume().from()), origin.offset(pane.volume().to()), pane.block())));
+        run(server, fill(origin.offset(GLASS_LAKE.volume().from()), origin.offset(GLASS_LAKE.volume().to()), GLASS_LAKE.block()));
+        run(server, fill(origin.offset(STAINED_LIGHT_ROOM.from()), origin.offset(STAINED_LIGHT_ROOM.to()), CASTER_BLOCK + " hollow"));
+        STAINED_LIGHT_CAGE.forEach(placement -> run(server, placement.command(origin)));
         List.of(EMITTER_AIR, EMITTER_FLOOR).forEach(area -> run(server, fill(origin.offset(area.volume().from()), origin.offset(area.volume().to()), area.block())));
         EMITTER_ROW.forEach(placement -> run(server, placement.command(origin)));
         buildTorchRoom(server, origin);

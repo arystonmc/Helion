@@ -74,7 +74,7 @@ public final class FrameStages {
             new WaterSurfaceStage(sources.terrain(), core.water(), core.glossy()),
             new RtxReflectionStage(core.rayTracing(), sources.terrain()),
             new ScreenReflectionStage(core.water()),
-            new WaterReflectionStage(core.water()),
+            new WaterReflectionStage(sources.waves(), core.water()),
             new LightShaftStage(core.lightShafts()),
             new TransparentGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere(), sources.transparency(), core.glossy()),
             new HeatShimmerStage(core.water()),

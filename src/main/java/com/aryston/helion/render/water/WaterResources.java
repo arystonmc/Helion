@@ -68,6 +68,7 @@ public final class WaterResources {
     private final RainWetness rainWetness = new RainWetness();
     private final Footprints footprints = new Footprints();
     private final WaterWaves waves;
+    private final WaterRainCover rainCover;
     private @Nullable UniformRing surfaceUniforms;
     private @Nullable UniformRing glassSurfaceUniforms;
     private @Nullable UniformRing reflectionUniforms;
@@ -80,6 +81,7 @@ public final class WaterResources {
     public WaterResources(GpuResources resources) {
         this.resources = resources;
         this.waves = new WaterWaves(resources);
+        this.rainCover = new WaterRainCover(resources);
     }
 
     Optional<CompiledRenderPipeline> reflectionProgram(boolean physicalSky) {
@@ -107,6 +109,10 @@ public final class WaterResources {
 
     WaterWaves waves() {
         return waves;
+    }
+
+    WaterRainCover rainCover() {
+        return rainCover;
     }
 
     Footprints footprints() {
@@ -243,6 +249,7 @@ public final class WaterResources {
 
     public void close() {
         waves.close();
+        rainCover.close();
         if (surfaceUniforms != null) {
             surfaceUniforms.close();
             Objects.requireNonNull(glassSurfaceUniforms).close();

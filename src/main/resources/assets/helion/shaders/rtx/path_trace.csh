@@ -123,7 +123,10 @@ const float HELION_GROUND_SHARE = 0.3;
 const float HELION_HIT_OFFSET = 0.01;
 const float HELION_PLANT_START = 0.3;
 const float HELION_INDIRECT_LIMIT = 4.0;
-const float HELION_STAIN_STRENGTH = 1.6;
+const float HELION_STAIN_STRENGTH = 2.0;
+const int HELION_STAIN_CELL = 16;
+const int HELION_STAIN_TAPS = 4;
+const float HELION_MIN_STAIN_ALPHA = 1.0e-3;
 const int HELION_STAIN_LAYERS = 4;
 const float HELION_STAIN_UNREACHED = 1.0e30;
 const float HELION_MIN_STAIN_PEAK = 1.0e-3;
@@ -148,6 +151,19 @@ vec3 helionVanillaLight(vec2 levels) {
     return mix(bottom, top, blend.y);
 }
 
+vec4 helionStainAverage(vec2 uv) {
+    ivec2 corner = ivec2(uv * vec2(textureSize(AtlasSampler, 0))) / HELION_STAIN_CELL * HELION_STAIN_CELL;
+    int spacing = HELION_STAIN_CELL / HELION_STAIN_TAPS;
+    vec4 sum = vec4(0.0);
+    for (int row = 0; row < HELION_STAIN_TAPS; row++) {
+        for (int column = 0; column < HELION_STAIN_TAPS; column++) {
+            vec4 texel = texelFetch(AtlasSampler, corner + ivec2(column, row) * spacing + spacing / 2, 0);
+            sum += vec4(texel.rgb * texel.a, texel.a);
+        }
+    }
+    return vec4(sum.rgb / max(sum.a, HELION_MIN_STAIN_ALPHA), sum.a / float(HELION_STAIN_TAPS * HELION_STAIN_TAPS));
+}
+
 vec3 helionStainFilter(vec4 texel) {
     vec3 color = helionSrgbToLinear(texel.rgb);
     float peak = max(color.r, max(color.g, color.b));
@@ -170,7 +186,7 @@ vec3 helionVisible(vec3 origin, vec3 direction, float reach) {
                 rayQueryConfirmIntersectionEXT(shadow);
             }
         } else if (helionMaterialCell(textureLod(MaterialSampler, point.uv, 0.0).r) == HELION_CELL_GLOSSY) {
-            filtered *= helionStainFilter(texel * point.tint);
+            filtered *= helionStainFilter(helionStainAverage(point.uv) * point.tint);
         }
     }
     return rayQueryGetIntersectionTypeEXT(shadow, true) == gl_RayQueryCommittedIntersectionNoneEXT ? filtered : vec3(0.0);
@@ -190,7 +206,7 @@ vec3 helionTraceStained(rayQueryEXT query) {
                 rayQueryConfirmIntersectionEXT(query);
             }
         } else if (count < HELION_STAIN_LAYERS && helionMaterialCell(textureLod(MaterialSampler, point.uv, 0.0).r) == HELION_CELL_GLOSSY) {
-            stains[count] = vec4(helionStainFilter(texel * point.tint), rayQueryGetIntersectionTEXT(query, false));
+            stains[count] = vec4(helionStainFilter(helionStainAverage(point.uv) * point.tint), rayQueryGetIntersectionTEXT(query, false));
             count++;
         }
     }
@@ -276,7 +292,14 @@ vec3 helionLightVisible(HelionBlockLight light, vec3 origin, vec3 normal) {
     vec3 far = (light.high - origin) * inverted;
     vec3 entries = min(near, far);
     float entry = clamp(max(max(entries.x, entries.y), entries.z), 0.0, span) - HELION_ENTRY_MARGIN;
-    return entry <= HELION_RAY_START ? vec3(1.0) : helionVisible(origin, direction, entry);
+    if (entry <= HELION_RAY_START) {
+        return vec3(1.0);
+    }
+    rayQueryEXT query;
+    rayQueryInitializeEXT(query, Scene, gl_RayFlagsNoneEXT, HELION_SHADOW_INSTANCES, origin, HELION_RAY_START, direction, entry + 2.0 * HELION_ENTRY_MARGIN);
+    vec3 filtered = helionTraceStained(query);
+    bool blocked = rayQueryGetIntersectionTypeEXT(query, true) != gl_RayQueryCommittedIntersectionNoneEXT && rayQueryGetIntersectionTEXT(query, true) < entry;
+    return blocked ? vec3(0.0) : filtered;
 }
 
 uvec4 helionLightCell(vec3 position) {

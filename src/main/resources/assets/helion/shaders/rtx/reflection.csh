@@ -106,7 +106,8 @@ bool helionCandidateHit(rayQueryEXT query) {
         return helionEntityCandidateHit(query);
     }
 #endif
-    return textureLod(AtlasSampler, helionCandidatePoint(query).uv, 0.0).a >= HELION_RT_CUTOUT_ALPHA;
+    return uint(rayQueryGetIntersectionGeometryIndexEXT(query, false)) != HELION_RT_TRANSLUCENT_GEOMETRY
+        && textureLod(AtlasSampler, helionCandidatePoint(query).uv, 0.0).a >= HELION_RT_CUTOUT_ALPHA;
 }
 
 void helionTraceReflection(rayQueryEXT query) {

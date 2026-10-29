@@ -100,6 +100,12 @@ final class VanillaWaveSource implements WaveSource {
         return level.getFluidState(position).is(FluidTags.WATER);
     }
 
+    @Override
+    public float rainFloor(int blockX, int blockZ) {
+        ClientLevel level = Minecraft.getInstance().level;
+        return level == null ? Float.MAX_VALUE : level.getHeight(Heightmap.Types.MOTION_BLOCKING, blockX, blockZ);
+    }
+
     private static void step(Entity entity, double x, double z, List<WaveImpulse> impulses) {
         double speed = Math.hypot(x - entity.xo, z - entity.zo) * TICKS_PER_SECOND;
         if (speed > MIN_WAKE_SPEED) {

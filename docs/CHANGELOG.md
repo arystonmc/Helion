@@ -9,7 +9,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ### Added
 - Path traced light: nights are dark, lit by the moon in its real strength instead of the vanilla night brightness, so torches and lanterns matter; torches and other light blocks shine stronger
 - Plain glass and glass panes are clear real glass with a faint green tint, without the vanilla frame and streaks
-- Rain on glass looks like a real wet window: the pane mists over, drops of three sizes act as lenses with an upside down view, and wavy streaks run down and clear the mist
+- Rain on glass looks like a real wet window: clear drops of two sizes act as lenses with an upside down view, also of water behind the glass, and wavy streaks run down; only glass that rain can reach gets wet
 - Path traced light: every light source shines in its own strong color, stained glass colors the light passing through it, also the sky light that lights a room through a stained window, and light fades smoothly and round instead of a hard bright patch
 - Path traced light: mobs, dropped items and other entities no longer have the vanilla round black shadow under them; the ray traced shadows replace it
 - Path traced light: polished blocks get glossy ray traced reflections, and iron, gold, netherite and copper blocks reflect like real metal
@@ -62,6 +62,9 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Depth of field focuses on the sky when you look at it, so the sun, the moon and the stars stay sharp
 
 ### Fixed
+- Light through stained glass no longer shows lines from the glass texture and the seams between blocks, and its color is stronger and even
+- Water and glass reflections no longer show stained glass and water as solid vanilla blocks
+- Glass underground and under roofs no longer gets rain drops
 - Rooms full of lights no longer blind you: the exposure adapts down in very bright scenes
 - Clouds show behind stained glass and glass
 - Waterfalls and water next to glass no longer look like framed blue glass or solid teal blocks
