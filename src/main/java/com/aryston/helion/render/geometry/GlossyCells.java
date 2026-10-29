@@ -11,6 +11,7 @@ public record GlossyCells(GpuTextureView atlas, int width, int height, byte[] ce
     public static final byte LAVA_FLOW = (byte) 0x9F;
     public static final byte DRY = (byte) 0xBF;
     public static final byte LAVA = (byte) 0xDF;
+    public static final byte PLAIN_GLASS = (byte) 0xF0;
     public static final byte GLOSSY = (byte) 0xFF;
     public static final byte ORDINARY = 0;
 }

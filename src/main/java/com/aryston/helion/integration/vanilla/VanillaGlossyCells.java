@@ -48,6 +48,7 @@ final class VanillaGlossyCells {
     private static final List<String> NOT_MUDDY_PARTS = List.of("dirt_path", "brick", "packed");
     private static final List<String> HOLDS_WATER_PARTS = List.of("sandstone", "dirt_path", "mossy");
 
+    private static final List<String> PLAIN_GLASS_BLOCKS = List.of("glass", "glass_pane");
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private static @Nullable GlossyCells cached;
@@ -134,6 +135,9 @@ final class VanillaGlossyCells {
     }
 
     private static byte material(String path) {
+        if (PLAIN_GLASS_BLOCKS.contains(path)) {
+            return GlossyCells.PLAIN_GLASS;
+        }
         if (METAL_SUFFIXES.stream().anyMatch(path::endsWith) && NOT_METAL_PARTS.stream().noneMatch(path::contains)) {
             return GlossyCells.METAL;
         }

@@ -2,6 +2,7 @@ package com.aryston.helion.integration.vanilla;
 
 import com.aryston.helion.mixin.ChunkSectionsToRenderAccessor;
 import com.aryston.helion.mixin.LevelRendererAccessor;
+import com.aryston.helion.render.geometry.GeometryBufferPipelines;
 import com.aryston.helion.render.geometry.GlossyCells;
 import com.aryston.helion.render.geometry.TerrainSource;
 import com.aryston.helion.render.geometry.TerrainTextures;
@@ -12,6 +13,7 @@ import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalDouble;
 import net.minecraft.client.TextureFilteringMethod;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
@@ -31,7 +33,6 @@ final class VanillaTerrainSource implements TerrainSource {
     private static final Identifier WATER_STILL = Identifier.withDefaultNamespace("block/water_still");
     private static final Identifier WATER_FLOW = Identifier.withDefaultNamespace("block/water_flow");
     private static final Identifier WATER_OVERLAY = Identifier.withDefaultNamespace("block/water_overlay");
-    private static final Identifier PLAIN_GLASS = Identifier.withDefaultNamespace("block/glass");
 
     private final LevelRendererAccessor level;
     private final ChunkSectionsToRender sections;
@@ -81,9 +82,15 @@ final class VanillaTerrainSource implements TerrainSource {
     }
 
     @Override
-    public void renderTranslucent(RenderPass pass) {
+    public void renderTranslucent(RenderPass pass, Optional<GpuTextureView> seeThroughGlass) {
         Profiler.get().push("translucentTerrain");
-        renderGroup(ChunkSectionLayerGroup.TRANSLUCENT, pass);
+        Optional<VanillaGeometryPipelines.LayerPipelines> seeThrough = seeThroughGlass.flatMap(ignored -> VanillaGeometryPipelines.seeThroughTranslucent());
+        if (seeThrough.isPresent()) {
+            pass.setUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, seeThroughGlass.get(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
+            renderLayer(ChunkSectionLayer.TRANSLUCENT, pass, seeThrough.get());
+        } else {
+            renderGroup(ChunkSectionLayerGroup.TRANSLUCENT, pass);
+        }
         Profiler.get().pop();
         events.afterTranslucentBlocks(pass);
     }
@@ -104,7 +111,7 @@ final class VanillaTerrainSource implements TerrainSource {
     @Override
     public TerrainTextures textures() {
         TextureAtlas atlas = level.helion$atlasManager().getAtlasOrThrow(AtlasIds.BLOCKS);
-        return new TerrainTextures(atlas.getTextureView(), level.helion$gameRenderer().lightmap(), bounds(atlas, WATER_STILL), bounds(atlas, WATER_FLOW), bounds(atlas, WATER_OVERLAY), bounds(atlas, PLAIN_GLASS));
+        return new TerrainTextures(atlas.getTextureView(), level.helion$gameRenderer().lightmap(), bounds(atlas, WATER_STILL), bounds(atlas, WATER_FLOW), bounds(atlas, WATER_OVERLAY));
     }
 
     @Override

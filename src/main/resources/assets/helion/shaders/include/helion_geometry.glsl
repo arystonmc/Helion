@@ -12,6 +12,8 @@ const float HELION_GEOMETRY_EMISSIVE = 0.8125;
 const float HELION_GEOMETRY_METAL = 0.9375;
 const float HELION_GEOMETRY_MATERIAL_TOLERANCE = 0.03;
 const float HELION_GLOSSY_CELL = 0.9;
+const float HELION_PLAIN_GLASS_FROM = 0.92;
+const float HELION_PLAIN_GLASS_TO = 0.97;
 const float HELION_MATERIAL_CELL_STEPS = 8.0;
 const int HELION_CELL_EMISSIVE = 1;
 const int HELION_CELL_MUDDY = 2;
@@ -24,6 +26,10 @@ const int HELION_CELL_GLOSSY = 8;
 
 int helionMaterialCell(float cell) {
     return int(cell * HELION_MATERIAL_CELL_STEPS + 0.5);
+}
+
+bool helionIsPlainGlassCell(float cell) {
+    return cell > HELION_PLAIN_GLASS_FROM && cell < HELION_PLAIN_GLASS_TO;
 }
 
 bool helionIsLavaCell(int material) {

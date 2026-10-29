@@ -10,6 +10,7 @@ import com.mojang.renderpearl.api.pipeline.UniformType;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
@@ -20,11 +21,16 @@ public final class VanillaGeometryPipelines {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String PIPELINE_PREFIX = "pipeline/geometry/";
     private static final Identifier SHADER = Identifier.fromNamespaceAndPath(Helion.MOD_ID, "terrain/geometry");
+    private static final Identifier TRANSLUCENT_SHADER = Identifier.fromNamespaceAndPath(Helion.MOD_ID, "terrain/translucent");
     private static final String SEE_THROUGH_GLASS_DEFINE = "HELION_SEE_THROUGH_GLASS";
     private static final Map<ChunkSectionLayer, LayerPipelines> BY_LAYER = layers();
     private static final LayerPipelines SEE_THROUGH_GLASS = new LayerPipelines(
         geometry(RenderPipelines.CUTOUT_TERRAIN, "cutout_terrain_see_through_glass").withShaderDefine(SEE_THROUGH_GLASS_DEFINE).build(),
         geometry(RenderPipelines.CUTOUT_TERRAIN_MULTIDRAW, "cutout_terrain_see_through_glass_multidraw").withShaderDefine(SEE_THROUGH_GLASS_DEFINE).build()
+    );
+    private static final LayerPipelines SEE_THROUGH_TRANSLUCENT = new LayerPipelines(
+        translucent(RenderPipelines.TRANSLUCENT_TERRAIN, "translucent_terrain_see_through_glass"),
+        translucent(RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW, "translucent_terrain_see_through_glass_multidraw")
     );
     private static boolean missingPipelinesReported;
 
@@ -32,7 +38,7 @@ public final class VanillaGeometryPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return pipelines().toList();
+        return Stream.concat(pipelines(), Stream.of(SEE_THROUGH_TRANSLUCENT.direct(), SEE_THROUGH_TRANSLUCENT.multiDraw())).toList();
     }
 
     static boolean compiled() {
@@ -49,6 +55,11 @@ public final class VanillaGeometryPipelines {
             return SEE_THROUGH_GLASS;
         }
         return Objects.requireNonNull(BY_LAYER.get(layer), layer::label);
+    }
+
+    static Optional<LayerPipelines> seeThroughTranslucent() {
+        boolean compiled = isCompiled(SEE_THROUGH_TRANSLUCENT.direct()) && isCompiled(SEE_THROUGH_TRANSLUCENT.multiDraw());
+        return compiled ? Optional.of(SEE_THROUGH_TRANSLUCENT) : Optional.empty();
     }
 
     private static Stream<RenderPipeline> pipelines() {
@@ -83,6 +94,16 @@ public final class VanillaGeometryPipelines {
             .withBindGroupLayout(BindGroupLayout.builder()
                 .withUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .build());
+    }
+
+    private static RenderPipeline translucent(RenderPipeline vanilla, String name) {
+        return vanilla.toBuilder()
+            .withLocation(Identifier.fromNamespaceAndPath(Helion.MOD_ID, PIPELINE_PREFIX + name))
+            .withFragmentShader(TRANSLUCENT_SHADER)
+            .withBindGroupLayout(BindGroupLayout.builder()
+                .withUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .build())
+            .build();
     }
 
     record LayerPipelines(RenderPipeline direct, RenderPipeline multiDraw) {

@@ -76,7 +76,7 @@ void main() {
     }
     #endif
     #ifdef HELION_SEE_THROUGH_GLASS
-    if (cell == HELION_CELL_GLOSSY) {
+    if (helionIsPlainGlassCell(texture(GlossySampler, texCoord0).r)) {
         discard;
     }
     #endif

@@ -12,6 +12,7 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.ResourceHandle;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -24,12 +25,14 @@ public final class TransparentGeometryStage implements RenderStage {
     private final EntitySource entities;
     private final AtmosphereSource atmosphere;
     private final TransparencySource transparency;
+    private final GlossyMask glossy;
 
-    public TransparentGeometryStage(TerrainSource terrain, EntitySource entities, AtmosphereSource atmosphere, TransparencySource transparency) {
+    public TransparentGeometryStage(TerrainSource terrain, EntitySource entities, AtmosphereSource atmosphere, TransparencySource transparency, GlossyMask glossy) {
         this.terrain = terrain;
         this.entities = entities;
         this.atmosphere = atmosphere;
         this.transparency = transparency;
+        this.glossy = glossy;
     }
 
     @Override
@@ -54,31 +57,33 @@ public final class TransparentGeometryStage implements RenderStage {
         atmospherePasses.declareReads(pass);
         boolean orderIndependent = frame.scene().orderIndependentTransparency();
         boolean featuresDrawn = TranslucentFeatureStage.drawsBeforeWater(frame);
-        pass.executes(frame.graph().timed(NAME, () -> render(scene.get(), orderIndependent, featuresDrawn, atmospherePasses)));
+        boolean seeThroughGlass = !orderIndependent && frame.settings().reflections().realisticWater() && terrain.supportsWaterSurface();
+        pass.executes(frame.graph().timed(NAME, () -> render(scene.get(), orderIndependent, featuresDrawn, atmospherePasses, seeThroughGlass)));
     }
 
-    private void render(RenderTarget target, boolean orderIndependent, boolean featuresDrawn, AtmospherePasses atmospherePasses) {
+    private void render(RenderTarget target, boolean orderIndependent, boolean featuresDrawn, AtmospherePasses atmospherePasses, boolean seeThroughGlass) {
+        Optional<GpuTextureView> mask = seeThroughGlass ? Optional.of(glossy.update(terrain.glossyCells())) : Optional.empty();
         if (orderIndependent) {
             transparency.renderOrderIndependent();
             atmospherePasses.draw(target);
         } else if (!atmospherePasses.isEmpty()) {
-            renderSortedThroughFog(target, featuresDrawn, atmospherePasses);
+            renderSortedThroughFog(target, featuresDrawn, atmospherePasses, mask);
         } else {
-            renderSorted(target, featuresDrawn);
+            renderSorted(target, featuresDrawn, mask);
         }
         entities.renderOverlays(target);
     }
 
-    private void renderSorted(RenderTarget target, boolean featuresDrawn) {
+    private void renderSorted(RenderTarget target, boolean featuresDrawn, Optional<GpuTextureView> mask) {
         try (RenderPass pass = openPass(target)) {
-            renderTranslucents(pass, featuresDrawn);
+            renderTranslucents(pass, featuresDrawn, mask);
             renderAtmosphere(pass);
         }
     }
 
-    private void renderSortedThroughFog(RenderTarget target, boolean featuresDrawn, AtmospherePasses atmospherePasses) {
+    private void renderSortedThroughFog(RenderTarget target, boolean featuresDrawn, AtmospherePasses atmospherePasses, Optional<GpuTextureView> mask) {
         try (RenderPass pass = openPass(target)) {
-            renderTranslucents(pass, featuresDrawn);
+            renderTranslucents(pass, featuresDrawn, mask);
         }
         atmospherePasses.draw(target);
         try (RenderPass pass = openPass(target)) {
@@ -86,11 +91,11 @@ public final class TransparentGeometryStage implements RenderStage {
         }
     }
 
-    private void renderTranslucents(RenderPass pass, boolean featuresDrawn) {
+    private void renderTranslucents(RenderPass pass, boolean featuresDrawn, Optional<GpuTextureView> mask) {
         if (!featuresDrawn) {
             entities.renderTranslucent(pass);
         }
-        terrain.renderTranslucent(pass);
+        terrain.renderTranslucent(pass, mask);
         entities.renderTranslucentAfterTerrain(pass);
     }
 
