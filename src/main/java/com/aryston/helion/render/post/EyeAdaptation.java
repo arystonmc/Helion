@@ -4,7 +4,8 @@ public final class EyeAdaptation {
     static final float TARGET_LOG2_LUMINANCE = -4.8F;
     static final float DARKEN_FROM_LOG2_LUMINANCE = -3.0F;
     static final float MIN_EXPOSURE = -1.5F;
-    static final float MAX_EXPOSURE = 0.5F;
+    static final float MAX_EXPOSURE = 1.5F;
+    static final float BRIGHTEN_SHARE = 0.5F;
     private static final float NO_DARKENING = 0.0F;
     static final float BRIGHTEN_RATE = 1.0F;
     static final float DARKEN_RATE = 3.0F;
@@ -48,6 +49,6 @@ public final class EyeAdaptation {
         if (averageLog2Luminance > DARKEN_FROM_LOG2_LUMINANCE) {
             return Math.max(DARKEN_FROM_LOG2_LUMINANCE - averageLog2Luminance, MIN_EXPOSURE);
         }
-        return Math.clamp(TARGET_LOG2_LUMINANCE - averageLog2Luminance, NO_DARKENING, MAX_EXPOSURE);
+        return Math.clamp((TARGET_LOG2_LUMINANCE - averageLog2Luminance) * BRIGHTEN_SHARE, NO_DARKENING, MAX_EXPOSURE);
     }
 }

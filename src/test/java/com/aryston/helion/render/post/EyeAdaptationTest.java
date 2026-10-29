@@ -22,6 +22,11 @@ class EyeAdaptationTest {
     }
 
     @Test
+    void darkScenesAdaptOnlyPartway() {
+        assertEquals(1.0F, EyeAdaptation.targetExposure(EyeAdaptation.TARGET_LOG2_LUMINANCE - 2.0F), TOLERANCE);
+    }
+
+    @Test
     void ordinaryDaylightIsNeverDarkened() {
         assertEquals(0.0F, EyeAdaptation.targetExposure(EyeAdaptation.DARKEN_FROM_LOG2_LUMINANCE - 0.5F), TOLERANCE);
         assertEquals(-0.5F, EyeAdaptation.targetExposure(EyeAdaptation.DARKEN_FROM_LOG2_LUMINANCE + 0.5F), TOLERANCE);
@@ -30,7 +35,7 @@ class EyeAdaptationTest {
     @Test
     void theFirstMeasurementIsAppliedAtOnce() {
         EyeAdaptation adaptation = new EyeAdaptation();
-        adaptation.update(EyeAdaptation.TARGET_LOG2_LUMINANCE - 0.5F, 0L);
+        adaptation.update(EyeAdaptation.TARGET_LOG2_LUMINANCE - 1.0F, 0L);
 
         assertEquals(0.5F, adaptation.exposure(), TOLERANCE);
     }

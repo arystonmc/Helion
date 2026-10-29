@@ -82,6 +82,11 @@ Always on with the path traced light since 2026-10-28, after a spike on the bran
 
 Not yet: wet surfaces in the path tracer, water and glass folded into it (they keep `RtxReflectionStage`), LabPBR materials.
 
+## Exposure and Finish (Phase 7, 2026-10-29)
+
+- The path traced light is anchored to vanilla in daylight, so `EyeAdaptation` keeps its -4.8 target; enclosed and night scenes meter darker than under vanilla light (night -5.6, torch room -5.8, cave -8.0). Eye adaptation now brightens by half of the difference to the target, up to +1.5 stops, so caves become readable while night stays dark and its sky black (see `docs/architecture/image-pipeline.md`).
+- Light shafts, clouds and underwater read texels 0 to 2 of the sky light target as before; the sky radiance map only adds rows below them.
+
 ## Next
 
-1. Phase 7, exposure calibration and the finish.
+1. Open items: wet surfaces, water and glass in the path tracer, separate direct and indirect signals, entity motion vectors for the history, LabPBR materials.

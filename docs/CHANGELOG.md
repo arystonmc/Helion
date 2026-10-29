@@ -45,6 +45,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental ray tracing: mobs, players and dropped items show in water reflections, also when they are off screen
 
 ### Changed
+- Automatic exposure adapts further in dark places: caves get up to one and a half stops brighter, while nights stay dark
 - Path traced light denoising is faster: fewer filter passes now that the bounced light is smoother
 - Path traced light runs faster: bounced light is kept per block face and reused across frames
 - Volumetric clouds are a little thinner in clear weather
