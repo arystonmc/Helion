@@ -9,7 +9,7 @@ public interface TerrainSource {
 
     void renderOpaque(RenderPass pass);
 
-    void renderOpaqueGeometry(RenderPass geometryPass);
+    void renderOpaqueGeometry(RenderPass geometryPass, boolean seeThroughGlass);
 
     void afterOpaque(RenderPass pass);
 

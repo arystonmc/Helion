@@ -31,6 +31,7 @@ final class VanillaTerrainSource implements TerrainSource {
     private static final Identifier WATER_STILL = Identifier.withDefaultNamespace("block/water_still");
     private static final Identifier WATER_FLOW = Identifier.withDefaultNamespace("block/water_flow");
     private static final Identifier WATER_OVERLAY = Identifier.withDefaultNamespace("block/water_overlay");
+    private static final Identifier PLAIN_GLASS = Identifier.withDefaultNamespace("block/glass");
 
     private final LevelRendererAccessor level;
     private final ChunkSectionsToRender sections;
@@ -66,10 +67,10 @@ final class VanillaTerrainSource implements TerrainSource {
     }
 
     @Override
-    public void renderOpaqueGeometry(RenderPass geometryPass) {
+    public void renderOpaqueGeometry(RenderPass geometryPass, boolean seeThroughGlass) {
         Profiler.get().push("solidTerrainGeometry");
         for (ChunkSectionLayer layer : ChunkSectionLayerGroup.OPAQUE.layers()) {
-            renderLayer(layer, geometryPass, VanillaGeometryPipelines.forLayer(layer));
+            renderLayer(layer, geometryPass, VanillaGeometryPipelines.forLayer(layer, seeThroughGlass));
         }
         Profiler.get().pop();
     }
@@ -103,7 +104,7 @@ final class VanillaTerrainSource implements TerrainSource {
     @Override
     public TerrainTextures textures() {
         TextureAtlas atlas = level.helion$atlasManager().getAtlasOrThrow(AtlasIds.BLOCKS);
-        return new TerrainTextures(atlas.getTextureView(), level.helion$gameRenderer().lightmap(), bounds(atlas, WATER_STILL), bounds(atlas, WATER_FLOW), bounds(atlas, WATER_OVERLAY));
+        return new TerrainTextures(atlas.getTextureView(), level.helion$gameRenderer().lightmap(), bounds(atlas, WATER_STILL), bounds(atlas, WATER_FLOW), bounds(atlas, WATER_OVERLAY), bounds(atlas, PLAIN_GLASS));
     }
 
     @Override

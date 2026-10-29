@@ -6,7 +6,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### OpaqueGeometryStage
 - Path: `src/main/java/com/aryston/helion/render/geometry/OpaqueGeometryStage.java`
-- Role: Prepares fog, chunk sampler, translucent buffers and lighting, then draws opaque terrain and solid features in one pass, as vanilla does. With the geometry buffer on, creates the normal, light and albedo targets (cleared to zero, so alpha 0 marks pixels without terrain), draws only opaque terrain into them and the scene in a four-attachment render pass with the glossy mask bound, and publishes them in `GeometryBuffer`; while temporal anti-aliasing runs it also copies the terrain-only depth into `helion:terrain_depth` (R32_FLOAT, pass `terrain_depth`) for the moving object detection of `taa_resolve`; `SolidFeatureStage` draws the rest afterwards.
+- Role: Prepares fog, chunk sampler, translucent buffers and lighting, then draws opaque terrain and solid features in one pass, as vanilla does. The cutout layer uses the see-through glass pipelines while realistic water and glass are on and the terrain supports the water surface. With the geometry buffer on, creates the normal, light and albedo targets (cleared to zero, so alpha 0 marks pixels without terrain), draws only opaque terrain into them and the scene in a four-attachment render pass with the glossy mask bound, and publishes them in `GeometryBuffer`; while temporal anti-aliasing runs it also copies the terrain-only depth into `helion:terrain_depth` (R32_FLOAT, pass `terrain_depth`) for the moving object detection of `taa_resolve`; `SolidFeatureStage` draws the rest afterwards.
 - Depends on: `TerrainSource`, `EntitySource`, `AtmosphereSource`, `GlossyMask`.
 
 #### EntityGeometryStage
@@ -31,11 +31,11 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### TerrainSource
 - Path: `src/main/java/com/aryston/helion/render/geometry/TerrainSource.java`
-- Role: Contract for drawing chunk geometry: `prepareFrame`, `supportsGeometryBuffer`, `renderOpaque` (vanilla path with the after-opaque event), `renderOpaqueGeometry` (geometry buffer path), `afterOpaque`, `renderTranslucent`, `supportsWaterSurface` and `renderWaterSurface` (translucent layer and plain glass into the water surface target), `textures()`, `glossyCells()`.
+- Role: Contract for drawing chunk geometry: `prepareFrame`, `supportsGeometryBuffer`, `renderOpaque` (vanilla path with the after-opaque event), `renderOpaqueGeometry` (geometry buffer path; `seeThroughGlass` drops the opaque plain glass texels), `afterOpaque`, `renderTranslucent`, `supportsWaterSurface` and `renderWaterSurface` (translucent layer and plain glass into the water surface target), `textures()`, `glossyCells()`.
 
 #### TerrainTextures
 - Path: `src/main/java/com/aryston/helion/render/geometry/TerrainTextures.java`
-- Role: The block atlas, the lightmap and the atlas bounds of the still, flowing and overlay water sprites, for the water surface and the traced reflections.
+- Role: The block atlas, the lightmap and the atlas bounds of the still, flowing and overlay water sprites and of `block/glass` (plain glass and panes), for the water surface and the traced reflections.
 
 #### GeometryBuffer
 - Path: `src/main/java/com/aryston/helion/render/geometry/GeometryBuffer.java`

@@ -58,7 +58,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### WaterResources
 - Path: `src/main/java/com/aryston/helion/render/water/WaterResources.java`
-- Role: Owned by `HelionRenderCore`: the rain wetness state, the uniform rings of the surface pass and of the glass pass (water sprite bounds, wave strength, glass pass flag), the screen pass (view projection and its inverse, flags, wetness, camera position modulo 1024 for the puddle noise) and the composite (inverse view projection, reflection strength), and the compiled composite program with a one-time warning when it is missing.
+- Role: Owned by `HelionRenderCore`: the rain wetness state, the uniform rings of the surface pass and of the glass pass (water sprite bounds, wave strength, glass pass flag, plain glass sprite bounds), the screen pass (view projection and its inverse, flags, wetness, camera position modulo 1024 for the puddle noise) and the composite (inverse view projection, reflection strength), and the compiled composite program with a one-time warning when it is missing.
 
 #### WaterResults, SceneReflectionPass
 - Path: `src/main/java/com/aryston/helion/render/water/WaterResults.java`, `src/main/java/com/aryston/helion/render/water/SceneReflectionPass.java`

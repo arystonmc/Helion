@@ -7,10 +7,12 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Path traced light: nights are dark, lit by the moon in its real strength instead of the vanilla night brightness, so torches and lanterns matter; torches and other light blocks shine stronger
+- Plain glass and glass panes are clear real glass without the vanilla frame and streaks
 - Path traced light: mobs, dropped items and other entities no longer have the vanilla round black shadow under them; the ray traced shadows replace it
 - Path traced light: polished blocks get glossy ray traced reflections, and iron, gold, netherite and copper blocks reflect like real metal
 - Experimental path traced light (Ray Tracing section): Helion's new ray traced light, with ray traced sun and moon shadows with soft edges, colored block light with ray traced shadows from every light block, and light that bounces up to three times between surfaces and the sky, cleaned up by a denoiser that keeps edges and textures sharp
-- Glass is smooth with an even tint and carries rain drops that bead up and run down
+- Glass is smooth with an even tint and carries small rain drops of two sizes that act as tiny lenses, bead up and run down in thin trails
 - Realistic glass: plain glass slightly bends the view behind it, stained glass tints it like real colored glass, and glass reflects the world
 - Realistic water: waves roll in from open water and break on beaches with white foam that runs up the shore
 - In third person the player, slimes and other see-through mobs mirror in the water and show through it

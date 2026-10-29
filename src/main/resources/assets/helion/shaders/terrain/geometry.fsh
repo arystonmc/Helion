@@ -75,6 +75,11 @@ void main() {
         discard;
     }
     #endif
+    #ifdef HELION_SEE_THROUGH_GLASS
+    if (cell == HELION_CELL_GLOSSY) {
+        discard;
+    }
+    #endif
 
     fragColor = apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
     geometryNormal = vec4(helionEncodeNormal(faceNormal(cameraRelativePosition, derived)), HELION_GEOMETRY_PRESENT);

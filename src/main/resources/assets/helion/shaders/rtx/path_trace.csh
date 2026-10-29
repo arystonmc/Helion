@@ -60,6 +60,7 @@ struct HelionSky {
     vec3 moon;
     vec3 dome;
     vec3 ambient;
+    float vanillaShare;
 };
 
 struct HelionBlockLight {
@@ -89,7 +90,9 @@ const float HELION_MOON_RADIUS = 0.0186;
 const float HELION_SKY_GAMMA = 2.2;
 const float HELION_SKY_GATE_LEVELS = 15.0;
 const float HELION_DOME_GROUND = 0.45;
-const float HELION_MIN_OPEN_SKY = 1.0e-4;
+const float HELION_DAYLIGHT_OPEN_SKY = 3.0;
+const float HELION_DAY_FULL_SKY = 1.0;
+const float HELION_MIN_VANILLA_SKY = 1.0e-3;
 const int HELION_GRID_RADIUS = 4;
 const int HELION_GRID_SIZE = 2 * HELION_GRID_RADIUS + 1;
 const float HELION_SCENE_REACH = float(HELION_GRID_RADIUS) * HELION_SECTION_SIZE;
@@ -98,7 +101,7 @@ const uint HELION_RECORD_ENTRIES = 2u;
 const uint HELION_NO_LIGHT = 0xFFFFFFFFu;
 const float HELION_LIGHT_COLOR_RANGE = 2.0;
 const uint HELION_FLICKER_BIT = 1u << 24u;
-const float HELION_BLOCK_STRENGTH = 2.2;
+const float HELION_BLOCK_STRENGTH = 3.0;
 const float HELION_BLOCK_NEAR = 1.0;
 const float HELION_OWN_FACE = 0.05;
 const float HELION_ENTRY_MARGIN = 0.02;
@@ -378,10 +381,11 @@ HelionSky helionSky() {
     vec3 moonLight = texelFetch(SkyLightSampler, HELION_MOON_TEXEL, 0).rgb;
     vec3 dome = texelFetch(SkyLightSampler, HELION_DOME_TEXEL, 0).rgb;
     vec3 ambient = helionSrgbToLinear(helionLightmapTexel(ivec2(0)));
-    vec3 fullSky = helionSrgbToLinear(helionLightmapTexel(ivec2(0, HELION_LIGHTMAP_LAST_TEXEL)));
     float openSky = helionLuminance(sunLight) * max(Sun.y, 0.0) + helionLuminance(moonLight) * max(Moon.y, 0.0) + helionLuminance(dome);
-    float scale = max(helionLuminance(fullSky) - helionLuminance(ambient), 0.0) / max(openSky, HELION_MIN_OPEN_SKY);
-    return HelionSky(sunLight * scale, moonLight * scale, dome * scale, ambient);
+    float scale = max(HELION_DAY_FULL_SKY - helionLuminance(ambient), 0.0) / max(openSky, HELION_DAYLIGHT_OPEN_SKY);
+    float vanillaSky = helionLuminance(helionSrgbToLinear(helionLightmapTexel(ivec2(0, HELION_LIGHTMAP_LAST_TEXEL))));
+    float vanillaShare = clamp((helionLuminance(ambient) + openSky * scale) / max(vanillaSky, HELION_MIN_VANILLA_SKY), 0.0, 1.0);
+    return HelionSky(sunLight * scale, moonLight * scale, dome * scale, ambient, vanillaShare);
 }
 
 const int HELION_CACHE_PROBES = 8;
@@ -728,13 +732,14 @@ void main() {
     float span = length(view);
     vec3 origin = position + normal * (HELION_ORIGIN_OFFSET + span * HELION_ORIGIN_DISTANCE_SHARE);
     float traced = helionSceneShare(origin);
+    HelionSky sky = helionSky();
+    vanilla *= mix(1.0, sky.vanillaShare, levels.g);
     if (traced <= 0.0) {
         imageStore(Irradiance, pixel, vec4(vanilla, HELION_PATH_LIT));
         imageStore(Specular, pixel, HELION_NO_SPECULAR);
         return;
     }
     helionState = helionPcg(uint(pixel.x) ^ helionPcg(uint(pixel.y) ^ helionPcg(uint(Frame.w))));
-    HelionSky sky = helionSky();
     float gate = clamp(levels.g * HELION_SKY_GATE_LEVELS, 0.0, 1.0);
     vec3 indirect;
     if (!helionCachedIndirect(position, normal, span, gate, indirect)) {

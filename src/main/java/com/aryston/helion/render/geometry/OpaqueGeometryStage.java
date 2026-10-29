@@ -65,7 +65,8 @@ public final class OpaqueGeometryStage implements RenderStage {
             ? Optional.of(createGeometryTargets(frame, pass))
             : Optional.empty();
         geometry.ifPresent(frame.geometry()::publish);
-        pass.executes(frame.graph().timed(NAME, () -> render(scene.get(), geometry)));
+        boolean seeThroughGlass = frame.settings().reflections().realisticWater() && terrain.supportsWaterSurface();
+        pass.executes(frame.graph().timed(NAME, () -> render(scene.get(), geometry, seeThroughGlass)));
         if (geometry.isPresent() && frame.temporal().active()) {
             HelionPipelines.compiled(GeometryBufferPipelines.TERRAIN_DEPTH).ifPresent(pipeline -> addTerrainDepthPass(frame, scene, pipeline));
         }
@@ -98,12 +99,12 @@ public final class OpaqueGeometryStage implements RenderStage {
         );
     }
 
-    private void render(RenderTarget target, Optional<GeometryBuffer.Targets> geometry) {
+    private void render(RenderTarget target, Optional<GeometryBuffer.Targets> geometry, boolean seeThroughGlass) {
         terrain.prepareFrame();
         atmosphere.prepareTranslucents();
         entities.prepareLighting();
         if (geometry.isPresent()) {
-            renderGeometry(target, geometry.get());
+            renderGeometry(target, geometry.get(), seeThroughGlass);
             return;
         }
         try (RenderPass pass = RenderSystem.getDevice()
@@ -121,7 +122,7 @@ public final class OpaqueGeometryStage implements RenderStage {
         }
     }
 
-    private void renderGeometry(RenderTarget target, GeometryBuffer.Targets targets) {
+    private void renderGeometry(RenderTarget target, GeometryBuffer.Targets targets, boolean seeThroughGlass) {
         GpuTextureView mask = glossy.update(terrain.glossyCells());
         RenderPassDescriptor descriptor = RenderPassDescriptor.builder(() -> GEOMETRY_PASS_LABEL)
             .withColorAttachment(colorView(target))
@@ -133,7 +134,7 @@ public final class OpaqueGeometryStage implements RenderStage {
         try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor)) {
             RenderSystem.bindDefaultUniforms(pass);
             pass.setUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, mask, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
-            terrain.renderOpaqueGeometry(pass);
+            terrain.renderOpaqueGeometry(pass, seeThroughGlass);
         }
     }
 

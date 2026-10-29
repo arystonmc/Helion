@@ -20,7 +20,12 @@ public final class VanillaGeometryPipelines {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String PIPELINE_PREFIX = "pipeline/geometry/";
     private static final Identifier SHADER = Identifier.fromNamespaceAndPath(Helion.MOD_ID, "terrain/geometry");
+    private static final String SEE_THROUGH_GLASS_DEFINE = "HELION_SEE_THROUGH_GLASS";
     private static final Map<ChunkSectionLayer, LayerPipelines> BY_LAYER = layers();
+    private static final LayerPipelines SEE_THROUGH_GLASS = new LayerPipelines(
+        geometry(RenderPipelines.CUTOUT_TERRAIN, "cutout_terrain_see_through_glass").withShaderDefine(SEE_THROUGH_GLASS_DEFINE).build(),
+        geometry(RenderPipelines.CUTOUT_TERRAIN_MULTIDRAW, "cutout_terrain_see_through_glass_multidraw").withShaderDefine(SEE_THROUGH_GLASS_DEFINE).build()
+    );
     private static boolean missingPipelinesReported;
 
     private VanillaGeometryPipelines() {
@@ -39,12 +44,15 @@ public final class VanillaGeometryPipelines {
         return compiled;
     }
 
-    static LayerPipelines forLayer(ChunkSectionLayer layer) {
+    static LayerPipelines forLayer(ChunkSectionLayer layer, boolean seeThroughGlass) {
+        if (seeThroughGlass && layer == ChunkSectionLayer.CUTOUT) {
+            return SEE_THROUGH_GLASS;
+        }
         return Objects.requireNonNull(BY_LAYER.get(layer), layer::label);
     }
 
     private static Stream<RenderPipeline> pipelines() {
-        return BY_LAYER.values().stream().flatMap(pipelines -> Stream.of(pipelines.direct(), pipelines.multiDraw()));
+        return Stream.concat(BY_LAYER.values().stream(), Stream.of(SEE_THROUGH_GLASS)).flatMap(pipelines -> Stream.of(pipelines.direct(), pipelines.multiDraw()));
     }
 
     private static boolean isCompiled(RenderPipeline pipeline) {
@@ -54,17 +62,17 @@ public final class VanillaGeometryPipelines {
     private static Map<ChunkSectionLayer, LayerPipelines> layers() {
         return Map.of(
             ChunkSectionLayer.SOLID, new LayerPipelines(
-                geometry(RenderPipelines.SOLID_TERRAIN, "solid_terrain"),
-                geometry(RenderPipelines.SOLID_TERRAIN_MULTIDRAW, "solid_terrain_multidraw")
+                geometry(RenderPipelines.SOLID_TERRAIN, "solid_terrain").build(),
+                geometry(RenderPipelines.SOLID_TERRAIN_MULTIDRAW, "solid_terrain_multidraw").build()
             ),
             ChunkSectionLayer.CUTOUT, new LayerPipelines(
-                geometry(RenderPipelines.CUTOUT_TERRAIN, "cutout_terrain"),
-                geometry(RenderPipelines.CUTOUT_TERRAIN_MULTIDRAW, "cutout_terrain_multidraw")
+                geometry(RenderPipelines.CUTOUT_TERRAIN, "cutout_terrain").build(),
+                geometry(RenderPipelines.CUTOUT_TERRAIN_MULTIDRAW, "cutout_terrain_multidraw").build()
             )
         );
     }
 
-    private static RenderPipeline geometry(RenderPipeline vanilla, String name) {
+    private static RenderPipeline.Builder geometry(RenderPipeline vanilla, String name) {
         return vanilla.toBuilder()
             .withLocation(Identifier.fromNamespaceAndPath(Helion.MOD_ID, PIPELINE_PREFIX + name))
             .withVertexShader(SHADER)
@@ -74,8 +82,7 @@ public final class VanillaGeometryPipelines {
             .withColorTargetState(GeometryBufferPipelines.ALBEDO_TARGET, GeometryBufferPipelines.target(GeometryBufferPipelines.ALBEDO_FORMAT))
             .withBindGroupLayout(BindGroupLayout.builder()
                 .withUniform(GeometryBufferPipelines.GLOSSY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
-                .build())
-            .build();
+                .build());
     }
 
     record LayerPipelines(RenderPipeline direct, RenderPipeline multiDraw) {

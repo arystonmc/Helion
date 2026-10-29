@@ -20,6 +20,7 @@ layout(std140) uniform HelionWaterSurface {
     vec4 WaterRain;
     float WaveStrength;
     vec4 WaterOverlay;
+    vec4 PlainGlass;
 };
 
 layout(location = 0) in vec2 texCoord0;
@@ -44,6 +45,7 @@ const float HELION_SIMULATION_SLOPE_SHARE = 0.85;
 const float HELION_SIMULATION_SLOPE_SCALE = HELION_SIMULATION_CELLS_PER_BLOCK / 2.0 * HELION_SIMULATION_SLOPE_SHARE;
 const float HELION_SIMULATION_ON = 0.5;
 const float HELION_GLASS_PASS_ON = 0.5;
+const vec4 HELION_CLEAR_GLASS_TINT = vec4(0.93, 0.98, 0.97, 0.0);
 const float HELION_SHORE_DEEP = 0.3;
 const float HELION_SHORE_SHALLOW_FROM = 3.0;
 const float HELION_SHORE_SHALLOW_TO = 9.0;
@@ -122,7 +124,7 @@ void main() {
         discard;
     }
     #elif defined(ALPHA_CUTOUT)
-    if (texel.a * vertexAlpha < ALPHA_CUTOUT) {
+    if (texel.a * vertexAlpha < ALPHA_CUTOUT && !helionInside(texCoord0, PlainGlass)) {
         discard;
     }
     #endif
@@ -139,7 +141,7 @@ void main() {
     }
     if (!waterTexture) {
         waterSurface = vec4(helionEncodeOctahedral(normal), helionEncodeGlossy(helionWaterThickness(sceneDepth)), skyLight);
-        waterTint = vec4(texel.rgb * vertexTint, texel.a);
+        waterTint = helionInside(texCoord0, PlainGlass) ? HELION_CLEAR_GLASS_TINT : vec4(texel.rgb * vertexTint, texel.a);
         return;
     }
     bool flowing = helionInside(texCoord0, WaterFlow);
