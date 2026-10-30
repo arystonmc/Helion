@@ -204,6 +204,10 @@ float helionFootprints(vec2 position) {
     return wet;
 }
 
+bool helionTracedHit(ivec2 pixel) {
+    return FootprintCount.y > HELION_FLAG_SET && texelFetch(ReflectionSampler, pixel, 0).a > HELION_FLAG_SET;
+}
+
 vec4 helionSurfaceSheen(ivec2 pixel, vec2 screen) {
     if (ReflectionFlags.x < HELION_FLAG_SET) {
         return vec4(0.0);
@@ -265,7 +269,7 @@ void main() {
         return;
     }
     vec3 normal = helionDecodeOctahedral(surface.xy);
-    if (water && normal.y < HELION_MIN_FACING) {
+    if (water && normal.y < HELION_MIN_FACING || helionTracedHit(pixel)) {
         return;
     }
     float reach;

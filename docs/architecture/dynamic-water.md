@@ -45,7 +45,7 @@ While puddles are filling (puddle level above 0.05) the land cells of the field 
 
 ## Phase 1b: Shores (2026-10-24)
 
-`WaterShoreMask` keeps one byte per block for the 128 x 128 block window (R8 texture, toroidal like the field) and rescans 16 rows of it per frame through `WaveSource.holdsWaves`: a column holds waves when the topmost motion blocking block (client height map) is water, when it is more than 8 blocks above the camera (caves, high roofs: unknown, so waves stay free), or when below a roof of at most 3 blocks and at most 12 blocks of air the first block is water. Cells of land columns stay at zero, so waves reflect from shores and never cross land into the next pond. About 3 to 6 block lookups per column, 2048 columns per frame.
+`WaterShoreMask` keeps one byte per block for the 128 x 128 block window (R8 texture, toroidal like the field) and rescans 16 rows of it per frame through `WaveSource.holdsWaves`: a column holds waves when the topmost motion blocking block (client height map) is water, when it is more than 8 blocks above the camera (caves, high roofs: unknown, so waves stay free), or when below a roof of at most 3 blocks and at most 12 blocks of air the first block is water. Cells of land columns stay at zero, so waves reflect from shores and never cross land into the next pond. About 2 to 4 block lookups per column, 2048 columns per frame; the mask is uploaded only when a rescanned cell changed, and the shore distance is recomputed only then or when the window moved by a block.
 
 The simulated waves only tilt the surface: they are a few hundredths of a block high, so displacing them would hardly change the silhouette.
 

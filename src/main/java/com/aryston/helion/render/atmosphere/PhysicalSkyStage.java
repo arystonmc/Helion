@@ -34,6 +34,8 @@ public final class PhysicalSkyStage implements RenderStage {
     private static final String MOON_SKY_VIEW_PASS = "sky_view_moon";
     private static final String HORIZON_PASS = "sky_horizon";
     private static final String SKY_LIGHT_PASS = "sky_light";
+    private static final String CELESTIALS_PASS = "sky_celestials";
+    private static final String BACKDROP_LABEL = "Helion Physical Sky";
     private static final String FOG_LABEL = "Helion Sky Fog";
 
     private final AtmosphereSource atmosphere;
@@ -41,6 +43,7 @@ public final class PhysicalSkyStage implements RenderStage {
     private @Nullable PhysicalSkyPrograms programs;
     private @Nullable SkyEnvironment environment;
     private @Nullable GpuBuffer frameUniforms;
+    private @Nullable SkyBackdrop backdrop;
 
     public PhysicalSkyStage(AtmosphereSource atmosphere, PhysicalSkyResources resources) {
         this.atmosphere = atmosphere;
@@ -205,18 +208,18 @@ public final class PhysicalSkyStage implements RenderStage {
     }
 
     private void addSkyPass(FrameContext frame, PhysicalSkyPrograms compiled, SkyEnvironment sky, List<LookupInput> inputs) {
-        FramePass pass = frame.graph().addPass(NAME);
-        inputs.forEach(input -> pass.reads(input.target()));
+        FramePass pass = frame.graph().addPass(CELESTIALS_PASS);
         ResourceHandle<RenderTarget> scene = pass.readsAndWrites(frame.targets().scene());
         frame.targets().updateScene(scene);
-        pass.executes(frame.graph().timed(NAME, () -> {
+        pass.executes(frame.graph().timed(CELESTIALS_PASS, () -> {
             resources.writeFog(sky.fog());
-            FullscreenPass.draw("Helion Physical Sky", scene.get(), compiled.sky(), renderPass -> {
-                renderPass.setUniform(PhysicalSkyPipelines.SETTINGS, uniforms(sky, frame));
-                bind(renderPass, inputs);
-            });
             atmosphere.renderCelestials(scene.get());
         }));
+        backdrop = new SkyBackdrop(compiled, sky, inputs);
+    }
+
+    public RenderStage backdrop() {
+        return new BackdropStage();
     }
 
     private GpuBuffer uniforms(SkyEnvironment sky, FrameContext frame) {
@@ -265,6 +268,35 @@ public final class PhysicalSkyStage implements RenderStage {
     }
 
     private record LookupInput(String sampler, ResourceHandle<RenderTarget> target) {
+    }
+
+    private record SkyBackdrop(PhysicalSkyPrograms compiled, SkyEnvironment sky, List<LookupInput> inputs) {
+    }
+
+    private final class BackdropStage implements RenderStage {
+        @Override
+        public String name() {
+            return NAME;
+        }
+
+        @Override
+        public boolean isActive(FrameContext frame) {
+            return backdrop != null;
+        }
+
+        @Override
+        public void addTo(FrameContext frame) {
+            SkyBackdrop drawn = Objects.requireNonNull(backdrop);
+            backdrop = null;
+            FramePass pass = frame.graph().addPass(NAME);
+            drawn.inputs().forEach(input -> pass.reads(input.target()));
+            ResourceHandle<RenderTarget> scene = pass.readsAndWrites(frame.targets().scene());
+            frame.targets().updateScene(scene);
+            pass.executes(frame.graph().timed(NAME, () -> FullscreenPass.drawWithDepth(BACKDROP_LABEL, scene.get(), drawn.compiled().sky(), renderPass -> {
+                renderPass.setUniform(PhysicalSkyPipelines.SETTINGS, uniforms(drawn.sky(), frame));
+                bind(renderPass, drawn.inputs());
+            })));
+        }
     }
 
     private record SkyView(List<RenderTarget> targets, SkyViewCache cache, float lightHeight, float viewHeight, boolean lookupsWritten) {

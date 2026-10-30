@@ -35,6 +35,8 @@ final class WaterShoreMask {
     private @Nullable ByteBuffer cells;
     private @Nullable TrackedResource tracked;
     private int nextRow;
+    private int distanceCornerX;
+    private int distanceCornerZ;
 
     WaterShoreMask(GpuResources resources) {
         this.resources = resources;
@@ -45,18 +47,32 @@ final class WaterShoreMask {
         ByteBuffer data = cells();
         int cornerX = (int) Math.floor(cameraX) - HALF;
         int cornerZ = (int) Math.floor(cameraZ) - HALF;
-        int cameraBlockY = (int) Math.floor(cameraY);
+        boolean cellsChanged = rescan(source, data, cornerX, cornerZ, (int) Math.floor(cameraY)) || texture == null;
+        if (cellsChanged) {
+            RenderSystem.getDevice().createCommandEncoder().writeToTexture(texture(), data, BASE_LEVEL, FIRST_LAYER, ORIGIN, ORIGIN, SIZE, SIZE);
+        }
+        if (cellsChanged || cornerX != distanceCornerX || cornerZ != distanceCornerZ) {
+            distance.update(data, LAND, cornerX, cornerZ);
+            distanceCornerX = cornerX;
+            distanceCornerZ = cornerZ;
+        }
+        return Objects.requireNonNull(view);
+    }
+
+    private boolean rescan(WaveSource source, ByteBuffer data, int cornerX, int cornerZ, int cameraBlockY) {
+        boolean changed = false;
         for (int row = 0; row < ROWS_PER_FRAME; row++) {
             int blockZ = cornerZ + nextRow;
             for (int column = 0; column < SIZE; column++) {
                 int blockX = cornerX + column;
-                data.put((blockZ & MASK) * SIZE + (blockX & MASK), source.holdsWaves(blockX, blockZ, cameraBlockY) ? WATER : LAND);
+                int index = (blockZ & MASK) * SIZE + (blockX & MASK);
+                byte cell = source.holdsWaves(blockX, blockZ, cameraBlockY) ? WATER : LAND;
+                changed |= data.get(index) != cell;
+                data.put(index, cell);
             }
             nextRow = (nextRow + 1) % SIZE;
         }
-        RenderSystem.getDevice().createCommandEncoder().writeToTexture(texture(), data, BASE_LEVEL, FIRST_LAYER, ORIGIN, ORIGIN, SIZE, SIZE);
-        distance.update(data, LAND, cornerX, cornerZ);
-        return Objects.requireNonNull(view);
+        return changed;
     }
 
     Optional<GpuTextureView> view() {

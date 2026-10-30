@@ -111,7 +111,7 @@ public final class WaterSurfaceStage implements RenderStage {
 
     private void renderGlass(RenderTarget scene, RenderTarget surface, RenderTarget tint, GpuTextureView mask, Wetness wetness, Optional<RenderTarget> waves) {
         try (RenderPass pass = openPass(GLASS_PASS_LABEL, scene, surface, tint, mask, wetness, waves, GLASS_PASS)) {
-            terrain.renderWaterSurface(pass);
+            terrain.renderGlassSurface(pass);
         }
     }
 

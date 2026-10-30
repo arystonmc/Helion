@@ -41,6 +41,8 @@ const float HELION_SIMULATION_ON = 0.5;
 const float HELION_SWELL_NEAR = 48.0;
 const float HELION_SWELL_FAR = 60.0;
 const float HELION_SPRITE_EDGE = 1.0e-4;
+const float HELION_GLASS_PASS_ON = 0.5;
+const vec4 HELION_OUTSIDE_VIEW = vec4(2.0, 2.0, 2.0, 1.0);
 
 bool helionInsideSprite(vec2 uv, vec4 rect) {
     return all(greaterThanEqual(uv, rect.xy - HELION_SPRITE_EDGE)) && all(lessThanEqual(uv, rect.zw + HELION_SPRITE_EDGE));
@@ -53,6 +55,10 @@ void main() {
     wavePosition = vec2(ChunkPosition.xz & HELION_WAVE_WRAP) + local.xz;
     worldPosition = vec3(ChunkPosition) + local;
     bool water = helionInsideSprite(texCoord0, WaterStill) || helionInsideSprite(texCoord0, WaterFlow);
+    if ((water || helionInsideSprite(texCoord0, WaterOverlay)) == (WaterRain.w > HELION_GLASS_PASS_ON)) {
+        gl_Position = HELION_OUTSIDE_VIEW;
+        return;
+    }
     float far = smoothstep(HELION_SWELL_NEAR, HELION_SWELL_FAR, length(pos.xz));
     bool simulated = water && WaterRain.z > HELION_SIMULATION_ON;
     float open = simulated && far < 1.0 ? helionOceanOpenness(ShoreSampler, wavePosition) : 0.0;

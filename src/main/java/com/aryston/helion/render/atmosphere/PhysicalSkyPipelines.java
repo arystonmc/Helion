@@ -5,6 +5,8 @@ import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
 import com.mojang.renderpearl.api.pipeline.BlendFunction;
 import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.CompareOp;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.pipeline.UniformType;
 import java.util.List;
@@ -58,6 +60,7 @@ public final class PhysicalSkyPipelines {
     public static final RenderPipeline SKY = HelionPipelines.fullscreen("atmosphere/sky")
         .withBindGroupLayout(skyColorBindings().build())
         .withColorTargetState(new ColorTargetState(Optional.empty(), SCENE_COLOR_FORMAT, ColorTargetState.WRITE_ALL))
+        .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
         .build();
 
     public static final RenderPipeline FOG_PASS = HelionPipelines.fullscreen("atmosphere/fog")

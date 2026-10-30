@@ -104,7 +104,14 @@ final class VanillaTerrainSource implements TerrainSource {
     public void renderWaterSurface(RenderPass waterPass) {
         Profiler.get().push("waterSurface");
         VanillaWaterPipelines.surface().ifPresent(pipelines -> renderLayer(ChunkSectionLayer.TRANSLUCENT, waterPass, pipelines));
-        VanillaWaterPipelines.glass().ifPresent(pipelines -> renderLayer(ChunkSectionLayer.CUTOUT, waterPass, pipelines));
+        Profiler.get().pop();
+    }
+
+    @Override
+    public void renderGlassSurface(RenderPass glassPass) {
+        Profiler.get().push("glassSurface");
+        VanillaWaterPipelines.surface().ifPresent(pipelines -> renderLayer(ChunkSectionLayer.TRANSLUCENT, glassPass, pipelines));
+        VanillaWaterPipelines.glass().ifPresent(pipelines -> renderLayer(ChunkSectionLayer.CUTOUT, glassPass, pipelines));
         Profiler.get().pop();
     }
 

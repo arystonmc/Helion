@@ -59,11 +59,13 @@ public final class FrameStages {
 
     private static List<RenderStage> create(FrameContext frame, FrameSources sources) {
         HelionRenderCore core = HelionRenderCore.get();
+        PhysicalSkyStage physical = new PhysicalSkyStage(sources.atmosphere(), core.sky());
         return List.of(
             new ClearStage(),
             new RainWetnessStage(sources.weather(), sources.footprints(), sources.waves(), core.water()),
-            sky(frame, sources, core),
+            sky(frame, physical, sources),
             new OpaqueGeometryStage(sources.terrain(), sources.entities(), sources.atmosphere(), core.glossy()),
+            physical.backdrop(),
             new EntityGeometryStage(sources.entities()),
             new RtxSceneStage(core.rayTracing(), sources.lights()),
             new RtxPathTracingStage(core.rayTracing(), sources.terrain(), core.glossy()),
@@ -97,8 +99,7 @@ public final class FrameStages {
         return effects;
     }
 
-    private static RenderStage sky(FrameContext frame, FrameSources sources, HelionRenderCore core) {
-        PhysicalSkyStage physical = new PhysicalSkyStage(sources.atmosphere(), core.sky());
+    private static RenderStage sky(FrameContext frame, PhysicalSkyStage physical, FrameSources sources) {
         return physical.isActive(frame) ? physical : new SkyStage(sources.atmosphere());
     }
 

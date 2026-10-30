@@ -12,6 +12,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 
@@ -87,17 +88,18 @@ final class VanillaWaveSource implements WaveSource {
         }
         BlockPos.MutableBlockPos position = new BlockPos.MutableBlockPos(blockX, top, blockZ);
         int lowest = top - MAX_ROOF_THICKNESS;
-        while (position.getY() > lowest && !level.getBlockState(position).isAir()) {
-            if (level.getFluidState(position).is(FluidTags.WATER)) {
+        BlockState state = level.getBlockState(position);
+        while (position.getY() > lowest && !state.isAir()) {
+            if (state.getFluidState().is(FluidTags.WATER)) {
                 return true;
             }
-            position.move(Direction.DOWN);
+            state = level.getBlockState(position.move(Direction.DOWN));
         }
         int floor = position.getY() - MAX_HEADROOM;
-        while (position.getY() > floor && level.getBlockState(position).isAir()) {
-            position.move(Direction.DOWN);
+        while (position.getY() > floor && state.isAir()) {
+            state = level.getBlockState(position.move(Direction.DOWN));
         }
-        return level.getFluidState(position).is(FluidTags.WATER);
+        return state.getFluidState().is(FluidTags.WATER);
     }
 
     @Override

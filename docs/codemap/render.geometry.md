@@ -31,7 +31,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### TerrainSource
 - Path: `src/main/java/com/aryston/helion/render/geometry/TerrainSource.java`
-- Role: Contract for drawing chunk geometry: `prepareFrame`, `supportsGeometryBuffer`, `renderOpaque` (vanilla path with the after-opaque event), `renderOpaqueGeometry` (geometry buffer path; `seeThroughGlass` drops the opaque plain glass texels), `afterOpaque`, `renderTranslucent` (with the glossy mask when plain glass is see-through), `supportsWaterSurface` and `renderWaterSurface` (translucent layer and plain glass into the water surface target), `textures()`, `glossyCells()`.
+- Role: Contract for drawing chunk geometry: `prepareFrame`, `supportsGeometryBuffer`, `renderOpaque` (vanilla path with the after-opaque event), `renderOpaqueGeometry` (geometry buffer path; `seeThroughGlass` drops the opaque plain glass texels), `afterOpaque`, `renderTranslucent` (with the glossy mask when plain glass is see-through), `supportsWaterSurface`, `renderWaterSurface` (translucent layer only, for the water pass) and `renderGlassSurface` (translucent layer and plain glass, for the glass pass), `textures()`, `glossyCells()`.
 
 #### TerrainTextures
 - Path: `src/main/java/com/aryston/helion/render/geometry/TerrainTextures.java`

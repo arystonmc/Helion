@@ -21,6 +21,8 @@ public interface TerrainSource {
 
     void renderWaterSurface(RenderPass waterPass);
 
+    void renderGlassSurface(RenderPass glassPass);
+
     TerrainTextures textures();
 
     GlossyCells glossyCells();
