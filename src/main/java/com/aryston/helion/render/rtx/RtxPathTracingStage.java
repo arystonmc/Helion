@@ -172,7 +172,7 @@ public final class RtxPathTracingStage implements RenderStage {
     private static void writeDenoiseConstants(ByteBuffer constants, HelionCamera camera, RtxDenoiseImages images) {
         constants.clear();
         camera.levelViewProjection().invert().get(0, constants);
-        images.reprojection(camera).get(MATRIX_BYTES, constants);
+        images.writeReprojection(camera, MATRIX_BYTES, constants);
         images.advance(camera.levelViewProjection(), camera.position());
     }
 

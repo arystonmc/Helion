@@ -3,6 +3,7 @@ package com.aryston.helion.render.rtx;
 import com.aryston.helion.render.camera.HelionCamera;
 import com.aryston.helion.render.resource.GpuResources;
 import com.mojang.renderpearl.api.GpuFormat;
+import java.nio.ByteBuffer;
 import java.util.Optional;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
@@ -119,16 +120,17 @@ final class RtxDenoiseImages {
         return specularHistory[1 - current];
     }
 
-    Matrix4f reprojection(HelionCamera camera) {
+    void writeReprojection(HelionCamera camera, int offset, ByteBuffer constants) {
         Matrix4f last = previousViewProjection;
         Vector3d lastPosition = previousPosition;
         if (last == null || lastPosition == null) {
-            return new Matrix4f().zero();
+            new Matrix4f().zero().get(offset, constants);
+            return;
         }
         Vector3dc position = camera.position();
-        return new Matrix4f(last).translate(
+        new Matrix4f(last).translate(
             (float) (position.x() - lastPosition.x()), (float) (position.y() - lastPosition.y()), (float) (position.z() - lastPosition.z())
-        );
+        ).get(offset, constants);
     }
 
     void advance(Matrix4fc viewProjection, Vector3dc position) {
