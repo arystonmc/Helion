@@ -157,76 +157,85 @@ public final class RtxPathTracingStage implements RenderStage {
     }
 
     private void denoise(FrameContext frame, GeometryBuffer.Targets geometry, RtxDenoiseImages images) {
-        HelionCamera camera = frame.camera();
         ByteBuffer constants = resources.accumulateConstants();
-        constants.clear();
-        camera.levelViewProjection().invert().get(0, constants);
-        images.reprojection(camera).get(MATRIX_BYTES, constants);
-        images.advance(camera.levelViewProjection(), camera.position());
-        RtxImage traced = images.work(TRACED_SLOT);
-        RtxImage accumulated = images.work(FINAL_SLOT);
-        RtxImage history = images.history();
-        RtxImage moments = images.moments();
-        RtxImage previousMoments = images.previousMoments();
-        RtxImage guide = images.guide();
-        RtxImage previousGuide = images.previousGuide();
-        RtxImage specular = images.specular();
-        RtxImage specularHistory = images.specularHistory();
-        RtxImage previousSpecularHistory = images.previousSpecularHistory();
-        RtxImage[] chain = {accumulated, history, traced, accumulated};
+        writeDenoiseConstants(constants, frame.camera(), images);
         FramePass pass = frame.graph().addPass(DENOISE_PASS);
         pass.reads(geometry.normal());
         pass.reads(geometry.light());
         ResourceHandle<RenderTarget> sceneTarget = frame.targets().scene();
         pass.reads(sceneTarget);
         pass.disableCulling();
+        DenoiseFrame targets = DenoiseFrame.of(images, geometry, sceneTarget, constants);
+        pass.executes(frame.graph().timed(DENOISE_PASS, () -> runDenoise(targets)));
+    }
+
+    private static void writeDenoiseConstants(ByteBuffer constants, HelionCamera camera, RtxDenoiseImages images) {
+        constants.clear();
+        camera.levelViewProjection().invert().get(0, constants);
+        images.reprojection(camera).get(MATRIX_BYTES, constants);
+        images.advance(camera.levelViewProjection(), camera.position());
+    }
+
+    private void runDenoise(DenoiseFrame frame) {
+        accumulate(frame);
+        filter(frame);
+        resources.device().memoryBarrier();
+        frame.images().upsampled().ifPresent(upsampled -> upsample(frame, upsampled));
+    }
+
+    private void accumulate(DenoiseFrame frame) {
+        RtxDevice device = resources.device();
+        RtxDenoiseImages images = frame.images();
+        resources.accumulatePipeline().dispatch(device.commandBuffer(), List.of(
+            new RtxBinding.StorageImage(frame.accumulated().vkImageView()),
+            new RtxBinding.StorageImage(frame.moments().vkImageView()),
+            new RtxBinding.StorageImage(frame.guide().vkImageView()),
+            new RtxBinding.Sampled(frame.traced().vkImageView()),
+            new RtxBinding.Sampled(frame.history().vkImageView()),
+            new RtxBinding.Sampled(frame.previousMoments().vkImageView()),
+            new RtxBinding.Sampled(frame.previousGuide().vkImageView()),
+            new RtxBinding.Sampled(frame.depth()),
+            new RtxBinding.Sampled(frame.normal())
+        ), frame.constants(), images.width(), images.height());
+        resources.specularPipeline().dispatch(device.commandBuffer(), List.of(
+            new RtxBinding.StorageImage(frame.specularHistory().vkImageView()),
+            new RtxBinding.Sampled(frame.specular().vkImageView()),
+            new RtxBinding.Sampled(frame.previousSpecularHistory().vkImageView()),
+            new RtxBinding.Sampled(frame.previousGuide().vkImageView()),
+            new RtxBinding.Sampled(frame.depth()),
+            new RtxBinding.Sampled(frame.normal())
+        ), frame.constants(), images.width(), images.height());
+    }
+
+    private void filter(DenoiseFrame frame) {
         RtxDevice device = resources.device();
         ByteBuffer steps = resources.filterConstants();
-        pass.executes(frame.graph().timed(DENOISE_PASS, () -> {
-            resources.accumulatePipeline().dispatch(device.commandBuffer(), List.of(
-                new RtxBinding.StorageImage(accumulated.vkImageView()),
-                new RtxBinding.StorageImage(moments.vkImageView()),
-                new RtxBinding.StorageImage(guide.vkImageView()),
-                new RtxBinding.Sampled(traced.vkImageView()),
-                new RtxBinding.Sampled(history.vkImageView()),
-                new RtxBinding.Sampled(previousMoments.vkImageView()),
-                new RtxBinding.Sampled(previousGuide.vkImageView()),
-                new RtxBinding.Sampled(handle(Objects.requireNonNull(sceneTarget.get().getDepthTextureView()))),
-                new RtxBinding.Sampled(handle(colorView(geometry.normal())))
-            ), constants, images.width(), images.height());
-            resources.specularPipeline().dispatch(device.commandBuffer(), List.of(
-                new RtxBinding.StorageImage(specularHistory.vkImageView()),
-                new RtxBinding.Sampled(specular.vkImageView()),
-                new RtxBinding.Sampled(previousSpecularHistory.vkImageView()),
-                new RtxBinding.Sampled(previousGuide.vkImageView()),
-                new RtxBinding.Sampled(handle(Objects.requireNonNull(sceneTarget.get().getDepthTextureView()))),
-                new RtxBinding.Sampled(handle(colorView(geometry.normal())))
-            ), constants, images.width(), images.height());
-            for (int iteration = 0; iteration < FILTER_STEPS.length; iteration++) {
-                device.memoryBarrier();
-                steps.clear();
-                steps.putInt(FILTER_STEPS[iteration]).putInt(UNUSED_STEP).putInt(UNUSED_STEP).putInt(UNUSED_STEP).flip();
-                resources.filterPipeline().dispatch(device.commandBuffer(), List.of(
-                    new RtxBinding.StorageImage(chain[iteration + 1].vkImageView()),
-                    new RtxBinding.Sampled(chain[iteration].vkImageView()),
-                    new RtxBinding.Sampled(guide.vkImageView())
-                ), steps, images.width(), images.height());
-            }
+        RtxImage[] chain = {frame.accumulated(), frame.history(), frame.traced(), frame.accumulated()};
+        for (int iteration = 0; iteration < FILTER_STEPS.length; iteration++) {
             device.memoryBarrier();
-            images.upsampled().ifPresent(upsampled -> {
-                resources.upsamplePipeline().dispatch(device.commandBuffer(), List.of(
-                    new RtxBinding.StorageImage(upsampled.vkImageView()),
-                    new RtxBinding.StorageImage(images.upsampledSpecular().orElseThrow().vkImageView()),
-                    new RtxBinding.Sampled(accumulated.vkImageView()),
-                    new RtxBinding.Sampled(specularHistory.vkImageView()),
-                    new RtxBinding.Sampled(guide.vkImageView()),
-                    new RtxBinding.Sampled(handle(Objects.requireNonNull(sceneTarget.get().getDepthTextureView()))),
-                    new RtxBinding.Sampled(handle(colorView(geometry.normal()))),
-                    new RtxBinding.Sampled(handle(colorView(geometry.light())))
-                ), constants, upsampled.width(), upsampled.height());
-                device.memoryBarrier();
-            });
-        }));
+            steps.clear();
+            steps.putInt(FILTER_STEPS[iteration]).putInt(UNUSED_STEP).putInt(UNUSED_STEP).putInt(UNUSED_STEP).flip();
+            resources.filterPipeline().dispatch(device.commandBuffer(), List.of(
+                new RtxBinding.StorageImage(chain[iteration + 1].vkImageView()),
+                new RtxBinding.Sampled(chain[iteration].vkImageView()),
+                new RtxBinding.Sampled(frame.guide().vkImageView())
+            ), steps, frame.images().width(), frame.images().height());
+        }
+    }
+
+    private void upsample(DenoiseFrame frame, RtxImage upsampled) {
+        RtxDevice device = resources.device();
+        resources.upsamplePipeline().dispatch(device.commandBuffer(), List.of(
+            new RtxBinding.StorageImage(upsampled.vkImageView()),
+            new RtxBinding.StorageImage(frame.images().upsampledSpecular().orElseThrow().vkImageView()),
+            new RtxBinding.Sampled(frame.accumulated().vkImageView()),
+            new RtxBinding.Sampled(frame.specularHistory().vkImageView()),
+            new RtxBinding.Sampled(frame.guide().vkImageView()),
+            new RtxBinding.Sampled(frame.depth()),
+            new RtxBinding.Sampled(frame.normal()),
+            new RtxBinding.Sampled(handle(colorView(frame.geometry().light())))
+        ), frame.constants(), upsampled.width(), upsampled.height());
+        device.memoryBarrier();
     }
 
     private static void writeConstants(ByteBuffer constants, HelionCamera camera, RtxSectionPos center, SkyLight sky, int frameCount) {
@@ -264,5 +273,40 @@ public final class RtxPathTracingStage implements RenderStage {
 
     private static GpuSampler nearest() {
         return RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
+    }
+
+    private record DenoiseFrame(
+        RtxDenoiseImages images,
+        GeometryBuffer.Targets geometry,
+        ResourceHandle<RenderTarget> sceneTarget,
+        ByteBuffer constants,
+        RtxImage traced,
+        RtxImage accumulated,
+        RtxImage history,
+        RtxImage moments,
+        RtxImage previousMoments,
+        RtxImage guide,
+        RtxImage previousGuide,
+        RtxImage specular,
+        RtxImage specularHistory,
+        RtxImage previousSpecularHistory
+    ) {
+        static DenoiseFrame of(RtxDenoiseImages images, GeometryBuffer.Targets geometry, ResourceHandle<RenderTarget> sceneTarget, ByteBuffer constants) {
+            return new DenoiseFrame(
+                images, geometry, sceneTarget, constants,
+                images.work(TRACED_SLOT), images.work(FINAL_SLOT), images.history(),
+                images.moments(), images.previousMoments(),
+                images.guide(), images.previousGuide(),
+                images.specular(), images.specularHistory(), images.previousSpecularHistory()
+            );
+        }
+
+        long depth() {
+            return handle(Objects.requireNonNull(sceneTarget.get().getDepthTextureView()));
+        }
+
+        long normal() {
+            return handle(colorView(geometry.normal()));
+        }
     }
 }
