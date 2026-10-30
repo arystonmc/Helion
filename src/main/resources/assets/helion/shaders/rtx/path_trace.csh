@@ -83,7 +83,16 @@ const float HELION_FLICKER_FAST = 13.0;
 const float HELION_FLICKER_SPREAD = 1.7;
 const float HELION_TAU = 6.28318530718;
 const uint HELION_SECTION_INSTANCES = 0x01u;
+#if defined(HELION_PATH_QUALITY_LOW)
+const int HELION_BOUNCES = 2;
+const int HELION_CACHE_PATHS = 1;
+#elif defined(HELION_PATH_QUALITY_MEDIUM)
+const int HELION_BOUNCES = 2;
+const int HELION_CACHE_PATHS = 2;
+#else
 const int HELION_BOUNCES = 3;
+const int HELION_CACHE_PATHS = 2;
+#endif
 const int HELION_ROULETTE_START = 2;
 const float HELION_ROULETTE_MIN = 0.1;
 const float HELION_BOUNCE_REACH = 128.0;
@@ -412,7 +421,6 @@ const float HELION_CACHE_COARSE_PLANE = 1.0;
 const float HELION_CACHE_AXIS = 0.99;
 const uint HELION_CACHE_READY = 8u;
 const uint HELION_CACHE_MAX_COUNT = 128u;
-const int HELION_CACHE_PATHS = 2;
 const uint HELION_CACHE_CHECK_SALT = 0x9E3779B9u;
 const uint HELION_CACHE_LEVEL_SHIFT = 3u;
 const uint HELION_CACHE_FACE_MASK = 7u;
@@ -684,14 +692,18 @@ vec4 helionSpecular(vec3 origin, vec3 normal, vec3 view, float presence, vec3 al
 
 #ifdef HELION_LIGHT_CACHE_UPDATE
 void main() {
-    uint index = gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x + gl_GlobalInvocationID.x;
+    uvec2 threads = gl_NumWorkGroups.xy * gl_WorkGroupSize.xy;
+    uint index = gl_GlobalInvocationID.y * threads.x + gl_GlobalInvocationID.x;
     if (index == 0u) {
         NextCount = 0u;
     }
-    if (index >= min(QueuedCount, uint(Queued.length()))) {
+    uint queuedCells = min(QueuedCount, uint(Queued.length()));
+    uint stride = max((queuedCells + threads.x * threads.y - 1u) / (threads.x * threads.y), 1u);
+    uint queued = index * stride + uint(Frame.w) % stride;
+    if (queued >= queuedCells) {
         return;
     }
-    uint slot = Queued[index];
+    uint slot = Queued[queued];
     HelionCacheEntry entry = Entries[slot];
     HelionCacheCell cell = helionCacheLayout(entry.state.w & HELION_CACHE_FACE_MASK, int(entry.state.w >> HELION_CACHE_LEVEL_SHIFT));
     vec3 normal = vec3(0.0);
@@ -741,8 +753,10 @@ void main() {
     if (any(greaterThanEqual(pixel, size))) {
         return;
     }
-    vec4 levels = texelFetch(GeometryLightSampler, pixel, 0);
-    float depth = texelFetch(SceneDepthSampler, pixel, 0).r;
+    ivec2 full = textureSize(SceneDepthSampler, 0);
+    ivec2 source = helionTraceSource(pixel, size, full);
+    vec4 levels = texelFetch(GeometryLightSampler, source, 0);
+    float depth = texelFetch(SceneDepthSampler, source, 0).r;
     if (levels.a < HELION_GEOMETRY_PRESENT_THRESHOLD || depth <= HELION_SKY_DEPTH) {
         imageStore(Irradiance, pixel, vec4(HELION_PATH_NOTHING));
         imageStore(Specular, pixel, HELION_NO_SPECULAR);
@@ -753,11 +767,11 @@ void main() {
         imageStore(Specular, pixel, HELION_NO_SPECULAR);
         return;
     }
-    vec3 albedo = texelFetch(AlbedoSampler, pixel, 0).rgb;
-    vec2 screen = (vec2(pixel) + 0.5) / vec2(size);
+    vec3 albedo = texelFetch(AlbedoSampler, source, 0).rgb;
+    vec2 screen = helionTraceScreen(source, full);
     vec4 world = InverseViewProjection * vec4(screen * 2.0 - 1.0, depth, 1.0);
     vec3 view = world.xyz / world.w;
-    vec3 normal = normalize(texelFetch(GeometryNormalSampler, pixel, 0).rgb * 2.0 - 1.0);
+    vec3 normal = normalize(texelFetch(GeometryNormalSampler, source, 0).rgb * 2.0 - 1.0);
     vec3 surface = helionSurfaceAlbedo(albedo, normal);
     vec3 vanilla = min(helionSrgbToLinear(albedo * helionVanillaLight(levels.rg)) / max(surface, vec3(HELION_PATH_MIN_ALBEDO)), vec3(HELION_PATH_VANILLA_LIMIT));
     vec3 position = view + Camera.xyz;

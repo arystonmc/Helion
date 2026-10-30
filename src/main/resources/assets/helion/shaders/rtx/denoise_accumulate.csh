@@ -68,16 +68,15 @@ void main() {
     }
     vec4 traced = texelFetch(TracedSampler, pixel, 0);
     if (traced.a < HELION_PATH_LIT * 0.5) {
-        imageStore(Accumulated, pixel, HELION_EMPTY);
-        imageStore(Moments, pixel, HELION_EMPTY);
         imageStore(Guide, pixel, HELION_EMPTY);
         return;
     }
-    vec2 screen = (vec2(pixel) + 0.5) / vec2(size);
-    vec4 world = InverseViewProjection * vec4(screen * 2.0 - 1.0, texelFetch(SceneDepthSampler, pixel, 0).r, 1.0);
+    ivec2 full = textureSize(SceneDepthSampler, 0);
+    ivec2 source = helionTraceSource(pixel, size, full);
+    vec4 world = InverseViewProjection * vec4(helionTraceScreen(source, full) * 2.0 - 1.0, texelFetch(SceneDepthSampler, source, 0).r, 1.0);
     vec3 relative = world.xyz / world.w;
     float distance = length(relative);
-    vec3 normal = normalize(texelFetch(GeometryNormalSampler, pixel, 0).rgb * 2.0 - 1.0);
+    vec3 normal = normalize(texelFetch(GeometryNormalSampler, source, 0).rgb * 2.0 - 1.0);
     if (helionIsEmissiveSignal(traced.a)) {
         imageStore(Accumulated, pixel, vec4(traced.rgb, 0.0));
         imageStore(Moments, pixel, HELION_EMPTY);

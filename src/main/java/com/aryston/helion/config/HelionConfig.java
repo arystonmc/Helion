@@ -18,6 +18,7 @@ import com.aryston.helion.render.temporal.DynamicScaleSettings;
 import com.aryston.helion.render.temporal.FrameRateTarget;
 import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalSettings;
+import com.aryston.helion.render.rtx.PathTracingQuality;
 import com.aryston.helion.render.rtx.RayTracing;
 import com.aryston.helion.render.rtx.RayTracingSettings;
 import com.aryston.helion.render.water.ReflectionSettings;
@@ -67,6 +68,7 @@ public final class HelionConfig {
     static final ModConfigSpec.BooleanValue RAY_TRACING_ENABLED;
     static final ModConfigSpec.BooleanValue WATER_REFLECTIONS;
     static final ModConfigSpec.BooleanValue PATH_TRACING;
+    static final ModConfigSpec.EnumValue<PathTracingQuality> PATH_TRACING_QUALITY;
     static final ModConfigSpec.BooleanValue SCREEN_REFLECTIONS;
     static final ModConfigSpec.BooleanValue RAIN_WETNESS;
     static final ModConfigSpec.BooleanValue REALISTIC_WATER;
@@ -161,6 +163,9 @@ public final class HelionConfig {
         PATH_TRACING = BUILDER
             .translation("helion.configuration.rayTracing.pathTracing")
             .define("pathTracing", false);
+        PATH_TRACING_QUALITY = BUILDER
+            .translation("helion.configuration.rayTracing.pathTracingQuality")
+            .defineEnum("pathTracingQuality", PathTracingQuality.MEDIUM);
         BUILDER.pop();
 
         BUILDER.translation("helion.configuration.reflections").push("reflections");
@@ -231,7 +236,8 @@ public final class HelionConfig {
             ),
             new PhysicalSkySettings(PHYSICAL_SKY_ENABLED.getAsBoolean(), STAR_DENSITY.get(), MILKY_WAY.getAsBoolean(), LIGHT_SHAFTS.getAsBoolean()),
             new CloudSettings(CLOUDS_ENABLED.getAsBoolean(), CLOUD_QUALITY.get()),
-            new RayTracingSettings(RAY_TRACING_ENABLED.getAsBoolean() || RayTracing.forced(), WATER_REFLECTIONS.getAsBoolean(), PATH_TRACING.getAsBoolean()),
+            new RayTracingSettings(RAY_TRACING_ENABLED.getAsBoolean() || RayTracing.forced(), WATER_REFLECTIONS.getAsBoolean(), PATH_TRACING.getAsBoolean(),
+                PATH_TRACING_QUALITY.get()),
             new ReflectionSettings(SCREEN_REFLECTIONS.getAsBoolean(), RAIN_WETNESS.getAsBoolean(), REALISTIC_WATER.getAsBoolean())
         );
     }

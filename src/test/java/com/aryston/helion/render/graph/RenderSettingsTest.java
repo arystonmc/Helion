@@ -10,6 +10,7 @@ import com.aryston.helion.render.clouds.CloudSettings;
 import com.aryston.helion.render.geometry.GeometryBufferSettings;
 import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.post.ImageSettings;
+import com.aryston.helion.render.rtx.PathTracingQuality;
 import com.aryston.helion.render.rtx.RayTracingSettings;
 import com.aryston.helion.render.temporal.DynamicScaleSettings;
 import com.aryston.helion.render.temporal.RenderScale;
@@ -24,7 +25,7 @@ class RenderSettingsTest {
         new TemporalSettings(true, RenderScale.NATIVE, DynamicScaleSettings.DISABLED),
         PhysicalSkySettings.enabledWithDefaults(),
         new CloudSettings(true, CloudQuality.HIGH),
-        new RayTracingSettings(true, true, true),
+        new RayTracingSettings(true, true, true, PathTracingQuality.MEDIUM),
         new ReflectionSettings(true, true, true)
     );
 

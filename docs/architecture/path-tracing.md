@@ -84,6 +84,21 @@ Always on with the path traced light since 2026-10-28, after a spike on the bran
 
 Not yet: wet surfaces in the path tracer, water and glass folded into it (they keep `RtxReflectionStage`), LabPBR materials.
 
+## Quality Levels (2026-10-30)
+
+Setting `rayTracing.pathTracingQuality` (`PathTracingQuality`: Low, Medium or High, default Medium), shown under the path traced light. High is the full resolution behavior described above.
+
+| Level | Trace and denoise | Light cache cells updated per frame | Bounces | Paths per cache cell |
+|---|---|---|---|---|
+| High | full resolution | up to 512 x 256 (all queued) | 3 | 2 |
+| Medium | half resolution | up to 512 x 64 | 2 | 2 |
+| Low | half resolution | up to 512 x 16 | 2 | 1 |
+
+- Each level compiles its own trace and update pipeline from `path_trace.csh` with a define (`HELION_PATH_QUALITY_LOW`, `_MEDIUM`, `_HIGH`); all six are created when ray tracing opens. The cache update dispatches 512 x rows threads; when more cells are queued it walks the queue with a stride and an offset that rotates with the frame counter, so every queued cell is refreshed every few frames instead of all of them every frame.
+- Half resolution: `RtxDenoiseImages` is sized by the divisor. The trace, the accumulation and the specular accumulation read the geometry buffer and depth at the top left pixel of each 2 x 2 block (`helionTraceSource` in `helion_path_tracing.glsl`); the filter runs unchanged on the small images. `rtx/denoise_upsample.csh` then writes full resolution irradiance and specular: every geometry pixel weighs the 3 x 3 nearest half resolution samples by a bilinear tent, the normal match (power 32) and the distance of the sample position from the pixel plane (0.02 blocks plus 0.4 % of the view distance), so thin edges do not take light from the surface behind them; when no sample matches it takes the best matching one. Emissive pixels write 1 and sky pixels are skipped. The radiance pass reads the upsampled images.
+- Sky pixels (signal 0) leave the accumulated, moments and filtered images unwritten, and the filter returns after reading the guide; only the guide is cleared, because the next frame's reprojection reads it.
+- Measured 2026-10-30 (RTX 4050 Laptop, 1080p, one run per level in the same session, scenes `day_showcase`, `torch_room`, `night_showcase`, `cave_corner`, `day_showcase_moving`): `path_trace` + `path_denoise` 6.4 to 7.4 ms at High, 2.0 to 2.5 ms at Medium (trace 1.0 to 1.6, denoise with the upsample 0.9 to 1.0), 2.1 to 2.6 ms at Low; FPS 65 to 85 at High, 94 to 135 at Medium. Mean pixel difference to High is 0.4 to 1.1 of 255 in the closed scenes and 4.0 to 5.4 in the open scenes, where water, clouds and torch flames also change between runs; glossy tiles show a noisier reflection at half resolution. Low barely gains over Medium: at half resolution the cache update is no longer the main cost.
+
 ## Exposure and Finish (Phase 7, 2026-10-29)
 
 - The path traced light is anchored to vanilla in daylight, so `EyeAdaptation` keeps its -4.8 target; enclosed and night scenes meter darker than under vanilla light (night showcase -5.8, moonlit terrain -8.5 after the physical night, torch room -5.4, cave -8.0). Eye adaptation now brightens by half of the difference to the target, up to +1.5 stops, so caves become readable while night stays dark and its sky black (see `docs/architecture/image-pipeline.md`).

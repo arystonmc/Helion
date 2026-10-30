@@ -12,6 +12,7 @@ import com.aryston.helion.render.clouds.CloudQuality;
 import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.post.ColorGrade;
 import com.aryston.helion.render.post.ToneMapper;
+import com.aryston.helion.render.rtx.PathTracingQuality;
 import com.aryston.helion.render.temporal.FrameRateTarget;
 import com.aryston.helion.render.temporal.RenderScale;
 import java.util.List;
@@ -43,6 +44,7 @@ final class HelionOptions {
     final ConfigOption<Boolean> rayTracing;
     final ConfigOption<Boolean> waterReflections;
     final ConfigOption<Boolean> pathTracing;
+    final ConfigOption<PathTracingQuality> pathTracingQuality;
     final ConfigOption<Boolean> screenReflections;
     final ConfigOption<Boolean> rainWetness;
     final ConfigOption<Boolean> realisticWater;
@@ -91,6 +93,8 @@ final class HelionOptions {
             .cost(LOW_COST).requires(this.rayTracing);
         this.pathTracing = experimental(toggle("pathTracing", HelionConfig.PATH_TRACING, Icons.SUN, "rayTracing.pathTracing"))
             .cost(HIGH_COST).requires(this.rayTracing);
+        this.pathTracingQuality = choice("pathTracingQuality", HelionConfig.PATH_TRACING_QUALITY, PathTracingQuality.class, Icons.GAUGE, "rayTracing.pathTracingQuality")
+            .style(ChoiceStyle.SEGMENTED).cost(HIGH_COST).requires(this.pathTracing);
         this.screenReflections = experimental(toggle("screenReflections", HelionConfig.SCREEN_REFLECTIONS, Icons.SPARKLE, "reflections.screenSpace"))
             .cost(MEDIUM_COST).requires(this.enabled);
         this.rainWetness = toggle("rainWetness", HelionConfig.RAIN_WETNESS, Icons.CLOUD, "reflections.rainWetness")
@@ -137,7 +141,7 @@ final class HelionOptions {
 
     List<ConfigOption<?>> all() {
         return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.starDensity, this.milkyWay, this.lightShafts, this.clouds, this.cloudQuality,
-            this.rayTracing, this.pathTracing, this.waterReflections, this.screenReflections, this.rainWetness, this.realisticWater, this.renderScale,
+            this.rayTracing, this.pathTracing, this.pathTracingQuality, this.waterReflections, this.screenReflections, this.rainWetness, this.realisticWater, this.renderScale,
             this.dynamicRenderScale, this.targetFrameRate,
             this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.colorGrade, this.edgeSmoothing, this.dither,
             this.sharpening, this.sharpeningStrength, this.motionBlur, this.motionBlurStrength, this.depthOfField, this.depthOfFieldStrength, this.debugMode, this.bloomView, this.geometryBufferView);

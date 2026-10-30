@@ -65,10 +65,11 @@ void main() {
     }
     mean /= taps;
     vec3 deviation = sqrt(max(square / taps - mean * mean, vec3(0.0)));
-    vec2 screen = (vec2(pixel) + 0.5) / vec2(size);
-    vec4 world = InverseViewProjection * vec4(screen * 2.0 - 1.0, texelFetch(SceneDepthSampler, pixel, 0).r, 1.0);
+    ivec2 full = textureSize(SceneDepthSampler, 0);
+    ivec2 source = helionTraceSource(pixel, size, full);
+    vec4 world = InverseViewProjection * vec4(helionTraceScreen(source, full) * 2.0 - 1.0, texelFetch(SceneDepthSampler, source, 0).r, 1.0);
     vec3 relative = world.xyz / world.w;
-    vec3 normal = normalize(texelFetch(GeometryNormalSampler, pixel, 0).rgb * 2.0 - 1.0);
+    vec3 normal = normalize(texelFetch(GeometryNormalSampler, source, 0).rgb * 2.0 - 1.0);
     ivec2 tap;
     vec3 color = mean;
     float count = 1.0;

@@ -5,6 +5,7 @@ import static com.aryston.helion.Helion.LOGGER;
 import com.aryston.helion.render.resource.GpuResources;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -38,6 +39,10 @@ public final class RayTracingResources {
     private static final String SPECULAR_SOURCE = "/assets/helion/shaders/rtx/specular_accumulate.csh";
     private static final String SPECULAR_NAME = "specular_accumulate.csh";
     private static final String SPECULAR_PIPELINE_LABEL = "Helion Path Tracing Specular Pipeline";
+    private static final String UPSAMPLE_SOURCE = "/assets/helion/shaders/rtx/denoise_upsample.csh";
+    private static final String UPSAMPLE_NAME = "denoise_upsample.csh";
+    private static final String UPSAMPLE_PIPELINE_LABEL = "Helion Path Tracing Upsample Pipeline";
+    private static final String QUALITY_SEPARATOR = " ";
     private static final long PIPELINE_BYTES = 0L;
     private static final long LOG_INTERVAL_FRAMES = 600L;
     private static final long BYTES_PER_MIB = 1L << 20;
@@ -120,6 +125,16 @@ public final class RayTracingResources {
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     };
+    private static final int[] UPSAMPLE_DESCRIPTORS = {
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        VK10.VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        VK10.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    };
 
     private final GpuResources resources;
     private final RtxSectionInbox inbox = new RtxSectionInbox();
@@ -129,9 +144,9 @@ public final class RayTracingResources {
     private @Nullable RtxComputePipeline reflection;
     private @Nullable RtxImage reflectionImage;
     private @Nullable ByteBuffer reflectionConstants;
-    private @Nullable RtxComputePipeline pathTrace;
+    private final Map<PathTracingQuality, RtxComputePipeline> pathTrace = new EnumMap<>(PathTracingQuality.class);
     private @Nullable ByteBuffer pathTraceConstants;
-    private @Nullable RtxComputePipeline cacheUpdate;
+    private final Map<PathTracingQuality, RtxComputePipeline> cacheUpdate = new EnumMap<>(PathTracingQuality.class);
     private @Nullable RtxLightCache lightCache;
     private int pathTraceFrame;
     private volatile boolean pathTraced;
@@ -139,6 +154,7 @@ public final class RayTracingResources {
     private @Nullable ByteBuffer accumulateConstants;
     private @Nullable RtxComputePipeline filter;
     private @Nullable RtxComputePipeline specular;
+    private @Nullable RtxComputePipeline upsample;
     private @Nullable ByteBuffer filterConstants;
     private @Nullable RtxDenoiseImages denoiseImages;
     private boolean checked;
@@ -229,11 +245,12 @@ public final class RayTracingResources {
     }
 
     boolean pathTracingAvailable() {
-        return pathTrace != null && cacheUpdate != null && accumulate != null && filter != null && specular != null;
+        int levels = PathTracingQuality.values().length;
+        return pathTrace.size() == levels && cacheUpdate.size() == levels && accumulate != null && filter != null && specular != null && upsample != null;
     }
 
-    RtxComputePipeline pathTracePipeline() {
-        return Objects.requireNonNull(pathTrace);
+    RtxComputePipeline pathTracePipeline(PathTracingQuality quality) {
+        return Objects.requireNonNull(pathTrace.get(quality));
     }
 
     ByteBuffer pathTraceConstants() {
@@ -256,8 +273,8 @@ public final class RayTracingResources {
         return pathTraceFrame;
     }
 
-    RtxComputePipeline cacheUpdatePipeline() {
-        return Objects.requireNonNull(cacheUpdate);
+    RtxComputePipeline cacheUpdatePipeline(PathTracingQuality quality) {
+        return Objects.requireNonNull(cacheUpdate.get(quality));
     }
 
     RtxLightCache lightCache() {
@@ -286,6 +303,10 @@ public final class RayTracingResources {
         return Objects.requireNonNull(filter);
     }
 
+    RtxComputePipeline upsamplePipeline() {
+        return Objects.requireNonNull(upsample);
+    }
+
     ByteBuffer filterConstants() {
         if (filterConstants == null) {
             filterConstants = MemoryUtil.memAlloc(FILTER_CONSTANT_BYTES);
@@ -293,15 +314,15 @@ public final class RayTracingResources {
         return filterConstants;
     }
 
-    RtxDenoiseImages denoiseImages(int width, int height) {
+    RtxDenoiseImages denoiseImages(int width, int height, int divisor) {
         RtxDenoiseImages current = denoiseImages;
-        if (current != null && current.fits(width, height)) {
+        if (current != null && current.fits(width, height, divisor)) {
             return current;
         }
         if (current != null) {
             current.close(resources);
         }
-        RtxDenoiseImages created = RtxDenoiseImages.create(resources, width, height);
+        RtxDenoiseImages created = RtxDenoiseImages.create(resources, width, height, divisor);
         denoiseImages = created;
         return created;
     }
@@ -379,27 +400,36 @@ public final class RayTracingResources {
             LOGGER.error("Helion ray traced reflections are off: {}", exception.getMessage());
         }
         try {
-            RtxComputePipeline traced = RtxComputePipeline.create(rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, TRACE_DESCRIPTORS, PATH_TRACE_CONSTANT_BYTES);
-            resources.track(PATH_TRACE_PIPELINE_LABEL, PIPELINE_BYTES, traced::destroy);
-            RtxComputePipeline updated = RtxComputePipeline.create(
-                rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, Set.of(LIGHT_CACHE_UPDATE_DEFINE), TRACE_DESCRIPTORS, singles(TRACE_DESCRIPTORS), PATH_TRACE_CONSTANT_BYTES
-            );
-            resources.track(CACHE_UPDATE_PIPELINE_LABEL, PIPELINE_BYTES, updated::destroy);
+            for (PathTracingQuality quality : PathTracingQuality.values()) {
+                pathTrace.put(quality, pathTracePipeline(rtx, Set.of(quality.define()), PATH_TRACE_PIPELINE_LABEL + QUALITY_SEPARATOR + quality));
+                cacheUpdate.put(
+                    quality, pathTracePipeline(rtx, Set.of(quality.define(), LIGHT_CACHE_UPDATE_DEFINE), CACHE_UPDATE_PIPELINE_LABEL + QUALITY_SEPARATOR + quality)
+                );
+            }
+            RtxComputePipeline upsampled = RtxComputePipeline.create(rtx, UPSAMPLE_SOURCE, UPSAMPLE_NAME, UPSAMPLE_DESCRIPTORS, ACCUMULATE_CONSTANT_BYTES);
+            resources.track(UPSAMPLE_PIPELINE_LABEL, PIPELINE_BYTES, upsampled::destroy);
             RtxComputePipeline accumulated = RtxComputePipeline.create(rtx, ACCUMULATE_SOURCE, ACCUMULATE_NAME, ACCUMULATE_DESCRIPTORS, ACCUMULATE_CONSTANT_BYTES);
             resources.track(ACCUMULATE_PIPELINE_LABEL, PIPELINE_BYTES, accumulated::destroy);
             RtxComputePipeline filtered = RtxComputePipeline.create(rtx, FILTER_SOURCE, FILTER_NAME, FILTER_DESCRIPTORS, FILTER_CONSTANT_BYTES);
             resources.track(FILTER_PIPELINE_LABEL, PIPELINE_BYTES, filtered::destroy);
             RtxComputePipeline specularAccumulated = RtxComputePipeline.create(rtx, SPECULAR_SOURCE, SPECULAR_NAME, SPECULAR_DESCRIPTORS, ACCUMULATE_CONSTANT_BYTES);
             resources.track(SPECULAR_PIPELINE_LABEL, PIPELINE_BYTES, specularAccumulated::destroy);
-            pathTrace = traced;
             accumulate = accumulated;
             filter = filtered;
             specular = specularAccumulated;
-            cacheUpdate = updated;
+            upsample = upsampled;
         } catch (IllegalStateException exception) {
             LOGGER.error("Helion path traced light is off: {}", exception.getMessage());
         }
         LOGGER.info("Helion ray tracing is on: section scene within {} sections of the camera", RtxSectionInbox.RADIUS);
+    }
+
+    private RtxComputePipeline pathTracePipeline(RtxDevice rtx, Set<String> defines, String label) {
+        RtxComputePipeline created = RtxComputePipeline.create(
+            rtx, PATH_TRACE_SOURCE, PATH_TRACE_NAME, defines, TRACE_DESCRIPTORS, singles(TRACE_DESCRIPTORS), PATH_TRACE_CONSTANT_BYTES
+        );
+        resources.track(label, PIPELINE_BYTES, created::destroy);
+        return created;
     }
 
     private static int[] withStorageBuffers(int[] descriptors, int count) {

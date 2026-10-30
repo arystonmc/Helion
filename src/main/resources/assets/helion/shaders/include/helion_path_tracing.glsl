@@ -34,4 +34,12 @@ bool helionIsEmissiveSignal(float signal) {
     return signal > HELION_PATH_SIGNAL_SPLIT;
 }
 
+ivec2 helionTraceSource(ivec2 pixel, ivec2 traced, ivec2 full) {
+    return min(pixel * ((full + traced - 1) / traced), full - 1);
+}
+
+vec2 helionTraceScreen(ivec2 source, ivec2 full) {
+    return (vec2(source) + 0.5) / vec2(full);
+}
+
 #endif

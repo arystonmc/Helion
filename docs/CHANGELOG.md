@@ -7,6 +7,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Path tracing quality (Low, Medium, High): Medium traces and cleans the light at half resolution and costs about a third of High, for 45 to 60 % more frames per second with path tracing
 - Performance preset for high frame rates: physical sky, light shafts, light clouds, rain and realistic water at a 67 % render scale without ray tracing, 200 FPS and more on a laptop RTX 4050
 - Dynamic render scale: holds a target frame rate of your choice by lowering and raising the render scale step by step
 - Path traced light: dynamic lights; a torch or other light block in hand, a dropped light block and a burning mob light up their surroundings

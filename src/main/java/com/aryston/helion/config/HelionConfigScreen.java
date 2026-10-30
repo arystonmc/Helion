@@ -37,7 +37,7 @@ public final class HelionConfigScreen {
                 .section(text("section.antialiasing"), section -> section.add(options.temporal))
                 .fullSection(text("section.sky"), section -> section.add(options.physicalSky).add(options.starDensity).add(options.milkyWay).add(options.lightShafts).add(options.clouds)))
             .page("lighting", text("page.lighting"), Icons.SUN, page -> page
-                .fullSection(text("section.rayTracing"), section -> section.add(options.rayTracing).add(options.pathTracing).add(options.waterReflections))
+                .fullSection(text("section.rayTracing"), section -> section.add(options.rayTracing).add(options.pathTracing).add(options.pathTracingQuality).add(options.waterReflections))
                 .fullSection(text("section.reflections"), section -> section.add(options.screenReflections).add(options.rainWetness).add(options.realisticWater)))
             .page("effects", text("page.effects"), Icons.SPARKLE, page -> page
                 .section(text("section.bloom"), section -> section.add(options.bloom).add(options.bloomIntensity).add(options.bloomThreshold))

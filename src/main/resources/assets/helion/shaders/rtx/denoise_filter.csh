@@ -19,6 +19,7 @@ const float HELION_DEPTH_SHARPNESS = 0.03;
 const float HELION_LUMINANCE_SIGMA = 4.0;
 const float HELION_MIN_WEIGHT = 1.0e-4;
 const float HELION_MIN_SIGMA = 1.0e-3;
+const float HELION_NO_SURFACE = 0.0;
 
 void main() {
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
@@ -26,9 +27,12 @@ void main() {
     if (any(greaterThanEqual(pixel, size))) {
         return;
     }
-    vec4 center = texelFetch(InputSampler, pixel, 0);
     vec4 guide = texelFetch(GuideSampler, pixel, 0);
-    if (guide.w <= 0.0) {
+    if (guide.w == HELION_NO_SURFACE) {
+        return;
+    }
+    vec4 center = texelFetch(InputSampler, pixel, 0);
+    if (guide.w < HELION_NO_SURFACE) {
         imageStore(Filtered, pixel, center);
         return;
     }

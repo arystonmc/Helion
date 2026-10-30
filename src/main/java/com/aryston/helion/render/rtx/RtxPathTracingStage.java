@@ -83,12 +83,13 @@ public final class RtxPathTracingStage implements RenderStage {
     @Override
     public void addTo(FrameContext frame) {
         GeometryBuffer.Targets geometry = frame.geometry().targets().orElseThrow();
-        RtxDenoiseImages images = resources.denoiseImages(frame.scene().width(), frame.scene().height());
-        trace(frame, geometry, images.work(TRACED_SLOT), images.specular(), Objects.requireNonNull(skyLight));
+        PathTracingQuality quality = frame.settings().rayTracing().pathTracingQuality();
+        RtxDenoiseImages images = resources.denoiseImages(frame.scene().width(), frame.scene().height(), quality.resolutionDivisor());
+        trace(frame, geometry, images.work(TRACED_SLOT), images.specular(), Objects.requireNonNull(skyLight), quality);
         denoise(frame, geometry, images);
         frame.geometry().publishTracedSpecular();
-        RtxImage image = images.work(FINAL_SLOT);
-        RtxImage specular = images.specularHistory();
+        RtxImage image = images.upsampled().orElse(images.work(FINAL_SLOT));
+        RtxImage specular = images.upsampledSpecular().orElse(images.specularHistory());
         CompiledRenderPipeline pipeline = Objects.requireNonNull(radiance);
         FramePass pass = frame.graph().addPass(NAME);
         pass.reads(geometry.albedo());
@@ -106,7 +107,7 @@ public final class RtxPathTracingStage implements RenderStage {
         })));
     }
 
-    private void trace(FrameContext frame, GeometryBuffer.Targets geometry, RtxImage image, RtxImage specular, SkyLight sky) {
+    private void trace(FrameContext frame, GeometryBuffer.Targets geometry, RtxImage image, RtxImage specular, SkyLight sky, PathTracingQuality quality) {
         ByteBuffer constants = resources.pathTraceConstants();
         writeConstants(constants, frame.camera(), Objects.requireNonNull(anchor), sky, resources.nextPathTraceFrame());
         FramePass pass = frame.graph().addPass(TRACE_PASS);
@@ -146,11 +147,11 @@ public final class RtxPathTracingStage implements RenderStage {
             if (cache.clearIfNew(device.commandBuffer())) {
                 device.memoryBarrier();
             }
-            resources.cacheUpdatePipeline().dispatch(
-                device.commandBuffer(), concat(bindings, cacheUpdate), constants, RtxLightCache.QUEUE_WIDTH, RtxLightCache.QUEUE_ROWS
+            resources.cacheUpdatePipeline(quality).dispatch(
+                device.commandBuffer(), concat(bindings, cacheUpdate), constants, RtxLightCache.QUEUE_WIDTH, quality.cacheRows()
             );
             device.memoryBarrier();
-            resources.pathTracePipeline().dispatch(device.commandBuffer(), concat(bindings, cacheTrace), constants, image.width(), image.height());
+            resources.pathTracePipeline(quality).dispatch(device.commandBuffer(), concat(bindings, cacheTrace), constants, image.width(), image.height());
             device.memoryBarrier();
         }));
     }
@@ -175,6 +176,7 @@ public final class RtxPathTracingStage implements RenderStage {
         RtxImage[] chain = {accumulated, history, traced, accumulated};
         FramePass pass = frame.graph().addPass(DENOISE_PASS);
         pass.reads(geometry.normal());
+        pass.reads(geometry.light());
         ResourceHandle<RenderTarget> sceneTarget = frame.targets().scene();
         pass.reads(sceneTarget);
         pass.disableCulling();
@@ -211,6 +213,19 @@ public final class RtxPathTracingStage implements RenderStage {
                 ), steps, images.width(), images.height());
             }
             device.memoryBarrier();
+            images.upsampled().ifPresent(upsampled -> {
+                resources.upsamplePipeline().dispatch(device.commandBuffer(), List.of(
+                    new RtxBinding.StorageImage(upsampled.vkImageView()),
+                    new RtxBinding.StorageImage(images.upsampledSpecular().orElseThrow().vkImageView()),
+                    new RtxBinding.Sampled(accumulated.vkImageView()),
+                    new RtxBinding.Sampled(specularHistory.vkImageView()),
+                    new RtxBinding.Sampled(guide.vkImageView()),
+                    new RtxBinding.Sampled(handle(Objects.requireNonNull(sceneTarget.get().getDepthTextureView()))),
+                    new RtxBinding.Sampled(handle(colorView(geometry.normal()))),
+                    new RtxBinding.Sampled(handle(colorView(geometry.light())))
+                ), constants, upsampled.width(), upsampled.height());
+                device.memoryBarrier();
+            });
         }));
     }
 

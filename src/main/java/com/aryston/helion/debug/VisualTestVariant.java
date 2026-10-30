@@ -94,7 +94,7 @@ enum VisualTestVariant {
             settings.temporal(),
             settings.sky(),
             settings.clouds(),
-            pathTracing ? new RayTracingSettings(true, settings.rayTracing().waterReflections(), true) : settings.rayTracing(),
+            pathTracing ? new RayTracingSettings(true, settings.rayTracing().waterReflections(), true, settings.rayTracing().pathTracingQuality()) : settings.rayTracing(),
             settings.reflections()
         );
     }

@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.lwjgl.system.MemoryUtil;
 
@@ -16,11 +17,12 @@ class RtxShaderSourceTest {
     private static final String ACCUMULATE = "denoise_accumulate.csh";
     private static final String FILTER = "denoise_filter.csh";
     private static final String SPECULAR = "specular_accumulate.csh";
+    private static final String UPSAMPLE = "denoise_upsample.csh";
     private static final String ENTITY_REFLECTION_DEFINE = "HELION_RT_ENTITIES";
     private static final String LIGHT_CACHE_UPDATE_DEFINE = "HELION_LIGHT_CACHE_UPDATE";
 
     @ParameterizedTest
-    @ValueSource(strings = {REFLECTION, PATH_TRACE, ACCUMULATE, FILTER, SPECULAR})
+    @ValueSource(strings = {REFLECTION, PATH_TRACE, ACCUMULATE, FILTER, SPECULAR, UPSAMPLE})
     void computeShaderCompilesWithRayQueries(String shader) {
         assertCompiles(shader, Set.of());
     }
@@ -30,9 +32,11 @@ class RtxShaderSourceTest {
         assertCompiles(REFLECTION, Set.of(ENTITY_REFLECTION_DEFINE));
     }
 
-    @Test
-    void pathTraceCompilesTheLightCacheUpdate() {
-        assertCompiles(PATH_TRACE, Set.of(LIGHT_CACHE_UPDATE_DEFINE));
+    @ParameterizedTest
+    @EnumSource(PathTracingQuality.class)
+    void pathTraceCompilesEveryQuality(PathTracingQuality quality) {
+        assertCompiles(PATH_TRACE, Set.of(quality.define()));
+        assertCompiles(PATH_TRACE, Set.of(quality.define(), LIGHT_CACHE_UPDATE_DEFINE));
     }
 
     private static void assertCompiles(String shader, Set<String> defines) {
