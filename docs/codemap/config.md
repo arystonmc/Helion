@@ -21,7 +21,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### HelionPresets
 - Path: `src/main/java/com/aryston/helion/config/HelionPresets.java`
-- Role: Vanilla, Balanced, Quality and Experimental presets that set the effect switches and quality levels together. Every preset also sets edge smoothing (Quality only), automatic exposure (Experimental only); Vanilla also turns motion blur and depth of field off, the other presets leave those two as the player set them. Ray tracing and the path traced light are on only in Experimental; water reflections stay on in every preset. Rain wetness and realistic water are on in every preset but Vanilla.
+- Role: Vanilla, Balanced, Quality, Performance and Experimental presets that set the effect switches and quality levels together. Performance and Experimental turn on the geometry buffer, physical sky, light shafts, clouds (Low and Medium) and temporal anti-aliasing at the Quality render scale; Performance also turns motion blur and depth of field off. Every preset also sets edge smoothing (Quality only), automatic exposure (Experimental only); Vanilla also turns motion blur and depth of field off, Balanced, Quality and Experimental leave those two as the player set them. Ray tracing and the path traced light are on only in Experimental; water reflections stay on in every preset. Rain wetness and realistic water are on in every preset but Vanilla.
 
 #### HelionPresetSettings
 - Path: `src/main/java/com/aryston/helion/config/HelionPresetSettings.java`

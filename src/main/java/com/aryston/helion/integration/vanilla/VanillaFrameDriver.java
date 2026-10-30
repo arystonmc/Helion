@@ -55,7 +55,7 @@ final class VanillaFrameDriver {
         LevelRendererAccessor level = request.level();
         HelionRenderCore core = HelionRenderCore.get();
         RenderTarget output = level.helion$gameRenderer().mainRenderTarget();
-        RenderTarget scene = core.beginLevelFrame(output, core.temporal().upscaling(settings.temporal()));
+        RenderTarget scene = core.beginLevelFrame(output, core.temporal().upscaling(settings.temporal(), FrameRateCeiling.current()));
         RenderSystem.isRenderingLevel = true;
         try {
             keepVanillaSkyExtracted(request, output);

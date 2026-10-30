@@ -12,6 +12,7 @@ import com.aryston.helion.render.clouds.CloudQuality;
 import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.post.ColorGrade;
 import com.aryston.helion.render.post.ToneMapper;
+import com.aryston.helion.render.temporal.FrameRateTarget;
 import com.aryston.helion.render.temporal.RenderScale;
 import java.util.List;
 import java.util.Locale;
@@ -46,6 +47,8 @@ final class HelionOptions {
     final ConfigOption<Boolean> rainWetness;
     final ConfigOption<Boolean> realisticWater;
     final ConfigOption<RenderScale> renderScale;
+    final ConfigOption<Boolean> dynamicRenderScale;
+    final ConfigOption<FrameRateTarget> targetFrameRate;
     final ConfigOption<Boolean> bloom;
     final ConfigOption<Double> bloomIntensity;
     final ConfigOption<Double> bloomThreshold;
@@ -96,6 +99,10 @@ final class HelionOptions {
             .cost(LOW_COST).requires(this.enabled);
         this.renderScale = choice("renderScale", HelionConfig.RENDER_SCALE, RenderScale.class, Icons.GAUGE, "temporalAntiAliasing.renderScale")
             .style(ChoiceStyle.DROPDOWN).requires(this.temporal);
+        this.dynamicRenderScale = toggle("dynamicRenderScale", HelionConfig.DYNAMIC_RENDER_SCALE, Icons.GAUGE, "temporalAntiAliasing.dynamicRenderScale")
+            .requires(this.temporal);
+        this.targetFrameRate = choice("targetFrameRate", HelionConfig.TARGET_FRAME_RATE, FrameRateTarget.class, Icons.GAUGE, "temporalAntiAliasing.targetFrameRate")
+            .style(ChoiceStyle.DROPDOWN).requires(this.dynamicRenderScale);
         this.bloom = toggle("bloom", HelionConfig.BLOOM_ENABLED, Icons.SPARKLE, "image.bloom").cost(LOW_COST).requires(this.enabled)
             .preview(VANILLA_PREVIEW, preview("bloom"), PREVIEW_ASPECT);
         this.bloomIntensity = slider("bloomIntensity", HelionConfig.BLOOM_INTENSITY, HelionConfig.MIN_BLOOM_INTENSITY, HelionConfig.MAX_BLOOM_INTENSITY, STRENGTH_STEP, Icons.SPARKLE, "image.bloom.intensity")
@@ -131,6 +138,7 @@ final class HelionOptions {
     List<ConfigOption<?>> all() {
         return List.of(this.enabled, this.geometryBuffer, this.temporal, this.physicalSky, this.starDensity, this.milkyWay, this.lightShafts, this.clouds, this.cloudQuality,
             this.rayTracing, this.pathTracing, this.waterReflections, this.screenReflections, this.rainWetness, this.realisticWater, this.renderScale,
+            this.dynamicRenderScale, this.targetFrameRate,
             this.bloom, this.bloomIntensity, this.bloomThreshold, this.toneMapper, this.exposure, this.autoExposure, this.colorGrade, this.edgeSmoothing, this.dither,
             this.sharpening, this.sharpeningStrength, this.motionBlur, this.motionBlurStrength, this.depthOfField, this.depthOfFieldStrength, this.debugMode, this.bloomView, this.geometryBufferView);
     }

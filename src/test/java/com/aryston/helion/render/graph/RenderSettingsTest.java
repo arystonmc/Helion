@@ -11,6 +11,7 @@ import com.aryston.helion.render.geometry.GeometryBufferSettings;
 import com.aryston.helion.render.geometry.GeometryBufferView;
 import com.aryston.helion.render.post.ImageSettings;
 import com.aryston.helion.render.rtx.RayTracingSettings;
+import com.aryston.helion.render.temporal.DynamicScaleSettings;
 import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalSettings;
 import com.aryston.helion.render.water.ReflectionSettings;
@@ -20,7 +21,7 @@ class RenderSettingsTest {
     private static final RenderSettings GEOMETRY_WITH_VIEW = new RenderSettings(
         ImageSettings.FOUNDATION,
         new GeometryBufferSettings(true, GeometryBufferView.NORMALS),
-        new TemporalSettings(true, RenderScale.NATIVE),
+        new TemporalSettings(true, RenderScale.NATIVE, DynamicScaleSettings.DISABLED),
         PhysicalSkySettings.enabledWithDefaults(),
         new CloudSettings(true, CloudQuality.HIGH),
         new RayTracingSettings(true, true, true),

@@ -156,6 +156,12 @@ public final class HelionDebugSnapshot {
     private static JsonObject temporal(TemporalSettings settings) {
         JsonObject section = new JsonObject();
         section.addProperty("enabled", settings.enabled());
+        section.addProperty("renderScale", settings.renderScale().name());
+        section.addProperty("dynamicRenderScale", settings.dynamicScale().enabled());
+        if (settings.dynamicScale().enabled()) {
+            section.addProperty("targetFrameRate", settings.dynamicScale().target().framesPerSecond());
+            section.addProperty("dynamicScale", HelionRenderCore.get().temporal().dynamicScale().name());
+        }
         return section;
     }
 

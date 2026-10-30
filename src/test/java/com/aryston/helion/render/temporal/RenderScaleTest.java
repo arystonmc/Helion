@@ -21,8 +21,8 @@ class RenderScaleTest {
 
     @Test
     void renderScaleNeedsTemporalAntiAliasing() {
-        assertEquals(RenderScale.QUALITY, new TemporalSettings(true, RenderScale.QUALITY).effectiveScale());
-        assertEquals(RenderScale.NATIVE, new TemporalSettings(false, RenderScale.QUALITY).effectiveScale());
+        assertEquals(RenderScale.QUALITY, new TemporalSettings(true, RenderScale.QUALITY, DynamicScaleSettings.DISABLED).effectiveScale());
+        assertEquals(RenderScale.NATIVE, new TemporalSettings(false, RenderScale.QUALITY, DynamicScaleSettings.DISABLED).effectiveScale());
     }
 
     @Test

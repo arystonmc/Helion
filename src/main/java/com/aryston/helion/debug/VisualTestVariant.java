@@ -12,6 +12,7 @@ import com.aryston.helion.render.rtx.RayTracingSettings;
 import com.aryston.helion.render.post.MotionBlurSettings;
 import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.post.ToneMapper;
+import com.aryston.helion.render.temporal.DynamicScaleSettings;
 import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalSettings;
 import com.aryston.helion.render.water.ReflectionSettings;
@@ -62,7 +63,7 @@ enum VisualTestVariant {
             return new RenderSettings(
                 ImageSettings.FOUNDATION,
                 settings.geometry().withoutView(),
-                new TemporalSettings(true, RenderScale.NATIVE),
+                new TemporalSettings(true, RenderScale.NATIVE, DynamicScaleSettings.DISABLED),
                 PhysicalSkySettings.DISABLED,
                 CloudSettings.DISABLED,
                 RayTracingSettings.DISABLED,

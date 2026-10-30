@@ -14,6 +14,8 @@ import com.aryston.helion.render.post.ImageSettings;
 import com.aryston.helion.render.post.MotionBlurSettings;
 import com.aryston.helion.render.post.SharpeningSettings;
 import com.aryston.helion.render.post.ToneMapper;
+import com.aryston.helion.render.temporal.DynamicScaleSettings;
+import com.aryston.helion.render.temporal.FrameRateTarget;
 import com.aryston.helion.render.temporal.RenderScale;
 import com.aryston.helion.render.temporal.TemporalSettings;
 import com.aryston.helion.render.rtx.RayTracing;
@@ -70,6 +72,8 @@ public final class HelionConfig {
     static final ModConfigSpec.BooleanValue REALISTIC_WATER;
     static final ModConfigSpec.BooleanValue TEMPORAL_ENABLED;
     static final ModConfigSpec.EnumValue<RenderScale> RENDER_SCALE;
+    static final ModConfigSpec.BooleanValue DYNAMIC_RENDER_SCALE;
+    static final ModConfigSpec.EnumValue<FrameRateTarget> TARGET_FRAME_RATE;
     static final ModConfigSpec.BooleanValue PHYSICAL_SKY_ENABLED;
     static final ModConfigSpec.EnumValue<StarDensity> STAR_DENSITY;
     static final ModConfigSpec.BooleanValue MILKY_WAY;
@@ -178,6 +182,12 @@ public final class HelionConfig {
         RENDER_SCALE = BUILDER
             .translation("helion.configuration.temporalAntiAliasing.renderScale")
             .defineEnum("renderScale", RenderScale.NATIVE);
+        DYNAMIC_RENDER_SCALE = BUILDER
+            .translation("helion.configuration.temporalAntiAliasing.dynamicRenderScale")
+            .define("dynamicRenderScale", false);
+        TARGET_FRAME_RATE = BUILDER
+            .translation("helion.configuration.temporalAntiAliasing.targetFrameRate")
+            .defineEnum("targetFrameRate", FrameRateTarget.FPS_144);
         BUILDER.pop();
 
         BUILDER.translation("helion.configuration.physicalSky").push("physicalSky");
@@ -214,7 +224,11 @@ public final class HelionConfig {
         return new RenderSettings(
             imageSettings(),
             geometryBufferSettings(),
-            new TemporalSettings(TEMPORAL_ENABLED.getAsBoolean(), RENDER_SCALE.get()),
+            new TemporalSettings(
+                TEMPORAL_ENABLED.getAsBoolean(),
+                RENDER_SCALE.get(),
+                new DynamicScaleSettings(DYNAMIC_RENDER_SCALE.getAsBoolean(), TARGET_FRAME_RATE.get())
+            ),
             new PhysicalSkySettings(PHYSICAL_SKY_ENABLED.getAsBoolean(), STAR_DENSITY.get(), MILKY_WAY.getAsBoolean(), LIGHT_SHAFTS.getAsBoolean()),
             new CloudSettings(CLOUDS_ENABLED.getAsBoolean(), CLOUD_QUALITY.get()),
             new RayTracingSettings(RAY_TRACING_ENABLED.getAsBoolean() || RayTracing.forced(), WATER_REFLECTIONS.getAsBoolean(), PATH_TRACING.getAsBoolean()),

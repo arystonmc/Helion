@@ -7,6 +7,8 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 ## Unreleased
 
 ### Added
+- Performance preset for high frame rates: physical sky, light shafts, light clouds, rain and realistic water at a 67 % render scale without ray tracing, 200 FPS and more on a laptop RTX 4050
+- Dynamic render scale: holds a target frame rate of your choice by lowering and raising the render scale step by step
 - Path traced light: dynamic lights; a torch or other light block in hand, a dropped light block and a burning mob light up their surroundings
 - Path traced light: true darkness; caves and other places without any light, and nights without a moon, are fully dark, so only light sources light them
 - Path traced light: nights are dark, lit by the moon in its real strength instead of the vanilla night brightness, so torches and lanterns matter; torches and other light blocks shine stronger
@@ -52,6 +54,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental ray tracing: mobs, players and dropped items show in water reflections, also when they are off screen
 
 ### Changed
+- The Experimental preset renders at a 67 % render scale, which gives 25 to 55 % more frames per second with path traced light
 - Path traced light: lava glows softer, so a lava pool no longer floods a cave with harsh contrast
 - Path traced light: a new moon gives no light at all
 - Path traced light: glass and water reflections take the path traced light, so glass panes no longer show bright beige vanilla lit reflections at night

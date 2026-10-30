@@ -34,6 +34,7 @@ public final class TemporalResources {
 
     private final GpuResources resources;
     private final TemporalHistory history;
+    private final DynamicRenderScale dynamicScale = new DynamicRenderScale();
     private @Nullable UniformRing uniforms;
     private @Nullable PreviousView previous;
     private @Nullable TemporalPrograms programs;
@@ -46,8 +47,15 @@ public final class TemporalResources {
         this.history = new TemporalHistory(resources);
     }
 
-    public RenderScale upscaling(TemporalSettings settings) {
-        return settings.enabled() && compilePrograms() ? settings.renderScale() : RenderScale.NATIVE;
+    public RenderScale upscaling(TemporalSettings settings, int frameRateCeiling) {
+        if (!settings.enabled() || !compilePrograms()) {
+            return RenderScale.NATIVE;
+        }
+        return dynamicScale.update(settings.dynamicScale(), settings.renderScale(), frameRateCeiling, System.nanoTime());
+    }
+
+    public RenderScale dynamicScale() {
+        return dynamicScale.current();
     }
 
     public TemporalFrame begin(TemporalSettings settings, boolean tracksCameraMotion, HelionCamera camera, FrameSize size) {

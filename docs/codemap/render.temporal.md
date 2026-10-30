@@ -11,8 +11,20 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### TemporalResources
 - Path: `src/main/java/com/aryston/helion/render/temporal/TemporalResources.java`
-- Role: Persistent temporal state owned by the core: the jitter frame index, the previous view, the history targets, the `HelionTemporal` uniform ring and the one-time missing shader warning. `begin` returns the `TemporalFrame` of a level frame (jittered projection, reprojection, whether the history is usable). With temporal anti-aliasing off but motion blur on it still tracks the previous view and returns an inactive frame with an unjittered camera reprojection; the history is dropped after a resize, a jump of 16 blocks or more, a frame without temporal anti-aliasing and every vanilla frame (`invalidate`).
-- Depends on: `TemporalHistory`, `PreviousView`, `JitterSequence`, `TemporalPrograms`, `UniformRing`, `HelionCamera`.
+- Role: Persistent temporal state owned by the core: the jitter frame index, the previous view, the history targets, the `HelionTemporal` uniform ring and the one-time missing shader warning. `begin` returns the `TemporalFrame` of a level frame (jittered projection, reprojection, whether the history is usable). With temporal anti-aliasing off but motion blur on it still tracks the previous view and returns an inactive frame with an unjittered camera reprojection; `upscaling` returns the render scale of the frame, from `DynamicRenderScale` when it is on, given the frame rate ceiling; the history is dropped after a resize, a jump of 16 blocks or more, a frame without temporal anti-aliasing and every vanilla frame (`invalidate`).
+- Depends on: `TemporalHistory`, `DynamicRenderScale`, `PreviousView`, `JitterSequence`, `TemporalPrograms`, `UniformRing`, `HelionCamera`.
+
+#### DynamicRenderScale
+- Path: `src/main/java/com/aryston/helion/render/temporal/DynamicRenderScale.java`
+- Role: Picks the render scale of each level frame while the dynamic render scale is on: starts at the configured scale, averages the frame rate over two second windows and steps one `RenderScale` down below 92 % of the target or up at 98 % of it (the target lowered to the frame rate ceiling). Raises wait four seconds after the last change, doubled up to 64 s each time a raise is followed by a step down; the ten frames after a change, a stalled frame (over 250 ms) or a settings change are not measured. `UNLIMITED_FRAME_RATE` marks a game without a ceiling.
+
+#### DynamicScaleSettings
+- Path: `src/main/java/com/aryston/helion/render/temporal/DynamicScaleSettings.java`
+- Role: Whether the dynamic render scale is on and its `FrameRateTarget`. `DISABLED` for the foundation and the visual test.
+
+#### FrameRateTarget
+- Path: `src/main/java/com/aryston/helion/render/temporal/FrameRateTarget.java`
+- Role: The target frame rates of the dynamic render scale: 60, 90, 120, 144, 165, 200 and 240 frames per second.
 
 #### TemporalFrame
 - Path: `src/main/java/com/aryston/helion/render/temporal/TemporalFrame.java`
@@ -42,7 +54,7 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### TemporalSettings
 - Path: `src/main/java/com/aryston/helion/render/temporal/TemporalSettings.java`
-- Role: Player settings: enabled and the render scale. `effectiveScale` is native while temporal anti-aliasing is off, because the upscaler is the temporal resolve. `DISABLED` for the foundation.
+- Role: Player settings: enabled, the render scale and the `DynamicScaleSettings`. `effectiveScale` is native while temporal anti-aliasing is off, because the upscaler is the temporal resolve. `DISABLED` for the foundation.
 
 #### RenderScale
 - Path: `src/main/java/com/aryston/helion/render/temporal/RenderScale.java`

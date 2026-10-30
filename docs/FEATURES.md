@@ -104,6 +104,7 @@ The foundation for Helion's water, rain and reflection effects and its coming pa
 Smooth block edges and calm, shimmer-free distant textures.
 
 - Render scale: draw the world at 77, 67, 59 or 50 % of the screen resolution and let anti-aliasing rebuild the full picture over a few frames, like FSR or TSR, for a large frame rate boost; menus and the hand stay sharp at full resolution
+- Dynamic render scale: picks the render scale for you to hold a target frame rate (60 to 240 FPS, 144 by default); it steps down when the game falls below the target and back up when there is room, at most one step every two seconds, and respects your frame rate limit and VSync; off by default
 - Moves the camera by less than a pixel every frame and blends each frame with the previous ones, like modern games do
 - Works while you walk and turn; the picture gets a little softer, which the sharpening option makes up for
 - Moving mobs, items and particles stay sharp and leave no trail behind them
@@ -246,7 +247,7 @@ Everything Helion knows, on screen and in a log file, only when you ask for it.
 A clear settings window in the Arkea style, with presets and a live estimate of the GPU cost.
 
 - Pages for General, Rendering, Lighting, Effects, Performance and Advanced, with search across every setting
-- Presets: Vanilla, Balanced, Quality and Experimental. Vanilla turns every effect off, including motion blur and depth of field; Quality adds edge smoothing, Experimental adds automatic exposure; motion blur and depth of field otherwise stay as you set them
+- Presets: Vanilla, Balanced, Quality, Performance and Experimental. Vanilla turns every effect off, including motion blur and depth of field; Quality adds edge smoothing; Performance is built for high frame rates (200 FPS and more on a laptop RTX 4050 at 1080p): physical sky with light shafts, light clouds, temporal anti-aliasing at a 67 % render scale, rain wetness and realistic water, but no ray tracing, screen space reflections, motion blur or depth of field; Experimental adds automatic exposure, ray tracing and path traced light and also renders at 67 %; motion blur and depth of field otherwise stay as you set them
 - Share your settings: Copy code puts a settings code on the clipboard, Paste code applies a code a friend sent you
 - Every setting has a short description, the full explanation on hover, and a reset button when it differs from its default
 - Before and after previews for bloom and the physical sky

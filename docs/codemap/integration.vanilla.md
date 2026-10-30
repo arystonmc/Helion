@@ -20,9 +20,13 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 
 #### VanillaFrameDriver
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaFrameDriver.java`
-- Role: Rebuilds `LevelRenderer.render` with Helion stages: the vanilla sky renderer created as `addSkyPass` does (vanilla extracts the sky state only while it exists), feature preparation, targets, NeoForge frame graph event, chunk draw preparation, the scene snapshot, the camera with the captured level projection, the temporal frame with the jittered projection uploaded for the level (and put into the camera) and restored afterwards, the frame sources sharing one `SceneFog`, the ray tracing recompile requests before the stages are built, stage building, graph execution, then section compile, upload and occlusion update.
+- Role: Rebuilds `LevelRenderer.render` with Helion stages: the vanilla sky renderer created as `addSkyPass` does (vanilla extracts the sky state only while it exists), feature preparation, targets, NeoForge frame graph event, chunk draw preparation, the render scale from `TemporalResources.upscaling` with the `FrameRateCeiling`, the scene snapshot, the camera with the captured level projection, the temporal frame with the jittered projection uploaded for the level (and put into the camera) and restored afterwards, the frame sources sharing one `SceneFog`, the ray tracing recompile requests before the stages are built, stage building, graph execution, then section compile, upload and occlusion update.
 - Depends on: every class in this package, `FrameStages`, `HelionRenderCore`.
 - Notes: mirrors vanilla code; see Vanilla Coupling in `docs/ARCHITECTURE.md`.
+
+#### FrameRateCeiling
+- Path: `src/main/java/com/aryston/helion/integration/vanilla/FrameRateCeiling.java`
+- Role: The frame rate the game can reach at most for the dynamic render scale: the limit of vanilla `FramerateLimitTracker` (unlimited from `Options.UNLIMITED_FRAMERATE_CUTOFF`), with VSync on also the refresh rate of the monitor the window is on.
 
 #### VanillaFrameTargets
 - Path: `src/main/java/com/aryston/helion/integration/vanilla/VanillaFrameTargets.java`
