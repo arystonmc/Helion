@@ -55,6 +55,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Experimental ray tracing: mobs, players and dropped items show in water reflections, also when they are off screen
 
 ### Changed
+- Rain on glass costs less: the mist blur renders once at half resolution and glass no longer looks up the sky where it does not use it, with the same look
 - Faster sky, water and reflections: the sky is only computed where it is visible (up to 1.2 ms less at night indoors), water no longer redraws leaves and plants, and screen space reflections skip what ray traced reflections already show
 - The Experimental preset renders at a 67 % render scale, which gives 25 to 55 % more frames per second with path traced light
 - Path traced light: lava glows softer, so a lava pool no longer floods a cave with harsh contrast

@@ -62,7 +62,8 @@ public final class WaterReflectionStage implements RenderStage {
             frame.atmosphere().clouds().flatMap(SceneCloudPass::skyMap),
             frame.water().waves().flatMap(ignored -> resources.waves().shore().distanceView()),
             frame.water().glassSurface(),
-            frame.water().glassTint()
+            frame.water().glassTint(),
+            frame.water().glassMist()
         ));
     }
 
@@ -80,6 +81,7 @@ public final class WaterReflectionStage implements RenderStage {
         private final Optional<GpuTextureView> shore;
         private final Optional<ResourceHandle<RenderTarget>> glassSurface;
         private final Optional<ResourceHandle<RenderTarget>> glassTint;
+        private final Optional<ResourceHandle<RenderTarget>> glassMist;
 
         private Composite(
             FrameContext frame,
@@ -94,7 +96,8 @@ public final class WaterReflectionStage implements RenderStage {
             Optional<ResourceHandle<RenderTarget>> skyMap,
             Optional<GpuTextureView> shore,
             Optional<ResourceHandle<RenderTarget>> glassSurface,
-            Optional<ResourceHandle<RenderTarget>> glassTint
+            Optional<ResourceHandle<RenderTarget>> glassTint,
+            Optional<ResourceHandle<RenderTarget>> glassMist
         ) {
             this.frame = frame;
             this.pipeline = pipeline;
@@ -109,6 +112,7 @@ public final class WaterReflectionStage implements RenderStage {
             this.shore = shore;
             this.glassSurface = glassSurface;
             this.glassTint = glassTint;
+            this.glassMist = glassMist;
         }
 
         @Override
@@ -122,6 +126,7 @@ public final class WaterReflectionStage implements RenderStage {
             skyMap.ifPresent(pass::reads);
             glassSurface.ifPresent(pass::reads);
             glassTint.ifPresent(pass::reads);
+            glassMist.ifPresent(pass::reads);
         }
 
         @Override
@@ -153,6 +158,7 @@ public final class WaterReflectionStage implements RenderStage {
                 renderPass.setUniform(WaterPipelines.RAIN_COVER_SAMPLER, resources.rainCover().view().orElse(standIn), nearest);
                 renderPass.setUniform(WaterPipelines.GLASS_BEAD_SAMPLER, beads, mipmapped);
                 renderPass.setUniform(WaterPipelines.GLASS_STREAK_SAMPLER, streaks, mipmapped);
+                renderPass.setUniform(WaterPipelines.GLASS_MIST_SAMPLER, glassMist.map(WaterReflectionStage::colorView).orElse(standIn), linear());
             });
             resources.finishReflection();
         }

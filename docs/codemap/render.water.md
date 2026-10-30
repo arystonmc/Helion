@@ -52,6 +52,11 @@ Part of the [Helion code map](../CODEMAP.md). Every class of this package has it
 - Role: The rain on glass textures. `GlassRainPattern` generates, from fixed seeds, a tiling 512 x 512 bead map (about 40 % of a 2 x 2 block tile covered by non-overlapping drops of 2.2 to 12 texels, many small and few large, with a wobbled outline) and a 256 x 512 streak map (six wandering run paths per 1 x 2 block tile, 3.5 to 5.5 texels half wide); each texel holds the lens offset scaled by the drop size (RG), the cone profile 1 at the center to 0 at the edge (B) and the seed of the nearest drop or path (A), with box filtered mip levels down to the first one texel wide level (`GlassRainImage`). `GlassRainMaps` (owned by `WaterResources`) uploads both as mipmapped RGBA8 textures on first use, tracked in `GpuResources`; `WaterReflectionStage` binds them with a repeating trilinear sampler.
 - Depends on: `GpuResources`.
 
+#### GlassMistStage
+- Path: `src/main/java/com/aryston/helion/render/water/GlassMistStage.java`
+- Role: Pass `glass_mist` after the water surface, only with realistic water and while it rains: blurs the refraction copy at half resolution with `water/glass_mist.fsh` (16 golden angle taps where the half texel holds glass, one tap elsewhere) into `helion:glass_mist` and publishes it in `WaterResults`; the glass composite reads it for the mist. See `docs/architecture/glass-rain.md`, cost pass.
+- Depends on: `WaterResources`, `WaterPipelines`, `WaterResults`, `FullscreenPass`.
+
 #### ReflectedClouds
 - Path: `src/main/java/com/aryston/helion/render/water/ReflectedClouds.java`
 - Role: Which clouds the water composite can reflect (none, the on-screen cloud target, or that plus the cloud sky map), written as a level into `WaterCameraPosition.w`.

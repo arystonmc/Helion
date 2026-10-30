@@ -28,6 +28,7 @@ import com.aryston.helion.render.scene.ClearStage;
 import com.aryston.helion.render.temporal.TemporalStage;
 import com.aryston.helion.render.water.RainWetnessStage;
 import com.aryston.helion.render.water.HeatShimmerStage;
+import com.aryston.helion.render.water.GlassMistStage;
 import com.aryston.helion.render.water.ScreenReflectionStage;
 import com.aryston.helion.render.water.UnderwaterStage;
 import com.aryston.helion.render.water.WaterReflectionStage;
@@ -74,6 +75,7 @@ public final class FrameStages {
             new CloudStage(sources.clouds(), core.clouds()),
             new WaterWaveStage(sources.waves(), core.water()),
             new WaterSurfaceStage(sources.terrain(), core.water(), core.glossy()),
+            new GlassMistStage(core.water()),
             new RtxReflectionStage(core.rayTracing(), sources.terrain()),
             new ScreenReflectionStage(core.water()),
             new WaterReflectionStage(core.water()),

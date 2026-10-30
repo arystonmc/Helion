@@ -29,6 +29,7 @@ uniform sampler2D GlassTintSampler;
 uniform sampler2D RainCoverSampler;
 uniform sampler2D GlassBeadSampler;
 uniform sampler2D GlassStreakSampler;
+uniform sampler2D GlassMistSampler;
 
 #include <helion:helion_rain_cover.glsl>
 
@@ -189,15 +190,10 @@ const float HELION_GLASS_MIST_PATCH_LOW = 0.55;
 const float HELION_GLASS_MIST_MICRO_TILE = 3.0;
 const float HELION_GLASS_MIST_MICRO_LOW = 0.75;
 const float HELION_GLASS_MIST_MICRO_GAIN = 1.2;
-const int HELION_GLASS_MIST_TAPS = 16;
-const float HELION_GLASS_MIST_RADIUS = 0.02;
 const float HELION_GLASS_MIST_HAZE = 0.45;
 const float HELION_GLASS_MIST_AMBIENT = 0.4;
 const float HELION_GLASS_MIST_LIFT = 1.06;
 const float HELION_GLASS_MIST_VEIL = 0.06;
-const vec2 HELION_GLASS_NOISE_STEP = vec2(0.06711056, 0.00583715);
-const float HELION_GLASS_NOISE_SCALE = 52.9829189;
-const float HELION_GLASS_GOLDEN_ANGLE = 2.39996323;
 const float HELION_GLASS_MAX_STEP = 0.5;
 const float HELION_GLASS_MIN_LENGTH = 1.0e-4;
 const float HELION_GLASS_MIN_FACING = 1.0e-4;
@@ -300,9 +296,13 @@ vec3 helionSunHue() {
 vec3 helionCelestialGlint(vec3 view, vec3 normal, float roughness, float skyLight) {
     #ifdef HELION_PHYSICAL_SKY
     float open = smoothstep(HELION_OPEN_SKY_FROM, 1.0, skyLight) * RainBrightness;
+    if (open <= 0.0) {
+        return vec3(0.0);
+    }
     float sunUp = smoothstep(-HELION_SUN_HORIZON, HELION_SUN_HORIZON, SunDirection.y);
     float moonUp = smoothstep(-HELION_SUN_HORIZON, HELION_SUN_HORIZON, MoonDirection.y) * (1.0 - sunUp);
-    vec3 sun = helionSunHue() * HELION_SUN_IRRADIANCE * sunUp * helionSpecular(view, normal, SunDirection, roughness);
+    float sunShine = sunUp * helionSpecular(view, normal, SunDirection, roughness);
+    vec3 sun = sunShine > 0.0 ? helionSunHue() * HELION_SUN_IRRADIANCE * sunShine : vec3(0.0);
     vec3 moon = HELION_MOON_GLINT * HELION_MOON_IRRADIANCE * moonUp * helionSpecular(view, normal, MoonDirection, roughness);
     return min(sun + moon, vec3(HELION_GLINT_MAX)) * open;
     #else
@@ -387,7 +387,7 @@ vec3 helionGlassFog(vec3 behind, vec3 position) {
         AerialRenderDistanceStart,
         AerialRenderDistanceEnd
     );
-    return mix(behind, helionSkyColor(normalize(position)), clamp(amount, 0.0, 1.0));
+    return amount > 0.0 ? mix(behind, helionSkyColor(normalize(position)), clamp(amount, 0.0, 1.0)) : behind;
     #else
     return behind;
     #endif
@@ -403,14 +403,17 @@ float helionGlassFresnel(vec3 view, vec3 normal) {
 }
 
 vec3 helionGlassReflection(ivec2 pixel, vec4 glassSurface, vec3 view, vec3 normal, bool traced) {
+    vec4 rayHit = traced && TracedReflections > HELION_PRESENT ? texelFetch(ReflectionSampler, pixel, 0) : vec4(0.0);
+    vec4 screenHit = traced && ScreenReflections > HELION_PRESENT ? texelFetch(ScreenReflectionSampler, pixel, 0) : vec4(0.0);
+    if (rayHit.a > HELION_GEOMETRY_PRESENT_THRESHOLD) {
+        return mix(rayHit.rgb, screenHit.rgb, screenHit.a);
+    }
+    if (screenHit.a >= 1.0) {
+        return screenHit.rgb;
+    }
     float light = glassSurface.w * glassSurface.w;
     vec3 sky = helionReflectedSky(reflect(view, normal), false) * light * (1.0 + LightningFlash * HELION_FLASH_SKY * glassSurface.w);
-    if (!traced) {
-        return sky;
-    }
-    vec4 rayHit = TracedReflections > HELION_PRESENT ? texelFetch(ReflectionSampler, pixel, 0) : vec4(0.0);
-    vec4 screenHit = ScreenReflections > HELION_PRESENT ? texelFetch(ScreenReflectionSampler, pixel, 0) : vec4(0.0);
-    return mix(rayHit.a > HELION_GEOMETRY_PRESENT_THRESHOLD ? rayHit.rgb : sky, screenHit.rgb, screenHit.a);
+    return mix(sky, screenHit.rgb, screenHit.a);
 }
 
 vec3 helionCloudsBehindGlass(vec3 behind, vec2 screen) {
@@ -611,23 +614,8 @@ vec2 helionDropBent(vec2 screen, HelionGlassRain rain, vec3 position, vec3 norma
     return clip.w > 0.0 ? clamp(clip.xy / clip.w * 0.5 + 0.5, vec2(0.0), vec2(1.0)) : screen;
 }
 
-float helionGlassNoise(ivec2 pixel) {
-    return fract(HELION_GLASS_NOISE_SCALE * fract(dot(vec2(pixel), HELION_GLASS_NOISE_STEP)));
-}
-
-vec3 helionGlassMist(vec3 base, ivec2 pixel, vec2 screen, float skyLight, bool blurred) {
-    vec3 misted = base;
-    if (blurred) {
-        vec2 size = vec2(textureSize(RefractionSampler, 0));
-        float spin = helionGlassNoise(pixel) * HELION_GLASS_TURN;
-        vec3 sum = vec3(0.0);
-        for (int tap = 0; tap < HELION_GLASS_MIST_TAPS; tap++) {
-            float along = sqrt((float(tap) + 0.5) / float(HELION_GLASS_MIST_TAPS)) * HELION_GLASS_MIST_RADIUS * size.y;
-            float angle = float(tap) * HELION_GLASS_GOLDEN_ANGLE + spin;
-            sum += textureLod(RefractionSampler, clamp(screen + vec2(cos(angle), sin(angle)) * along / size, vec2(0.0), vec2(1.0)), 0.0).rgb;
-        }
-        misted = sum / float(HELION_GLASS_MIST_TAPS);
-    }
+vec3 helionGlassMist(vec3 base, vec2 screen, float skyLight, bool blurred) {
+    vec3 misted = blurred ? textureLod(GlassMistSampler, screen, 0.0).rgb : base;
     vec3 haze = mix(vec3(helionLuminance(misted)), helionWaterAmbient() * skyLight, HELION_GLASS_MIST_AMBIENT);
     return min(mix(misted, haze, HELION_GLASS_MIST_HAZE) * HELION_GLASS_MIST_LIFT + HELION_GLASS_MIST_VEIL, vec3(1.0));
 }
@@ -638,7 +626,7 @@ vec3 helionDropGathered(vec2 screen, HelionGlassRain rain, vec3 position, vec3 n
     return helionSrgbToLinear(textureLod(RefractionSampler, far, 0.0).rgb);
 }
 
-vec3 helionWetDrop(vec3 surface, vec3 transmitted, vec3 gathered, vec3 view, vec3 normal, float skyLight, HelionGlassRain rain) {
+vec3 helionWetDrop(vec3 surface, vec3 transmitted, vec3 tint, vec2 screen, vec3 position, vec3 view, vec3 normal, float skyLight, HelionGlassRain rain) {
     float rim = rain.rim * rain.detail;
     float tilt = rim * HELION_GLASS_DROP_STEEP;
     vec3 dropNormal = normalize(normal * sqrt(max(1.0 - tilt * tilt, 0.0)) + helionGlassAxes(normal) * (rain.facing * tilt));
@@ -646,13 +634,14 @@ vec3 helionWetDrop(vec3 surface, vec3 transmitted, vec3 gathered, vec3 view, vec
         dropNormal = -dropNormal;
     }
     float facing = clamp(dot(-view, dropNormal), 0.0, 1.0);
-    vec3 mirrored = helionSrgbToLinear(helionReflectedSky(reflect(view, dropNormal), false)) * skyLight * skyLight;
     float sky = max(helionSchlick(HELION_WATER_F0, facing, 0.0) - helionSchlick(HELION_WATER_F0, clamp(dot(-view, normal), 0.0, 1.0), 0.0), 0.0) * HELION_GLASS_DROP_SKY;
+    vec3 mirrored = sky > 0.0 ? helionSrgbToLinear(helionReflectedSky(reflect(view, dropNormal), false)) * skyLight * skyLight * sky : vec3(0.0);
     float shade = 1.0 - HELION_GLASS_DROP_RIM_DARK * smoothstep(HELION_GLASS_DROP_RIM_FROM, 1.0, rain.rim);
     float crescent = smoothstep(HELION_GLASS_DROP_CRESCENT_FROM, 1.0, rim) * max(-rain.facing.y, 0.0) * HELION_GLASS_DROP_CRESCENT;
     vec3 glint = helionCelestialGlint(view, dropNormal, mix(HELION_GLASS_FAR_ROUGHNESS, HELION_GLASS_DROP_ROUGHNESS, rain.detail), skyLight) * HELION_GLASS_DROP_GLINT;
     float gather = smoothstep(HELION_GLASS_DROP_GATHER_FROM, 1.0, rim) * HELION_GLASS_DROP_GATHER;
-    vec3 drop = surface * shade + transmitted * crescent + gathered * gather + mirrored * sky + glint;
+    vec3 gathered = gather > 0.0 ? helionDropGathered(screen, rain, position, normal) * tint * gather : vec3(0.0);
+    vec3 drop = surface * shade + transmitted * crescent + gathered + mirrored + glint;
     return mix(surface, drop, rain.cover);
 }
 
@@ -676,7 +665,7 @@ vec3 helionRealisticGlass(ivec2 pixel, vec2 screen, vec4 glassSurface, vec3 posi
     }
     float mist = rain.mist * (1.0 - max(rain.cover, rain.wiped));
     if (mist > 0.0) {
-        base = mix(base, helionGlassMist(base, pixel, screen, glassSurface.w, alone && !skyBehind), mist);
+        base = mix(base, helionGlassMist(base, screen, glassSurface.w, alone && !skyBehind), mist);
     }
     if (!frame && !skyBehind) {
         base = helionGlassFog(base, behindPosition);
@@ -695,7 +684,7 @@ vec3 helionRealisticGlass(ivec2 pixel, vec2 screen, vec4 glassSurface, vec3 posi
     float fresnel = max(helionGlassFresnel(view, normal), HELION_GLASS_MIN_REFLECTANCE);
     vec3 surface = mix(transmitted, reflected, fresnel);
     if (rain.cover > 0.0) {
-        surface = helionWetDrop(surface, transmitted, helionDropGathered(screen, rain, position, normal) * tint, view, normal, glassSurface.w, rain);
+        surface = helionWetDrop(surface, transmitted, tint, screen, position, view, normal, glassSurface.w, rain);
     }
     return helionLinearToSrgb(surface);
 }

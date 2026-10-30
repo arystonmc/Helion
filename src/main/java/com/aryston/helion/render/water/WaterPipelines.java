@@ -45,6 +45,7 @@ public final class WaterPipelines {
     public static final String RAIN_COVER_SAMPLER = "RainCoverSampler";
     public static final String GLASS_BEAD_SAMPLER = "GlassBeadSampler";
     public static final String GLASS_STREAK_SAMPLER = "GlassStreakSampler";
+    public static final String GLASS_MIST_SAMPLER = "GlassMistSampler";
     public static final String HEAT_SOURCE_SAMPLER = "HeatSourceSampler";
     private static final int POLISHED_TARGET = 1;
     private static final String FOG = "Fog";
@@ -94,6 +95,14 @@ public final class WaterPipelines {
         .withColorTargetState(new ColorTargetState(Optional.empty(), WAVE_FORMAT, ColorTargetState.WRITE_ALL))
         .build();
 
+    public static final RenderPipeline GLASS_MIST = HelionPipelines.fullscreen("water/glass_mist")
+        .withBindGroupLayout(BindGroupLayout.builder()
+            .withUniform(REFRACTION_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .withUniform(GLASS_SURFACE_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+            .build())
+        .withColorTargetState(new ColorTargetState(Optional.empty(), SCREEN_REFLECTION_FORMAT, ColorTargetState.WRITE_ALL))
+        .build();
+
     public static final RenderPipeline POLISHED_COMPOSITE = HelionPipelines.fullscreen("water/polished_composite")
         .withBindGroupLayout(BindGroupLayout.builder()
             .withUniform(POLISHED_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
@@ -105,7 +114,7 @@ public final class WaterPipelines {
     }
 
     public static List<RenderPipeline> all() {
-        return List.of(REFLECTION, REFLECTION_PHYSICAL_SKY, SCREEN_REFLECTION, SCREEN_REFLECTION_PHYSICAL_SKY, POLISHED_COMPOSITE, WAVE_STEP, UNDERWATER, HEAT_SHIMMER);
+        return List.of(REFLECTION, REFLECTION_PHYSICAL_SKY, SCREEN_REFLECTION, SCREEN_REFLECTION_PHYSICAL_SKY, POLISHED_COMPOSITE, GLASS_MIST, WAVE_STEP, UNDERWATER, HEAT_SHIMMER);
     }
 
     private static RenderPipeline.Builder screenReflection(String name, BindGroupLayout.Builder bindings) {
@@ -147,6 +156,7 @@ public final class WaterPipelines {
                 .withUniform(RAIN_COVER_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .withUniform(GLASS_BEAD_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .withUniform(GLASS_STREAK_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform(GLASS_MIST_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .build())
             .withColorTargetState(new ColorTargetState(Optional.of(BlendFunction.TRANSLUCENT_PREMULTIPLIED_ALPHA), SCENE_COLOR_FORMAT, ColorTargetState.WRITE_COLOR));
     }

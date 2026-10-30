@@ -155,6 +155,10 @@ public final class WaterResources {
             .putVec4(turbidity, (float) (gameSeconds % GAME_SECONDS_PERIOD), shore ? PRESENT : ABSENT, ABSENT));
     }
 
+    Optional<CompiledRenderPipeline> glassMistProgram() {
+        return HelionPipelines.compiled(WaterPipelines.GLASS_MIST);
+    }
+
     Optional<CompiledRenderPipeline> polishedProgram() {
         return HelionPipelines.compiled(WaterPipelines.POLISHED_COMPOSITE);
     }
