@@ -23,6 +23,7 @@ public final class WaterReflectionStage implements RenderStage {
 
     private static final float NO_FLASH = 0.0F;
     private static final float NO_RAIN = 0.0F;
+    private static final boolean MIPMAPPED = true;
 
     private final WaterResources resources;
     private @Nullable CompiledRenderPipeline program;
@@ -127,6 +128,9 @@ public final class WaterReflectionStage implements RenderStage {
         public void draw(RenderTarget scene) {
             RenderTarget water = surface.get();
             GpuSampler nearest = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
+            GpuSampler mipmapped = RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR, MIPMAPPED);
+            GpuTextureView beads = resources.glassRain().beads();
+            GpuTextureView streaks = resources.glassRain().streaks();
             FullscreenPass.draw(PASS_LABEL, scene, pipeline, renderPass -> {
                 RenderSystem.bindDefaultUniforms(renderPass);
                 sky.ifPresent(color -> color.bind(renderPass));
@@ -147,6 +151,8 @@ public final class WaterReflectionStage implements RenderStage {
                 renderPass.setUniform(WaterPipelines.GLASS_DEPTH_SAMPLER, Objects.requireNonNull(glass.getDepthTextureView()), nearest);
                 renderPass.setUniform(WaterPipelines.GLASS_TINT_SAMPLER, glassTint.map(WaterReflectionStage::colorView).orElse(standIn), nearest);
                 renderPass.setUniform(WaterPipelines.RAIN_COVER_SAMPLER, resources.rainCover().view().orElse(standIn), nearest);
+                renderPass.setUniform(WaterPipelines.GLASS_BEAD_SAMPLER, beads, mipmapped);
+                renderPass.setUniform(WaterPipelines.GLASS_STREAK_SAMPLER, streaks, mipmapped);
             });
             resources.finishReflection();
         }

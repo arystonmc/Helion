@@ -43,6 +43,8 @@ public final class WaterPipelines {
     public static final String GLASS_DEPTH_SAMPLER = "GlassDepthSampler";
     public static final String GLASS_TINT_SAMPLER = "GlassTintSampler";
     public static final String RAIN_COVER_SAMPLER = "RainCoverSampler";
+    public static final String GLASS_BEAD_SAMPLER = "GlassBeadSampler";
+    public static final String GLASS_STREAK_SAMPLER = "GlassStreakSampler";
     public static final String HEAT_SOURCE_SAMPLER = "HeatSourceSampler";
     private static final int POLISHED_TARGET = 1;
     private static final String FOG = "Fog";
@@ -143,6 +145,8 @@ public final class WaterPipelines {
                 .withUniform(GLASS_DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .withUniform(GLASS_TINT_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .withUniform(RAIN_COVER_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform(GLASS_BEAD_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+                .withUniform(GLASS_STREAK_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
                 .build())
             .withColorTargetState(new ColorTargetState(Optional.of(BlendFunction.TRANSLUCENT_PREMULTIPLIED_ALPHA), SCENE_COLOR_FORMAT, ColorTargetState.WRITE_COLOR));
     }

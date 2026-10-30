@@ -73,7 +73,7 @@ Format: sections `Added`, `Changed`, `Fixed`, `Removed`. One short plain English
 - Depth of field focuses on the sky when you look at it, so the sun, the moon and the stars stay sharp
 
 ### Fixed
-- Rain drops on glass no longer shimmer; the wet pane also mists over again
+- Rain drops on windows no longer shimmer or fade away: drops, running trails and fog on glass were rebuilt, so windows look wet from close by and far away, drops run down with a round head and wipe a clear path, and the fog on the pane is clearly visible
 - Rain no longer ripples water or wets the floor under a roof, also under a glass roof
 - White walls under path traced light no longer show fine speckles
 - Path traced light: white and other bright walls lit by bounced light no longer show a dirt-like pattern of colored blotches
